@@ -1,6 +1,4 @@
-def main():
-    print("Hello from dprr-tool!")
-
+from dprr_tool.cli import cli
 
 if __name__ == "__main__":
-    main()
+    cli()
