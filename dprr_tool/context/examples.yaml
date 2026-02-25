@@ -1,0 +1,375 @@
+examples:
+  - question: "List all consuls in the Roman Republic"
+    sparql: |
+      PREFIX vocab: <http://romanrepublic.ac.uk/rdf/entity/vocab/>
+      PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+      SELECT DISTINCT ?person ?name ?dateStart ?dateEnd
+      WHERE {
+        ?assertion a vocab:PostAssertion ;
+                   vocab:isAboutPerson ?person ;
+                   vocab:hasOffice ?office .
+        ?office rdfs:label "consul" .
+        ?person rdfs:label ?name .
+        OPTIONAL { ?assertion vocab:hasDateStart ?dateStart }
+        OPTIONAL { ?assertion vocab:hasDateEnd ?dateEnd }
+      }
+      ORDER BY ?dateStart
+      LIMIT 100
+
+  - question: "Find all female persons in the database"
+    sparql: |
+      PREFIX vocab: <http://romanrepublic.ac.uk/rdf/entity/vocab/>
+      PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+      SELECT DISTINCT ?person ?name
+      WHERE {
+        ?person a vocab:Person ;
+                rdfs:label ?name ;
+                vocab:isSex <http://romanrepublic.ac.uk/rdf/entity/Sex/Female> .
+      }
+      ORDER BY ?name
+      LIMIT 100
+
+  - question: "Who were the father-son relationships in the Republic?"
+    sparql: |
+      PREFIX vocab: <http://romanrepublic.ac.uk/rdf/entity/vocab/>
+      PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+      SELECT DISTINCT ?person ?personName ?related ?relatedName ?relType
+      WHERE {
+        ?assertion a vocab:RelationshipAssertion ;
+                   vocab:isAboutPerson ?person ;
+                   vocab:hasRelatedPerson ?related ;
+                   vocab:hasRelationship ?rel .
+        ?rel rdfs:label ?relType .
+        FILTER(CONTAINS(LCASE(?relType), "father"))
+        ?person rdfs:label ?personName .
+        ?related rdfs:label ?relatedName .
+      }
+      ORDER BY ?personName
+      LIMIT 100
+
+  - question: "List all patrician senators"
+    sparql: |
+      PREFIX vocab: <http://romanrepublic.ac.uk/rdf/entity/vocab/>
+      PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+      SELECT DISTINCT ?person ?name
+      WHERE {
+        ?person a vocab:Person ;
+                rdfs:label ?name ;
+                vocab:isPatrician true .
+      }
+      ORDER BY ?name
+      LIMIT 100
+
+  - question: "Which persons belonged to the tribe Cornelia?"
+    sparql: |
+      PREFIX vocab: <http://romanrepublic.ac.uk/rdf/entity/vocab/>
+      PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+      SELECT DISTINCT ?person ?name
+      WHERE {
+        ?assertion a vocab:TribeAssertion ;
+                   vocab:isAboutPerson ?person ;
+                   vocab:hasTribe ?tribe .
+        ?tribe rdfs:label "Cornelia" .
+        ?person rdfs:label ?name .
+      }
+      ORDER BY ?name
+      LIMIT 100
+
+  - question: "What offices were held in the province of Sicily?"
+    sparql: |
+      PREFIX vocab: <http://romanrepublic.ac.uk/rdf/entity/vocab/>
+      PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+      SELECT DISTINCT ?person ?name ?officeName ?dateStart
+      WHERE {
+        ?assertion a vocab:PostAssertion ;
+                   vocab:isAboutPerson ?person ;
+                   vocab:hasOffice ?office ;
+                   vocab:hasProvince ?province .
+        ?province rdfs:label "Sicily" .
+        ?office rdfs:label ?officeName .
+        ?person rdfs:label ?name .
+        OPTIONAL { ?assertion vocab:hasDateStart ?dateStart }
+      }
+      ORDER BY ?dateStart
+      LIMIT 100
+
+  - question: "Find all uncertain post assertions"
+    sparql: |
+      PREFIX vocab: <http://romanrepublic.ac.uk/rdf/entity/vocab/>
+      PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+      SELECT DISTINCT ?person ?name ?officeName ?dateStart
+      WHERE {
+        ?assertion a vocab:PostAssertion ;
+                   vocab:isAboutPerson ?person ;
+                   vocab:hasOffice ?office ;
+                   vocab:isUncertain true .
+        ?office rdfs:label ?officeName .
+        ?person rdfs:label ?name .
+        OPTIONAL { ?assertion vocab:hasDateStart ?dateStart }
+      }
+      ORDER BY ?name
+      LIMIT 100
+
+  - question: "Which secondary source has the most post assertions?"
+    sparql: |
+      PREFIX vocab: <http://romanrepublic.ac.uk/rdf/entity/vocab/>
+      PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+      SELECT ?sourceName (COUNT(DISTINCT ?assertion) AS ?count)
+      WHERE {
+        ?assertion a vocab:PostAssertion ;
+                   vocab:hasSecondarySource ?source .
+        ?source rdfs:label ?sourceName .
+      }
+      GROUP BY ?sourceName
+      ORDER BY DESC(?count)
+      LIMIT 100
+
+  - question: "Find persons active between 100 BC and 50 BC"
+    sparql: |
+      PREFIX vocab: <http://romanrepublic.ac.uk/rdf/entity/vocab/>
+      PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+      SELECT DISTINCT ?person ?name ?eraFrom ?eraTo
+      WHERE {
+        ?person a vocab:Person ;
+                rdfs:label ?name ;
+                vocab:hasEraFrom ?eraFrom ;
+                vocab:hasEraTo ?eraTo .
+        FILTER(?eraFrom >= -100 && ?eraTo <= -50)
+      }
+      ORDER BY ?eraFrom
+      LIMIT 100
+
+  - question: "How many persons are in the database?"
+    sparql: |
+      PREFIX vocab: <http://romanrepublic.ac.uk/rdf/entity/vocab/>
+      SELECT (COUNT(DISTINCT ?person) AS ?total)
+      WHERE {
+        ?person a vocab:Person .
+      }
+
+  - question: "Find persons with the nomen Cornelius"
+    sparql: |
+      PREFIX vocab: <http://romanrepublic.ac.uk/rdf/entity/vocab/>
+      PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+      SELECT DISTINCT ?person ?name ?praenomen ?cognomen
+      WHERE {
+        ?person a vocab:Person ;
+                rdfs:label ?name ;
+                vocab:hasNomen "Cornelius" .
+        OPTIONAL { ?person vocab:hasPraenomen ?prae . ?prae rdfs:label ?praenomen }
+        OPTIONAL { ?person vocab:hasCognomen ?cognomen }
+      }
+      ORDER BY ?name
+      LIMIT 100
+
+  - question: "List all offices in the database"
+    sparql: |
+      PREFIX vocab: <http://romanrepublic.ac.uk/rdf/entity/vocab/>
+      PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+      SELECT DISTINCT ?office ?name ?abbrev
+      WHERE {
+        ?office a vocab:Office ;
+                rdfs:label ?name .
+        OPTIONAL { ?office vocab:hasAbbrevName ?abbrev }
+      }
+      ORDER BY ?name
+      LIMIT 100
+
+  - question: "Who held the office of praetor in 63 BC?"
+    sparql: |
+      PREFIX vocab: <http://romanrepublic.ac.uk/rdf/entity/vocab/>
+      PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+      SELECT DISTINCT ?person ?name
+      WHERE {
+        ?assertion a vocab:PostAssertion ;
+                   vocab:isAboutPerson ?person ;
+                   vocab:hasOffice ?office ;
+                   vocab:hasDateStart ?dateStart .
+        ?office rdfs:label "praetor" .
+        FILTER(?dateStart = -63)
+        ?person rdfs:label ?name .
+      }
+      ORDER BY ?name
+      LIMIT 100
+
+  - question: "Find all nobiles who were also patricians"
+    sparql: |
+      PREFIX vocab: <http://romanrepublic.ac.uk/rdf/entity/vocab/>
+      PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+      SELECT DISTINCT ?person ?name
+      WHERE {
+        ?person a vocab:Person ;
+                rdfs:label ?name ;
+                vocab:isPatrician true ;
+                vocab:isNobilis true .
+      }
+      ORDER BY ?name
+      LIMIT 100
+
+  - question: "What relationship types exist in the database?"
+    sparql: |
+      PREFIX vocab: <http://romanrepublic.ac.uk/rdf/entity/vocab/>
+      PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+      SELECT DISTINCT ?rel ?relLabel ?description
+      WHERE {
+        ?rel a vocab:Relationship ;
+             rdfs:label ?relLabel .
+        OPTIONAL { ?rel vocab:hasDescription ?description }
+      }
+      ORDER BY ?relLabel
+      LIMIT 100
+
+  - question: "Find all date information records of type death"
+    sparql: |
+      PREFIX vocab: <http://romanrepublic.ac.uk/rdf/entity/vocab/>
+      PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+      SELECT DISTINCT ?person ?name ?value ?interval
+      WHERE {
+        ?di a vocab:DateInformation ;
+            vocab:isAboutPerson ?person ;
+            vocab:hasDateType ?dtype ;
+            vocab:hasValue ?value .
+        ?dtype rdfs:label "Death" .
+        ?person rdfs:label ?name .
+        OPTIONAL { ?di vocab:hasDateInterval ?interval }
+      }
+      ORDER BY ?value
+      LIMIT 100
+
+  - question: "Count how many persons held each office"
+    sparql: |
+      PREFIX vocab: <http://romanrepublic.ac.uk/rdf/entity/vocab/>
+      PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+      SELECT ?officeName (COUNT(DISTINCT ?person) AS ?holderCount)
+      WHERE {
+        ?assertion a vocab:PostAssertion ;
+                   vocab:isAboutPerson ?person ;
+                   vocab:hasOffice ?office .
+        ?office rdfs:label ?officeName .
+      }
+      GROUP BY ?officeName
+      ORDER BY DESC(?holderCount)
+      LIMIT 100
+
+  - question: "Find persons whose cognomen is uncertain"
+    sparql: |
+      PREFIX vocab: <http://romanrepublic.ac.uk/rdf/entity/vocab/>
+      PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+      SELECT DISTINCT ?person ?name ?cognomen
+      WHERE {
+        ?person a vocab:Person ;
+                rdfs:label ?name ;
+                vocab:hasCognomen ?cognomen ;
+                vocab:isCognomenUncertain true .
+      }
+      ORDER BY ?name
+      LIMIT 100
+
+  - question: "List all status types available"
+    sparql: |
+      PREFIX vocab: <http://romanrepublic.ac.uk/rdf/entity/vocab/>
+      PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+      SELECT DISTINCT ?status ?label ?description
+      WHERE {
+        ?status a vocab:Status ;
+                rdfs:label ?label .
+        OPTIONAL { ?status vocab:hasDescription ?description }
+      }
+      ORDER BY ?label
+      LIMIT 100
+
+  - question: "Find women who held offices"
+    sparql: |
+      PREFIX vocab: <http://romanrepublic.ac.uk/rdf/entity/vocab/>
+      PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+      SELECT DISTINCT ?person ?name ?officeName ?dateStart
+      WHERE {
+        ?assertion a vocab:PostAssertion ;
+                   vocab:isAboutPerson ?person ;
+                   vocab:hasOffice ?office .
+        ?person vocab:isSex <http://romanrepublic.ac.uk/rdf/entity/Sex/Female> ;
+                rdfs:label ?name .
+        ?office rdfs:label ?officeName .
+        OPTIONAL { ?assertion vocab:hasDateStart ?dateStart }
+      }
+      ORDER BY ?name
+      LIMIT 100
+
+  - question: "Find consuls who served between 200 BC and 100 BC"
+    sparql: |
+      PREFIX vocab: <http://romanrepublic.ac.uk/rdf/entity/vocab/>
+      PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+      SELECT DISTINCT ?person ?name ?dateStart
+      WHERE {
+        ?assertion a vocab:PostAssertion ;
+                   vocab:isAboutPerson ?person ;
+                   vocab:hasOffice ?office ;
+                   vocab:hasDateStart ?dateStart .
+        ?office rdfs:label "consul" .
+        FILTER(?dateStart >= -200 && ?dateStart <= -100)
+        ?person rdfs:label ?name .
+      }
+      ORDER BY ?dateStart
+      LIMIT 100
+
+  - question: "Find all novi homines (new men) in the database"
+    sparql: |
+      PREFIX vocab: <http://romanrepublic.ac.uk/rdf/entity/vocab/>
+      PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+      SELECT DISTINCT ?person ?name ?eraFrom ?eraTo
+      WHERE {
+        ?person a vocab:Person ;
+                rdfs:label ?name ;
+                vocab:isNovus true .
+        OPTIONAL { ?person vocab:hasEraFrom ?eraFrom }
+        OPTIONAL { ?person vocab:hasEraTo ?eraTo }
+      }
+      ORDER BY ?name
+      LIMIT 100
+
+  - question: "Find the office hierarchy showing parent-child relationships"
+    sparql: |
+      PREFIX vocab: <http://romanrepublic.ac.uk/rdf/entity/vocab/>
+      PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+      SELECT DISTINCT ?office ?officeName ?parent ?parentName
+      WHERE {
+        ?office a vocab:Office ;
+                rdfs:label ?officeName ;
+                vocab:hasParent ?parent .
+        ?parent rdfs:label ?parentName .
+      }
+      ORDER BY ?parentName ?officeName
+      LIMIT 100
+
+  - question: "Look up a person by their DPRR ID"
+    sparql: |
+      PREFIX vocab: <http://romanrepublic.ac.uk/rdf/entity/vocab/>
+      PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+      SELECT ?person ?name ?nomen ?cognomen ?eraFrom ?eraTo
+      WHERE {
+        ?person a vocab:Person ;
+                rdfs:label ?name ;
+                vocab:hasDprrID 1 .
+        OPTIONAL { ?person vocab:hasNomen ?nomen }
+        OPTIONAL { ?person vocab:hasCognomen ?cognomen }
+        OPTIONAL { ?person vocab:hasEraFrom ?eraFrom }
+        OPTIONAL { ?person vocab:hasEraTo ?eraTo }
+      }
+      LIMIT 100
+
+  - question: "Find all persons with a specific secondary source citation"
+    sparql: |
+      PREFIX vocab: <http://romanrepublic.ac.uk/rdf/entity/vocab/>
+      PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+      SELECT DISTINCT ?person ?name ?officeName
+      WHERE {
+        ?assertion a vocab:PostAssertion ;
+                   vocab:isAboutPerson ?person ;
+                   vocab:hasOffice ?office ;
+                   vocab:hasSecondarySource ?source .
+        ?source rdfs:label "Broughton MRR" .
+        ?person rdfs:label ?name .
+        ?office rdfs:label ?officeName .
+      }
+      ORDER BY ?name
+      LIMIT 100
