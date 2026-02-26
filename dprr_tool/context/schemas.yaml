@@ -4,15 +4,15 @@ classes:
     comment: "A historical person from the Roman Republic period."
     uri: "vocab:Person"
     properties:
-      - pred: "rdfs:label"
+      - pred: "vocab:hasPersonName"
         range: "xsd:string"
-        comment: "Full display name of the person."
+        comment: "Full display name. Format: \"DPRRID Praenomen Nomen (RE#) Filiation Cognomen\" (e.g. \"IUNI0001 L. Iunius (46a, Supb. 5.356ff.) M. f. Brutus\")."
       - pred: "vocab:hasDprrID"
-        range: "xsd:integer"
-        comment: "Unique DPRR numeric identifier."
+        range: "xsd:string"
+        comment: "Unique DPRR identifier string (e.g. \"IUNI0001\")."
       - pred: "vocab:hasID"
-        range: "xsd:integer"
-        comment: "Internal database identifier."
+        range: "xsd:string"
+        comment: "Internal database identifier (numeric string, e.g. \"1\")."
       - pred: "vocab:hasPraenomen"
         range: "vocab:Praenomen"
         comment: "The person's praenomen (first name)."
@@ -73,6 +73,27 @@ classes:
       - pred: "vocab:isReNumberUncertain"
         range: "xsd:boolean"
         comment: "Whether the RE number attribution is uncertain."
+      - pred: "vocab:isFiliationUncertain"
+        range: "xsd:boolean"
+        comment: "Whether the filiation attribution is uncertain."
+      - pred: "vocab:isOtherNamesUncertain"
+        range: "xsd:boolean"
+        comment: "Whether the other names attribution is uncertain."
+      - pred: "vocab:isPatricianUncertain"
+        range: "xsd:boolean"
+        comment: "Whether the patrician status attribution is uncertain."
+      - pred: "vocab:hasNobilisNotes"
+        range: "xsd:string"
+        comment: "Notes on the person's nobilis classification."
+      - pred: "vocab:hasNovusNotes"
+        range: "xsd:string"
+        comment: "Notes on the person's novus homo classification."
+      - pred: "vocab:hasReNumberOld"
+        range: "xsd:string"
+        comment: "Old/superseded RE reference number."
+      - pred: "vocab:hasAssociatedWebpage"
+        range: "xsd:string"
+        comment: "URL to the person's page on the DPRR website."
 
   PostAssertion:
     label: "Post Assertion"
@@ -109,6 +130,27 @@ classes:
       - pred: "vocab:hasOriginalText"
         range: "xsd:string"
         comment: "Original text from the source for this assertion."
+
+  PostAssertionProvince:
+    label: "Post Assertion Province"
+    comment: "Links a PostAssertion to a Province. Province is not stored directly on PostAssertion; instead, query this intermediary class using hasPostAssertion to reach the PostAssertion and hasProvince to reach the Province."
+    uri: "vocab:PostAssertionProvince"
+    properties:
+      - pred: "vocab:hasPostAssertion"
+        range: "vocab:PostAssertion"
+        comment: "The post assertion this province assignment belongs to."
+      - pred: "vocab:hasProvince"
+        range: "vocab:Province"
+        comment: "The province where the office was held."
+      - pred: "vocab:hasID"
+        range: "xsd:string"
+        comment: "Internal database identifier."
+      - pred: "rdfs:label"
+        range: "xsd:string"
+        comment: "Label. Prefixed with \"Post Assertion Province: \" (e.g. \"Post Assertion Province: #3897\")."
+      - pred: "vocab:isProvinceUncertain"
+        range: "xsd:boolean"
+        comment: "Whether the province assignment is uncertain."
 
   RelationshipAssertion:
     label: "Relationship Assertion"
@@ -213,7 +255,7 @@ classes:
     properties:
       - pred: "rdfs:label"
         range: "xsd:string"
-        comment: "The name of the office."
+        comment: "The name of the office. Prefixed with \"Office: \" (e.g. \"Office: consul\", \"Office: praetor\")."
       - pred: "vocab:hasID"
         range: "xsd:integer"
         comment: "Internal database identifier."
@@ -234,7 +276,7 @@ classes:
     properties:
       - pred: "rdfs:label"
         range: "xsd:string"
-        comment: "The name of the province."
+        comment: "The name of the province. Prefixed with \"Province: \" (e.g. \"Province: Latium\", \"Province: Gallia Cisalpina\")."
       - pred: "vocab:hasID"
         range: "xsd:integer"
         comment: "Internal database identifier."
@@ -252,7 +294,7 @@ classes:
     properties:
       - pred: "rdfs:label"
         range: "xsd:string"
-        comment: "Label for the sex (Male or Female)."
+        comment: "Label for the sex. Prefixed with \"Sex: \" (e.g. \"Sex: Male\", \"Sex: Female\")."
 
   Praenomen:
     label: "Praenomen"
@@ -261,7 +303,7 @@ classes:
     properties:
       - pred: "rdfs:label"
         range: "xsd:string"
-        comment: "The full praenomen."
+        comment: "The full praenomen. Prefixed with \"Praenomen: \" (e.g. \"Praenomen: Lucius\", \"Praenomen: Marcus\")."
       - pred: "vocab:hasAbbrevName"
         range: "xsd:string"
         comment: "Abbreviated form of the praenomen (e.g. 'M.' for Marcus)."
@@ -273,7 +315,7 @@ classes:
     properties:
       - pred: "rdfs:label"
         range: "xsd:string"
-        comment: "The name of the tribe."
+        comment: "The name of the tribe. Prefixed with \"Tribe: \" (e.g. \"Tribe: Cornelia\", \"Tribe: Aemilia\")."
       - pred: "vocab:hasAbbrevName"
         range: "xsd:string"
         comment: "Abbreviated name for the tribe."
@@ -285,7 +327,7 @@ classes:
     properties:
       - pred: "rdfs:label"
         range: "xsd:string"
-        comment: "The name or title of the source."
+        comment: "The name or title of the source. Prefixed with \"Secondary Source: \" (e.g. \"Secondary Source: Broughton MRR I\")."
       - pred: "vocab:hasAbbrevName"
         range: "xsd:string"
         comment: "Abbreviated name or citation key."
@@ -300,7 +342,7 @@ classes:
     properties:
       - pred: "rdfs:label"
         range: "xsd:string"
-        comment: "The name or title of the primary source."
+        comment: "The name or title of the primary source. Prefixed with \"Primary Source: \" (e.g. \"Primary Source: Livy\")."
       - pred: "vocab:hasAbbrevName"
         range: "xsd:string"
         comment: "Abbreviated name or citation key."
@@ -315,7 +357,7 @@ classes:
     properties:
       - pred: "rdfs:label"
         range: "xsd:string"
-        comment: "The name of the status."
+        comment: "The name of the status. Prefixed with \"Status: \" (e.g. \"Status: senator\", \"Status: eques Romanus\")."
       - pred: "vocab:hasAbbrevName"
         range: "xsd:string"
         comment: "Abbreviated name for the status."
@@ -330,7 +372,7 @@ classes:
     properties:
       - pred: "rdfs:label"
         range: "xsd:string"
-        comment: "The name of the relationship type."
+        comment: "The name of the relationship type. Prefixed with \"Relationship: \" (e.g. \"Relationship: father of\", \"Relationship: brother of\")."
       - pred: "vocab:hasDescription"
         range: "xsd:string"
         comment: "Description of the relationship type."
@@ -342,7 +384,7 @@ classes:
     properties:
       - pred: "rdfs:label"
         range: "xsd:string"
-        comment: "The name of the date type."
+        comment: "The name of the date type. Prefixed with \"Date Type: \" (e.g. \"Date Type: birth\", \"Date Type: death\")."
       - pred: "vocab:hasDescription"
         range: "xsd:string"
         comment: "Description of the date type."

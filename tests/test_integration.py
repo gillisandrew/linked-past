@@ -24,7 +24,7 @@ def test_full_validation_pipeline_with_valid_query():
     store = _setup_store()
     prefixes = load_prefixes()
     sd = build_schema_dict(load_schemas(), prefixes)
-    sparql = "PREFIX vocab: <http://romanrepublic.ac.uk/rdf/entity/vocab/>\nPREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\nSELECT DISTINCT ?person ?name WHERE {\n    ?person a vocab:Person ;\n        rdfs:label ?name .\n}\nLIMIT 100"
+    sparql = "PREFIX vocab: <http://romanrepublic.ac.uk/rdf/entity/vocab/>\nSELECT DISTINCT ?person ?name WHERE {\n    ?person a vocab:Person ;\n        vocab:hasPersonName ?name .\n}\nLIMIT 100"
     result = validate_and_execute(sparql, store, sd, prefixes)
     assert result.success
     assert len(result.rows) == 2
@@ -34,7 +34,7 @@ def test_full_validation_pipeline_with_missing_prefix():
     store = _setup_store()
     prefixes = load_prefixes()
     sd = build_schema_dict(load_schemas(), prefixes)
-    sparql = "SELECT DISTINCT ?person ?name WHERE {\n    ?person a vocab:Person ;\n        rdfs:label ?name .\n}"
+    sparql = "SELECT DISTINCT ?person ?name WHERE {\n    ?person a vocab:Person ;\n        vocab:hasPersonName ?name .\n}"
     result = validate_and_execute(sparql, store, sd, prefixes)
     assert result.success
     assert len(result.rows) == 2

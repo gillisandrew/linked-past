@@ -22,13 +22,13 @@ def _make_schema_dict():
 # --- Tier 1: Syntax + prefix repair ---
 
 def test_parse_valid_query():
-    sparql = "PREFIX vocab: <http://romanrepublic.ac.uk/rdf/entity/vocab/>\nPREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\nSELECT ?person ?name WHERE {\n    ?person a vocab:Person ;\n        rdfs:label ?name .\n}"
+    sparql = "PREFIX vocab: <http://romanrepublic.ac.uk/rdf/entity/vocab/>\nSELECT ?person ?name WHERE {\n    ?person a vocab:Person ;\n        vocab:hasPersonName ?name .\n}"
     fixed, errors = parse_and_fix_prefixes(sparql, PREFIXES)
     assert errors == []
     assert fixed == sparql
 
 def test_parse_fixes_missing_prefix():
-    sparql = "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\nSELECT ?person ?name WHERE {\n    ?person a vocab:Person ;\n        rdfs:label ?name .\n}"
+    sparql = "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\nSELECT ?person ?name WHERE {\n    ?person a vocab:Person ;\n        vocab:hasPersonName ?name .\n}"
     fixed, errors = parse_and_fix_prefixes(sparql, PREFIXES)
     assert errors == []
     assert "PREFIX vocab:" in fixed
@@ -40,13 +40,15 @@ def test_parse_fixes_multiple_missing_prefixes():
     assert "PREFIX vocab:" in fixed
     assert "PREFIX rdfs:" in fixed
 
+
+
 def test_parse_returns_syntax_error():
     sparql = "SELCT ?person WHERE { ?person ?p ?o }"
     fixed, errors = parse_and_fix_prefixes(sparql, PREFIXES)
     assert len(errors) > 0
 
 def test_parse_preserves_comments():
-    sparql = "# Find all persons\nPREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\nSELECT ?name WHERE {\n    ?person a vocab:Person ;\n        rdfs:label ?name .\n}"
+    sparql = "# Find all persons\nPREFIX vocab: <http://romanrepublic.ac.uk/rdf/entity/vocab/>\nSELECT ?name WHERE {\n    ?person a vocab:Person ;\n        vocab:hasPersonName ?name .\n}"
     fixed, errors = parse_and_fix_prefixes(sparql, PREFIXES)
     assert errors == []
     assert "# Find all persons" in fixed
@@ -62,7 +64,7 @@ def test_build_schema_dict():
 
 def test_validate_semantics_valid_query():
     sd = _make_schema_dict()
-    sparql = "PREFIX vocab: <http://romanrepublic.ac.uk/rdf/entity/vocab/>\nPREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\nSELECT ?person ?name WHERE {\n    ?person a vocab:Person ;\n        rdfs:label ?name ;\n        vocab:hasNomen \"Cornelius\" .\n}"
+    sparql = "PREFIX vocab: <http://romanrepublic.ac.uk/rdf/entity/vocab/>\nSELECT ?person ?name WHERE {\n    ?person a vocab:Person ;\n        vocab:hasPersonName ?name ;\n        vocab:hasNomen \"Cornelius\" .\n}"
     errors = validate_semantics(sparql, sd)
     assert errors == []
 
@@ -94,7 +96,7 @@ def _make_test_store():
 def test_validate_and_execute_success():
     store = _make_test_store()
     sd = _make_schema_dict()
-    sparql = "PREFIX vocab: <http://romanrepublic.ac.uk/rdf/entity/vocab/>\nPREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\nSELECT ?person ?name WHERE {\n    ?person a vocab:Person ;\n        rdfs:label ?name .\n}"
+    sparql = "PREFIX vocab: <http://romanrepublic.ac.uk/rdf/entity/vocab/>\nSELECT ?person ?name WHERE {\n    ?person a vocab:Person ;\n        vocab:hasPersonName ?name .\n}"
     result = validate_and_execute(sparql, store, sd, PREFIXES)
     assert result.success
     assert len(result.rows) == 2
@@ -103,7 +105,7 @@ def test_validate_and_execute_success():
 def test_validate_and_execute_fixes_prefix():
     store = _make_test_store()
     sd = _make_schema_dict()
-    sparql = "SELECT ?person ?name WHERE {\n    ?person a vocab:Person ;\n        rdfs:label ?name .\n}"
+    sparql = "SELECT ?person ?name WHERE {\n    ?person a vocab:Person ;\n        vocab:hasPersonName ?name .\n}"
     result = validate_and_execute(sparql, store, sd, PREFIXES)
     assert result.success
     assert "PREFIX vocab:" in result.sparql

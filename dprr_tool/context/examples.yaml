@@ -8,8 +8,8 @@ examples:
         ?assertion a vocab:PostAssertion ;
                    vocab:isAboutPerson ?person ;
                    vocab:hasOffice ?office .
-        ?office rdfs:label "consul" .
-        ?person rdfs:label ?name .
+        ?office rdfs:label "Office: consul" .
+        ?person vocab:hasPersonName ?name .
         OPTIONAL { ?assertion vocab:hasDateStart ?dateStart }
         OPTIONAL { ?assertion vocab:hasDateEnd ?dateEnd }
       }
@@ -19,11 +19,10 @@ examples:
   - question: "Find all female persons in the database"
     sparql: |
       PREFIX vocab: <http://romanrepublic.ac.uk/rdf/entity/vocab/>
-      PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
       SELECT DISTINCT ?person ?name
       WHERE {
         ?person a vocab:Person ;
-                rdfs:label ?name ;
+                vocab:hasPersonName ?name ;
                 vocab:isSex <http://romanrepublic.ac.uk/rdf/entity/Sex/Female> .
       }
       ORDER BY ?name
@@ -41,8 +40,8 @@ examples:
                    vocab:hasRelationship ?rel .
         ?rel rdfs:label ?relType .
         FILTER(CONTAINS(LCASE(?relType), "father"))
-        ?person rdfs:label ?personName .
-        ?related rdfs:label ?relatedName .
+        ?person vocab:hasPersonName ?personName .
+        ?related vocab:hasPersonName ?relatedName .
       }
       ORDER BY ?personName
       LIMIT 100
@@ -50,11 +49,10 @@ examples:
   - question: "List all patrician senators"
     sparql: |
       PREFIX vocab: <http://romanrepublic.ac.uk/rdf/entity/vocab/>
-      PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
       SELECT DISTINCT ?person ?name
       WHERE {
         ?person a vocab:Person ;
-                rdfs:label ?name ;
+                vocab:hasPersonName ?name ;
                 vocab:isPatrician true .
       }
       ORDER BY ?name
@@ -69,25 +67,26 @@ examples:
         ?assertion a vocab:TribeAssertion ;
                    vocab:isAboutPerson ?person ;
                    vocab:hasTribe ?tribe .
-        ?tribe rdfs:label "Cornelia" .
-        ?person rdfs:label ?name .
+        ?tribe rdfs:label "Tribe: Cornelia" .
+        ?person vocab:hasPersonName ?name .
       }
       ORDER BY ?name
       LIMIT 100
 
-  - question: "What offices were held in the province of Sicily?"
+  - question: "What offices were held in the province of Sicilia?"
     sparql: |
       PREFIX vocab: <http://romanrepublic.ac.uk/rdf/entity/vocab/>
       PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
       SELECT DISTINCT ?person ?name ?officeName ?dateStart
       WHERE {
-        ?assertion a vocab:PostAssertion ;
-                   vocab:isAboutPerson ?person ;
-                   vocab:hasOffice ?office ;
-                   vocab:hasProvince ?province .
-        ?province rdfs:label "Sicily" .
+        ?pap a vocab:PostAssertionProvince ;
+             vocab:hasProvince ?province ;
+             vocab:hasPostAssertion ?assertion .
+        ?province rdfs:label "Province: Sicilia" .
+        ?assertion vocab:isAboutPerson ?person ;
+                   vocab:hasOffice ?office .
         ?office rdfs:label ?officeName .
-        ?person rdfs:label ?name .
+        ?person vocab:hasPersonName ?name .
         OPTIONAL { ?assertion vocab:hasDateStart ?dateStart }
       }
       ORDER BY ?dateStart
@@ -104,7 +103,7 @@ examples:
                    vocab:hasOffice ?office ;
                    vocab:isUncertain true .
         ?office rdfs:label ?officeName .
-        ?person rdfs:label ?name .
+        ?person vocab:hasPersonName ?name .
         OPTIONAL { ?assertion vocab:hasDateStart ?dateStart }
       }
       ORDER BY ?name
@@ -127,11 +126,10 @@ examples:
   - question: "Find persons active between 100 BC and 50 BC"
     sparql: |
       PREFIX vocab: <http://romanrepublic.ac.uk/rdf/entity/vocab/>
-      PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
       SELECT DISTINCT ?person ?name ?eraFrom ?eraTo
       WHERE {
         ?person a vocab:Person ;
-                rdfs:label ?name ;
+                vocab:hasPersonName ?name ;
                 vocab:hasEraFrom ?eraFrom ;
                 vocab:hasEraTo ?eraTo .
         FILTER(?eraFrom >= -100 && ?eraTo <= -50)
@@ -154,7 +152,7 @@ examples:
       SELECT DISTINCT ?person ?name ?praenomen ?cognomen
       WHERE {
         ?person a vocab:Person ;
-                rdfs:label ?name ;
+                vocab:hasPersonName ?name ;
                 vocab:hasNomen "Cornelius" .
         OPTIONAL { ?person vocab:hasPraenomen ?prae . ?prae rdfs:label ?praenomen }
         OPTIONAL { ?person vocab:hasCognomen ?cognomen }
@@ -185,9 +183,9 @@ examples:
                    vocab:isAboutPerson ?person ;
                    vocab:hasOffice ?office ;
                    vocab:hasDateStart ?dateStart .
-        ?office rdfs:label "praetor" .
+        ?office rdfs:label "Office: praetor" .
         FILTER(?dateStart = -63)
-        ?person rdfs:label ?name .
+        ?person vocab:hasPersonName ?name .
       }
       ORDER BY ?name
       LIMIT 100
@@ -195,11 +193,10 @@ examples:
   - question: "Find all nobiles who were also patricians"
     sparql: |
       PREFIX vocab: <http://romanrepublic.ac.uk/rdf/entity/vocab/>
-      PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
       SELECT DISTINCT ?person ?name
       WHERE {
         ?person a vocab:Person ;
-                rdfs:label ?name ;
+                vocab:hasPersonName ?name ;
                 vocab:isPatrician true ;
                 vocab:isNobilis true .
       }
@@ -229,8 +226,8 @@ examples:
             vocab:isAboutPerson ?person ;
             vocab:hasDateType ?dtype ;
             vocab:hasValue ?value .
-        ?dtype rdfs:label "Death" .
-        ?person rdfs:label ?name .
+        ?dtype rdfs:label "Date Type: death" .
+        ?person vocab:hasPersonName ?name .
         OPTIONAL { ?di vocab:hasDateInterval ?interval }
       }
       ORDER BY ?value
@@ -254,11 +251,10 @@ examples:
   - question: "Find persons whose cognomen is uncertain"
     sparql: |
       PREFIX vocab: <http://romanrepublic.ac.uk/rdf/entity/vocab/>
-      PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
       SELECT DISTINCT ?person ?name ?cognomen
       WHERE {
         ?person a vocab:Person ;
-                rdfs:label ?name ;
+                vocab:hasPersonName ?name ;
                 vocab:hasCognomen ?cognomen ;
                 vocab:isCognomenUncertain true .
       }
@@ -288,7 +284,7 @@ examples:
                    vocab:isAboutPerson ?person ;
                    vocab:hasOffice ?office .
         ?person vocab:isSex <http://romanrepublic.ac.uk/rdf/entity/Sex/Female> ;
-                rdfs:label ?name .
+                vocab:hasPersonName ?name .
         ?office rdfs:label ?officeName .
         OPTIONAL { ?assertion vocab:hasDateStart ?dateStart }
       }
@@ -305,9 +301,9 @@ examples:
                    vocab:isAboutPerson ?person ;
                    vocab:hasOffice ?office ;
                    vocab:hasDateStart ?dateStart .
-        ?office rdfs:label "consul" .
+        ?office rdfs:label "Office: consul" .
         FILTER(?dateStart >= -200 && ?dateStart <= -100)
-        ?person rdfs:label ?name .
+        ?person vocab:hasPersonName ?name .
       }
       ORDER BY ?dateStart
       LIMIT 100
@@ -315,11 +311,10 @@ examples:
   - question: "Find all novi homines (new men) in the database"
     sparql: |
       PREFIX vocab: <http://romanrepublic.ac.uk/rdf/entity/vocab/>
-      PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
       SELECT DISTINCT ?person ?name ?eraFrom ?eraTo
       WHERE {
         ?person a vocab:Person ;
-                rdfs:label ?name ;
+                vocab:hasPersonName ?name ;
                 vocab:isNovus true .
         OPTIONAL { ?person vocab:hasEraFrom ?eraFrom }
         OPTIONAL { ?person vocab:hasEraTo ?eraTo }
@@ -341,15 +336,14 @@ examples:
       ORDER BY ?parentName ?officeName
       LIMIT 100
 
-  - question: "Look up a person by their DPRR ID"
+  - question: "Look up a person by their internal ID"
     sparql: |
       PREFIX vocab: <http://romanrepublic.ac.uk/rdf/entity/vocab/>
-      PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
       SELECT ?person ?name ?nomen ?cognomen ?eraFrom ?eraTo
       WHERE {
         ?person a vocab:Person ;
-                rdfs:label ?name ;
-                vocab:hasDprrID 1 .
+                vocab:hasPersonName ?name ;
+                vocab:hasID "1" .
         OPTIONAL { ?person vocab:hasNomen ?nomen }
         OPTIONAL { ?person vocab:hasCognomen ?cognomen }
         OPTIONAL { ?person vocab:hasEraFrom ?eraFrom }
@@ -367,9 +361,60 @@ examples:
                    vocab:isAboutPerson ?person ;
                    vocab:hasOffice ?office ;
                    vocab:hasSecondarySource ?source .
-        ?source rdfs:label "Broughton MRR" .
-        ?person rdfs:label ?name .
+        ?source rdfs:label "Secondary Source: Broughton MRR I" .
+        ?person vocab:hasPersonName ?name .
         ?office rdfs:label ?officeName .
       }
       ORDER BY ?name
+      LIMIT 100
+
+  - question: "Which equites Romani held the office of consul?"
+    sparql: |
+      PREFIX vocab: <http://romanrepublic.ac.uk/rdf/entity/vocab/>
+      PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+      SELECT DISTINCT ?person ?name ?dateStart
+      WHERE {
+        ?sa a vocab:StatusAssertion ;
+            vocab:isAboutPerson ?person ;
+            vocab:hasStatus ?status .
+        ?status rdfs:label "Status: eques Romanus" .
+        ?pa a vocab:PostAssertion ;
+            vocab:isAboutPerson ?person ;
+            vocab:hasOffice ?office ;
+            vocab:hasDateStart ?dateStart .
+        ?office rdfs:label "Office: consul" .
+        ?person vocab:hasPersonName ?name .
+      }
+      ORDER BY ?dateStart
+      LIMIT 100
+
+  - question: "Find persons who were either patrician or nobilis"
+    sparql: |
+      PREFIX vocab: <http://romanrepublic.ac.uk/rdf/entity/vocab/>
+      SELECT DISTINCT ?person ?name ?isPatrician ?isNobilis
+      WHERE {
+        ?person a vocab:Person ;
+                vocab:hasPersonName ?name .
+        { ?person vocab:isPatrician true } UNION { ?person vocab:isNobilis true }
+        OPTIONAL { ?person vocab:isPatrician ?isPatrician }
+        OPTIONAL { ?person vocab:isNobilis ?isNobilis }
+      }
+      ORDER BY ?name
+      LIMIT 100
+
+  - question: "Which persons were proscribed, and when?"
+    sparql: |
+      PREFIX vocab: <http://romanrepublic.ac.uk/rdf/entity/vocab/>
+      PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+      SELECT DISTINCT ?person ?name ?dateValue ?uncertain
+      WHERE {
+        ?di a vocab:DateInformation ;
+            vocab:isAboutPerson ?person ;
+            vocab:hasDateType ?dtype ;
+            vocab:hasValue ?dateValue .
+        ?dtype rdfs:label "Date Type: proscribed" .
+        ?person vocab:hasPersonName ?name .
+        OPTIONAL { ?di vocab:isUncertain ?uncertain }
+      }
+      ORDER BY ?dateValue ?name
       LIMIT 100

@@ -158,7 +158,7 @@ def _mock_full_pipeline_client():
     ext_resp.content = [ext_block]
 
     # Call 2: generation
-    sparql = "PREFIX vocab: <http://romanrepublic.ac.uk/rdf/entity/vocab/>\nPREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\nSELECT DISTINCT ?person ?name WHERE {\n    ?person a vocab:Person ;\n        rdfs:label ?name .\n}\nLIMIT 100"
+    sparql = "PREFIX vocab: <http://romanrepublic.ac.uk/rdf/entity/vocab/>\nSELECT DISTINCT ?person ?name WHERE {\n    ?person a vocab:Person ;\n        vocab:hasPersonName ?name .\n}\nLIMIT 100"
     gen_block = MagicMock()
     gen_block.type = "text"
     gen_block.text = f"```sparql\n{sparql}\n```"

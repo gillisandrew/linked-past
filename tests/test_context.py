@@ -24,6 +24,7 @@ def test_schemas_yaml_loads():
     for cls_name in [
         "Person",
         "PostAssertion",
+        "PostAssertionProvince",
         "RelationshipAssertion",
         "StatusAssertion",
         "DateInformation",
@@ -56,7 +57,7 @@ def test_schemas_person_has_key_properties():
     person = data["classes"]["Person"]
     preds = [p["pred"] for p in person["properties"]]
     for expected in [
-        "rdfs:label",
+        "vocab:hasPersonName",
         "vocab:hasDprrID",
         "vocab:hasNomen",
         "vocab:hasCognomen",

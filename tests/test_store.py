@@ -10,8 +10,9 @@ SAMPLE_TURTLE = """\
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
 <http://romanrepublic.ac.uk/rdf/entity/Person/1> a vocab:Person ;
-    rdfs:label "L. Iunius Brutus" ;
+    vocab:hasPersonName "IUNI0001 L. Iunius Brutus" ;
     vocab:hasDprrID "IUNI0001" ;
+    vocab:hasID "1" ;
     vocab:hasNomen "Iunius" ;
     vocab:hasCognomen "Brutus" ;
     vocab:isSex <http://romanrepublic.ac.uk/rdf/entity/Sex/Male> ;
@@ -19,8 +20,9 @@ SAMPLE_TURTLE = """\
     vocab:hasEraTo "-509"^^xsd:integer .
 
 <http://romanrepublic.ac.uk/rdf/entity/Person/2> a vocab:Person ;
-    rdfs:label "L. Tarquinius Collatinus" ;
+    vocab:hasPersonName "TARQ0001 L. Tarquinius Collatinus" ;
     vocab:hasDprrID "TARQ0001" ;
+    vocab:hasID "2" ;
     vocab:hasNomen "Tarquinius" ;
     vocab:hasCognomen "Collatinus" ;
     vocab:isSex <http://romanrepublic.ac.uk/rdf/entity/Sex/Male> .
@@ -38,10 +40,10 @@ SAMPLE_TURTLE = """\
     vocab:hasDateEnd "-509"^^xsd:integer .
 
 <http://romanrepublic.ac.uk/rdf/entity/Office/3> a vocab:Office ;
-    rdfs:label "Consul" .
+    rdfs:label "Office: consul" .
 
 <http://romanrepublic.ac.uk/rdf/entity/Sex/Male> a vocab:Sex ;
-    rdfs:label "Male" .
+    rdfs:label "Sex: Male" .
 """
 
 
@@ -74,17 +76,16 @@ def test_execute_query_returns_results():
             store,
             """
             PREFIX vocab: <http://romanrepublic.ac.uk/rdf/entity/vocab/>
-            PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
             SELECT ?person ?name WHERE {
                 ?person a vocab:Person ;
-                    rdfs:label ?name .
+                    vocab:hasPersonName ?name .
             }
             ORDER BY ?name
             """,
         )
         assert len(results) == 2
-        assert results[0]["name"] == "L. Iunius Brutus"
-        assert results[1]["name"] == "L. Tarquinius Collatinus"
+        assert results[0]["name"] == "IUNI0001 L. Iunius Brutus"
+        assert results[1]["name"] == "TARQ0001 L. Tarquinius Collatinus"
 
 
 def test_execute_query_empty_results():
