@@ -30,6 +30,11 @@ def test_build_generation_prompt():
     assert "vocab:Person" in prompt
     assert "vocab:PostAssertion" in prompt
     assert "PREFIX" in prompt
+    # Tips section
+    assert "Query Tips" in prompt
+    assert "FILTER NOT EXISTS" in prompt
+    assert "STR(" in prompt
+    assert "BIND" in prompt
 
 
 def test_build_synthesis_prompt():

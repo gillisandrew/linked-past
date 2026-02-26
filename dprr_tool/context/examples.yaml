@@ -418,3 +418,116 @@ examples:
       }
       ORDER BY ?dateValue ?name
       LIMIT 100
+
+  - question: "Find non-patrician consuls"
+    sparql: |
+      PREFIX vocab: <http://romanrepublic.ac.uk/rdf/entity/vocab/>
+      PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+      SELECT DISTINCT ?person ?name ?dateStart
+      WHERE {
+        ?assertion a vocab:PostAssertion ;
+                   vocab:isAboutPerson ?person ;
+                   vocab:hasOffice ?office .
+        ?office rdfs:label "Office: consul" .
+        ?person vocab:hasPersonName ?name .
+        FILTER NOT EXISTS { ?person vocab:isPatrician true }
+        OPTIONAL { ?assertion vocab:hasDateStart ?dateStart }
+      }
+      ORDER BY ?dateStart
+      LIMIT 100
+
+  - question: "Find all persons who held any type of dictator office"
+    sparql: |
+      PREFIX vocab: <http://romanrepublic.ac.uk/rdf/entity/vocab/>
+      PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+      SELECT DISTINCT ?person ?name ?officeName ?dateStart
+      WHERE {
+        ?assertion a vocab:PostAssertion ;
+                   vocab:isAboutPerson ?person ;
+                   vocab:hasOffice ?office .
+        ?office rdfs:label ?officeName .
+        FILTER(STRSTARTS(?officeName, "Office: dictator"))
+        ?person vocab:hasPersonName ?name .
+        OPTIONAL { ?assertion vocab:hasDateStart ?dateStart }
+      }
+      ORDER BY ?dateStart
+      LIMIT 100
+
+  - question: "Find persons who held both consul and praetor"
+    sparql: |
+      PREFIX vocab: <http://romanrepublic.ac.uk/rdf/entity/vocab/>
+      PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+      SELECT DISTINCT ?person ?name
+      WHERE {
+        ?pa1 a vocab:PostAssertion ;
+             vocab:isAboutPerson ?person ;
+             vocab:hasOffice ?office1 .
+        ?office1 rdfs:label "Office: consul" .
+        ?pa2 a vocab:PostAssertion ;
+             vocab:isAboutPerson ?person ;
+             vocab:hasOffice ?office2 .
+        ?office2 rdfs:label "Office: praetor" .
+        ?person vocab:hasPersonName ?name .
+      }
+      ORDER BY ?name
+      LIMIT 100
+
+  - question: "Find pairs of consuls who served in the same year"
+    sparql: |
+      PREFIX vocab: <http://romanrepublic.ac.uk/rdf/entity/vocab/>
+      PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+      SELECT DISTINCT ?person1 ?name1 ?person2 ?name2 ?year
+      WHERE {
+        ?pa1 a vocab:PostAssertion ;
+             vocab:isAboutPerson ?person1 ;
+             vocab:hasOffice ?office1 ;
+             vocab:hasDateStart ?year .
+        ?office1 rdfs:label "Office: consul" .
+        ?pa2 a vocab:PostAssertion ;
+             vocab:isAboutPerson ?person2 ;
+             vocab:hasOffice ?office2 ;
+             vocab:hasDateStart ?year .
+        ?office2 rdfs:label "Office: consul" .
+        ?person1 vocab:hasPersonName ?name1 .
+        ?person2 vocab:hasPersonName ?name2 .
+        FILTER(STR(?person1) < STR(?person2))
+      }
+      ORDER BY ?year
+      LIMIT 100
+
+  - question: "Count consuls by century"
+    sparql: |
+      PREFIX vocab: <http://romanrepublic.ac.uk/rdf/entity/vocab/>
+      PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+      SELECT ?century (COUNT(DISTINCT ?person) AS ?consulCount)
+      WHERE {
+        ?assertion a vocab:PostAssertion ;
+                   vocab:isAboutPerson ?person ;
+                   vocab:hasOffice ?office ;
+                   vocab:hasDateStart ?year .
+        ?office rdfs:label "Office: consul" .
+        BIND(IF(?year <= -400, "5th c. BC",
+          IF(?year <= -300, "4th c. BC",
+          IF(?year <= -200, "3rd c. BC",
+          IF(?year <= -100, "2nd c. BC",
+          "1st c. BC")))) AS ?century)
+      }
+      GROUP BY ?century
+      ORDER BY ?century
+      LIMIT 100
+
+  - question: "Which gentes produced the most consuls?"
+    sparql: |
+      PREFIX vocab: <http://romanrepublic.ac.uk/rdf/entity/vocab/>
+      PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+      SELECT ?nomen (COUNT(DISTINCT ?person) AS ?consulCount)
+      WHERE {
+        ?assertion a vocab:PostAssertion ;
+                   vocab:isAboutPerson ?person ;
+                   vocab:hasOffice ?office .
+        ?office rdfs:label "Office: consul" .
+        ?person vocab:hasNomen ?nomen .
+      }
+      GROUP BY ?nomen
+      ORDER BY DESC(?consulCount)
+      LIMIT 20

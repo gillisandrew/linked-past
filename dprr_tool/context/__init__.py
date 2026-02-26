@@ -23,6 +23,12 @@ def load_examples() -> list[dict]:
         return yaml.safe_load(f)["examples"]
 
 
+def load_tips() -> list[dict]:
+    """Load the query tips from tips.yaml."""
+    with open(_CONTEXT_DIR / "tips.yaml") as f:
+        return yaml.safe_load(f)["tips"]
+
+
 def render_schemas_as_shex(schemas: dict) -> str:
     """Render the schema dict as ShEx-style text for LLM context injection."""
     sections = []
@@ -48,3 +54,11 @@ def render_examples(examples: list[dict]) -> str:
         section = f"Question: {ex['question']}\n\n```sparql\n{ex['sparql'].strip()}\n```"
         sections.append(section)
     return "\n\n---\n\n".join(sections)
+
+
+def render_tips(tips: list[dict]) -> str:
+    """Render the query tips as formatted text for LLM context injection."""
+    sections = []
+    for tip in tips:
+        sections.append(f"- **{tip['title']}**: {tip['body'].strip()}")
+    return "\n\n".join(sections)

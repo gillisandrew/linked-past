@@ -1,4 +1,4 @@
-from dprr_tool.context import load_schemas, load_examples, render_schemas_as_shex, render_examples
+from dprr_tool.context import load_schemas, load_examples, load_tips, render_schemas_as_shex, render_examples, render_tips
 
 
 EXTRACTION_TOOL_SCHEMA = {
@@ -61,8 +61,10 @@ Call the extract_question tool with your analysis."""
 def build_generation_prompt() -> str:
     schemas = load_schemas()
     examples = load_examples()
+    tips = load_tips()
     schema_text = render_schemas_as_shex(schemas)
     examples_text = render_examples(examples)
+    tips_text = render_tips(tips)
 
     return f"""\
 You are a SPARQL query generator for the Digital Prosopography of the Roman Republic (DPRR).
@@ -95,7 +97,11 @@ Briefly explain the query before the code block.
 
 ## Example Queries
 
-{examples_text}"""
+{examples_text}
+
+## Query Tips and Known Limitations
+
+{tips_text}"""
 
 
 def build_synthesis_prompt() -> str:

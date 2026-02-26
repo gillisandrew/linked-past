@@ -14,8 +14,10 @@ from dprr_tool.context import (
     load_examples,
     load_prefixes,
     load_schemas,
+    load_tips,
     render_examples,
     render_schemas_as_shex,
+    render_tips,
 )
 from dprr_tool.store import ensure_initialized, execute_query
 from dprr_tool.validate import (
@@ -58,16 +60,18 @@ mcp = FastMCP(
 
 @mcp.tool()
 def get_schema(ctx: Context) -> str:
-    """Get the full DPRR ontology context: namespace prefixes, ShEx schema for all classes/properties, and 22 curated example question/SPARQL pairs. Call this first to learn the domain before generating queries."""
+    """Get the full DPRR ontology context: namespace prefixes, ShEx schema for all classes/properties, 28 curated example question/SPARQL pairs, and query tips for common pitfalls. Call this first to learn the domain before generating queries."""
     prefix_map = load_prefixes()
     schemas = load_schemas()
     examples = load_examples()
+    tips = load_tips()
 
     return json.dumps(
         {
             "prefixes": prefix_map,
             "schema_shex": render_schemas_as_shex(schemas),
             "examples": render_examples(examples),
+            "query_tips": render_tips(tips),
         },
         indent=2,
     )

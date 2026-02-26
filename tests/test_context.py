@@ -90,7 +90,7 @@ def test_examples_yaml_loads():
         data = yaml.safe_load(f)
     assert "examples" in data
     examples = data["examples"]
-    assert len(examples) >= 15
+    assert len(examples) >= 25
     for i, ex in enumerate(examples):
         assert "question" in ex, f"Example {i} missing question"
         assert "sparql" in ex, f"Example {i} missing sparql"
@@ -103,6 +103,7 @@ def test_examples_cover_key_patterns():
     with open(CONTEXT_DIR / "examples.yaml") as f:
         data = yaml.safe_load(f)
     questions = [ex["question"].lower() for ex in data["examples"]]
+    sparqls = [ex["sparql"] for ex in data["examples"]]
     assert any("consul" in q for q in questions), "Missing consul query"
     assert any("woman" in q or "female" in q for q in questions), (
         "Missing gender query"
@@ -121,3 +122,20 @@ def test_examples_cover_key_patterns():
     assert any("province" in q for q in questions), "Missing province query"
     assert any("uncertain" in q for q in questions), "Missing uncertainty query"
     assert any("source" in q for q in questions), "Missing source query"
+    # Advanced patterns from examples 23-28
+    assert any("FILTER NOT EXISTS" in s for s in sparqls), "Missing FILTER NOT EXISTS example"
+    assert any("STRSTARTS" in s for s in sparqls), "Missing STRSTARTS example"
+    assert any("STR(?person1)" in s or "STR(?person2)" in s for s in sparqls), "Missing STR() URI comparison example"
+    assert any("BIND" in s for s in sparqls), "Missing BIND example"
+
+
+def test_tips_yaml_loads():
+    with open(CONTEXT_DIR / "tips.yaml") as f:
+        data = yaml.safe_load(f)
+    assert "tips" in data
+    tips = data["tips"]
+    assert len(tips) >= 7
+    for i, tip in enumerate(tips):
+        assert "id" in tip, f"Tip {i} missing id"
+        assert "title" in tip, f"Tip {i} missing title"
+        assert "body" in tip, f"Tip {i} missing body"
