@@ -35,11 +35,32 @@ dprr-tool info
 
 ### MCP Server
 
+The MCP server supports two transport modes:
+
+- **stdio** (default) — one server per connection, suitable for single-client usage
+- **HTTP** (streamable-http) — a single long-running server that multiple clients connect to, ideal for parallel agent workflows
+
+#### stdio mode
+
 Run as an MCP server over stdio for use with Claude Code, Claude Desktop, Cursor, or any MCP-compatible client:
 
 ```bash
+dprr-server
+# or
 dprr-tool serve
 ```
+
+#### HTTP mode
+
+Start a persistent HTTP server that multiple agents can share concurrently:
+
+```bash
+dprr-server --transport http
+# Custom host/port:
+dprr-server --transport http --host 0.0.0.0 --port 9000
+```
+
+The server listens on `http://127.0.0.1:8000/mcp` by default. Queries that exceed the timeout (default 30s, configurable via `DPRR_QUERY_TIMEOUT`) return a structured error instead of crashing the connection.
 
 #### MCP Tools
 
@@ -51,14 +72,33 @@ dprr-tool serve
 
 #### Claude Code configuration
 
+**HTTP mode** (recommended for parallel agents) — start the server first, then configure Claude Code to connect:
+
+```bash
+uv run dprr-server --transport http
+```
+
 Add to `.claude/settings.json`:
 
 ```json
 {
   "mcpServers": {
     "dprr": {
+      "type": "http",
+      "url": "http://127.0.0.1:8000/mcp"
+    }
+  }
+}
+```
+
+**stdio mode** — Claude Code launches and manages the server process:
+
+```json
+{
+  "mcpServers": {
+    "dprr": {
       "command": "uv",
-      "args": ["run", "--directory", "/path/to/dprr-tool", "dprr-tool", "serve"],
+      "args": ["run", "--directory", "/path/to/dprr-tool", "dprr-server"],
       "env": {
         "DPRR_RDF_FILE": "/path/to/dprr-data.ttl"
       }
@@ -78,7 +118,7 @@ Add to `claude_desktop_config.json`:
   "mcpServers": {
     "dprr": {
       "command": "uv",
-      "args": ["run", "--directory", "/path/to/dprr-tool", "dprr-tool", "serve"],
+      "args": ["run", "--directory", "/path/to/dprr-tool", "dprr-server"],
       "env": {
         "DPRR_RDF_FILE": "/path/to/dprr-data.ttl"
       }
@@ -105,10 +145,10 @@ Claude will load the DPRR schema, generate a SPARQL query, validate and execute 
 │  Orchestrates: analyze → generate   │
 │  → validate → execute → synthesize  │
 └──────────────┬──────────────────────┘
-               │ MCP protocol (stdio)
+               │ MCP protocol (stdio or HTTP)
 ┌──────────────▼──────────────────────┐
-│  MCP Server (dprr-tool serve)       │  3 tools: get_schema, validate_sparql,
-│  Python, stdio transport            │  execute_sparql
+│  MCP Server (dprr-server)           │  3 tools: get_schema, validate_sparql,
+│  Python, stdio or streamable-http   │  execute_sparql
 └──────────────┬──────────────────────┘
                │
 ┌──────────────▼──────────────────────┐
@@ -125,6 +165,7 @@ The CLI `ask` command uses the Anthropic API directly for a standalone experienc
 | `ANTHROPIC_API_KEY` | Required for `dprr-tool ask` (CLI mode) |
 | `DPRR_STORE_PATH` | Override default store location (`~/.dprr-tool`) |
 | `DPRR_RDF_FILE` | Path to DPRR Turtle file for auto-initialization (MCP mode) |
+| `DPRR_QUERY_TIMEOUT` | Query timeout in seconds (default: 30) |
 
 ## References
 
