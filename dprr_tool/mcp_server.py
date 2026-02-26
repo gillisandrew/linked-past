@@ -30,7 +30,7 @@ from dprr_tool.validate import (
 
 logger = logging.getLogger(__name__)
 
-QUERY_TIMEOUT = int(os.environ.get("DPRR_QUERY_TIMEOUT", "30"))
+QUERY_TIMEOUT = int(os.environ.get("DPRR_QUERY_TIMEOUT", "60"))
 
 DEFAULT_STORE_PATH = Path.home() / ".dprr-tool" / "store"
 
@@ -107,26 +107,27 @@ def validate_sparql(ctx: Context, sparql: str) -> str:
 
 
 @mcp.tool()
-async def execute_sparql(ctx: Context, sparql: str) -> str:
+async def execute_sparql(ctx: Context, sparql: str, timeout: int | None = None) -> str:
     """Validate and execute a SPARQL query against the local DPRR RDF store. Returns results as rows of column/value pairs. Automatically repairs missing PREFIX declarations before execution."""
     app: AppContext = ctx.request_context.lifespan_context
+    effective_timeout = timeout if timeout is not None else QUERY_TIMEOUT
 
     try:
         result = await asyncio.wait_for(
             asyncio.to_thread(
                 validate_and_execute, sparql, app.store, app.schema_dict, app.prefix_map
             ),
-            timeout=QUERY_TIMEOUT,
+            timeout=effective_timeout,
         )
     except asyncio.TimeoutError:
-        logger.warning("Query timed out after %ds: %s", QUERY_TIMEOUT, sparql[:200])
+        logger.warning("Query timed out after %ds: %s", effective_timeout, sparql[:200])
         return json.dumps(
             {
                 "success": False,
                 "sparql": sparql,
                 "rows": [],
                 "row_count": 0,
-                "errors": [f"Query timed out after {QUERY_TIMEOUT}s. Simplify the query or increase DPRR_QUERY_TIMEOUT."],
+                "errors": [f"Query timed out after {effective_timeout}s. Simplify the query or increase the timeout."],
             }
         )
     except OSError as e:
