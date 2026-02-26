@@ -8,7 +8,7 @@ from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from pathlib import Path
 
-from mcp.server.fastmcp import FastMCP
+from mcp.server.fastmcp import Context, FastMCP
 
 from dprr_tool.context import (
     load_examples,
@@ -57,7 +57,7 @@ mcp = FastMCP(
 
 
 @mcp.tool()
-def get_schema(ctx) -> str:
+def get_schema(ctx: Context) -> str:
     """Get the full DPRR ontology context: namespace prefixes, ShEx schema for all classes/properties, and 22 curated example question/SPARQL pairs. Call this first to learn the domain before generating queries."""
     prefix_map = load_prefixes()
     schemas = load_schemas()
@@ -74,7 +74,7 @@ def get_schema(ctx) -> str:
 
 
 @mcp.tool()
-def validate_sparql(ctx, sparql: str) -> str:
+def validate_sparql(ctx: Context, sparql: str) -> str:
     """Validate a SPARQL query against the DPRR schema without executing it. Checks syntax, auto-repairs missing PREFIX declarations, and validates that all classes and predicates exist in the ontology."""
     app: AppContext = ctx.request_context.lifespan_context
 
@@ -97,7 +97,7 @@ def validate_sparql(ctx, sparql: str) -> str:
 
 
 @mcp.tool()
-def execute_sparql(ctx, sparql: str) -> str:
+def execute_sparql(ctx: Context, sparql: str) -> str:
     """Validate and execute a SPARQL query against the local DPRR RDF store. Returns results as rows of column/value pairs. Automatically repairs missing PREFIX declarations before execution."""
     app: AppContext = ctx.request_context.lifespan_context
 
