@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import difflib
 import logging
 import os
 from contextlib import asynccontextmanager
@@ -144,7 +145,14 @@ def validate_sparql(ctx: Context, sparql: str) -> str:
         return base + _query_context(fixed_sparql, app)
 
     if fixed_sparql != sparql:
-        base = f"VALID (prefixes auto-repaired)\n\n```sparql\n{fixed_sparql}\n```"
+        diff = "".join(
+            difflib.unified_diff(
+                sparql.splitlines(keepends=True),
+                fixed_sparql.splitlines(keepends=True),
+                n=0,
+            )
+        )
+        base = f"VALID (prefixes auto-repaired)\n\n```diff\n{diff}```"
     else:
         base = "VALID"
     return base + _query_context(fixed_sparql, app)

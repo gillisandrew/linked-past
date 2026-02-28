@@ -236,7 +236,8 @@ def test_validate_sparql_prefix_repair():
     result = validate_sparql(ctx, "SELECT ?p WHERE { ?p a vocab:Person }")
     assert "VALID" in result
     assert "prefixes auto-repaired" in result
-    assert "PREFIX vocab:" in result
+    assert "```diff" in result
+    assert "+PREFIX vocab:" in result
 
 
 def test_validate_sparql_semantic_error():
