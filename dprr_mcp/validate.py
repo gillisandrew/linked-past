@@ -8,7 +8,7 @@ from rdflib.plugins.sparql.parser import parseQuery
 from rdflib.plugins.sparql.parserutils import CompValue
 from rdflib.term import URIRef, Variable
 
-from dprr_tool.store import execute_query
+from dprr_mcp.store import execute_query
 
 RDF_TYPE = URIRef("http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
 

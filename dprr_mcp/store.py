@@ -7,14 +7,14 @@ from pyoxigraph import RdfFormat, Store
 def get_data_dir() -> Path:
     """Compute the DPRR data directory.
 
-    Precedence: DPRR_DATA_DIR > $XDG_DATA_HOME/dprr-tool > ~/.local/share/dprr-tool
+    Precedence: DPRR_DATA_DIR > $XDG_DATA_HOME/dprr-mcp > ~/.local/share/dprr-mcp
     """
     explicit = os.environ.get("DPRR_DATA_DIR")
     if explicit:
         return Path(explicit)
     xdg = os.environ.get("XDG_DATA_HOME")
     base = Path(xdg) if xdg else Path.home() / ".local" / "share"
-    return base / "dprr-tool"
+    return base / "dprr-mcp"
 
 
 def get_or_create_store(path: Path) -> Store:
@@ -80,7 +80,7 @@ def ensure_initialized() -> Store:
     If dprr.ttl is not present, attempts to fetch it from the configured URL.
     Returns a read-only store. Derives paths from get_data_dir().
     """
-    from dprr_tool.fetch import fetch_data
+    from dprr_mcp.fetch import fetch_data
 
     data_dir = get_data_dir()
     store_path = data_dir / "store"

@@ -1,5 +1,5 @@
 [project]
-name = "dprr-tool"
+name = "dprr-mcp"
 version = "0.1.0"
 description = "Natural language SPARQL queries for the Digital Prosopography of the Roman Republic"
 readme = "README.md"
@@ -13,7 +13,7 @@ dependencies = [
 ]
 
 [project.scripts]
-dprr-server = "dprr_tool.mcp_server:main"
+dprr-server = "dprr_mcp.mcp_server:main"
 
 [build-system]
 requires = ["hatchling"]
@@ -38,7 +38,7 @@ select = ["E", "F", "I", "W"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["E501"]
-"dprr_tool/mcp_server.py" = ["E501"]  # MCP tool docstrings must be single-line
+"dprr_mcp/mcp_server.py" = ["E501"]  # MCP tool docstrings must be single-line
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

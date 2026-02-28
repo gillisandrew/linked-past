@@ -1,4 +1,4 @@
-# dprr-tool
+# dprr-mcp
 
 Natural language SPARQL queries for the [Digital Prosopography of the Roman Republic](http://romanrepublic.ac.uk/) (DPRR). Ask questions about ~4,800 Roman individuals (509–31 BC) — their offices, family relationships, social statuses, and life dates — and get validated SPARQL queries and academic prose summaries.
 
@@ -14,7 +14,7 @@ uv sync
 
 On first startup, the server automatically downloads the DPRR RDF dataset from the latest GitHub release and initializes the local Oxigraph store. No manual data setup is required.
 
-Data is stored in `$XDG_DATA_HOME/dprr-tool/` (defaults to `~/.local/share/dprr-tool/`). Override with `DPRR_DATA_DIR`.
+Data is stored in `$XDG_DATA_HOME/dprr-mcp/` (defaults to `~/.local/share/dprr-mcp/`). Override with `DPRR_DATA_DIR`.
 
 ## Usage
 
@@ -66,7 +66,7 @@ Alternatively, Claude Code can launch the server process automatically:
   "mcpServers": {
     "dprr": {
       "command": "uv",
-      "args": ["run", "--directory", "/path/to/dprr-tool", "dprr-server"],
+      "args": ["run", "--directory", "/path/to/dprr-mcp", "dprr-server"],
     }
   }
 }
@@ -83,7 +83,7 @@ Add to `claude_desktop_config.json`:
   "mcpServers": {
     "dprr": {
       "command": "uv",
-      "args": ["run", "--directory", "/path/to/dprr-tool", "dprr-server"]
+      "args": ["run", "--directory", "/path/to/dprr-mcp", "dprr-server"]
     }
   }
 }
@@ -124,7 +124,7 @@ The MCP server + skill path lets Claude orchestrate the pipeline with no additio
 
 | Variable | Description |
 |----------|-------------|
-| `DPRR_DATA_DIR` | Override data directory (default: `$XDG_DATA_HOME/dprr-tool`) |
+| `DPRR_DATA_DIR` | Override data directory (default: `$XDG_DATA_HOME/dprr-mcp`) |
 | `DPRR_DATA_URL` | Override URL for auto-downloading the data tarball |
 | `DPRR_QUERY_TIMEOUT` | Query timeout in seconds (default: 600) |
 
@@ -197,14 +197,14 @@ This tool queries data from the [Digital Prosopography of the Roman Republic](ht
 
 ### Citing this tool
 
-If you use dprr-tool in your research, please cite:
+If you use dprr-mcp in your research, please cite:
 
 ```bibtex
-@software{dprr_tool,
+@software{dprr_mcp,
   author    = {Gillis, Andrew},
-  title     = {dprr-tool: Natural Language {SPARQL} Queries for the Digital Prosopography of the Roman Republic},
+  title     = {dprr-mcp: Natural Language {SPARQL} Queries for the Digital Prosopography of the Roman Republic},
   year      = {2025},
-  url       = {https://github.com/gillisandrew/dprr-tool}
+  url       = {https://github.com/gillisandrew/dprr-mcp}
 }
 ```
 

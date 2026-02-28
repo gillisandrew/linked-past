@@ -2,7 +2,7 @@ from pathlib import Path
 
 import yaml
 
-CONTEXT_DIR = Path(__file__).parent.parent / "dprr_tool" / "context"
+CONTEXT_DIR = Path(__file__).parent.parent / "dprr_mcp" / "context"
 
 
 def test_prefixes_yaml_loads():

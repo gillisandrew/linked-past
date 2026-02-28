@@ -1,8 +1,8 @@
 import pytest
 
-from dprr_tool.context import load_prefixes, load_schemas
-from dprr_tool.store import get_or_create_store, load_rdf
-from dprr_tool.validate import (
+from dprr_mcp.context import load_prefixes, load_schemas
+from dprr_mcp.store import get_or_create_store, load_rdf
+from dprr_mcp.validate import (
     ValidationResult,
     _local_name,
     _suggest,

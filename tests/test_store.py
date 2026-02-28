@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 import pytest
 
-from dprr_tool.store import ensure_initialized, execute_query, get_or_create_store, is_initialized, load_rdf
+from dprr_mcp.store import ensure_initialized, execute_query, get_or_create_store, is_initialized, load_rdf
 
 SAMPLE_TURTLE = """\
 @prefix vocab: <http://romanrepublic.ac.uk/rdf/entity/vocab/> .
@@ -140,28 +140,28 @@ def test_execute_query_non_select_raises():
 
 
 def test_get_data_dir_default():
-    """Falls back to ~/.local/share/dprr-tool when no envvars set."""
-    from dprr_tool.store import get_data_dir
+    """Falls back to ~/.local/share/dprr-mcp when no envvars set."""
+    from dprr_mcp.store import get_data_dir
 
     with patch.dict(os.environ, {}, clear=True):
         os.environ.pop("DPRR_DATA_DIR", None)
         os.environ.pop("XDG_DATA_HOME", None)
         result = get_data_dir()
-        assert result == Path.home() / ".local" / "share" / "dprr-tool"
+        assert result == Path.home() / ".local" / "share" / "dprr-mcp"
 
 
 def test_get_data_dir_xdg_data_home():
     """Respects XDG_DATA_HOME when set."""
-    from dprr_tool.store import get_data_dir
+    from dprr_mcp.store import get_data_dir
 
     with patch.dict(os.environ, {"XDG_DATA_HOME": "/tmp/xdg"}, clear=True):
         result = get_data_dir()
-        assert result == Path("/tmp/xdg/dprr-tool")
+        assert result == Path("/tmp/xdg/dprr-mcp")
 
 
 def test_get_data_dir_dprr_data_dir_overrides_xdg():
     """DPRR_DATA_DIR takes precedence over XDG_DATA_HOME."""
-    from dprr_tool.store import get_data_dir
+    from dprr_mcp.store import get_data_dir
 
     with patch.dict(os.environ, {"DPRR_DATA_DIR": "/tmp/custom", "XDG_DATA_HOME": "/tmp/xdg"}, clear=True):
         result = get_data_dir()
@@ -192,7 +192,7 @@ def test_ensure_initialized_fetches_when_no_ttl(tmp_path):
         return data_dir / "dprr.ttl"
 
     with patch.dict(os.environ, {"DPRR_DATA_DIR": str(data_dir)}, clear=True):
-        with patch("dprr_tool.fetch.fetch_data", side_effect=fake_fetch) as mock_fetch:
+        with patch("dprr_mcp.fetch.fetch_data", side_effect=fake_fetch) as mock_fetch:
             store = ensure_initialized()
             mock_fetch.assert_called_once_with(data_dir)
             results = execute_query(store, "SELECT (COUNT(*) AS ?c) WHERE { ?s ?p ?o }")
@@ -205,6 +205,6 @@ def test_ensure_initialized_fetch_failure_raises(tmp_path):
     data_dir.mkdir()
 
     with patch.dict(os.environ, {"DPRR_DATA_DIR": str(data_dir)}, clear=True):
-        with patch("dprr_tool.fetch.fetch_data", side_effect=RuntimeError("download failed")):
+        with patch("dprr_mcp.fetch.fetch_data", side_effect=RuntimeError("download failed")):
             with pytest.raises(RuntimeError, match="download failed"):
                 ensure_initialized()

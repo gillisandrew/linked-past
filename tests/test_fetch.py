@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 import pytest
 
-from dprr_tool.fetch import DEFAULT_DATA_URL, fetch_data
+from dprr_mcp.fetch import DEFAULT_DATA_URL, fetch_data
 
 
 def _make_tarball(tmp_path: Path, filename: str = "dprr.ttl", content: str = "test data") -> Path:
@@ -24,7 +24,7 @@ def test_fetch_data_extracts_ttl(tmp_path):
     data_dir = tmp_path / "output"
     data_dir.mkdir()
 
-    with patch("dprr_tool.fetch.urllib.request.urlretrieve") as mock_retrieve:
+    with patch("dprr_mcp.fetch.urllib.request.urlretrieve") as mock_retrieve:
         mock_retrieve.return_value = (str(tarball_path), {})
         fetch_data(data_dir, url="https://example.com/data.tar.gz")
 
@@ -38,7 +38,7 @@ def test_fetch_data_missing_ttl_in_tarball(tmp_path):
     data_dir = tmp_path / "output"
     data_dir.mkdir()
 
-    with patch("dprr_tool.fetch.urllib.request.urlretrieve") as mock_retrieve:
+    with patch("dprr_mcp.fetch.urllib.request.urlretrieve") as mock_retrieve:
         mock_retrieve.return_value = (str(tarball_path), {})
         with pytest.raises(RuntimeError, match="dprr.ttl"):
             fetch_data(data_dir, url="https://example.com/data.tar.gz")
@@ -51,7 +51,7 @@ def test_fetch_data_url_from_envvar(tmp_path):
     data_dir.mkdir()
 
     with patch.dict(os.environ, {"DPRR_DATA_URL": "https://custom.example.com/data.tar.gz"}):
-        with patch("dprr_tool.fetch.urllib.request.urlretrieve") as mock_retrieve:
+        with patch("dprr_mcp.fetch.urllib.request.urlretrieve") as mock_retrieve:
             mock_retrieve.return_value = (str(tarball_path), {})
             fetch_data(data_dir)
             mock_retrieve.assert_called_once()
@@ -70,6 +70,6 @@ def test_fetch_data_network_error(tmp_path):
     data_dir = tmp_path / "output"
     data_dir.mkdir()
 
-    with patch("dprr_tool.fetch.urllib.request.urlretrieve", side_effect=OSError("connection refused")):
+    with patch("dprr_mcp.fetch.urllib.request.urlretrieve", side_effect=OSError("connection refused")):
         with pytest.raises(RuntimeError, match="Failed to download"):
             fetch_data(data_dir, url="https://example.com/data.tar.gz")

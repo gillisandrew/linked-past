@@ -12,14 +12,14 @@ import toons
 from mcp.server.fastmcp import Context, FastMCP
 from pyoxigraph import Store
 
-from dprr_tool.context import (
+from dprr_mcp.context import (
     load_examples,
     load_prefixes,
     load_schemas,
     load_tips,
 )
-from dprr_tool.store import ensure_initialized
-from dprr_tool.validate import (
+from dprr_mcp.store import ensure_initialized
+from dprr_mcp.validate import (
     build_schema_dict,
     parse_and_fix_prefixes,
     validate_and_execute,

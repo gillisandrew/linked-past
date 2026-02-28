@@ -6,7 +6,7 @@ WORKDIR /app
 COPY pyproject.toml uv.lock ./
 RUN uv sync --no-dev --frozen
 
-COPY dprr_tool/ dprr_tool/
+COPY dprr_mcp/ dprr_mcp/
 
 FROM python:3.13-slim
 

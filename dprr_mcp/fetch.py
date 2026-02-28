@@ -9,7 +9,7 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_DATA_URL = "https://github.com/gillisandrew/dprr-tool/releases/latest/download/dprr-data.tar.gz"
+DEFAULT_DATA_URL = "https://github.com/gillisandrew/dprr-mcp/releases/latest/download/dprr-data.tar.gz"
 
 
 def fetch_data(data_dir: Path, url: str | None = None) -> Path:

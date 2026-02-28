@@ -1,9 +1,9 @@
 """Integration tests using sample data."""
 import pytest
 
-from dprr_tool.context import load_prefixes, load_schemas
-from dprr_tool.store import get_or_create_store, load_rdf
-from dprr_tool.validate import build_schema_dict, validate_and_execute
+from dprr_mcp.context import load_prefixes, load_schemas
+from dprr_mcp.store import get_or_create_store, load_rdf
+from dprr_mcp.validate import build_schema_dict, validate_and_execute
 from tests.test_store import SAMPLE_TURTLE
 
 
@@ -46,7 +46,7 @@ def test_full_validation_catches_bad_predicate(integration_store):
 
 
 def test_context_rendering_is_nonempty():
-    from dprr_tool.context import load_schemas, render_schemas_as_shex
+    from dprr_mcp.context import load_schemas, render_schemas_as_shex
     schemas = load_schemas()
     rendered = render_schemas_as_shex(schemas)
     assert len(rendered) > 500

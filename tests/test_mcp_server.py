@@ -4,16 +4,16 @@ from unittest.mock import MagicMock, patch
 import pytest
 import toons
 
-from dprr_tool.context import load_examples, load_prefixes, load_schemas, load_tips
-from dprr_tool.mcp_server import execute_sparql, get_schema, main, validate_sparql
-from dprr_tool.validate import build_schema_dict
+from dprr_mcp.context import load_examples, load_prefixes, load_schemas, load_tips
+from dprr_mcp.mcp_server import execute_sparql, get_schema, main, validate_sparql
+from dprr_mcp.validate import build_schema_dict
 
 # --- argparse tests ---
 
 
 def test_main_defaults():
     """main() with no args runs streamable-http on default host/port."""
-    with patch("dprr_tool.mcp_server.mcp") as mock_mcp:
+    with patch("dprr_mcp.mcp_server.mcp") as mock_mcp:
         with patch("sys.argv", ["dprr-server"]):
             main()
         assert mock_mcp.settings.host == "127.0.0.1"
@@ -23,7 +23,7 @@ def test_main_defaults():
 
 def test_main_custom_host_port():
     """main() with --host/--port sets settings."""
-    with patch("dprr_tool.mcp_server.mcp") as mock_mcp:
+    with patch("dprr_mcp.mcp_server.mcp") as mock_mcp:
         with patch("sys.argv", ["dprr-server", "--host", "0.0.0.0", "--port", "9000"]):
             main()
         assert mock_mcp.settings.host == "0.0.0.0"
@@ -37,7 +37,7 @@ def test_main_custom_host_port():
 @pytest.mark.asyncio
 async def test_execute_sparql_empty_results():
     """execute_sparql returns empty toons array for empty result set."""
-    from dprr_tool.validate import ValidationResult
+    from dprr_mcp.validate import ValidationResult
 
     ctx = _make_mock_ctx()
     mock_result = ValidationResult(
@@ -47,7 +47,7 @@ async def test_execute_sparql_empty_results():
         errors=[],
     )
 
-    with patch("dprr_tool.mcp_server.asyncio.wait_for", return_value=mock_result):
+    with patch("dprr_mcp.mcp_server.asyncio.wait_for", return_value=mock_result):
         result_str = await execute_sparql(ctx, "SELECT ?x WHERE { ?x ?y ?z }")
 
     assert toons.loads(result_str) == []
@@ -56,7 +56,7 @@ async def test_execute_sparql_empty_results():
 @pytest.mark.asyncio
 async def test_execute_sparql_toons_roundtrip():
     """execute_sparql toons output round-trips back to original rows."""
-    from dprr_tool.validate import ValidationResult
+    from dprr_mcp.validate import ValidationResult
 
     ctx = _make_mock_ctx()
     rows = [{"name": "Alice", "age": "30"}, {"name": "Bob", "age": "25"}]
@@ -67,7 +67,7 @@ async def test_execute_sparql_toons_roundtrip():
         errors=[],
     )
 
-    with patch("dprr_tool.mcp_server.asyncio.wait_for", return_value=mock_result):
+    with patch("dprr_mcp.mcp_server.asyncio.wait_for", return_value=mock_result):
         result_str = await execute_sparql(ctx, "SELECT ?name ?age WHERE { ?x ?y ?z }")
 
     assert toons.loads(result_str) == rows
@@ -78,7 +78,7 @@ async def test_execute_sparql_toons_roundtrip():
 
 def _make_mock_ctx(store=None, prefix_map=None, schema_dict=None):
     """Create a mock Context with AppContext."""
-    from dprr_tool.mcp_server import AppContext
+    from dprr_mcp.mcp_server import AppContext
 
     app = AppContext(
         store=store or MagicMock(),
@@ -101,8 +101,8 @@ async def test_execute_sparql_timeout():
     async def slow_thread(*args, **kwargs):
         await asyncio.sleep(10)
 
-    with patch("dprr_tool.mcp_server.QUERY_TIMEOUT", 0.1), \
-         patch("dprr_tool.mcp_server.asyncio.to_thread", side_effect=slow_thread):
+    with patch("dprr_mcp.mcp_server.QUERY_TIMEOUT", 0.1), \
+         patch("dprr_mcp.mcp_server.asyncio.to_thread", side_effect=slow_thread):
         result_str = await execute_sparql(ctx, "SELECT ?x WHERE { ?x ?y ?z }")
 
     assert result_str.startswith("ERROR:")
@@ -117,7 +117,7 @@ async def test_execute_sparql_os_error():
     async def raise_os_error(*args, **kwargs):
         raise OSError("store locked")
 
-    with patch("dprr_tool.mcp_server.asyncio.to_thread", side_effect=raise_os_error):
+    with patch("dprr_mcp.mcp_server.asyncio.to_thread", side_effect=raise_os_error):
         result_str = await execute_sparql(ctx, "SELECT ?x WHERE { ?x ?y ?z }")
 
     assert result_str.startswith("ERROR:")
@@ -132,7 +132,7 @@ async def test_execute_sparql_unexpected_error():
     async def raise_unexpected(*args, **kwargs):
         raise RuntimeError("something broke")
 
-    with patch("dprr_tool.mcp_server.asyncio.to_thread", side_effect=raise_unexpected):
+    with patch("dprr_mcp.mcp_server.asyncio.to_thread", side_effect=raise_unexpected):
         result_str = await execute_sparql(ctx, "SELECT ?x WHERE { ?x ?y ?z }")
 
     assert result_str.startswith("ERROR:")
@@ -142,7 +142,7 @@ async def test_execute_sparql_unexpected_error():
 @pytest.mark.asyncio
 async def test_execute_sparql_success():
     """execute_sparql returns toons-formatted output on success."""
-    from dprr_tool.validate import ValidationResult
+    from dprr_mcp.validate import ValidationResult
 
     ctx = _make_mock_ctx()
     mock_result = ValidationResult(
@@ -152,7 +152,7 @@ async def test_execute_sparql_success():
         errors=[],
     )
 
-    with patch("dprr_tool.mcp_server.asyncio.wait_for", return_value=mock_result):
+    with patch("dprr_mcp.mcp_server.asyncio.wait_for", return_value=mock_result):
         result_str = await execute_sparql(ctx, "SELECT ?x WHERE { ?x ?y ?z }")
 
     parsed = toons.loads(result_str)
@@ -164,7 +164,7 @@ async def test_execute_sparql_success():
 
 def _make_full_ctx():
     """Create a mock Context with real YAML data loaded."""
-    from dprr_tool.mcp_server import AppContext
+    from dprr_mcp.mcp_server import AppContext
 
     prefix_map = load_prefixes()
     schemas = load_schemas()

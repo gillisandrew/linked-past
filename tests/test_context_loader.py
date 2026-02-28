@@ -1,4 +1,4 @@
-from dprr_tool.context import (
+from dprr_mcp.context import (
     load_examples,
     load_prefixes,
     load_schemas,
