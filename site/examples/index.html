@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Examples — dprr-mcp</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<div class="container">
+  <header class="site-header">
+    <nav class="breadcrumb"><a href="../">dprr-mcp</a> / Examples</nav>
+    <h1>Example Queries</h1>
+    <p class="lead">
+      Interactive visualisations generated from the
+      <a href="https://romanrepublic.ac.uk">Digital Prosopography of the Roman Republic</a>
+      using the <a href="https://github.com/gillisandrew/dprr-mcp">dprr-mcp</a> server
+      for Claude Code.
+    </p>
+  </header>
+
+  <details>
+    <summary>How these examples were generated</summary>
+    <p>Each example was produced in an interactive Claude Code session using the DPRR MCP server:</p>
+    <ol>
+      <li>A natural-language question is posed via the <code>/dprr</code> skill.</li>
+      <li>Claude generates SPARQL, validates it against the ontology, and executes it against the local RDF store.</li>
+      <li>The results are rendered into standalone HTML with charts and searchable tables.</li>
+    </ol>
+    <p>
+      No data was hand-edited. The underlying dataset is T.R.S. Broughton's
+      <em>Magistrates of the Roman Republic</em> as digitised by the DPRR project at King's College London.
+    </p>
+  </details>
+
+  <ul class="card-list">
+    <li>
+      <a href="praetorships/">
+        <div class="title">Praetorships of the Middle to Late Republic</div>
+        <div class="desc">
+          Decadal bar chart of firmly attested, date-uncertain, and office-uncertain praetors
+          (264–31 BC), with a searchable table of all 996 individual records and their sources.
+        </div>
+        <div class="meta">996 records · 3 certainty categories · SPARQL → Chart.js</div>
+      </a>
+    </li>
+  </ul>
+</div>
+</body>
+</html>

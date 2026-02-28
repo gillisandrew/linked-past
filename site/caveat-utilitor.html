@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Caveat Utilitor — dprr-mcp</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="container">
+  <header class="site-header">
+    <nav class="breadcrumb"><a href="./">dprr-mcp</a> / Caveat Utilitor</nav>
+    <h1>Caveat Utilitor</h1>
+    <p class="lead">Interpreting DPRR query results</p>
+  </header>
+
+  <p>
+    The Digital Prosopography of the Roman Republic (DPRR) aggregates prosopographical data on
+    the political elite of the Roman Republic. It enables queries across magistracies, priesthoods,
+    family relationships, and status assertions that would otherwise require laborious manual
+    cross-referencing. However, no database can be better than its sources, and DPRR inherits the
+    biases, gaps, and interpretive layers of the scholarship on which it rests.
+  </p>
+  <p>This document warns researchers against treating DPRR query results as unmediated historical fact.</p>
+
+  <section>
+    <h2>1. A database of secondary sources</h2>
+    <p>
+      DPRR is not built from ancient evidence. It aggregates modern secondary sources — principally
+      Broughton's <em>Magistrates of the Roman Republic</em> (1951–1986), supplemented by Rüpke's
+      <em>Fasti Sacerdotum</em>, Zmeskal's <em>Adfinitas</em> (2009), and over thirty additional
+      modern compilations (Bradley 2020). Each of these works embodies its author's editorial
+      judgments about inclusion, exclusion, and the resolution of ambiguous ancient testimony.
+    </p>
+    <p>
+      Broughton's decisions about which magistrates to include, how to handle contradictions between
+      Livy and the <em>fasti</em>, and when to mark entries as uncertain are locked into DPRR's
+      data model. Where Broughton excluded a figure for insufficient evidence, that person cannot be
+      recovered from DPRR without returning to primary sources. The project was explicitly designed
+      not to conduct independent primary source research (Bradley 2020).
+    </p>
+    <p>
+      DPRR encodes uncertainty through boolean flags, but this notation cannot represent the full
+      spectrum of scholarly disagreement. A question mark on a date may conceal a debate spanning
+      decades of journal articles with fundamentally incompatible reconstructions.
+    </p>
+    <div class="callout">
+      Every query result should be understood as "according to Broughton (or Zmeskal, or Rüpke),
+      as digitised by the DPRR team" — not as "according to the ancient sources."
+    </div>
+  </section>
+
+  <section>
+    <h2>2. Elite bias</h2>
+    <p>
+      DPRR covers only the political upper strata of Roman society: senators, magistrates, priests,
+      and equestrians who appear in the secondary literature. The database documents a few thousand
+      individuals out of a population that numbered in the millions.
+    </p>
+    <p>
+      Women held no Republican magistracies and appear in DPRR almost exclusively through
+      relationship assertions — as daughters, wives, and mothers of male office-holders. Freedmen,
+      non-Italian provincials, and the urban plebs are absent by design. Mouritsen (2001)
+      demonstrated that structural barriers excluded ordinary people from the political
+      participation that generates prosopographical records.
+    </p>
+    <p>
+      The ancient sources themselves are not a random sample. Literary texts survive because they
+      were copied; inscriptions survive where stone endured. Figures who left no literary or
+      epigraphic trace are underrepresented even among the elite.
+    </p>
+  </section>
+
+  <section>
+    <h2>3. Absence does not prove non-occurrence</h2>
+    <p>
+      The most dangerous fallacy awaiting DPRR users is the argument from silence — inferring that
+      because a person does not appear in the database holding a particular office, they never held it.
+    </p>
+    <p>
+      For most magistracies in most periods of the Republic, silence is not evidential. The
+      <em>fasti</em> are fragmentary; Broughton's MRR synthesises rather than exhausts; and ancient
+      historians routinely omitted magistrates they considered unremarkable.
+    </p>
+    <p>
+      Career data in DPRR exhibits what statisticians call informative censoring: a person's record
+      may end because they genuinely held no further office, because documentation was lost, or
+      because they died, were exiled, or fell from favour — and we cannot reliably distinguish
+      these mechanisms.
+    </p>
+    <p>
+      For certain well-documented magistracies in the late Republic (e.g., the consulship after
+      c. 200 BC), absence is more meaningful. For most lesser magistracies, priesthoods, and
+      earlier periods, it is not.
+    </p>
+    <div class="callout">
+      A query returning zero results for a person's quaestorship means only that DPRR's sources
+      do not record it. It does not mean the person was never quaestor.
+    </div>
+  </section>
+
+  <section>
+    <h2>4. Nomenclatural ambiguity</h2>
+    <p>
+      Roman naming conventions create fundamental identification problems. Salomies (1992)
+      catalogued seventeen distinct nomenclatural variants that adoption alone could produce, and
+      crucially, any type of name change caused by adoption can also occur without adoption having
+      taken place. A name that appears to indicate a family connection may reflect coincidence,
+      freedman nomenclature, or conventions we do not fully understand.
+    </p>
+    <p>
+      Zmeskal (2009), whose <em>Adfinitas</em> is itself a DPRR source, acknowledged that
+      genealogical reconstruction from onomastic data is inherently uncertain. Family trees rest on
+      probabilistic inference about naming patterns, not on documented pedigrees. A relationship
+      assertion in DPRR may represent a scholarly hypothesis with varying degrees of confidence,
+      not an established fact.
+    </p>
+    <p>
+      Brunt (1982) demonstrated that no ancient definition of <em>nobilis</em> or
+      <em>novus homo</em> exists. Status labels in DPRR encode modern scholarly convention as if it
+      were ancient social fact.
+    </p>
+  </section>
+
+  <section>
+    <h2>5. Temporal unevenness</h2>
+    <p>
+      DPRR's coverage is radically uneven across the Republic's five centuries. The late Republic
+      (c. 133–31 BC) is densely documented thanks to Cicero, Sallust, Caesar, and extensive
+      epigraphy. The middle Republic (c. 264–133 BC) depends heavily on Livy and fragmentary
+      <em>fasti</em>. The early Republic (509–264 BC) rests on traditions of questionable historicity.
+      Develin (1979) mapped patterns in office-holding for 366–49 BC, but these patterns describe
+      only the visible elite.
+    </p>
+    <p>
+      Any quantitative analysis that spans these periods without controlling for differential
+      documentation risks producing artifacts of source survival rather than historical trends.
+      Flower (2010) argues that the Republic underwent fundamental institutional transformations —
+      the introduction of the secret ballot (c. 139 BC), the formalisation of the
+      <em>cursus honorum</em> (<em>lex Villia</em>, 180 BC) — that make cross-period comparison
+      perilous.
+    </p>
+  </section>
+
+  <section>
+    <h2>6. What prosopography cannot capture</h2>
+    <p>
+      Hölkeskamp (2010) argued that the prosopographical tradition reduced political life to
+      networks of patronage and family connection, missing the symbolic, ritual, and consensual
+      dimensions of Republican politics. DPRR's relationship assertions encode kinship and political
+      connections but cannot represent the ideological, economic, and cultural forces that drove
+      Republican political competition (Brunt 1988).
+    </p>
+    <p>
+      Clientage networks were constantly shifting rather than the fixed structures that database
+      relationships imply. Prosopographical data should be supplemented with cultural, institutional,
+      and ideological analysis.
+    </p>
+  </section>
+
+  <section>
+    <h2>Summary</h2>
+    <table>
+      <thead><tr><th>Risk</th><th>Mitigation</th></tr></thead>
+      <tbody>
+        <tr><td>Treating DPRR as primary evidence</td><td>Always cite the underlying secondary source (Broughton, Zmeskal, etc.)</td></tr>
+        <tr><td>Argument from silence</td><td>Never infer non-occurrence from non-appearance; state the limits of the evidence</td></tr>
+        <tr><td>Elite bias</td><td>Acknowledge that DPRR documents a tiny, privileged fraction of Roman society</td></tr>
+        <tr><td>Nomenclatural false positives</td><td>Treat identification and kinship assertions as hypotheses, not facts</td></tr>
+        <tr><td>Temporal conflation</td><td>Control for differential documentation when comparing across periods</td></tr>
+        <tr><td>Quantitative overreach</td><td>Do not calculate rates or probabilities without discussing sample bias</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>Bibliography</h2>
+    <ul class="bib">
+      <li>Bradley, J. "A Prosopography as Linked Open Data: Some Implications from DPRR." <em>Digital Humanities Quarterly</em> 14.2 (2020).</li>
+      <li>Broughton, T. R. S. <em>The Magistrates of the Roman Republic.</em> 3 vols. American Philological Association, 1951–1986.</li>
+      <li>Brunt, P. A. "Nobilitas and Novitas." <em>Journal of Roman Studies</em> 72 (1982): 1–17.</li>
+      <li>Brunt, P. A. <em>The Fall of the Roman Republic and Related Essays.</em> Clarendon Press, 1988.</li>
+      <li>Develin, R. <em>Patterns in Office-Holding, 366–49 B.C.</em> Latomus, 1979.</li>
+      <li>Flower, H. I. <em>Roman Republics.</em> Princeton University Press, 2010.</li>
+      <li>Hölkeskamp, K.-J. <em>Reconstructing the Roman Republic.</em> Princeton University Press, 2010.</li>
+      <li>Mouritsen, H. <em>Plebs and Politics in the Late Roman Republic.</em> Cambridge University Press, 2001.</li>
+      <li>Salomies, O. <em>Adoptive and Polyonymous Nomenclature in the Roman Empire.</em> Societas Scientiarum Fennica, 1992.</li>
+      <li>Zmeskal, K. <em>Adfinitas.</em> 2 vols. Stutz, 2009.</li>
+    </ul>
+  </section>
+</div>
+</body>
+</html>
