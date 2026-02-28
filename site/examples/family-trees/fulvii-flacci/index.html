@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Fulvii Flacci &amp; Calpurnii Pisones — dprr-mcp</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  body {
+    font-family: 'Georgia', serif;
+    background: #faf8f4;
+    color: #2c2c2c;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    padding: 2rem 1.5rem;
+    line-height: 1.65;
+  }
+  .container {
+    max-width: 960px;
+    width: 100%;
+  }
+
+  /* Header */
+  .breadcrumb {
+    font-size: 0.82rem;
+    color: #999;
+    margin-bottom: 0.25rem;
+  }
+  .breadcrumb a { color: #c4593a; text-decoration: none; }
+  .breadcrumb a:hover { text-decoration: underline; }
+  h1 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0 0 0.25rem;
+  }
+  .subtitle {
+    font-size: 0.9rem;
+    color: #777;
+    margin-bottom: 1.5rem;
+  }
+
+  /* Sections */
+  h2 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #2c2c2c;
+    margin: 2rem 0 0.75rem;
+    padding-bottom: 0.3rem;
+    border-bottom: 1px solid #e0dcd6;
+  }
+  h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #4a3520;
+    margin: 1.25rem 0 0.5rem;
+  }
+  p {
+    font-size: 0.92rem;
+    color: #444;
+    margin: 0 0 0.75rem;
+  }
+  a { color: #c4593a; }
+
+  /* Tree container */
+  .tree-wrap {
+    background: #fff;
+    border: 1px solid #e0dcd6;
+    border-radius: 6px;
+    padding: 2rem 1.5rem;
+    overflow-x: auto;
+    margin-bottom: 1.5rem;
+  }
+
+  /* SVG tree */
+  .tree-svg {
+    display: block;
+    margin: 0 auto;
+  }
+  .tree-svg text {
+    font-family: 'Georgia', serif;
+    fill: #2c2c2c;
+  }
+  .tree-svg .name {
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .tree-svg .office {
+    font-size: 11px;
+    fill: #777;
+  }
+  .tree-svg .date {
+    font-size: 10px;
+    fill: #999;
+  }
+  .tree-svg .label {
+    font-size: 10px;
+    fill: #c4593a;
+    font-style: italic;
+  }
+  .tree-svg .connector {
+    stroke: #c9bfb0;
+    stroke-width: 1.5;
+    fill: none;
+  }
+  .tree-svg .connector-marriage {
+    stroke: #c4593a;
+    stroke-width: 1.5;
+    stroke-dasharray: 4 3;
+    fill: none;
+  }
+  .tree-svg .node-box {
+    fill: #fff;
+    stroke: #e0dcd6;
+    stroke-width: 1;
+    rx: 4;
+    ry: 4;
+  }
+  .tree-svg .node-box-highlight {
+    fill: #fdf5f0;
+    stroke: #c4593a;
+    stroke-width: 1.5;
+    rx: 4;
+    ry: 4;
+  }
+  .tree-svg .node-box-female {
+    fill: #faf5ff;
+    stroke: #c9b8d9;
+    stroke-width: 1;
+    rx: 4;
+    ry: 4;
+  }
+  .tree-svg .generation-label {
+    font-size: 10px;
+    fill: #bbb;
+    font-style: italic;
+    letter-spacing: 0.03em;
+  }
+
+  /* Legend */
+  .tree-legend {
+    display: flex;
+    gap: 1.5rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+    font-size: 0.78rem;
+    color: #777;
+  }
+  .tree-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .tree-legend-swatch {
+    width: 28px;
+    height: 14px;
+    border-radius: 3px;
+    border: 1px solid #ccc;
+  }
+  .tree-legend-line {
+    width: 28px;
+    height: 0;
+    border-top: 1.5px solid #c9bfb0;
+  }
+  .tree-legend-line-marriage {
+    width: 28px;
+    height: 0;
+    border-top: 1.5px dashed #c4593a;
+  }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+    margin: 0.5rem 0 1rem;
+  }
+  th {
+    background: #f5f0ea;
+    padding: 0.55rem 0.75rem;
+    text-align: left;
+    font-weight: 600;
+    color: #4a3520;
+    border-bottom: 2px solid #e0dcd6;
+  }
+  td {
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid #f0ece6;
+    color: #444;
+    vertical-align: top;
+  }
+  tr:hover td { background: #fdf9f4; }
+
+  .person-link {
+    color: #c4593a;
+    text-decoration: none;
+  }
+  .person-link:hover { text-decoration: underline; }
+
+  .source-tag {
+    display: inline-block;
+    font-size: 0.7rem;
+    padding: 0.1rem 0.4rem;
+    border-radius: 3px;
+    background: #f0ece6;
+    color: #7a6a55;
+    white-space: nowrap;
+  }
+
+  /* Callout */
+  .callout {
+    background: #fff;
+    border-left: 3px solid #c4593a;
+    border-radius: 0 4px 4px 0;
+    padding: 0.75rem 1rem;
+    margin: 1rem 0;
+    font-size: 0.85rem;
+    color: #555;
+    line-height: 1.6;
+  }
+  .callout a { color: #c4593a; }
+
+  /* Bib */
+  ul.bib {
+    list-style: none;
+    padding: 0;
+  }
+  ul.bib li {
+    font-size: 0.82rem;
+    color: #555;
+    margin-bottom: 0.5rem;
+    padding-left: 1.5rem;
+    text-indent: -1.5rem;
+  }
+
+  .note {
+    font-size: 0.78rem;
+    color: #999;
+    margin-top: 1rem;
+    line-height: 1.5;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <nav class="breadcrumb">
+    <a href="../../../">dprr-mcp</a> / <a href="../../">Examples</a> / <a href="../">Family Trees</a> / Fulvii Flacci
+  </nav>
+  <h1>The Fulvii Flacci &amp; Calpurnii Pisones</h1>
+  <p class="subtitle">
+    A blended consular family across four generations (c. 295&ndash;135 BC)
+    &middot; DPRR relationship data
+  </p>
+
+  <div class="callout">
+    <strong>Subject:</strong> Cn. Fulvius (RE 12), praetor 190 BC &mdash; an obscure middle-Republican
+    magistrate whose family tree reveals how a single remarriage by his mother, Hostilia Quarta,
+    connected the Fulvii Flacci to the Calpurnii Pisones and produced four consuls among his siblings.
+  </div>
+
+  <!-- SVG Family Tree -->
+  <h2>Family Tree</h2>
+  <div class="tree-wrap">
+    <svg class="tree-svg" viewBox="0 0 920 620" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+
+      <!-- Generation labels -->
+      <text class="generation-label" x="10" y="52">I</text>
+      <text class="generation-label" x="10" y="170">II</text>
+      <text class="generation-label" x="10" y="300">III</text>
+      <text class="generation-label" x="10" y="435">IV</text>
+      <text class="generation-label" x="10" y="570">V</text>
+
+      <!-- ═══ GENERATION I: C. Fulvius Curvus ═══ -->
+      <rect class="node-box" x="320" y="25" width="200" height="52"/>
+      <text class="name" x="420" y="47" text-anchor="middle">C. Fulvius (45) Curvus</text>
+      <text class="office" x="420" y="63" text-anchor="middle">aed. pl. 296 BC</text>
+
+      <!-- Gen I → Gen II -->
+      <line class="connector" x1="420" y1="77" x2="420" y2="140"/>
+
+      <!-- ═══ GENERATION II: M. Fulvius Flaccus ═══ -->
+      <rect class="node-box" x="305" y="140" width="230" height="52"/>
+      <text class="name" x="420" y="162" text-anchor="middle">M. Fulvius (55) Flaccus</text>
+      <text class="office" x="420" y="178" text-anchor="middle">cos. 264 BC</text>
+
+      <!-- Gen II → Gen III (horizontal bar connecting 3 sons) -->
+      <line class="connector" x1="420" y1="192" x2="420" y2="220"/>
+      <line class="connector" x1="130" y1="220" x2="700" y2="220"/>
+      <line class="connector" x1="130" y1="220" x2="130" y2="260"/>
+      <line class="connector" x1="420" y1="220" x2="420" y2="260"/>
+      <line class="connector" x1="700" y1="220" x2="700" y2="260"/>
+
+      <!-- ═══ GENERATION III ═══ -->
+
+      <!-- Q. Fulvius Flaccus (cos. 237) -->
+      <rect class="node-box" x="30" y="260" width="200" height="52"/>
+      <text class="name" x="130" y="282" text-anchor="middle">Q. Fulvius (59) Flaccus</text>
+      <text class="office" x="130" y="298" text-anchor="middle">cos. 237 BC</text>
+
+      <!-- Cn. Fulvius Flaccus (pr. 212) — center -->
+      <rect class="node-box" x="305" y="260" width="230" height="52"/>
+      <text class="name" x="420" y="282" text-anchor="middle">Cn. Fulvius (54) Flaccus</text>
+      <text class="office" x="420" y="298" text-anchor="middle">pr. 212 BC</text>
+
+      <!-- C. Fulvius Flaccus (leg. 209) -->
+      <rect class="node-box" x="600" y="260" width="200" height="52"/>
+      <text class="name" x="700" y="282" text-anchor="middle">C. Fulvius (52) Flaccus</text>
+      <text class="office" x="700" y="298" text-anchor="middle">leg. lieut. 209 BC</text>
+
+      <!-- Marriage: Cn. Fulvius (54) ═══ Hostilia Quarta -->
+      <line class="connector-marriage" x1="420" y1="312" x2="420" y2="345"/>
+
+      <!-- Hostilia Quarta (center, between two marriages) -->
+      <rect class="node-box-female" x="310" y="345" width="220" height="52"/>
+      <text class="name" x="420" y="367" text-anchor="middle">Hostilia (27) Quarta</text>
+      <text class="office" x="420" y="383" text-anchor="middle">married twice</text>
+
+      <!-- Marriage: Hostilia ═══ C. Calpurnius Piso -->
+      <rect class="node-box" x="620" y="345" width="240" height="52"/>
+      <text class="name" x="740" y="367" text-anchor="middle">C. Calpurnius (62) Piso</text>
+      <text class="office" x="740" y="383" text-anchor="middle">cos. 180 BC</text>
+      <line class="connector-marriage" x1="530" y1="371" x2="620" y2="371"/>
+      <text class="label" x="575" y="364">2nd marriage</text>
+
+      <!-- Label: 1st marriage -->
+      <text class="label" x="420" y="339" text-anchor="middle">1st marriage</text>
+
+      <!-- ═══ GENERATION IV: Children ═══ -->
+
+      <!-- Connector from Hostilia down to children bar -->
+      <line class="connector" x1="420" y1="397" x2="420" y2="418"/>
+      <line class="connector" x1="70" y1="418" x2="820" y2="418"/>
+
+      <!-- Verticals down to each child -->
+      <line class="connector" x1="70" y1="418" x2="70" y2="440"/>
+      <line class="connector" x1="240" y1="418" x2="240" y2="440"/>
+      <line class="connector" x1="430" y1="418" x2="430" y2="440"/>
+      <line class="connector" x1="620" y1="418" x2="620" y2="440"/>
+      <line class="connector" x1="820" y1="418" x2="820" y2="440"/>
+
+      <!-- ★ Cn. Fulvius (12) — HIGHLIGHTED -->
+      <rect class="node-box-highlight" x="0" y="440" width="140" height="68"/>
+      <text class="name" x="70" y="462" text-anchor="middle" style="fill:#c4593a;">Cn. Fulvius (12)</text>
+      <text class="office" x="70" y="478" text-anchor="middle">pr. 190 BC</text>
+      <text class="date" x="70" y="496" text-anchor="middle">Fulvian line</text>
+
+      <!-- Q. Fulvius (60) Flaccus -->
+      <rect class="node-box" x="150" y="440" width="180" height="68"/>
+      <text class="name" x="240" y="462" text-anchor="middle">Q. Fulvius (60) Flaccus</text>
+      <text class="office" x="240" y="478" text-anchor="middle">cos. suff. 180 BC</text>
+      <text class="date" x="240" y="496" text-anchor="middle">Fulvian line</text>
+
+      <!-- L. Calpurnius Piso Caesoninus -->
+      <rect class="node-box" x="340" y="440" width="180" height="68"/>
+      <text class="name" x="430" y="458" text-anchor="middle">L. Calpurnius (87)</text>
+      <text class="name" x="430" y="474" text-anchor="middle">Piso Caesoninus</text>
+      <text class="office" x="430" y="490" text-anchor="middle">cos. 148 BC</text>
+
+      <!-- Cn. Calpurnius Piso -->
+      <rect class="node-box" x="530" y="440" width="180" height="68"/>
+      <text class="name" x="620" y="462" text-anchor="middle">Cn. Calpurnius (73)</text>
+      <text class="name" x="620" y="478" text-anchor="middle">Piso</text>
+      <text class="office" x="620" y="494" text-anchor="middle">cos. 139 BC</text>
+
+      <!-- Q. Calpurnius Piso -->
+      <rect class="node-box" x="730" y="440" width="180" height="68"/>
+      <text class="name" x="820" y="462" text-anchor="middle">Q. Calpurnius (86)</text>
+      <text class="name" x="820" y="478" text-anchor="middle">Piso</text>
+      <text class="office" x="820" y="494" text-anchor="middle">cos. 135 BC</text>
+
+      <!-- Piso half-sibling bracket -->
+      <line class="connector" x1="430" y1="508" x2="430" y2="520"/>
+      <line class="connector" x1="430" y1="520" x2="820" y2="520"/>
+      <text class="label" x="625" y="534" text-anchor="middle">half-siblings (Calpurnian line, via 2nd marriage)</text>
+
+      <!-- ═══ GENERATION V: Cn. Fulvius (13) ═══ -->
+      <line class="connector" x1="70" y1="508" x2="70" y2="550"/>
+      <rect class="node-box" x="0" y="550" width="140" height="52"/>
+      <text class="name" x="70" y="572" text-anchor="middle">Cn. Fulvius (13)</text>
+      <text class="office" x="70" y="588" text-anchor="middle">pr. 167 BC</text>
+    </svg>
+
+    <div class="tree-legend">
+      <div class="tree-legend-item">
+        <div class="tree-legend-swatch" style="background: #fdf5f0; border-color: #c4593a;"></div>
+        <span>Subject (Cn. Fulvius 12)</span>
+      </div>
+      <div class="tree-legend-item">
+        <div class="tree-legend-swatch" style="background: #fff; border-color: #e0dcd6;"></div>
+        <span>Male</span>
+      </div>
+      <div class="tree-legend-item">
+        <div class="tree-legend-swatch" style="background: #faf5ff; border-color: #c9b8d9;"></div>
+        <span>Female</span>
+      </div>
+      <div class="tree-legend-item">
+        <div class="tree-legend-line"></div>
+        <span>Descent</span>
+      </div>
+      <div class="tree-legend-item">
+        <div class="tree-legend-line-marriage"></div>
+        <span>Marriage</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Relationship Table -->
+  <h2>DPRR Relationship Data</h2>
+  <p>All relationships recorded for Cn. Fulvius (RE 12, pr. 190 BC) in the DPRR database.</p>
+  <table>
+    <thead>
+      <tr>
+        <th>Related Person</th>
+        <th>Relationship</th>
+        <th>Highest Office</th>
+        <th>Source</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="person-link" href="https://romanrepublic.ac.uk/person/699/" target="_blank" rel="noopener">M. Fulvius (55) Flaccus</a></td>
+        <td>Grandfather</td>
+        <td>cos. 264 BC</td>
+        <td><span class="source-tag">Brennan 2000</span></td>
+      </tr>
+      <tr>
+        <td><a class="person-link" href="https://romanrepublic.ac.uk/person/924/" target="_blank" rel="noopener">Cn. Fulvius (54) Flaccus</a></td>
+        <td>Father</td>
+        <td>pr. 212 BC</td>
+        <td><span class="source-tag">Brennan 2000</span></td>
+      </tr>
+      <tr>
+        <td><a class="person-link" href="https://romanrepublic.ac.uk/person/4216/" target="_blank" rel="noopener">Hostilia (27) Quarta</a></td>
+        <td>Mother</td>
+        <td>&mdash;</td>
+        <td><span class="source-tag">DPRR Team</span></td>
+      </tr>
+      <tr>
+        <td><a class="person-link" href="https://romanrepublic.ac.uk/person/1194/" target="_blank" rel="noopener">Q. Fulvius (60) Flaccus</a></td>
+        <td>Brother (full)</td>
+        <td>cos. suff. 180 BC</td>
+        <td><span class="source-tag">DPRR Team</span></td>
+      </tr>
+      <tr>
+        <td><a class="person-link" href="https://romanrepublic.ac.uk/person/1483/" target="_blank" rel="noopener">L. Calpurnius (87) Piso Caesoninus</a></td>
+        <td>Brother (half, maternal)</td>
+        <td>cos. 148 BC</td>
+        <td><span class="source-tag">DPRR Team</span></td>
+      </tr>
+      <tr>
+        <td><a class="person-link" href="https://romanrepublic.ac.uk/person/1561/" target="_blank" rel="noopener">Cn. Calpurnius (73) Piso</a></td>
+        <td>Brother (half, maternal)</td>
+        <td>cos. 139 BC</td>
+        <td><span class="source-tag">DPRR Team</span></td>
+      </tr>
+      <tr>
+        <td><a class="person-link" href="https://romanrepublic.ac.uk/person/1575/" target="_blank" rel="noopener">Q. Calpurnius (86) Piso</a></td>
+        <td>Brother (half, maternal)</td>
+        <td>cos. 135 BC</td>
+        <td><span class="source-tag">DPRR Team</span></td>
+      </tr>
+      <tr>
+        <td><a class="person-link" href="https://romanrepublic.ac.uk/person/1441/" target="_blank" rel="noopener">Cn. Fulvius (13)</a></td>
+        <td>Son</td>
+        <td>pr. 167 BC</td>
+        <td><span class="source-tag">Brennan 2000</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Extended kin from father and mother -->
+  <h3>Father&rsquo;s connections: Cn. Fulvius (54) Flaccus (pr. 212 BC)</h3>
+  <table>
+    <thead>
+      <tr><th>Related Person</th><th>Relationship</th><th>Highest Office</th><th>Source</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="person-link" href="https://romanrepublic.ac.uk/person/699/" target="_blank" rel="noopener">M. Fulvius (55) Flaccus</a></td>
+        <td>Father (= subject&rsquo;s grandfather)</td>
+        <td>cos. 264 BC</td>
+        <td><span class="source-tag">Brennan 2000</span></td>
+      </tr>
+      <tr>
+        <td><a class="person-link" href="https://romanrepublic.ac.uk/person/781/" target="_blank" rel="noopener">Q. Fulvius (59) Flaccus</a></td>
+        <td>Brother</td>
+        <td>cos. 237 BC</td>
+        <td><span class="source-tag">Zmeskal 2009</span></td>
+      </tr>
+      <tr>
+        <td><a class="person-link" href="https://romanrepublic.ac.uk/person/945/" target="_blank" rel="noopener">C. Fulvius (52) Flaccus</a></td>
+        <td>Brother</td>
+        <td>leg. lieut. 209 BC</td>
+        <td><span class="source-tag">DPRR Team</span></td>
+      </tr>
+      <tr>
+        <td><a class="person-link" href="https://romanrepublic.ac.uk/person/4216/" target="_blank" rel="noopener">Hostilia (27) Quarta</a></td>
+        <td>Wife</td>
+        <td>&mdash;</td>
+        <td><span class="source-tag">Zmeskal 2009</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Mother&rsquo;s connections: Hostilia (27) Quarta</h3>
+  <table>
+    <thead>
+      <tr><th>Related Person</th><th>Relationship</th><th>Highest Office</th><th>Source</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="person-link" href="https://romanrepublic.ac.uk/person/924/" target="_blank" rel="noopener">Cn. Fulvius (54) Flaccus</a></td>
+        <td>1st husband</td>
+        <td>pr. 212 BC</td>
+        <td><span class="source-tag">Zmeskal 2009</span></td>
+      </tr>
+      <tr>
+        <td><a class="person-link" href="https://romanrepublic.ac.uk/person/1222/" target="_blank" rel="noopener">C. Calpurnius (62) Piso</a></td>
+        <td>2nd husband</td>
+        <td>cos. 180 BC</td>
+        <td><span class="source-tag">Zmeskal 2009</span></td>
+      </tr>
+      <tr>
+        <td><a class="person-link" href="https://romanrepublic.ac.uk/person/1178/" target="_blank" rel="noopener">Cn. Fulvius (12)</a></td>
+        <td>Son (1st marriage)</td>
+        <td>pr. 190 BC</td>
+        <td><span class="source-tag">DPRR Team</span></td>
+      </tr>
+      <tr>
+        <td><a class="person-link" href="https://romanrepublic.ac.uk/person/1194/" target="_blank" rel="noopener">Q. Fulvius (60) Flaccus</a></td>
+        <td>Son (1st marriage)</td>
+        <td>cos. suff. 180 BC</td>
+        <td><span class="source-tag">Zmeskal 2009</span></td>
+      </tr>
+      <tr>
+        <td><a class="person-link" href="https://romanrepublic.ac.uk/person/1483/" target="_blank" rel="noopener">L. Calpurnius (87) Piso Caesoninus</a></td>
+        <td>Son (2nd marriage)</td>
+        <td>cos. 148 BC</td>
+        <td><span class="source-tag">DPRR Team</span></td>
+      </tr>
+      <tr>
+        <td><a class="person-link" href="https://romanrepublic.ac.uk/person/1561/" target="_blank" rel="noopener">Cn. Calpurnius (73) Piso</a></td>
+        <td>Son (2nd marriage)</td>
+        <td>cos. 139 BC</td>
+        <td><span class="source-tag">DPRR Team</span></td>
+      </tr>
+      <tr>
+        <td><a class="person-link" href="https://romanrepublic.ac.uk/person/1575/" target="_blank" rel="noopener">Q. Calpurnius (86) Piso</a></td>
+        <td>Son (2nd marriage)</td>
+        <td>cos. 135 BC</td>
+        <td><span class="source-tag">DPRR Team</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Commentary -->
+  <h2>Commentary</h2>
+  <p>
+    Cn. Fulvius (RE 12) held the praetorship in 190 BC (Livy 36.45.9, 37.2.1, 37.2.6; Broughton, <em>MRR</em> I)
+    but never advanced to the consulship. His family, however, is a textbook illustration of how remarriage
+    knit together Roman aristocratic <em>gentes</em> in the middle Republic.
+  </p>
+  <p>
+    His father, Cn. Fulvius (54) Flaccus (pr. 212 BC), was one of three sons of M. Fulvius (55) Flaccus (cos. 264 BC),
+    the first consul of the First Punic War. The elder brother, Q. Fulvius (59) Flaccus, reached the consulship in 237 BC.
+    Through his mother Hostilia Quarta&rsquo;s second marriage to C. Calpurnius (62) Piso (cos. 180 BC), our subject
+    gained three half-brothers who all attained the consulship: L. Calpurnius Piso Caesoninus (cos. 148),
+    Cn. Calpurnius Piso (cos. 139), and Q. Calpurnius Piso (cos. 135). His full brother Q. Fulvius (60) Flaccus
+    also reached the consulship as <em>consul suffectus</em> in 180 BC.
+  </p>
+  <p>
+    The praetorial line continued: Cn. Fulvius (12)&rsquo;s son, Cn. Fulvius (13), held the praetorship in 167 BC.
+    Three successive generations of Cn. Fulvii who reached the praetorship but not the consulship &mdash;
+    a respectable but distinctly second-tier trajectory, thoroughly overshadowed by siblings on every side.
+  </p>
+
+  <!-- Sources -->
+  <h2>Sources</h2>
+  <ul class="bib">
+    <li>Brennan, T. C. <em>The Praetorship in the Roman Republic.</em> 2 vols. Oxford University Press, 2000. &mdash; Primary authority for the Fulvian praetorial filiation.</li>
+    <li>Zmeskal, K. <em>Adfinitas: Die Verwandtschaften der senatorischen F&uuml;hrungsschicht der r&ouml;mischen Republik von 218&ndash;31 v. Chr.</em> 2 vols. Stutz, 2009. &mdash; Marriage connections (Hostilia Quarta &harr; Cn. Fulvius, C. Calpurnius Piso).</li>
+    <li>Broughton, T. R. S. <em>The Magistrates of the Roman Republic.</em> 3 vols. American Philological Association, 1951&ndash;1986. &mdash; Office-holding dates and prosopographic notes.</li>
+    <li>DPRR Team. <em>Digital Prosopography of the Roman Republic.</em> King&rsquo;s Digital Lab, King&rsquo;s College London, 2017. AHRC grant AH/K007211/1. &mdash; Supplementary relationship links.</li>
+  </ul>
+
+  <p class="note">
+    All data queried from the DPRR RDF store via the
+    <a href="https://github.com/gillisandrew/dprr-mcp">dprr-mcp</a> server.
+    The DPRR covers 509&ndash;31 BC and draws from specific secondary sources;
+    additional family connections may exist in the literary or epigraphic record
+    that are not captured here.
+  </p>
+</div>
+</body>
+</html>
