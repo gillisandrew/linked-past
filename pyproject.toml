@@ -3,6 +3,7 @@ name = "dprr-mcp"
 version = "0.1.0"
 description = "Natural language SPARQL queries for the Digital Prosopography of the Roman Republic"
 readme = "README.md"
+license = "MIT"
 requires-python = ">=3.13"
 dependencies = [
     "pyoxigraph",
