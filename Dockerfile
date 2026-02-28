@@ -4,9 +4,8 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
 WORKDIR /app
 COPY pyproject.toml uv.lock README.md ./
-RUN uv sync --no-dev --frozen
-
 COPY dprr_mcp/ dprr_mcp/
+RUN uv sync --no-dev --frozen
 
 FROM python:3.13-slim
 

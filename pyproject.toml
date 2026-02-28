@@ -1,6 +1,6 @@
 [project]
 name = "dprr-mcp"
-version = "1.1.1"
+version = "1.1.2"
 description = "Natural language SPARQL queries for the Digital Prosopography of the Roman Republic"
 readme = "README.md"
 license = "MIT"
