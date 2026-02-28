@@ -32,7 +32,7 @@ jobs:
         run: tar -czf dprr-data.tar.gz -C data dprr.ttl
 
       - name: Attest build provenance
-        uses: actions/attest-build-provenance@v2
+        uses: actions/attest-build-provenance@v4
         with:
           subject-path: |
             dist/*.tar.gz
@@ -47,7 +47,7 @@ jobs:
           output-file: sbom.spdx.json
 
       - name: Attest SBOM
-        uses: actions/attest-sbom@v2
+        uses: actions/attest-sbom@v4
         with:
           subject-path: |
             dist/*.tar.gz
