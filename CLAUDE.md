@@ -13,5 +13,7 @@
 
 ## Store
 
+- Data directory follows XDG: `DPRR_DATA_DIR` > `$XDG_DATA_HOME/dprr-tool` > `~/.local/share/dprr-tool`.
+- On first startup, if no `dprr.ttl` exists in the data directory, the server auto-downloads it from the latest GitHub release. Override the URL with `DPRR_DATA_URL`.
 - After first load, the Oxigraph store opens **read-only** (`Store.read_only()`) to avoid file locking. Do not add write operations to the initialized store.
 - Tests create ephemeral stores using `SAMPLE_TURTLE` from `tests/test_store.py`. Do not mock the store.
