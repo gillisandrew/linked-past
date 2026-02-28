@@ -54,3 +54,12 @@ tips:
       like "cos. 107" or "pr. 78?". It is NOT linked to an Office entity. For
       structured office queries, always use PostAssertion with vocab:hasOffice
       pointing to an Office resource.
+
+  - id: integer_date_filters
+    title: "Date fields are integers — compare directly without casting"
+    body: >
+      Date fields like hasDateStart, hasDateEnd, hasEraFrom, hasEraTo, and
+      hasValue (on DateInformation) are stored as xsd:integer values. Negative
+      values represent BC dates. Compare directly in FILTER expressions:
+      FILTER(?dateStart = -63) or FILTER(?eraFrom >= -200 && ?eraFrom <= -100).
+      No explicit "^^xsd:integer" cast is needed in FILTER comparisons.

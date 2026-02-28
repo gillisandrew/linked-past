@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from pyoxigraph import Store, RdfFormat
+from pyoxigraph import RdfFormat, Store
 
 
 def get_or_create_store(path: Path) -> Store:
@@ -19,8 +19,17 @@ def load_rdf(store: Store, file_path: Path) -> int:
 
 
 def execute_query(store: Store, sparql: str) -> list[dict[str, str]]:
-    """Execute a SPARQL SELECT query and return results as a list of dicts."""
+    """Execute a SPARQL SELECT query and return results as a list of dicts.
+
+    Only SELECT queries are supported. CONSTRUCT, ASK, and DESCRIBE queries
+    raise a ValueError with a descriptive message.
+    """
     results = store.query(sparql)
+    if not hasattr(results, "variables"):
+        raise ValueError(
+            "Only SELECT queries are supported. "
+            "CONSTRUCT, ASK, and DESCRIBE queries are not implemented."
+        )
     variables = [v.value for v in results.variables]
     rows = []
     for solution in results:

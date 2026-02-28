@@ -516,6 +516,36 @@ examples:
       ORDER BY ?century
       LIMIT 100
 
+  - question: "Find all date information records of type birth"
+    sparql: |
+      PREFIX vocab: <http://romanrepublic.ac.uk/rdf/entity/vocab/>
+      PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+      SELECT DISTINCT ?person ?name ?value ?interval
+      WHERE {
+        ?di a vocab:DateInformation ;
+            vocab:isAboutPerson ?person ;
+            vocab:hasDateType ?dtype ;
+            vocab:hasValue ?value .
+        ?dtype rdfs:label "Date Type: birth" .
+        ?person vocab:hasPersonName ?name .
+        OPTIONAL { ?di vocab:hasDateInterval ?interval }
+      }
+      ORDER BY ?value
+      LIMIT 100
+
+  - question: "List all primary sources in the database"
+    sparql: |
+      PREFIX vocab: <http://romanrepublic.ac.uk/rdf/entity/vocab/>
+      PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+      SELECT DISTINCT ?source ?label ?abbrev
+      WHERE {
+        ?source a vocab:PrimarySource ;
+                rdfs:label ?label .
+        OPTIONAL { ?source vocab:hasAbbrevName ?abbrev }
+      }
+      ORDER BY ?label
+      LIMIT 100
+
   - question: "Which gentes produced the most consuls?"
     sparql: |
       PREFIX vocab: <http://romanrepublic.ac.uk/rdf/entity/vocab/>

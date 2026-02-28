@@ -6,11 +6,18 @@ from rdflib.plugins.sparql import prepareQuery
 from rdflib.plugins.sparql.algebra import translateQuery, traverse
 from rdflib.plugins.sparql.parser import parseQuery
 from rdflib.plugins.sparql.parserutils import CompValue
-from rdflib.term import Variable, URIRef
+from rdflib.term import URIRef, Variable
 
 from dprr_tool.store import execute_query
 
 RDF_TYPE = URIRef("http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
+
+
+def _local_name(uri: str) -> str:
+    """Extract the local name from a URI, handling both # and / separators."""
+    if "#" in uri:
+        return uri.rsplit("#", 1)[-1]
+    return uri.rsplit("/", 1)[-1]
 
 
 @dataclass
@@ -186,10 +193,9 @@ def validate_semantics(sparql: str, schema_dict: dict) -> list[str]:
             class_uri = str(o)
             # Check if class exists in schema
             if class_uri not in all_class_uris:
-                local_name = class_uri.rsplit("/", 1)[-1] if "/" in class_uri else class_uri.rsplit("#", 1)[-1]
+                local_name = _local_name(class_uri)
                 valid_classes = sorted(
-                    uri.rsplit("/", 1)[-1] if "/" in uri else uri.rsplit("#", 1)[-1]
-                    for uri in all_class_uris
+                    _local_name(uri) for uri in all_class_uris
                 )
                 errors.append(
                     f"Unknown class '{local_name}'. Valid classes: {', '.join(valid_classes)}"
@@ -219,14 +225,13 @@ def validate_semantics(sparql: str, schema_dict: dict) -> list[str]:
                 continue
             valid_preds = schema_dict[class_uri]
             if pred_uri not in valid_preds:
-                pred_local = pred_uri.rsplit("/", 1)[-1] if "/" in pred_uri else pred_uri.rsplit("#", 1)[-1]
+                pred_local = _local_name(pred_uri)
                 valid_local = sorted(
-                    uri.rsplit("/", 1)[-1] if "/" in uri else uri.rsplit("#", 1)[-1]
-                    for uri in valid_preds
+                    _local_name(uri) for uri in valid_preds
                 )
                 errors.append(
                     f"Unknown predicate '{pred_local}' for class "
-                    f"'{class_uri.rsplit('/', 1)[-1]}'. "
+                    f"'{_local_name(class_uri)}'. "
                     f"Valid predicates: {', '.join(valid_local)}"
                 )
 

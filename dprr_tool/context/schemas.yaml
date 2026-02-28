@@ -377,6 +377,15 @@ classes:
         range: "xsd:string"
         comment: "Description of the relationship type."
 
+  PersonNote:
+    label: "Person Note"
+    comment: "A note attached to a person record."
+    uri: "vocab:PersonNote"
+    properties:
+      - pred: "rdfs:label"
+        range: "xsd:string"
+        comment: "The text of the note."
+
   DateType:
     label: "Date Type"
     comment: "A type of biographical date (birth, death, floruit, etc.)."
