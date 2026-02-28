@@ -1,69 +1,75 @@
 import asyncio
-import sys
 from unittest.mock import patch, MagicMock
 
 import pytest
+import toons
 
-from dprr_tool.mcp_server import main, execute_sparql, _format_table, QUERY_TIMEOUT
+from dprr_tool.mcp_server import main, execute_sparql, QUERY_TIMEOUT
 
 
 # --- argparse tests ---
 
 
-def test_main_defaults_to_stdio():
-    """main() with no args runs stdio transport."""
+def test_main_defaults():
+    """main() with no args runs streamable-http on default host/port."""
     with patch("dprr_tool.mcp_server.mcp") as mock_mcp:
         with patch("sys.argv", ["dprr-server"]):
-            main()
-        mock_mcp.run.assert_called_once_with(transport="stdio")
-
-
-def test_main_http_transport():
-    """main() with --transport http runs streamable-http."""
-    with patch("dprr_tool.mcp_server.mcp") as mock_mcp:
-        with patch("sys.argv", ["dprr-server", "--transport", "http"]):
             main()
         assert mock_mcp.settings.host == "127.0.0.1"
         assert mock_mcp.settings.port == 8000
         mock_mcp.run.assert_called_once_with(transport="streamable-http")
 
 
-def test_main_http_custom_host_port():
-    """main() with --transport http --host/--port sets settings."""
+def test_main_custom_host_port():
+    """main() with --host/--port sets settings."""
     with patch("dprr_tool.mcp_server.mcp") as mock_mcp:
-        with patch("sys.argv", ["dprr-server", "--transport", "http", "--host", "0.0.0.0", "--port", "9000"]):
+        with patch("sys.argv", ["dprr-server", "--host", "0.0.0.0", "--port", "9000"]):
             main()
         assert mock_mcp.settings.host == "0.0.0.0"
         assert mock_mcp.settings.port == 9000
         mock_mcp.run.assert_called_once_with(transport="streamable-http")
 
 
-def test_main_invalid_transport():
-    """main() with invalid transport exits with error."""
-    with patch("sys.argv", ["dprr-server", "--transport", "grpc"]):
-        with pytest.raises(SystemExit):
-            main()
+# --- toons output tests ---
 
 
-# --- _format_table tests ---
+@pytest.mark.asyncio
+async def test_execute_sparql_empty_results():
+    """execute_sparql returns empty toons array for empty result set."""
+    from dprr_tool.validate import ValidationResult
+
+    ctx = _make_mock_ctx()
+    mock_result = ValidationResult(
+        success=True,
+        sparql="SELECT ?x WHERE { ?x ?y ?z }",
+        rows=[],
+        errors=[],
+    )
+
+    with patch("dprr_tool.mcp_server.asyncio.wait_for", return_value=mock_result):
+        result_str = await execute_sparql(ctx, "SELECT ?x WHERE { ?x ?y ?z }")
+
+    assert toons.loads(result_str) == []
 
 
-def test_format_table_empty():
-    assert _format_table([]) == "(no results)"
+@pytest.mark.asyncio
+async def test_execute_sparql_toons_roundtrip():
+    """execute_sparql toons output round-trips back to original rows."""
+    from dprr_tool.validate import ValidationResult
 
+    ctx = _make_mock_ctx()
+    rows = [{"name": "Alice", "age": "30"}, {"name": "Bob", "age": "25"}]
+    mock_result = ValidationResult(
+        success=True,
+        sparql="SELECT ?name ?age WHERE { ?x ?y ?z }",
+        rows=rows,
+        errors=[],
+    )
 
-def test_format_table_single_row():
-    rows = [{"name": "Alice", "age": "30"}]
-    result = _format_table(rows)
-    assert "| name | age |" in result
-    assert "| Alice | 30 |" in result
+    with patch("dprr_tool.mcp_server.asyncio.wait_for", return_value=mock_result):
+        result_str = await execute_sparql(ctx, "SELECT ?name ?age WHERE { ?x ?y ?z }")
 
-
-def test_format_table_multiple_rows():
-    rows = [{"x": "a"}, {"x": "b"}]
-    result = _format_table(rows)
-    lines = result.strip().split("\n")
-    assert len(lines) == 4  # header + separator + 2 rows
+    assert toons.loads(result_str) == rows
 
 
 # --- execute_sparql timeout and error handling tests ---
@@ -131,7 +137,7 @@ async def test_execute_sparql_unexpected_error():
 
 @pytest.mark.asyncio
 async def test_execute_sparql_success():
-    """execute_sparql returns a markdown table on success."""
+    """execute_sparql returns toons-formatted output on success."""
     from dprr_tool.validate import ValidationResult
 
     ctx = _make_mock_ctx()
@@ -145,6 +151,5 @@ async def test_execute_sparql_success():
     with patch("dprr_tool.mcp_server.asyncio.wait_for", return_value=mock_result):
         result_str = await execute_sparql(ctx, "SELECT ?x WHERE { ?x ?y ?z }")
 
-    assert result_str.startswith("1 result(s)")
-    assert "| x |" in result_str
-    assert "http://example.com/1" in result_str
+    parsed = toons.loads(result_str)
+    assert parsed == [{"x": "http://example.com/1"}]

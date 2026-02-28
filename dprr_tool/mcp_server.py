@@ -1,4 +1,4 @@
-"""MCP server exposing DPRR SPARQL tools over stdio or streamable-http."""
+"""MCP server exposing DPRR SPARQL tools over streamable-http."""
 
 from __future__ import annotations
 
@@ -9,6 +9,7 @@ from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from pathlib import Path
 
+import toons
 from mcp.server.fastmcp import Context, FastMCP
 
 from dprr_tool.context import (
@@ -16,9 +17,6 @@ from dprr_tool.context import (
     load_prefixes,
     load_schemas,
     load_tips,
-    render_examples,
-    render_schemas_as_shex,
-    render_tips,
 )
 from dprr_tool.store import ensure_initialized, execute_query
 from dprr_tool.validate import (
@@ -66,19 +64,12 @@ mcp = FastMCP(
 @mcp.tool()
 def get_schema(ctx: Context) -> str:
     """Get the full DPRR ontology context: namespace prefixes, ShEx schema for all classes/properties, 28 curated example question/SPARQL pairs, and query tips for common pitfalls. Call this first to learn the domain before generating queries."""
-    prefix_map = load_prefixes()
-    schemas = load_schemas()
-    examples = load_examples()
-    tips = load_tips()
-
-    prefix_lines = "\n".join(f"PREFIX {k}: <{v}>" for k, v in prefix_map.items())
-
-    return (
-        f"## Prefixes\n\n{prefix_lines}\n\n"
-        f"## Schema (ShEx)\n\n{render_schemas_as_shex(schemas)}\n\n"
-        f"## Examples\n\n{render_examples(examples)}\n\n"
-        f"## Query Tips\n\n{render_tips(tips)}"
-    )
+    return toons.dumps({
+        "prefixes": load_prefixes(),
+        "schema": load_schemas(),
+        "examples": load_examples(),
+        "tips": load_tips(),
+    })
 
 
 @mcp.tool()
@@ -103,25 +94,9 @@ def validate_sparql(ctx: Context, sparql: str) -> str:
     return "VALID"
 
 
-def _format_table(rows: list[dict[str, str]]) -> str:
-    """Format result rows as a markdown table."""
-    if not rows:
-        return "(no results)"
-    columns = list(rows[0].keys())
-    # Build header
-    header = "| " + " | ".join(columns) + " |"
-    separator = "| " + " | ".join("---" for _ in columns) + " |"
-    # Build rows
-    lines = [header, separator]
-    for row in rows:
-        line = "| " + " | ".join(str(row.get(c, "")) for c in columns) + " |"
-        lines.append(line)
-    return "\n".join(lines)
-
-
 @mcp.tool()
 async def execute_sparql(ctx: Context, sparql: str, timeout: int | None = None) -> str:
-    """Validate and execute a SPARQL query against the local DPRR RDF store. Returns results as a markdown table. Automatically repairs missing PREFIX declarations before execution."""
+    """Validate and execute a SPARQL query against the local DPRR RDF store. Returns results in toons format. Automatically repairs missing PREFIX declarations before execution."""
     app: AppContext = ctx.request_context.lifespan_context
     effective_timeout = timeout if timeout is not None else QUERY_TIMEOUT
 
@@ -146,32 +121,21 @@ async def execute_sparql(ctx: Context, sparql: str, timeout: int | None = None) 
         error_list = "\n".join(f"- {e}" for e in result.errors)
         return f"ERROR:\n{error_list}"
 
-    row_count = len(result.rows)
-    table = _format_table(result.rows)
-    return f"{row_count} result(s)\n\n{table}"
+    return toons.dumps(result.rows)
 
 
 def main():
-    """Run the MCP server."""
+    """Run the MCP server over streamable-http."""
     import argparse
 
     parser = argparse.ArgumentParser(description="DPRR MCP Server")
-    parser.add_argument(
-        "--transport",
-        choices=["stdio", "http"],
-        default="stdio",
-        help="Transport protocol (default: stdio)",
-    )
-    parser.add_argument("--host", default="127.0.0.1", help="Host for HTTP transport (default: 127.0.0.1)")
-    parser.add_argument("--port", type=int, default=8000, help="Port for HTTP transport (default: 8000)")
+    parser.add_argument("--host", default="127.0.0.1", help="Bind host (default: 127.0.0.1)")
+    parser.add_argument("--port", type=int, default=8000, help="Bind port (default: 8000)")
     args = parser.parse_args()
 
-    if args.transport == "http":
-        mcp.settings.host = args.host
-        mcp.settings.port = args.port
-        mcp.run(transport="streamable-http")
-    else:
-        mcp.run(transport="stdio")
+    mcp.settings.host = args.host
+    mcp.settings.port = args.port
+    mcp.run(transport="streamable-http")
 
 
 if __name__ == "__main__":
