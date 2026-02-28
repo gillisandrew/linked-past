@@ -11,6 +11,7 @@ from pathlib import Path
 
 import toons
 from mcp.server.fastmcp import Context, FastMCP
+from pyoxigraph import Store
 
 from dprr_tool.context import (
     load_examples,
@@ -18,11 +19,12 @@ from dprr_tool.context import (
     load_schemas,
     load_tips,
 )
-from dprr_tool.store import ensure_initialized, execute_query
+from dprr_tool.store import ensure_initialized
 from dprr_tool.validate import (
     build_schema_dict,
     parse_and_fix_prefixes,
     validate_and_execute,
+    validate_semantics,
 )
 
 logger = logging.getLogger(__name__)
@@ -34,9 +36,12 @@ DEFAULT_STORE_PATH = Path.home() / ".dprr-tool" / "store"
 
 @dataclass
 class AppContext:
-    store: object  # pyoxigraph.Store
+    store: Store
     prefix_map: dict[str, str]
     schema_dict: dict
+    schemas: dict
+    examples: list[dict]
+    tips: list[dict]
 
 
 @asynccontextmanager
@@ -46,8 +51,17 @@ async def lifespan(server: FastMCP):
     store = ensure_initialized(store_path)
     prefix_map = load_prefixes()
     schemas = load_schemas()
+    examples = load_examples()
+    tips = load_tips()
     schema_dict = build_schema_dict(schemas, prefix_map)
-    yield AppContext(store=store, prefix_map=prefix_map, schema_dict=schema_dict)
+    yield AppContext(
+        store=store,
+        prefix_map=prefix_map,
+        schema_dict=schema_dict,
+        schemas=schemas,
+        examples=examples,
+        tips=tips,
+    )
 
 
 mcp = FastMCP(
@@ -61,14 +75,23 @@ mcp = FastMCP(
 )
 
 
+@mcp.custom_route("/healthz", ["GET"])
+async def healthz(request):
+    """Health check endpoint for container orchestrators."""
+    from starlette.responses import JSONResponse
+
+    return JSONResponse({"status": "ok"})
+
+
 @mcp.tool()
 def get_schema(ctx: Context) -> str:
-    """Get the full DPRR ontology context: namespace prefixes, ShEx schema for all classes/properties, 28 curated example question/SPARQL pairs, and query tips for common pitfalls. Call this first to learn the domain before generating queries."""
+    """Get the full DPRR ontology context: namespace prefixes, ShEx schema for all classes/properties, 30 curated example question/SPARQL pairs, and query tips for common pitfalls. Call this first to learn the domain before generating queries."""
+    app: AppContext = ctx.request_context.lifespan_context
     return toons.dumps({
-        "prefixes": load_prefixes(),
-        "schema": load_schemas(),
-        "examples": load_examples(),
-        "tips": load_tips(),
+        "prefixes": app.prefix_map,
+        "schema": app.schemas,
+        "examples": app.examples,
+        "tips": app.tips,
     })
 
 
@@ -81,8 +104,6 @@ def validate_sparql(ctx: Context, sparql: str) -> str:
     if parse_errors:
         error_list = "\n".join(f"- {e}" for e in parse_errors)
         return f"INVALID\n\nErrors:\n{error_list}"
-
-    from dprr_tool.validate import validate_semantics
 
     semantic_errors = validate_semantics(fixed_sparql, app.schema_dict)
     if semantic_errors:
