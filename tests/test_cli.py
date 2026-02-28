@@ -7,10 +7,10 @@ def test_cli_help():
     runner = CliRunner()
     result = runner.invoke(cli, ["--help"])
     assert result.exit_code == 0
-    assert "ask" in result.output
     assert "query" in result.output
     assert "init" in result.output
     assert "info" in result.output
+    assert "serve" in result.output
 
 
 def test_cli_info_no_store():

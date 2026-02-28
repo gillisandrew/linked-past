@@ -2,7 +2,6 @@ from pathlib import Path
 
 import click
 from rich.console import Console
-from rich.markdown import Markdown
 from rich.syntax import Syntax
 from rich.table import Table
 
@@ -67,47 +66,21 @@ def query(ctx, sparql_query: str):
 
 
 @cli.command()
-@click.argument("question", type=str)
+@click.option("--host", default="127.0.0.1", help="Bind host (default: 127.0.0.1)")
+@click.option("--port", default=8000, type=int, help="Bind port (default: 8000)")
 @click.pass_context
-def ask(ctx, question: str):
-    """Ask a natural language question about the Roman Republic."""
-    store_path = ctx.obj["store_path"] / "store"
-    if not is_initialized(store_path):
-        console.print("[red]Store is not initialized. Run 'dprr-tool init' first.[/red]")
-        raise SystemExit(1)
-    from anthropic import Anthropic
-    from dprr_tool.pipeline import run_pipeline
-    store = get_read_only_store(store_path)
-    client = Anthropic()
-    console.print(f"\n[bold]Question:[/bold] {question}\n")
-    with console.status("Thinking..."):
-        result = run_pipeline(question, store, client)
-    if result.sparql:
-        console.print("[bold]Generated SPARQL:[/bold]")
-        console.print(Syntax(result.sparql, "sparql", theme="monokai"))
-        console.print()
-    if result.errors:
-        for error in result.errors:
-            console.print(f"[red]Error: {error}[/red]")
-    if result.rows:
-        _print_results_table(result.rows)
-    if result.synthesis:
-        console.print("\n[bold]Summary:[/bold]\n")
-        console.print(Markdown(result.synthesis))
-
-
-@cli.command()
-@click.pass_context
-def serve(ctx):
-    """Start the MCP server on stdio for use with Claude Code, Claude Desktop, etc."""
+def serve(ctx, host, port):
+    """Start the MCP server over HTTP for use with Claude Code, Claude Desktop, etc."""
     import os
 
     store_path = ctx.obj["store_path"]
     os.environ.setdefault("DPRR_STORE_PATH", str(store_path / "store"))
 
-    from dprr_tool.mcp_server import main as mcp_main
+    from dprr_tool.mcp_server import mcp
 
-    mcp_main()
+    mcp.settings.host = host
+    mcp.settings.port = port
+    mcp.run(transport="streamable-http")
 
 
 def _print_results_table(rows: list[dict]):
