@@ -125,8 +125,8 @@ classes:
         range: "xsd:boolean"
         comment: "Whether the end date is uncertain."
       - pred: "vocab:hasPostAssertionNote"
-        range: "xsd:string"
-        comment: "Notes about this post assertion (links to PostAssertionNote entity)."
+        range: "vocab:PostAssertionNote"
+        comment: "Links to PostAssertionNote entity — dereference with vocab:hasNoteText."
       - pred: "vocab:hasOriginalText"
         range: "xsd:string"
         comment: "Original text from the source for this assertion."
@@ -173,8 +173,8 @@ classes:
         range: "vocab:SecondarySource"
         comment: "The secondary source for this assertion."
       - pred: "vocab:hasRelationshipReference"
-        range: "xsd:string"
-        comment: "Reference to the relationship assertion source details."
+        range: "vocab:RelationshipAssertionReference"
+        comment: "Links to reference entity — dereference with vocab:hasExtraInfo."
 
   StatusAssertion:
     label: "Status Assertion"
@@ -206,8 +206,8 @@ classes:
         range: "xsd:boolean"
         comment: "Whether the end date is uncertain."
       - pred: "vocab:hasStatusAssertionNote"
-        range: "xsd:string"
-        comment: "Notes about this status assertion."
+        range: "vocab:StatusAssertionNote"
+        comment: "Links to StatusAssertionNote entity — dereference with vocab:hasNoteText."
       - pred: "vocab:hasOriginalText"
         range: "xsd:string"
         comment: "Original text from the source."
@@ -387,7 +387,37 @@ classes:
     properties:
       - pred: "rdfs:label"
         range: "xsd:string"
-        comment: "The text of the note."
+        comment: "Identifier label (e.g. \"Person Note: #1589\"). NOT the note text."
+      - pred: "vocab:hasNoteText"
+        range: "xsd:string"
+        comment: "Actual text content of the note."
+
+  PostAssertionNote:
+    label: "Post Assertion Note"
+    comment: "A scholarly note on a post assertion."
+    uri: "vocab:PostAssertionNote"
+    properties:
+      - pred: "vocab:hasNoteText"
+        range: "xsd:string"
+        comment: "Text content of the note."
+
+  StatusAssertionNote:
+    label: "Status Assertion Note"
+    comment: "A scholarly note on a status assertion."
+    uri: "vocab:StatusAssertionNote"
+    properties:
+      - pred: "vocab:hasNoteText"
+        range: "xsd:string"
+        comment: "Text content of the note."
+
+  RelationshipAssertionReference:
+    label: "Relationship Assertion Reference"
+    comment: "A reference citation on a relationship assertion."
+    uri: "vocab:RelationshipAssertionReference"
+    properties:
+      - pred: "vocab:hasExtraInfo"
+        range: "xsd:string"
+        comment: "Text content of the reference."
 
   DateType:
     label: "Date Type"

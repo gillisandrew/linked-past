@@ -12,19 +12,13 @@ tips:
       A single person holding one office can generate multiple PostAssertion triples
       (one per secondary source). Always use COUNT(DISTINCT ?person), not COUNT(?assertion).
 
-  - id: consul_vs_suffectus
-    title: "'consul' and 'consul suffectus' are separate offices"
-    body: >
-      "Office: consul" only matches ordinary consuls. Suffect consuls are under
-      "Office: consul suffectus". To find all consuls, use STRSTARTS:
-      FILTER(STRSTARTS(?officeName, "Office: consul")).
-
   - id: office_subtypes
-    title: "Office subtypes — use STRSTARTS or hasParent"
+    title: "Offices have subtypes — use STRSTARTS to match all variants"
     body: >
-      Offices form a hierarchy via hasParent. E.g. "dictator rei gerundae causa"
-      is a subtype of "dictator". Match all subtypes with
-      FILTER(STRSTARTS(?officeName, "Office: dictator")).
+      Offices form a hierarchy via hasParent. "Office: consul" only matches
+      ordinary consuls, not "Office: consul suffectus" or "Office: consul
+      designatus". Use FILTER(STRSTARTS(?officeName, "Office: consul")) for
+      all consul types. Same for dictator, aedilis, quaestor, etc.
 
   - id: province_via_intermediary
     title: "Provinces are NOT on PostAssertion directly"
@@ -76,3 +70,37 @@ tips:
       "father of" means isAboutPerson is the father, hasRelatedPerson is the
       child. To find someone's father, filter for "Relationship: father of"
       where hasRelatedPerson is your target person.
+
+  - id: relationship_labels
+    title: "36 relationship types — no 'wife/husband of', use 'married to'"
+    body: >
+      Common labels (by frequency): "Relationship: brother of", "son of",
+      "father of", "married to", "sister of", "mother of", "daughter of",
+      "grandfather of", "grandson of", "related to", "adopted son of",
+      "adoptive father of", "divorced from", "uncle of", "nephew of",
+      "cousin of", "betrothed to". There is no "wife of" or "husband of" —
+      marriage uses "married to" (symmetric). Use CONTAINS() to search
+      when unsure of the exact label.
+
+  - id: cross_class_join_performance
+    title: "Multi-class joins can timeout — use FILTER ... IN () over ||"
+    body: >
+      Joining two assertion classes (e.g. StatusAssertion + DateInformation)
+      on the same ?person can be slow. Prefer FILTER(?x IN ("a", "b"))
+      over FILTER(?x = "a" || ?x = "b"). If a query times out, try
+      reordering triple patterns to put the most selective pattern first.
+
+  - id: uncertainty_and_notes
+    title: "Surface uncertainty flags, notes, and source text"
+    body: >
+      All assertion classes have vocab:isUncertain (boolean, only true
+      stored). PostAssertion also has isDateStartUncertain / isDateEndUncertain.
+      To exclude uncertain data: FILTER NOT EXISTS { ?a vocab:isUncertain true }.
+      For provenance, include hasOriginalText (literal string on PostAssertion
+      and StatusAssertion) and hasDateSourceText (on StatusAssertion) via
+      OPTIONAL. DateInformation has hasNotes (literal). Note entity fields
+      (hasPostAssertionNote, hasStatusAssertionNote, hasPersonNote,
+      hasRelationshipReference) return entity URIs, not text — dereference
+      with vocab:hasNoteText for note text (e.g. OPTIONAL {
+      ?a vocab:hasPostAssertionNote ?note . ?note vocab:hasNoteText ?noteText }).
+      hasRelationshipReference uses vocab:hasExtraInfo instead of hasNoteText.
