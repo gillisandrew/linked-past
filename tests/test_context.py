@@ -1,4 +1,5 @@
 from pathlib import Path
+
 import yaml
 
 CONTEXT_DIR = Path(__file__).parent.parent / "dprr_tool" / "context"
@@ -38,6 +39,7 @@ def test_schemas_yaml_loads():
         "PrimarySource",
         "Status",
         "Relationship",
+        "PersonNote",
         "DateType",
     ]:
         assert cls_name in classes, f"Missing class: {cls_name}"

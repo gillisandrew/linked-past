@@ -1,11 +1,12 @@
 import asyncio
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 import toons
 
-from dprr_tool.mcp_server import main, execute_sparql, QUERY_TIMEOUT
-
+from dprr_tool.context import load_examples, load_prefixes, load_schemas, load_tips
+from dprr_tool.mcp_server import execute_sparql, get_schema, main, validate_sparql
+from dprr_tool.validate import build_schema_dict
 
 # --- argparse tests ---
 
@@ -83,6 +84,9 @@ def _make_mock_ctx(store=None, prefix_map=None, schema_dict=None):
         store=store or MagicMock(),
         prefix_map=prefix_map or {},
         schema_dict=schema_dict or {},
+        schemas={},
+        examples=[],
+        tips=[],
     )
     ctx = MagicMock()
     ctx.request_context.lifespan_context = app
@@ -153,3 +157,92 @@ async def test_execute_sparql_success():
 
     parsed = toons.loads(result_str)
     assert parsed == [{"x": "http://example.com/1"}]
+
+
+# --- get_schema tests ---
+
+
+def _make_full_ctx():
+    """Create a mock Context with real YAML data loaded."""
+    from dprr_tool.mcp_server import AppContext
+
+    prefix_map = load_prefixes()
+    schemas = load_schemas()
+    examples = load_examples()
+    tips = load_tips()
+    schema_dict = build_schema_dict(schemas, prefix_map)
+    app = AppContext(
+        store=MagicMock(),
+        prefix_map=prefix_map,
+        schema_dict=schema_dict,
+        schemas=schemas,
+        examples=examples,
+        tips=tips,
+    )
+    ctx = MagicMock()
+    ctx.request_context.lifespan_context = app
+    return ctx
+
+
+def test_get_schema_returns_toons():
+    """get_schema returns valid toons with all expected keys."""
+    ctx = _make_full_ctx()
+    result_str = get_schema(ctx)
+    parsed = toons.loads(result_str)
+    assert "prefixes" in parsed
+    assert "schema" in parsed
+    assert "examples" in parsed
+    assert "tips" in parsed
+
+
+def test_get_schema_contains_data():
+    """get_schema output contains actual ontology data."""
+    ctx = _make_full_ctx()
+    parsed = toons.loads(get_schema(ctx))
+    assert "vocab" in parsed["prefixes"]
+    assert "Person" in parsed["schema"]
+    assert len(parsed["examples"]) >= 25
+    assert len(parsed["tips"]) >= 7
+
+
+# --- validate_sparql tests ---
+
+
+def test_validate_sparql_valid_query():
+    """validate_sparql returns VALID for a correct query."""
+    ctx = _make_full_ctx()
+    result = validate_sparql(
+        ctx,
+        "PREFIX vocab: <http://romanrepublic.ac.uk/rdf/entity/vocab/>\n"
+        "SELECT ?p WHERE { ?p a vocab:Person }",
+    )
+    assert result == "VALID"
+
+
+def test_validate_sparql_invalid_syntax():
+    """validate_sparql returns INVALID for bad syntax."""
+    ctx = _make_full_ctx()
+    result = validate_sparql(ctx, "SELCT ?p WHERE { ?p ?o ?s }")
+    assert result.startswith("INVALID")
+    assert "Errors:" in result
+
+
+def test_validate_sparql_prefix_repair():
+    """validate_sparql auto-repairs missing PREFIX and reports valid."""
+    ctx = _make_full_ctx()
+    result = validate_sparql(ctx, "SELECT ?p WHERE { ?p a vocab:Person }")
+    assert "VALID" in result
+    assert "prefixes auto-repaired" in result
+    assert "PREFIX vocab:" in result
+
+
+def test_validate_sparql_semantic_error():
+    """validate_sparql catches invalid predicates."""
+    ctx = _make_full_ctx()
+    result = validate_sparql(
+        ctx,
+        "PREFIX vocab: <http://romanrepublic.ac.uk/rdf/entity/vocab/>\n"
+        "SELECT ?p WHERE { ?p a vocab:Person ; vocab:hasOffice ?o }",
+    )
+    assert result.startswith("INVALID")
+    assert "hasOffice" in result

@@ -1,4 +1,12 @@
-from dprr_tool.context import load_prefixes, load_schemas, load_examples, load_tips, render_schemas_as_shex, render_examples, render_tips
+from dprr_tool.context import (
+    load_examples,
+    load_prefixes,
+    load_schemas,
+    load_tips,
+    render_examples,
+    render_schemas_as_shex,
+    render_tips,
+)
 
 
 def test_load_prefixes():

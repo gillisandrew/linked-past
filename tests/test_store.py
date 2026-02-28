@@ -1,8 +1,9 @@
 import tempfile
 from pathlib import Path
 
-from dprr_tool.store import get_or_create_store, load_rdf, execute_query, is_initialized
+import pytest
 
+from dprr_tool.store import execute_query, get_or_create_store, is_initialized, load_rdf
 
 SAMPLE_TURTLE = """\
 @prefix vocab: <http://romanrepublic.ac.uk/rdf/entity/vocab/> .
@@ -118,3 +119,19 @@ def test_is_initialized():
         ttl_path.write_text(SAMPLE_TURTLE)
         load_rdf(store, ttl_path)
         assert is_initialized(store_path)
+
+
+def test_execute_query_non_select_raises():
+    """Non-SELECT queries (ASK, CONSTRUCT) raise ValueError."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        store_path = Path(tmpdir) / "store"
+        store = get_or_create_store(store_path)
+        ttl_path = Path(tmpdir) / "test.ttl"
+        ttl_path.write_text(SAMPLE_TURTLE)
+        load_rdf(store, ttl_path)
+
+        with pytest.raises(ValueError, match="Only SELECT queries are supported"):
+            execute_query(
+                store,
+                "ASK { ?s ?p ?o }",
+            )
