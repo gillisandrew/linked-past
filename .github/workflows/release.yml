@@ -1,0 +1,37 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@v7
+
+      - name: Run tests
+        run: |
+          uv sync --group dev
+          uv run ruff check .
+          uv run pytest -q
+
+      - name: Build package
+        run: uv build
+
+      - name: Create data tarball
+        run: tar -czf dprr-data.tar.gz -C data dprr.ttl
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ github.ref_name }}" \
+            dist/*.tar.gz \
+            dist/*.whl \
+            dprr-data.tar.gz \
+            --generate-notes
