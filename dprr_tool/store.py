@@ -1,6 +1,20 @@
+import os
 from pathlib import Path
 
 from pyoxigraph import RdfFormat, Store
+
+
+def get_data_dir() -> Path:
+    """Compute the DPRR data directory.
+
+    Precedence: DPRR_DATA_DIR > $XDG_DATA_HOME/dprr-tool > ~/.local/share/dprr-tool
+    """
+    explicit = os.environ.get("DPRR_DATA_DIR")
+    if explicit:
+        return Path(explicit)
+    xdg = os.environ.get("XDG_DATA_HOME")
+    base = Path(xdg) if xdg else Path.home() / ".local" / "share"
+    return base / "dprr-tool"
 
 
 def get_or_create_store(path: Path) -> Store:
@@ -67,8 +81,6 @@ def ensure_initialized(store_path: Path, rdf_file: str | None = None) -> Store:
     If rdf_file is None, reads from the DPRR_RDF_FILE environment variable.
     Raises RuntimeError if the store is empty and no RDF file is available.
     """
-    import os
-
     if is_initialized(store_path):
         return get_read_only_store(store_path)
 

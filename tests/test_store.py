@@ -1,5 +1,7 @@
+import os
 import tempfile
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 
@@ -135,3 +137,32 @@ def test_execute_query_non_select_raises():
                 store,
                 "ASK { ?s ?p ?o }",
             )
+
+
+def test_get_data_dir_default():
+    """Falls back to ~/.local/share/dprr-tool when no envvars set."""
+    from dprr_tool.store import get_data_dir
+
+    with patch.dict(os.environ, {}, clear=True):
+        os.environ.pop("DPRR_DATA_DIR", None)
+        os.environ.pop("XDG_DATA_HOME", None)
+        result = get_data_dir()
+        assert result == Path.home() / ".local" / "share" / "dprr-tool"
+
+
+def test_get_data_dir_xdg_data_home():
+    """Respects XDG_DATA_HOME when set."""
+    from dprr_tool.store import get_data_dir
+
+    with patch.dict(os.environ, {"XDG_DATA_HOME": "/tmp/xdg"}, clear=True):
+        result = get_data_dir()
+        assert result == Path("/tmp/xdg/dprr-tool")
+
+
+def test_get_data_dir_dprr_data_dir_overrides_xdg():
+    """DPRR_DATA_DIR takes precedence over XDG_DATA_HOME."""
+    from dprr_tool.store import get_data_dir
+
+    with patch.dict(os.environ, {"DPRR_DATA_DIR": "/tmp/custom", "XDG_DATA_HOME": "/tmp/xdg"}, clear=True):
+        result = get_data_dir()
+        assert result == Path("/tmp/custom")
