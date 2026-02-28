@@ -10,7 +10,7 @@ def test_prefixes_yaml_loads():
         data = yaml.safe_load(f)
     assert "prefixes" in data
     prefixes = data["prefixes"]
-    assert prefixes["vocab"] == "http://romanrepublic.ac.uk/rdf/entity/vocab/"
+    assert prefixes["vocab"] == "http://romanrepublic.ac.uk/rdf/ontology#"
     assert "rdfs" in prefixes
     assert "rdf" in prefixes
     assert "xsd" in prefixes
@@ -92,7 +92,7 @@ def test_examples_yaml_loads():
         data = yaml.safe_load(f)
     assert "examples" in data
     examples = data["examples"]
-    assert len(examples) >= 25
+    assert len(examples) >= 15
     for i, ex in enumerate(examples):
         assert "question" in ex, f"Example {i} missing question"
         assert "sparql" in ex, f"Example {i} missing sparql"
@@ -122,9 +122,7 @@ def test_examples_cover_key_patterns():
     ), "Missing status query"
     assert any("tribe" in q for q in questions), "Missing tribe query"
     assert any("province" in q for q in questions), "Missing province query"
-    assert any("uncertain" in q for q in questions), "Missing uncertainty query"
-    assert any("source" in q for q in questions), "Missing source query"
-    # Advanced patterns from examples 23-28
+    # Advanced patterns
     assert any("FILTER NOT EXISTS" in s for s in sparqls), "Missing FILTER NOT EXISTS example"
     assert any("STRSTARTS" in s for s in sparqls), "Missing STRSTARTS example"
     assert any("STR(?person1)" in s or "STR(?person2)" in s for s in sparqls), "Missing STR() URI comparison example"

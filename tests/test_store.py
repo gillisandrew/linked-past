@@ -8,7 +8,7 @@ import pytest
 from dprr_mcp.store import ensure_initialized, execute_query, get_or_create_store, is_initialized, load_rdf
 
 SAMPLE_TURTLE = """\
-@prefix vocab: <http://romanrepublic.ac.uk/rdf/entity/vocab/> .
+@prefix vocab: <http://romanrepublic.ac.uk/rdf/ontology#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
@@ -78,7 +78,7 @@ def test_execute_query_returns_results():
         results = execute_query(
             store,
             """
-            PREFIX vocab: <http://romanrepublic.ac.uk/rdf/entity/vocab/>
+            PREFIX vocab: <http://romanrepublic.ac.uk/rdf/ontology#>
             SELECT ?person ?name WHERE {
                 ?person a vocab:Person ;
                     vocab:hasPersonName ?name .
@@ -102,7 +102,7 @@ def test_execute_query_empty_results():
         results = execute_query(
             store,
             """
-            PREFIX vocab: <http://romanrepublic.ac.uk/rdf/entity/vocab/>
+            PREFIX vocab: <http://romanrepublic.ac.uk/rdf/ontology#>
             SELECT ?person WHERE {
                 ?person a vocab:Person ;
                     vocab:hasNomen "Nonexistent" .

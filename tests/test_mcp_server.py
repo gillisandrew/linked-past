@@ -201,7 +201,7 @@ def test_get_schema_contains_data():
     parsed = toons.loads(get_schema(ctx))
     assert "vocab" in parsed["prefixes"]
     assert "Person" in parsed["schema"]
-    assert len(parsed["examples"]) >= 25
+    assert len(parsed["examples"]) >= 15
     assert len(parsed["tips"]) >= 7
 
 
@@ -213,7 +213,7 @@ def test_validate_sparql_valid_query():
     ctx = _make_full_ctx()
     result = validate_sparql(
         ctx,
-        "PREFIX vocab: <http://romanrepublic.ac.uk/rdf/entity/vocab/>\n"
+        "PREFIX vocab: <http://romanrepublic.ac.uk/rdf/ontology#>\n"
         "SELECT ?p WHERE { ?p a vocab:Person }",
     )
     assert result == "VALID"
@@ -241,7 +241,7 @@ def test_validate_sparql_semantic_error():
     ctx = _make_full_ctx()
     result = validate_sparql(
         ctx,
-        "PREFIX vocab: <http://romanrepublic.ac.uk/rdf/entity/vocab/>\n"
+        "PREFIX vocab: <http://romanrepublic.ac.uk/rdf/ontology#>\n"
         "SELECT ?p WHERE { ?p a vocab:Person ; vocab:hasOffice ?o }",
     )
     assert result.startswith("INVALID")

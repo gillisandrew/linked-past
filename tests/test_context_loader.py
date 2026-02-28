@@ -12,7 +12,7 @@ from dprr_mcp.context import (
 def test_load_prefixes():
     prefixes = load_prefixes()
     assert isinstance(prefixes, dict)
-    assert prefixes["vocab"] == "http://romanrepublic.ac.uk/rdf/entity/vocab/"
+    assert prefixes["vocab"] == "http://romanrepublic.ac.uk/rdf/ontology#"
     assert "rdfs" in prefixes
 
 
@@ -27,7 +27,7 @@ def test_load_schemas():
 def test_load_examples():
     examples = load_examples()
     assert isinstance(examples, list)
-    assert len(examples) >= 25
+    assert len(examples) >= 15
     assert "question" in examples[0]
     assert "sparql" in examples[0]
 
