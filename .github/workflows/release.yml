@@ -24,7 +24,7 @@ jobs:
         run: uv build
 
       - name: Create data tarball
-        run: tar -czf dprr-data.tar.gz -C data dprr.ttl
+        run: tar -czf dprr-data.tar.gz -C data dprr.ttl DATA-LICENSE
 
       - name: Create GitHub release
         env:
