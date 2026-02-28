@@ -6,7 +6,7 @@ import toons
 
 from dprr_mcp.context import load_examples, load_prefixes, load_schemas, load_tips
 from dprr_mcp.mcp_server import execute_sparql, get_schema, main, validate_sparql
-from dprr_mcp.validate import build_schema_dict
+from dprr_mcp.validate import build_schema_dict, extract_query_classes
 
 # --- argparse tests ---
 
@@ -171,6 +171,8 @@ def _make_full_ctx():
     examples = load_examples()
     tips = load_tips()
     schema_dict = build_schema_dict(schemas, prefix_map)
+    for ex in examples:
+        ex["classes"] = extract_query_classes(ex["sparql"], schema_dict)
     app = AppContext(
         store=MagicMock(),
         prefix_map=prefix_map,
@@ -184,39 +186,40 @@ def _make_full_ctx():
     return ctx
 
 
-def test_get_schema_returns_toons():
-    """get_schema returns valid toons with all expected keys."""
+def test_get_schema_returns_overview():
+    """get_schema returns markdown with prefixes, classes, and tips sections."""
     ctx = _make_full_ctx()
     result_str = get_schema(ctx)
-    parsed = toons.loads(result_str)
-    assert "prefixes" in parsed
-    assert "schema" in parsed
-    assert "examples" in parsed
-    assert "tips" in parsed
+    assert "## Prefixes" in result_str
+    assert "## Classes" in result_str
+    assert "## General Tips" in result_str
 
 
-def test_get_schema_contains_data():
-    """get_schema output contains actual ontology data."""
+def test_get_schema_slim_content():
+    """get_schema has class names but NOT full property listings."""
     ctx = _make_full_ctx()
-    parsed = toons.loads(get_schema(ctx))
-    assert "vocab" in parsed["prefixes"]
-    assert "Person" in parsed["schema"]
-    assert len(parsed["examples"]) >= 15
-    assert len(parsed["tips"]) >= 7
+    result_str = get_schema(ctx)
+    # Should contain class names
+    assert "Person" in result_str
+    assert "PostAssertion" in result_str
+    assert "vocab:" in result_str
+    # Should NOT contain full property details (no ShEx-style blocks)
+    assert "hasPersonName" not in result_str
+    assert "hasOffice" not in result_str
 
 
 # --- validate_sparql tests ---
 
 
 def test_validate_sparql_valid_query():
-    """validate_sparql returns VALID for a correct query."""
+    """validate_sparql starts with VALID for a correct query."""
     ctx = _make_full_ctx()
     result = validate_sparql(
         ctx,
         "PREFIX vocab: <http://romanrepublic.ac.uk/rdf/ontology#>\n"
         "SELECT ?p WHERE { ?p a vocab:Person }",
     )
-    assert result == "VALID"
+    assert result.startswith("VALID")
 
 
 def test_validate_sparql_invalid_syntax():
@@ -246,3 +249,38 @@ def test_validate_sparql_semantic_error():
     )
     assert result.startswith("INVALID")
     assert "hasOffice" in result
+
+
+def test_validate_sparql_includes_relevant_tips():
+    """validate_sparql appends class-specific tips for a Person query."""
+    ctx = _make_full_ctx()
+    result = validate_sparql(
+        ctx,
+        "PREFIX vocab: <http://romanrepublic.ac.uk/rdf/ontology#>\n"
+        "SELECT ?p ?name WHERE {\n"
+        "  ?p a vocab:Person ; vocab:hasPersonName ?name .\n"
+        "}",
+    )
+    assert result.startswith("VALID")
+    # Person-related tips should appear
+    assert "Relevant Tips" in result
+    # PostAssertion-only tips should NOT appear
+    assert "count_distinct" not in result.lower()
+
+
+def test_validate_sparql_post_assertion_tips():
+    """validate_sparql for PostAssertion query includes PostAssertion-specific tips."""
+    ctx = _make_full_ctx()
+    result = validate_sparql(
+        ctx,
+        "PREFIX vocab: <http://romanrepublic.ac.uk/rdf/ontology#>\n"
+        "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n"
+        "SELECT ?p WHERE {\n"
+        "  ?a a vocab:PostAssertion ; vocab:isAboutPerson ?p ; vocab:hasOffice ?o .\n"
+        "  ?o rdfs:label ?name .\n"
+        "}",
+    )
+    assert result.startswith("VALID")
+    assert "Relevant Tips" in result
+    # Should include PostAssertion-specific tips
+    assert "COUNT(DISTINCT" in result or "STRSTARTS" in result

@@ -13,14 +13,21 @@ from mcp.server.fastmcp import Context, FastMCP
 from pyoxigraph import Store
 
 from dprr_mcp.context import (
+    get_cross_cutting_tips,
+    get_relevant_examples,
+    get_relevant_tips,
     load_examples,
     load_prefixes,
     load_schemas,
     load_tips,
+    render_class_summary,
+    render_examples,
+    render_tips,
 )
 from dprr_mcp.store import ensure_initialized
 from dprr_mcp.validate import (
     build_schema_dict,
+    extract_query_classes,
     parse_and_fix_prefixes,
     validate_and_execute,
     validate_semantics,
@@ -50,6 +57,8 @@ async def lifespan(server: FastMCP):
     examples = load_examples()
     tips = load_tips()
     schema_dict = build_schema_dict(schemas, prefix_map)
+    for ex in examples:
+        ex["classes"] = extract_query_classes(ex["sparql"], schema_dict)
     yield AppContext(
         store=store,
         prefix_map=prefix_map,
@@ -81,14 +90,40 @@ async def healthz(request):
 
 @mcp.tool()
 def get_schema(ctx: Context) -> str:
-    """Get the full DPRR ontology context: namespace prefixes, ShEx schema for all classes/properties, 30 curated example question/SPARQL pairs, and query tips for common pitfalls. Call this first to learn the domain before generating queries."""
+    """Get a DPRR ontology overview: namespace prefixes, available classes, and general query tips. Call this first, then use validate_sparql for class-specific guidance and examples."""
     app: AppContext = ctx.request_context.lifespan_context
-    return toons.dumps({
-        "prefixes": app.prefix_map,
-        "schema": app.schemas,
-        "examples": app.examples,
-        "tips": app.tips,
-    })
+
+    prefix_lines = "\n".join(
+        f"PREFIX {k}: <{v}>" for k, v in app.prefix_map.items()
+    )
+    class_summary = render_class_summary(app.schemas)
+    cross_tips = get_cross_cutting_tips(app.tips)
+    tips_md = render_tips(cross_tips)
+
+    return (
+        f"## Prefixes\n\n```sparql\n{prefix_lines}\n```\n\n"
+        f"## Classes\n\n{class_summary}\n\n"
+        f"## General Tips\n\n{tips_md}"
+    )
+
+
+def _query_context(sparql: str, app: AppContext, *, include_examples: bool = True) -> str:
+    """Build contextual tips (and optionally examples) for a SPARQL query."""
+    classes = extract_query_classes(sparql, app.schema_dict)
+    if not classes:
+        return ""
+
+    parts: list[str] = []
+    tips = get_relevant_tips(app.tips, classes)
+    if tips:
+        parts.append(f"## Relevant Tips\n\n{render_tips(tips)}")
+    if include_examples:
+        examples = get_relevant_examples(app.examples, classes)
+        if examples:
+            parts.append(f"## Relevant Examples\n\n{render_examples(examples)}")
+    if not parts:
+        return ""
+    return "\n\n---\n\n" + "\n\n".join(parts)
 
 
 @mcp.tool()
@@ -99,16 +134,20 @@ def validate_sparql(ctx: Context, sparql: str) -> str:
     fixed_sparql, parse_errors = parse_and_fix_prefixes(sparql, app.prefix_map)
     if parse_errors:
         error_list = "\n".join(f"- {e}" for e in parse_errors)
-        return f"INVALID\n\nErrors:\n{error_list}"
+        base = f"INVALID\n\nErrors:\n{error_list}"
+        return base + _query_context(sparql, app)
 
     semantic_errors = validate_semantics(fixed_sparql, app.schema_dict)
     if semantic_errors:
         error_list = "\n".join(f"- {e}" for e in semantic_errors)
-        return f"INVALID\n\nErrors:\n{error_list}"
+        base = f"INVALID\n\nErrors:\n{error_list}"
+        return base + _query_context(fixed_sparql, app)
 
     if fixed_sparql != sparql:
-        return f"VALID (prefixes auto-repaired)\n\n```sparql\n{fixed_sparql}\n```"
-    return "VALID"
+        base = f"VALID (prefixes auto-repaired)\n\n```sparql\n{fixed_sparql}\n```"
+    else:
+        base = "VALID"
+    return base + _query_context(fixed_sparql, app)
 
 
 @mcp.tool()
@@ -136,7 +175,8 @@ async def execute_sparql(ctx: Context, sparql: str, timeout: int | None = None) 
 
     if not result.success:
         error_list = "\n".join(f"- {e}" for e in result.errors)
-        return f"ERROR:\n{error_list}"
+        base = f"ERROR:\n{error_list}"
+        return base + _query_context(sparql, app, include_examples=False)
 
     return toons.dumps(result.rows)
 
