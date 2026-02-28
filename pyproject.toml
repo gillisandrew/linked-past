@@ -5,13 +5,13 @@ description = "Natural language SPARQL queries for the Digital Prosopography of 
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-    "anthropic",
     "pyoxigraph",
     "rdflib",
     "click",
     "rich",
     "pyyaml",
     "mcp",
+    "toons>=0.5.3",
 ]
 
 [project.scripts]
