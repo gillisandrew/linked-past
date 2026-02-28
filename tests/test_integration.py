@@ -1,12 +1,10 @@
-"""Integration tests using sample data and mocked LLM calls."""
+"""Integration tests using sample data."""
 import tempfile
 from pathlib import Path
-from unittest.mock import MagicMock
 
 from dprr_tool.store import get_or_create_store, load_rdf
 from dprr_tool.context import load_prefixes, load_schemas
 from dprr_tool.validate import build_schema_dict, validate_and_execute
-from dprr_tool.pipeline import run_pipeline, PipelineResult
 from tests.test_store import SAMPLE_TURTLE
 
 
@@ -52,9 +50,9 @@ def test_full_validation_catches_bad_predicate():
 
 
 def test_context_rendering_is_nonempty():
-    from dprr_tool.prompts import build_generation_prompt
-    prompt = build_generation_prompt()
-    assert len(prompt) > 1000
-    assert "vocab:Person" in prompt
-    assert "vocab:PostAssertion" in prompt
-    assert "PREFIX" in prompt
+    from dprr_tool.context import render_schemas_as_shex, load_schemas
+    schemas = load_schemas()
+    rendered = render_schemas_as_shex(schemas)
+    assert len(rendered) > 500
+    assert "vocab:Person" in rendered
+    assert "vocab:PostAssertion" in rendered
