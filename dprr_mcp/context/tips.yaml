@@ -3,63 +3,76 @@ tips:
     title: "Boolean properties use open-world semantics"
     body: >
       Properties like isPatrician, isNobilis, isNovus, and all uncertainty flags
-      (isPraenomenUncertain, etc.) only store `true` values. There are no `false`
-      triples in the data. Querying `?person vocab:isPatrician false` will always
-      return 0 rows. To find persons who are NOT patrician (or whose status is
-      unknown), use: FILTER NOT EXISTS { ?person vocab:isPatrician true }.
-
-  - id: uri_comparison
-    title: "URI comparison requires STR() cast"
-    body: >
-      When comparing two URI variables (e.g. to find pairs of distinct persons),
-      direct comparison like `FILTER(?person1 < ?person2)` may silently fail or
-      return unexpected results. Always cast to string first:
-      FILTER(STR(?person1) < STR(?person2)).
-
-  - id: bind_for_grouping
-    title: "Use BIND(IF(...)) for computed GROUP BY expressions"
-    body: >
-      Complex expressions directly in GROUP BY often fail or produce unexpected
-      results in SPARQL engines. Instead, use BIND to create a named variable,
-      then GROUP BY that variable. Example: BIND(IF(?year <= -400, "5th c. BC",
-      IF(?year <= -300, "4th c. BC", "other")) AS ?century) then GROUP BY ?century.
+      only store `true` values. Querying `?person vocab:isPatrician false` returns
+      0 rows. Use: FILTER NOT EXISTS { ?person vocab:isPatrician true }.
 
   - id: count_distinct
     title: "Multiple PostAssertions per office-holding — use COUNT(DISTINCT ?person)"
     body: >
       A single person holding one office can generate multiple PostAssertion triples
-      (one per secondary source). When counting how many people held an office,
-      always use COUNT(DISTINCT ?person), not COUNT(?person) or COUNT(?assertion).
-
-  - id: office_subtypes
-    title: "Office subtypes and hierarchy — use STRSTARTS or hasParent"
-    body: >
-      Offices form a hierarchy via the hasParent property. For example, "dictator
-      rei gerundae causa" is a subtype of "dictator". To match all subtypes of an
-      office, use STRSTARTS on the label: FILTER(STRSTARTS(?officeName, "Office: dictator")).
-      Alternatively, traverse the hierarchy with vocab:hasParent.
+      (one per secondary source). Always use COUNT(DISTINCT ?person), not COUNT(?assertion).
 
   - id: consul_vs_suffectus
     title: "'consul' and 'consul suffectus' are separate offices"
     body: >
-      The office labeled "Office: consul" only matches ordinary consuls. Suffect
-      consuls are stored under the separate label "Office: consul suffectus". To
-      find all consuls (both ordinary and suffect), use STRSTARTS:
+      "Office: consul" only matches ordinary consuls. Suffect consuls are under
+      "Office: consul suffectus". To find all consuls, use STRSTARTS:
       FILTER(STRSTARTS(?officeName, "Office: consul")).
+
+  - id: office_subtypes
+    title: "Office subtypes — use STRSTARTS or hasParent"
+    body: >
+      Offices form a hierarchy via hasParent. E.g. "dictator rei gerundae causa"
+      is a subtype of "dictator". Match all subtypes with
+      FILTER(STRSTARTS(?officeName, "Office: dictator")).
+
+  - id: province_via_intermediary
+    title: "Provinces are NOT on PostAssertion directly"
+    body: >
+      To find the province for a post, join through PostAssertionProvince:
+      ?pap vocab:hasPostAssertion ?assertion ; vocab:hasProvince ?province .
+      Not all offices have province assignments (e.g. consuls typically do not).
+
+  - id: praenomen_labels
+    title: "Praenomen labels use abbreviations, not full names"
+    body: >
+      Praenomen rdfs:label is "Praenomen: L." (abbreviated), not "Praenomen: Lucius".
+      Use vocab:hasName on Praenomen to get the full name "Lucius".
+
+  - id: sex_entity_uris
+    title: "Sex uses full entity URIs, not label matching"
+    body: >
+      Filter sex using the entity URI directly:
+      ?person vocab:isSex <http://romanrepublic.ac.uk/rdf/entity/Sex/Male> .
+      Or match via rdfs:label "Sex: Male" / "Sex: Female".
+
+  - id: integer_date_filters
+    title: "Date fields are integers — compare directly"
+    body: >
+      hasDateStart, hasDateEnd, hasEraFrom, hasEraTo, hasValue are xsd:integer.
+      Negative = BC. Compare directly: FILTER(?dateStart = -63). No cast needed.
+
+  - id: uri_comparison
+    title: "URI comparison requires STR() cast"
+    body: >
+      When comparing two URI variables (e.g. to find distinct pairs), cast to
+      string: FILTER(STR(?person1) < STR(?person2)).
+
+  - id: bind_for_grouping
+    title: "Use BIND for computed GROUP BY expressions"
+    body: >
+      Complex expressions in GROUP BY often fail. Use BIND to create a named
+      variable, then GROUP BY that variable.
 
   - id: highest_office_is_text
     title: "hasHighestOffice is free text, not linked to Office"
     body: >
-      The Person property vocab:hasHighestOffice contains a free-text summary string
-      like "cos. 107" or "pr. 78?". It is NOT linked to an Office entity. For
-      structured office queries, always use PostAssertion with vocab:hasOffice
-      pointing to an Office resource.
+      vocab:hasHighestOffice is a free-text summary like "cos. 509". For
+      structured office queries, use PostAssertion with vocab:hasOffice.
 
-  - id: integer_date_filters
-    title: "Date fields are integers — compare directly without casting"
+  - id: relationship_directionality
+    title: "Relationships are directional — isAboutPerson vs hasRelatedPerson"
     body: >
-      Date fields like hasDateStart, hasDateEnd, hasEraFrom, hasEraTo, and
-      hasValue (on DateInformation) are stored as xsd:integer values. Negative
-      values represent BC dates. Compare directly in FILTER expressions:
-      FILTER(?dateStart = -63) or FILTER(?eraFrom >= -200 && ?eraFrom <= -100).
-      No explicit "^^xsd:integer" cast is needed in FILTER comparisons.
+      "father of" means isAboutPerson is the father, hasRelatedPerson is the
+      child. To find someone's father, filter for "Relationship: father of"
+      where hasRelatedPerson is your target person.
