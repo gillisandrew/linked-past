@@ -18,64 +18,49 @@ Download the DPRR RDF dataset (Turtle format), then initialize the local Oxigrap
 dprr-tool init /path/to/dprr-data.ttl
 ```
 
+Running `init` again will detect existing data and skip loading. Use `--force` to reinitialize.
+
 ## Usage
 
 ### CLI
 
 ```bash
-# Ask a natural language question (uses Anthropic API)
-dprr-tool ask "Who were the consuls in 100 BC?"
-
 # Execute a raw SPARQL query
 dprr-tool query "SELECT ?p WHERE { ?p a vocab:Person } LIMIT 10"
 
 # Show store statistics
 dprr-tool info
+
+# Set logging level
+dprr-tool --log-level DEBUG info
 ```
 
 ### MCP Server
 
-The MCP server supports two transport modes:
-
-- **stdio** (default) — one server per connection, suitable for single-client usage
-- **HTTP** (streamable-http) — a single long-running server that multiple clients connect to, ideal for parallel agent workflows
-
-#### stdio mode
-
-Run as an MCP server over stdio for use with Claude Code, Claude Desktop, Cursor, or any MCP-compatible client:
+Start a persistent HTTP server (streamable-http transport):
 
 ```bash
 dprr-server
-# or
-dprr-tool serve
-```
-
-#### HTTP mode
-
-Start a persistent HTTP server that multiple agents can share concurrently:
-
-```bash
-dprr-server --transport http
 # Custom host/port:
-dprr-server --transport http --host 0.0.0.0 --port 9000
+dprr-server --host 0.0.0.0 --port 9000
 ```
 
-The server listens on `http://127.0.0.1:8000/mcp` by default. Queries that exceed the timeout (default 30s, configurable via `DPRR_QUERY_TIMEOUT`) return a structured error instead of crashing the connection.
+The server listens on `http://127.0.0.1:8000/mcp` by default. A health check endpoint is available at `/healthz`. Queries that exceed the timeout (default 120s, configurable via `DPRR_QUERY_TIMEOUT`) return a structured error instead of crashing the connection.
 
 #### MCP Tools
 
 | Tool | Description |
 |------|-------------|
-| `get_schema` | Returns DPRR ontology prefixes, ShEx schema, and 22 curated example query pairs |
+| `get_schema` | Returns DPRR ontology prefixes, schema, 30 curated example query pairs, and query tips |
 | `validate_sparql` | Syntax check, auto-repairs missing PREFIX declarations, semantic validation against the ontology |
 | `execute_sparql` | Full validation + execution against the local Oxigraph RDF store |
 
 #### Claude Code configuration
 
-**HTTP mode** (recommended for parallel agents) — start the server first, then configure Claude Code to connect:
+Start the server, then configure Claude Code to connect:
 
 ```bash
-uv run dprr-server --transport http
+uv run dprr-server
 ```
 
 Add to `.claude/settings.json`:
@@ -91,7 +76,7 @@ Add to `.claude/settings.json`:
 }
 ```
 
-**stdio mode** — Claude Code launches and manages the server process:
+Alternatively, Claude Code can launch the server process automatically:
 
 ```json
 {
@@ -145,10 +130,10 @@ Claude will load the DPRR schema, generate a SPARQL query, validate and execute 
 │  Orchestrates: analyze → generate   │
 │  → validate → execute → synthesize  │
 └──────────────┬──────────────────────┘
-               │ MCP protocol (stdio or HTTP)
+               │ MCP protocol (streamable-http)
 ┌──────────────▼──────────────────────┐
 │  MCP Server (dprr-server)           │  3 tools: get_schema, validate_sparql,
-│  Python, stdio or streamable-http   │  execute_sparql
+│  Python, streamable-http            │  execute_sparql
 └──────────────┬──────────────────────┘
                │
 ┌──────────────▼──────────────────────┐
@@ -156,16 +141,15 @@ Claude will load the DPRR schema, generate a SPARQL query, validate and execute 
 └─────────────────────────────────────┘
 ```
 
-The CLI `ask` command uses the Anthropic API directly for a standalone experience. The MCP server + skill path lets Claude itself orchestrate the pipeline with no API calls needed.
+The MCP server + skill path lets Claude orchestrate the pipeline with no additional API calls needed.
 
 ## Environment Variables
 
 | Variable | Description |
 |----------|-------------|
-| `ANTHROPIC_API_KEY` | Required for `dprr-tool ask` (CLI mode) |
 | `DPRR_STORE_PATH` | Override default store location (`~/.dprr-tool`) |
 | `DPRR_RDF_FILE` | Path to DPRR Turtle file for auto-initialization (MCP mode) |
-| `DPRR_QUERY_TIMEOUT` | Query timeout in seconds (default: 30) |
+| `DPRR_QUERY_TIMEOUT` | Query timeout in seconds (default: 120) |
 
 ## References
 
@@ -251,4 +235,5 @@ If you use dprr-tool in your research, please cite:
 
 ```bash
 uv run pytest
+uv run ruff check .
 ```
