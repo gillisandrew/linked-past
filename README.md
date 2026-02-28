@@ -8,15 +8,41 @@ Natural language SPARQL queries for the [Digital Prosopography of the Roman Repu
 
 ## Setup
 
+### From source
+
 Requires Python 3.13+ and [uv](https://docs.astral.sh/uv/).
 
 ```bash
 uv sync
+uv run dprr-server
+```
+
+### Docker
+
+Prebuilt images are published to GHCR on every release:
+
+```bash
+docker run -p 8000:8000 ghcr.io/gillisandrew/dprr-mcp:latest
+```
+
+Or build locally:
+
+```bash
+docker build -t dprr-mcp .
+docker run -p 8000:8000 dprr-mcp
+```
+
+To persist the auto-downloaded data across container restarts, mount a volume:
+
+```bash
+docker run -p 8000:8000 -v dprr-data:/root/.local/share/dprr-mcp ghcr.io/gillisandrew/dprr-mcp:latest
 ```
 
 ### Data
 
 On first startup, the server automatically downloads the DPRR RDF dataset from the latest GitHub release and initializes the local Oxigraph store. No manual data setup is required.
+
+**Why bundle the data?** The upstream DPRR site ([romanrepublic.ac.uk](http://romanrepublic.ac.uk/)) experiences frequent downtime and serves a proof-of-work challenge page that blocks programmatic access. Bundling a snapshot of the RDF export in each release ensures the server can initialize reliably without depending on upstream availability. The dataset is distributed under its original [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/) license.
 
 Data is stored in `$XDG_DATA_HOME/dprr-mcp/` (defaults to `~/.local/share/dprr-mcp/`). Override with `DPRR_DATA_DIR`.
 
@@ -24,12 +50,17 @@ Data is stored in `$XDG_DATA_HOME/dprr-mcp/` (defaults to `~/.local/share/dprr-m
 
 ### MCP Server
 
-Start a persistent HTTP server (streamable-http transport):
+The server uses the `streamable-http` transport — it runs as a standalone HTTP process that MCP clients connect to over the network.
 
 ```bash
-dprr-server
+# From source:
+uv run dprr-server
+
 # Custom host/port:
-dprr-server --host 0.0.0.0 --port 9000
+uv run dprr-server --host 0.0.0.0 --port 9000
+
+# Docker:
+docker run -p 8000:8000 ghcr.io/gillisandrew/dprr-mcp:latest
 ```
 
 The server listens on `http://127.0.0.1:8000/mcp` by default. A health check endpoint is available at `/healthz`. Queries that exceed the timeout (default 600s, configurable via `DPRR_QUERY_TIMEOUT`) return a structured error instead of crashing the connection.
@@ -44,13 +75,7 @@ The server listens on `http://127.0.0.1:8000/mcp` by default. A health check end
 
 #### Claude Code configuration
 
-Start the server, then configure Claude Code to connect:
-
-```bash
-uv run dprr-server
-```
-
-Add to `.claude/settings.json`:
+Start the server, then configure Claude Code to connect. Add to `.claude/settings.json`:
 
 ```json
 {
@@ -63,31 +88,16 @@ Add to `.claude/settings.json`:
 }
 ```
 
-Alternatively, Claude Code can launch the server process automatically:
-
-```json
-{
-  "mcpServers": {
-    "dprr": {
-      "command": "uv",
-      "args": ["run", "--directory", "/path/to/dprr-mcp", "dprr-server"],
-    }
-  }
-}
-```
-
-The server auto-downloads data on first startup.
-
 #### Claude Desktop configuration
 
-Add to `claude_desktop_config.json`:
+Start the server, then add to `claude_desktop_config.json`:
 
 ```json
 {
   "mcpServers": {
     "dprr": {
-      "command": "uv",
-      "args": ["run", "--directory", "/path/to/dprr-mcp", "dprr-server"]
+      "type": "http",
+      "url": "http://127.0.0.1:8000/mcp"
     }
   }
 }
