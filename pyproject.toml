@@ -1,6 +1,6 @@
 [project]
 name = "dprr-mcp"
-version = "1.1.3"
+version = "1.2.0"
 description = "Natural-language prosopographic queries for the Roman Republic. Generates validated SPARQL against the DPRR RDF dataset and synthesises results with uncertainty flags and source citations."
 readme = "README.md"
 license = "MIT"
