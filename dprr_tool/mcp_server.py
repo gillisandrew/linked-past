@@ -7,7 +7,6 @@ import logging
 import os
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
-from pathlib import Path
 
 import toons
 from mcp.server.fastmcp import Context, FastMCP
@@ -31,8 +30,6 @@ logger = logging.getLogger(__name__)
 
 QUERY_TIMEOUT = int(os.environ.get("DPRR_QUERY_TIMEOUT", "600"))
 
-DEFAULT_STORE_PATH = Path.home() / ".dprr-tool" / "store"
-
 
 @dataclass
 class AppContext:
@@ -47,8 +44,7 @@ class AppContext:
 @asynccontextmanager
 async def lifespan(server: FastMCP):
     """Initialize the Oxigraph store and schema on startup."""
-    store_path = Path(os.environ.get("DPRR_STORE_PATH", str(DEFAULT_STORE_PATH)))
-    store = ensure_initialized(store_path)
+    store = ensure_initialized()
     prefix_map = load_prefixes()
     schemas = load_schemas()
     examples = load_examples()

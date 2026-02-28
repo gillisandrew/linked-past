@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 import pytest
 
-from dprr_tool.store import execute_query, get_or_create_store, is_initialized, load_rdf
+from dprr_tool.store import ensure_initialized, execute_query, get_or_create_store, is_initialized, load_rdf
 
 SAMPLE_TURTLE = """\
 @prefix vocab: <http://romanrepublic.ac.uk/rdf/entity/vocab/> .
@@ -166,3 +166,26 @@ def test_get_data_dir_dprr_data_dir_overrides_xdg():
     with patch.dict(os.environ, {"DPRR_DATA_DIR": "/tmp/custom", "XDG_DATA_HOME": "/tmp/xdg"}, clear=True):
         result = get_data_dir()
         assert result == Path("/tmp/custom")
+
+
+def test_ensure_initialized_uses_data_dir(tmp_path):
+    """ensure_initialized uses get_data_dir() to find store and rdf file."""
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+    rdf_file = data_dir / "dprr.ttl"
+    rdf_file.write_text(SAMPLE_TURTLE)
+
+    with patch.dict(os.environ, {"DPRR_DATA_DIR": str(data_dir)}, clear=True):
+        store = ensure_initialized()
+        results = execute_query(store, "SELECT (COUNT(*) AS ?c) WHERE { ?s ?p ?o }")
+        assert int(results[0]["c"]) > 0
+
+
+def test_ensure_initialized_no_rdf_file_raises(tmp_path):
+    """ensure_initialized raises RuntimeError when no dprr.ttl exists."""
+    data_dir = tmp_path / "empty"
+    data_dir.mkdir()
+
+    with patch.dict(os.environ, {"DPRR_DATA_DIR": str(data_dir)}, clear=True):
+        with pytest.raises(RuntimeError, match="dprr.ttl"):
+            ensure_initialized()

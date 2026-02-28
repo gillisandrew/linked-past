@@ -74,28 +74,26 @@ def get_read_only_store(path: Path) -> Store:
     return Store.read_only(str(path))
 
 
-def ensure_initialized(store_path: Path, rdf_file: str | None = None) -> Store:
-    """Open the store, auto-loading RDF data from rdf_file if the store is empty.
+def ensure_initialized() -> Store:
+    """Open the store, auto-loading dprr.ttl from data_dir if the store is empty.
 
-    Returns a read-only store when data already exists to avoid file locking.
-    If rdf_file is None, reads from the DPRR_RDF_FILE environment variable.
-    Raises RuntimeError if the store is empty and no RDF file is available.
+    Returns a read-only store. Derives paths from get_data_dir().
+    Raises RuntimeError if the store is empty and dprr.ttl is not found.
     """
+    data_dir = get_data_dir()
+    store_path = data_dir / "store"
+    rdf_path = data_dir / "dprr.ttl"
+
     if is_initialized(store_path):
         return get_read_only_store(store_path)
 
-    rdf_path = rdf_file or os.environ.get("DPRR_RDF_FILE")
-    if not rdf_path:
+    if not rdf_path.exists():
         raise RuntimeError(
-            "Store is empty and no RDF file provided. "
-            "Set DPRR_RDF_FILE environment variable."
+            f"Store is empty and no data file found at {rdf_path}. "
+            "Run the server where data can be fetched, or place dprr.ttl manually."
         )
 
-    path = Path(rdf_path)
-    if not path.exists():
-        raise RuntimeError(f"RDF file not found: {path}")
-
     store = get_or_create_store(store_path)
-    load_rdf(store, path)
+    load_rdf(store, rdf_path)
     del store
     return get_read_only_store(store_path)
