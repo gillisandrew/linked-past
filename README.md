@@ -10,15 +10,11 @@ Requires Python 3.13+ and [uv](https://docs.astral.sh/uv/).
 uv sync
 ```
 
-### Load DPRR data
+### Data
 
-Download the DPRR RDF dataset (Turtle format), then set the `DPRR_RDF_FILE` environment variable:
+On first startup, the server automatically downloads the DPRR RDF dataset from the latest GitHub release and initializes the local Oxigraph store. No manual data setup is required.
 
-```bash
-export DPRR_RDF_FILE=/path/to/dprr-data.ttl
-```
-
-The local Oxigraph store loads automatically on first use.
+Data is stored in `$XDG_DATA_HOME/dprr-tool/` (defaults to `~/.local/share/dprr-tool/`). Override with `DPRR_DATA_DIR`.
 
 ## Usage
 
@@ -71,15 +67,12 @@ Alternatively, Claude Code can launch the server process automatically:
     "dprr": {
       "command": "uv",
       "args": ["run", "--directory", "/path/to/dprr-tool", "dprr-server"],
-      "env": {
-        "DPRR_RDF_FILE": "/path/to/dprr-data.ttl"
-      }
     }
   }
 }
 ```
 
-Setting `DPRR_RDF_FILE` enables auto-initialization — the store loads the data on first use.
+The server auto-downloads data on first startup.
 
 #### Claude Desktop configuration
 
@@ -90,10 +83,7 @@ Add to `claude_desktop_config.json`:
   "mcpServers": {
     "dprr": {
       "command": "uv",
-      "args": ["run", "--directory", "/path/to/dprr-tool", "dprr-server"],
-      "env": {
-        "DPRR_RDF_FILE": "/path/to/dprr-data.ttl"
-      }
+      "args": ["run", "--directory", "/path/to/dprr-tool", "dprr-server"]
     }
   }
 }
@@ -134,8 +124,8 @@ The MCP server + skill path lets Claude orchestrate the pipeline with no additio
 
 | Variable | Description |
 |----------|-------------|
-| `DPRR_STORE_PATH` | Override default store location (`~/.dprr-tool`) |
-| `DPRR_RDF_FILE` | Path to DPRR Turtle file for auto-initialization (MCP mode) |
+| `DPRR_DATA_DIR` | Override data directory (default: `$XDG_DATA_HOME/dprr-tool`) |
+| `DPRR_DATA_URL` | Override URL for auto-downloading the data tarball |
 | `DPRR_QUERY_TIMEOUT` | Query timeout in seconds (default: 600) |
 
 ## References

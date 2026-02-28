@@ -3,8 +3,6 @@ from pathlib import Path
 
 from pyoxigraph import RdfFormat, Store
 
-from dprr_tool.fetch import fetch_data
-
 
 def get_data_dir() -> Path:
     """Compute the DPRR data directory.
@@ -82,6 +80,8 @@ def ensure_initialized() -> Store:
     If dprr.ttl is not present, attempts to fetch it from the configured URL.
     Returns a read-only store. Derives paths from get_data_dir().
     """
+    from dprr_tool.fetch import fetch_data
+
     data_dir = get_data_dir()
     store_path = data_dir / "store"
     rdf_path = data_dir / "dprr.ttl"
