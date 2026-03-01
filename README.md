@@ -115,20 +115,29 @@ Claude will load the DPRR schema, generate a SPARQL query, validate and execute 
 
 #### Example output
 
-> **Praetors of 150 BC**
+> # Praetors in 150 BC: Evidence from DPRR
 >
-> | Name | Office | Uncertain? |
-> |------|--------|------------|
-> | C. Livius (14) M. f. M. n. Drusus | Praetor | No |
-> | P. Sextilius (not in RE) | Praetor | No |
+> The Digital Prosopography of the Roman Republic (DPRR) aggregates modern secondary scholarship — principally Broughton's _Magistrates of the Roman Republic_ (_MRR_) and Brennan's _Praetorship in the Roman Republic_ (2000) — into a queryable database. Results therefore reflect modern editorial judgments about ancient magistracies, not unmediated ancient testimony. What follows reports what DPRR's sources record for praetors datable to 150 BC.
 >
-> The DPRR records **two praetors** for 150 BC:
+> ## Firmly Attested Praetors
 >
-> **C. Livius Drusus** (RE no. 14) is the better-attested of the pair. A member of the plebeian *gens Livia*, he is identified as the son and grandson of Marcus — the filiation M. f. M. n. places him firmly within the Drusi branch of the family. Broughton's *Magistrates of the Roman Republic* (MRR) lists him among the praetors for this year.
+> **C. Livius (14) M. f. M. n. Drusus** (LIVI1519) is recorded as praetor in 150 BC (Broughton, _MRR_ I). A scholarly note in DPRR observes that this represents "the latest possible date for his praetorship" (Broughton, _MRR_ I), indicating that the date itself carries some imprecision — 150 BC is a _terminus ante quem_ rather than a firmly fixed year. Brennan (2000, p. 737) also attests this praetorship.
 >
-> **P. Sextilius** is more obscure — the DPRR note "(not in RE)" indicates he lacks an entry in Pauly-Wissowa's *Realencyclopädie*, suggesting limited prosopographic evidence for this individual.
+> **P. Sextilius** (SEXT2976, not in RE) is recorded as praetor with a date of 150 BC, though DPRR flags **both the start and end dates as uncertain** (Broughton, _MRR_ II, Appendix 2). The accompanying scholarly note explains that he is "named, probably as presiding officer, in a fragmentary decree of the Senate discovered at Trikkala in Thessaly" (Giannopoulos, _Eph. Arch._ 1934–35, 149, no. 2; cf. L. Robert, _Études Épig. et Phil._ 287f., note 1), and dates his praetorship to "probably before the middle of the second century." The overall assertion is also flagged as uncertain. Brennan (2000, p. 756, fn. 504) provides additional discussion.
 >
-> Neither assertion is flagged as uncertain. Note that the Roman Republic typically elected **six praetors** per year by this period (after the increase from four in 227 BC), so the DPRR's two entries likely reflect incomplete survival of the historical record rather than the full college for 150 BC. Broughton's MRR remains the standard reference for supplementing these gaps.
+> ## A Note on Absent Evidence
+>
+> The query returns only two individuals with praetorships precisely dated to 150 BC. The remaining results captured by the broader date-range search are individuals whose praetorships fall within wide chronological windows (e.g., 200–101 BC or 509–31 BC) and are all flagged as uncertain — these represent persons known to have held the praetorship at some undetermined point within those ranges, not specifically in 150 BC. They include figures recorded by Brennan (2000) and Broughton (_MRR_ II, Appendix 2; _MRR_ III) such as Cn. Aufidius, (Cornelius) Sulla, Domitius Calvinus, L. Furius, A. (Manlius) Torquatus, M. Marcius, Octavius, and C. Rabirius — but assigning any of them to 150 BC specifically would exceed what the sources warrant.
+>
+> The small number of attested praetors for this year should not be taken as evidence that few praetors served. Six praetors were elected annually by this period. The sparse record reflects the fragmentary state of our sources for the mid-second century BC, a period that falls between Livy's surviving narrative (which breaks off after 167 BC) and the richer documentation of the late Republic. DPRR can only record what modern scholarship has been able to reconstruct from the surviving evidence.
+>
+> ## Bibliography
+>
+> - Bradley, John. "A Prosopography as Linked Open Data." _DHQ_ 14.2 (2020).
+> - Brennan, T. C. _The Praetorship in the Roman Republic_. 2 vols. Oxford (2000).
+> - Broughton, T. R. S. _The Magistrates of the Roman Republic_. 3 vols. (1951–1986).
+> - Giannopoulos. _Ephemeris Archaiologike_ (1934–35).
+> - Robert, L. _Études Épigraphiques et Philologiques_. Paris (1938).
 
 ## Architecture
 
