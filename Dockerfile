@@ -7,9 +7,9 @@ COPY pyproject.toml uv.lock README.md ./
 COPY dprr_mcp/ dprr_mcp/
 RUN uv sync --no-dev --frozen
 
-# Download and pre-build the Oxigraph store so the container starts instantly
-ARG DPRR_DATA_URL="https://github.com/gillisandrew/dprr-mcp/releases/latest/download/dprr-data.tar.gz"
-RUN DPRR_DATA_DIR=/app/data DPRR_DATA_URL="$DPRR_DATA_URL" \
+# Copy local data and pre-build the Oxigraph store so the container starts instantly
+COPY data/dprr.ttl /app/data/dprr.ttl
+RUN DPRR_DATA_DIR=/app/data \
     .venv/bin/python -c "from dprr_mcp.store import ensure_initialized; ensure_initialized()"
 
 FROM python:3.13-slim
