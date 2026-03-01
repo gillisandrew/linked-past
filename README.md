@@ -107,7 +107,7 @@ Start the server, then add to `claude_desktop_config.json`:
 
 With the MCP server configured, use the built-in skill:
 
-```
+```text
 /dprr Who held the office of praetor in 150 BC?
 ```
 
@@ -141,21 +141,14 @@ Claude will load the DPRR schema, generate a SPARQL query, validate and execute 
 
 ## Architecture
 
-```
-┌─────────────────────────────────────┐
-│  Claude Code Skill (/dprr)          │  System prompt with DPRR domain knowledge
-│  Orchestrates: analyze → generate   │
-│  → validate → execute → synthesize  │
-└──────────────┬──────────────────────┘
-               │ MCP protocol (streamable-http)
-┌──────────────▼──────────────────────┐
-│  MCP Server (dprr-server)           │  3 tools: get_schema, validate_sparql,
-│  Python, streamable-http            │  execute_sparql
-└──────────────┬──────────────────────┘
-               │
-┌──────────────▼──────────────────────┐
-│  Local Oxigraph Store               │  RDF triples from DPRR dataset
-└─────────────────────────────────────┘
+```mermaid
+flowchart TB
+    A["Claude Code Skill (/dprr)\nSystem prompt with DPRR domain knowledge\nOrchestrates: analyze → generate\n→ validate → execute → synthesize"]
+    B["MCP Server (dprr-server)\nPython, streamable-http\n3 tools: get_schema, validate_sparql,\nexecute_sparql"]
+    C["Local Oxigraph Store\nRDF triples from DPRR dataset"]
+
+    A -- "MCP protocol (streamable-http)" --> B
+    B --> C
 ```
 
 The MCP server + skill path lets Claude orchestrate the pipeline with no additional API calls needed.
