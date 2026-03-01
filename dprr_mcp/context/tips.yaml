@@ -67,6 +67,25 @@ tips:
       Complex expressions in GROUP BY often fail. Use BIND to create a named
       variable, then GROUP BY that variable.
 
+  - id: string_vs_linked_properties
+    classes: [Person]
+    title: "Some name properties are plain strings, others are linked entities"
+    body: >
+      hasNomen, hasCognomen, and hasFiliation are plain string literals — query
+      directly: ?person vocab:hasNomen "Fabius". But hasPraenomen, isSex,
+      hasOffice, and hasSecondarySource are linked entities — join through them:
+      ?person vocab:hasPraenomen ?p . ?p rdfs:label ?praenomen. Check the
+      property range in the schema (xsd:string = direct, vocab:* = linked entity).
+
+  - id: avoid_entity_prefix_in_subject
+    classes: [Person]
+    title: "Avoid entity: prefix in subject position — use hasDprrID instead"
+    body: >
+      Some SPARQL parsers reject the entity: prefix in subject position (e.g.
+      entity:Person/12345). Instead, look up persons by their DPRR identifier:
+      ?person a vocab:Person ; vocab:hasDprrID "CORN0001". This is portable and
+      always works.
+
   - id: highest_office_is_text
     classes: [Person]
     title: "hasHighestOffice is free text, not linked to Office"

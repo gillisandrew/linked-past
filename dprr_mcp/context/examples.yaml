@@ -277,6 +277,22 @@ examples:
       ORDER BY DESC(?consulCount)
       LIMIT 20
 
+  - question: "Find persons named Lucius Cornelius"
+    sparql: |
+      PREFIX vocab: <http://romanrepublic.ac.uk/rdf/ontology#>
+      PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+      SELECT DISTINCT ?person ?name ?cognomen
+      WHERE {
+        ?person a vocab:Person ;
+                vocab:hasPersonName ?name ;
+                vocab:hasNomen "Cornelius" ;
+                vocab:hasPraenomen ?prae .
+        ?prae vocab:hasName "Lucius" .
+        OPTIONAL { ?person vocab:hasCognomen ?cognomen }
+      }
+      ORDER BY ?name
+      LIMIT 100
+
   - question: "Look up a person by their DPRR ID"
     sparql: |
       PREFIX vocab: <http://romanrepublic.ac.uk/rdf/ontology#>
