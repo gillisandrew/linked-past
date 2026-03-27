@@ -200,6 +200,8 @@ Every assertion (post, status, tribe, date) carries uncertainty flags at the ass
 liber-amicorum/src/routes/
 ├── __root.tsx              # layout: nav, search bar, footer
 ├── index.tsx               # homepage: project intro, featured figures, browse links
+├── explore/
+│   └── index.tsx           # full-featured data exploration table
 ├── persons/
 │   ├── index.tsx           # person listing: alphabetical by nomen, filterable
 │   └── $personId.tsx       # individual person page
@@ -209,11 +211,25 @@ liber-amicorum/src/routes/
 └── 404.tsx                 # not found
 ```
 
+### Explore Page (`/explore`)
+
+A full-featured data exploration table powered by TanStack Table, giving researchers direct access to the entire dataset:
+
+- **All persons in a single table** with columns: name, nomen, cognomen, praenomen, era, sex, highest office, patrician, nobilis, novus, origin
+- **Column sorting** — click any header to sort (e.g., sort by era to find earliest/latest figures)
+- **Column filtering** — per-column filters: text search on name fields, range filters on dates, dropdown/facet filters on sex, patrician, nobilis, etc.
+- **Column visibility** — toggle columns on/off to focus on what matters
+- **Pagination** — client-side, with configurable page size
+- **Row links** — each row links to the full person page
+- Uncertainty markers shown inline where applicable
+
+This is the power-user view. The listing pages (`/persons`, `/offices`) remain as simpler, more browsable entry points.
+
 ### Person Page (`/persons/IUNI0001`)
 
 - **Header:** full name (with per-component uncertainty markers on praenomen, nomen, cognomen, filiation), era, sex, patrician/nobilis/novus badges with uncertainty markers
-- **Post Assertions table:** office (linked), dates, province, secondary sources, notes — uncertainty flagged inline. Sources shown per-assertion, not collapsed.
-- **Status Assertions:** senator/eques with dates and sources
+- **Post Assertions table** (TanStack Table): office (linked), dates, province, secondary sources, notes — sortable by date/office, uncertainty flagged inline. Sources shown per-assertion, not collapsed.
+- **Status Assertions** (TanStack Table): senator/eques with dates, sources, uncertainty — sortable
 - **Date Information:** birth, death, floruit etc. with sources
 - **Relationships:** direct relationships as linked cards showing name, type, and era
 - **Notes:** person notes at bottom
@@ -221,7 +237,7 @@ liber-amicorum/src/routes/
 ### Office Page (`/offices/consul`)
 
 - **Header:** office name, abbreviation, parent office (linked)
-- **Holders table:** person (linked), dates, province, sources — sortable by date. Uncertainty flagged inline.
+- **Holders table** (TanStack Table): person (linked), dates, province, sources — sortable by date/name, filterable. Uncertainty flagged inline.
 - **Child offices:** listed and linked if any
 
 ### Listing Pages
@@ -301,6 +317,7 @@ TanStack Start auto-generates `sitemap.xml` when prerender + crawlLinks are enab
 | Build | Vite+ (`vp`) | `defineConfig` from `vite-plus` |
 | Styling | Tailwind CSS v4 | `@tailwindcss/vite` plugin |
 | UI Components | shadcn/ui | Radix primitives + Tailwind, classic aesthetic |
+| Data Tables | TanStack Table | Sorting, filtering, column visibility, pagination |
 | Search | MiniSearch | Build-time index, client-side fuzzy search |
 | Data pipeline | Python (pyoxigraph) | SPARQL → JSON extraction script |
 | Hosting | Cloudflare Workers | `@cloudflare/vite-plugin` + wrangler |
