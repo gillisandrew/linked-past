@@ -41,9 +41,9 @@ dprr-tool/
 
 ## Data Pipeline
 
-A Python script (`scripts/extract_data.py`) loads `dprr.ttl` into an ephemeral pyoxigraph store, runs SPARQL queries, and writes JSON to `data/extracted/`.
+A Python script (`scripts/extract_data.py`) loads `data/dprr.ttl` (committed to the repo) into an ephemeral pyoxigraph store, runs SPARQL queries, and writes JSON to `data/extracted/`.
 
-The MCP server is not involved — the extraction script reuses pyoxigraph directly. This keeps the site build independent of any running service.
+The MCP server is not involved — the extraction script reuses pyoxigraph directly. This keeps the site build independent of any running service. In CI, `dprr.ttl` is available from the repo checkout — no download step needed.
 
 ### ID Conventions
 
@@ -72,6 +72,11 @@ The MCP server is not involved — the extraction script reuses pyoxigraph direc
     "highestOffice": "cos. 509",
     "reNumber": "46a",
     "origin": null,
+    "praenomenUncertain": false,
+    "nomenUncertain": false,
+    "cognomenUncertain": false,
+    "filiationUncertain": false,
+    "otherNamesUncertain": false,
     "patricianUncertain": false,
     "notes": ["..."],
     "postAssertions": [
@@ -106,7 +111,11 @@ The MCP server is not involved — the extraction script reuses pyoxigraph direc
         "dateStart": -509,
         "dateEnd": -509,
         "uncertain": false,
-        "sources": [{ "name": "Broughton MRR I", "id": "broughton-mrr-i" }]
+        "dateStartUncertain": false,
+        "dateEndUncertain": false,
+        "sources": [{ "name": "Broughton MRR I", "id": "broughton-mrr-i" }],
+        "notes": [],
+        "originalText": null
       }
     ],
     "dateInformation": [
@@ -202,7 +211,7 @@ liber-amicorum/src/routes/
 
 ### Person Page (`/persons/IUNI0001`)
 
-- **Header:** full name, era, sex, patrician/nobilis/novus badges with uncertainty markers
+- **Header:** full name (with per-component uncertainty markers on praenomen, nomen, cognomen, filiation), era, sex, patrician/nobilis/novus badges with uncertainty markers
 - **Post Assertions table:** office (linked), dates, province, secondary sources, notes — uncertainty flagged inline. Sources shown per-assertion, not collapsed.
 - **Status Assertions:** senator/eques with dates and sources
 - **Date Information:** birth, death, floruit etc. with sources
@@ -217,8 +226,8 @@ liber-amicorum/src/routes/
 
 ### Listing Pages
 
-- **Persons index:** alphabetical by nomen, showing era range and highest office. MiniSearch bar at top for filtering.
-- **Offices index:** grouped by office hierarchy (magistracies, priesthoods, military, etc.), with holder counts.
+- **Persons index:** alphabetical by nomen, showing era range and highest office. MiniSearch bar at top for filtering. All person links rendered in the initial HTML (no client-side pagination) — required for `crawlLinks` prerender discovery.
+- **Offices index:** grouped by office hierarchy (magistracies, priesthoods, military, etc.), with holder counts. All office links rendered in initial HTML.
 
 ## Search
 
@@ -276,8 +285,8 @@ Deployed as a Cloudflare Worker (not Pages), matching endo and agillis.dev. `wra
 
 1. Install Python deps: `uv sync`
 2. Run extraction: `uv run python scripts/extract_data.py`
-3. Install JS deps: `cd liber-amicorum && pnpm install`
-4. Build site: `cd liber-amicorum && pnpm build`
+3. Install JS deps: `cd liber-amicorum && vp install`
+4. Build site: `cd liber-amicorum && vp build`
 5. Deploy: `wrangler deploy`
 
 ### SEO
