@@ -1,4 +1,4 @@
-import { HeadContent, Outlet, Scripts, createRootRoute } from "@tanstack/react-router";
+import { HeadContent, Link, Outlet, Scripts, createRootRoute } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import appCss from "#/app.css?url";
 
@@ -49,24 +49,24 @@ function RootLayout() {
     <div className="flex min-h-screen flex-col">
       <header className="border-b border-ink/10 bg-parchment/80 backdrop-blur-sm">
         <nav className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-          <a href="/" className="font-serif text-xl font-bold text-ink">
+          <Link to="/" className="font-serif text-xl font-bold text-ink">
             Liber Amicorum
-          </a>
+          </Link>
           <ul className="flex items-center gap-6 text-sm font-medium">
             <li>
-              <a href="/" className="text-ink/70 transition-colors hover:text-ink">
+              <Link to="/" className="text-ink/70 transition-colors hover:text-ink">
                 Home
-              </a>
+              </Link>
             </li>
             <li>
-              <a href="/persons" className="text-ink/70 transition-colors hover:text-ink">
+              <Link to="/persons" className="text-ink/70 transition-colors hover:text-ink">
                 Persons
-              </a>
+              </Link>
             </li>
             <li>
-              <a href="/offices" className="text-ink/70 transition-colors hover:text-ink">
+              <Link to="/offices" className="text-ink/70 transition-colors hover:text-ink">
                 Offices
-              </a>
+              </Link>
             </li>
           </ul>
         </nav>

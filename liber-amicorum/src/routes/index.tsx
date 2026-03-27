@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { Link, createFileRoute } from "@tanstack/react-router";
 import { BookOpen, Users, Landmark } from "lucide-react";
 
 export const Route = createFileRoute("/")({
@@ -10,7 +10,7 @@ const cards = [
     title: "Explore",
     description:
       "Search the prosopographical database with full-text queries across persons, offices, and relationships.",
-    href: "/",
+    href: "/explore",
     icon: BookOpen,
   },
   {
@@ -43,15 +43,15 @@ function HomePage() {
 
       <section className="grid gap-6 sm:grid-cols-3">
         {cards.map((card) => (
-          <a
+          <Link
             key={card.title}
-            href={card.href}
+            to={card.href}
             className="group rounded-lg border border-ink/10 bg-white/50 p-6 transition-all hover:border-accent/30 hover:shadow-md"
           >
             <card.icon className="mb-4 h-8 w-8 text-accent" />
             <h2 className="font-serif text-xl font-semibold text-ink">{card.title}</h2>
             <p className="mt-2 text-sm leading-relaxed text-ink/60">{card.description}</p>
-          </a>
+          </Link>
         ))}
       </section>
     </div>
