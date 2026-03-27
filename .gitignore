@@ -19,3 +19,15 @@ wheels/
 
 # Git worktrees
 .worktrees/
+
+# Extracted data
+data/extracted/
+
+# Superpowers
+.superpowers/
+
+# Liber Amicorum build outputs
+liber-amicorum/dist/
+liber-amicorum/.output/
+liber-amicorum/.vinxi/
+liber-amicorum/src/routeTree.gen.ts

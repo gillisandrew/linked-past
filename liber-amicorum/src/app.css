@@ -1,0 +1,12 @@
+@import "tailwindcss";
+
+@theme {
+  /* Parchment-inspired palette */
+  --color-parchment: #f5f0e8;
+  --color-ink: #2c2418;
+  --color-accent: #1e3a5f;
+
+  /* Typography */
+  --font-serif: "Source Serif 4", "Georgia", serif;
+  --font-sans: "Inter", system-ui, sans-serif;
+}
