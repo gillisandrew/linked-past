@@ -290,7 +290,7 @@ ORDER BY ?dprrId ?pa
         # Date source
         ds_name = row.get("dateSourceName") or strip_label_prefix(row.get("dateSourceLabel"))
         if ds_name and pa_entry["dateSource"] is None:
-            pa_entry["dateSource"] = ds_name
+            pa_entry["dateSource"] = {"name": ds_name, "id": slugify(ds_name)}
 
         # Notes
         note = row.get("noteText")
@@ -416,7 +416,7 @@ WHERE {{
                     "value": to_int(row.get("value")),
                     "interval": row.get("interval"),
                     "uncertain": to_bool(row.get("uncertain")),
-                    "source": src_name,
+                    "source": {"name": src_name, "id": slugify(src_name)} if src_name else None,
                 }
             )
 
@@ -446,7 +446,7 @@ WHERE {{
                 {
                     "tribe": strip_label_prefix(row.get("tribeLabel")),
                     "uncertain": to_bool(row.get("uncertain")),
-                    "source": src_name,
+                    "source": {"name": src_name, "id": slugify(src_name)} if src_name else None,
                 }
             )
 
