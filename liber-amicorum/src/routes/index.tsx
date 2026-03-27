@@ -46,9 +46,9 @@ function HomePage() {
           <Link
             key={card.title}
             to={card.href}
-            className="group rounded-lg border border-ink/10 bg-white/50 p-6 transition-all hover:border-accent/30 hover:shadow-md"
+            className="group rounded-lg border border-ink/10 bg-white/50 p-6 transition-all hover:border-link/30 hover:shadow-md"
           >
-            <card.icon className="mb-4 h-8 w-8 text-accent" />
+            <card.icon className="mb-4 h-8 w-8 text-link" />
             <h2 className="font-serif text-xl font-semibold text-ink">{card.title}</h2>
             <p className="mt-2 text-sm leading-relaxed text-ink/60">{card.description}</p>
           </Link>

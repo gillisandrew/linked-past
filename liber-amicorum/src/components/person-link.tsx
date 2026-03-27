@@ -14,7 +14,7 @@ export function PersonLink({ id, name, eraFrom, eraTo, showEra = false }: Person
     <Link
       to="/persons/$personId"
       params={{ personId: id }}
-      className="text-accent hover:text-accent-light underline decoration-accent/30 hover:decoration-accent"
+      className="text-link hover:text-link-light underline decoration-link/30 hover:decoration-link"
     >
       {name}
       {showEra && (eraFrom != null || eraTo != null) && (
