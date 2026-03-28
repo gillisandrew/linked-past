@@ -167,6 +167,25 @@ export interface SourceIndex {
   citationCount: number;
 }
 
+export interface NetworkNode {
+  id: string;
+  name: string;
+  nomen: string | null;
+  eraFrom: number | null;
+  eraTo: number | null;
+}
+
+export interface NetworkEdge {
+  source: string;
+  target: string;
+  type: string;
+}
+
+export interface NetworkData {
+  nodes: NetworkNode[];
+  edges: NetworkEdge[];
+}
+
 export interface SearchDoc {
   id: string;
   type: "person" | "office";

@@ -88,6 +88,14 @@ function RootLayout() {
             </li>
             <li>
               <Link
+                to="/network"
+                className="font-medium text-ink/70 transition-colors hover:text-ink"
+              >
+                Network
+              </Link>
+            </li>
+            <li>
+              <Link
                 to="/explore"
                 className="font-medium text-ink/70 transition-colors hover:text-ink"
               >

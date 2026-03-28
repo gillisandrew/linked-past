@@ -794,6 +794,57 @@ def build_source_citations(
     return sources
 
 
+def build_relationships_graph(persons: list[dict]) -> dict:
+    """Build a network graph of relationships between persons.
+
+    Returns a dict with 'nodes' and 'edges' lists. Only persons that appear
+    in at least one relationship are included.
+    """
+    edges: list[dict] = []
+    node_ids: set[str] = set()
+
+    # Build a lookup for person data
+    person_map: dict[str, dict] = {p["id"]: p for p in persons}
+
+    for person in persons:
+        pid = person["id"]
+        for rel in person.get("relationships", []):
+            target_id = rel.get("relatedPersonId")
+            rel_type = rel.get("type")
+            if not target_id or not rel_type:
+                continue
+            edges.append({
+                "source": pid,
+                "target": target_id,
+                "type": rel_type,
+            })
+            node_ids.add(pid)
+            node_ids.add(target_id)
+
+    nodes: list[dict] = []
+    for nid in sorted(node_ids):
+        p = person_map.get(nid)
+        if p:
+            nodes.append({
+                "id": nid,
+                "name": p.get("name", ""),
+                "nomen": p.get("nomen"),
+                "eraFrom": p.get("eraFrom"),
+                "eraTo": p.get("eraTo"),
+            })
+        else:
+            # Person referenced in a relationship but not in the dataset
+            nodes.append({
+                "id": nid,
+                "name": nid,
+                "nomen": None,
+                "eraFrom": None,
+                "eraTo": None,
+            })
+
+    return {"nodes": nodes, "edges": edges}
+
+
 def build_sources_index(sources: list[dict]) -> list[dict]:
     """Build a lightweight source index with only listing-level fields."""
     return [
@@ -938,6 +989,10 @@ def main() -> None:
     total_citations = sum(len(s["citations"]) for s in sources)
     print(f"  {total_citations} citations across {len(sources)} sources")
 
+    print("Building relationship graph ...")
+    relationships = build_relationships_graph(persons)
+    print(f"  {len(relationships['nodes'])} nodes, {len(relationships['edges'])} edges")
+
     print("Building indexes ...")
     persons_index = build_persons_index(persons)
     offices_index = build_offices_index(offices)
@@ -992,6 +1047,12 @@ def main() -> None:
         with open(out_path, "w") as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
         print(f"Wrote {out_path} ({len(data)} records)")
+
+    # Write relationships graph
+    rel_path = OUTPUT_DIR / "relationships.json"
+    with open(rel_path, "w") as f:
+        json.dump(relationships, f, indent=2, ensure_ascii=False)
+    print(f"Wrote {rel_path} ({len(relationships['nodes'])} nodes, {len(relationships['edges'])} edges)")
 
     print("Done.")
 

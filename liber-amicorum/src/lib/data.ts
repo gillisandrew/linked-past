@@ -7,6 +7,7 @@ import type {
   OfficeHolderWithOffice,
   SourceIndex,
   SourceDetail,
+  NetworkData,
 } from "./types";
 
 import personsIndex from "../../../data/extracted/persons-index.json";
@@ -60,6 +61,11 @@ export async function getSourceById(id: string): Promise<SourceDetail | undefine
 
 export function getSearchIndex(): SearchDoc[] {
   return searchIdx;
+}
+
+export async function getNetworkData(): Promise<NetworkData> {
+  const mod = await import("../../../data/extracted/relationships.json");
+  return mod.default as NetworkData;
 }
 
 export interface OfficeWithMergedHolders extends Office {
