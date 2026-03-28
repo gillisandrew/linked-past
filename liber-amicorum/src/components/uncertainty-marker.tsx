@@ -1,12 +1,17 @@
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "#/components/ui/tooltip";
-import { Popover, PopoverContent, PopoverTrigger } from "#/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverHeader,
+  PopoverTitle,
+  PopoverTrigger,
+} from "#/components/ui/popover";
 
 interface UncertaintyMarkerProps {
   uncertain: boolean;
   children: React.ReactNode;
-  /** Brief source label shown in tooltip */
+  /** Brief source label */
   source?: string;
-  /** Detailed scholarly notes shown in popover on click */
+  /** Detailed scholarly notes shown in popover on hover */
   notes?: string[];
 }
 
@@ -17,68 +22,59 @@ export function UncertaintyMarker({ uncertain, children, source, notes }: Uncert
 
   const styledText = <span className="border-b border-dotted border-uncertain italic">{children}</span>;
 
-  // Notes present: clickable ? opens a Popover with full notes
-  if (hasNotes) {
+  if (!hasNotes && !source) {
     return (
       <span className="inline-flex items-baseline gap-0.5">
         {styledText}
-        <Popover>
-          <PopoverTrigger asChild>
-            <button
-              type="button"
-              className="cursor-pointer text-xs font-medium text-uncertain hover:text-uncertain/80"
-              title="Click for uncertainty details"
-            >
-              ?
-            </button>
-          </PopoverTrigger>
-          <PopoverContent className="max-h-80 w-[28rem] overflow-y-auto" align="start">
-            <div className="space-y-3">
-              <p className="text-sm font-medium text-ink">Uncertainty Notes</p>
-              {source && <p className="text-xs text-ink-muted">Source: {source}</p>}
-              {notes.map((note, i) => (
-                <div key={i} className="border-l-2 border-link/20 pl-3">
-                  {note
-                    .split(/\r?\n\r?\n/)
-                    .filter(Boolean)
-                    .map((para, j) => (
-                      <p key={j} className="mb-1.5 text-xs leading-relaxed text-ink/80">
-                        {para}
-                      </p>
-                    ))}
-                </div>
-              ))}
-            </div>
-          </PopoverContent>
-        </Popover>
+        <span className="text-xs font-medium text-uncertain">?</span>
       </span>
     );
   }
 
-  // Source only (no notes): tooltip on hover
-  if (source) {
-    return (
-      <TooltipProvider>
-        <Tooltip delayDuration={200}>
-          <TooltipTrigger asChild>
-            <span className="inline-flex cursor-help items-baseline gap-0.5">
-              {styledText}
-              <span className="text-xs font-medium text-uncertain">?</span>
-            </span>
-          </TooltipTrigger>
-          <TooltipContent align="start" side="bottom">
-            <p className="text-xs">Uncertain — {source}</p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    );
-  }
-
-  // Bare uncertain marker
   return (
     <span className="inline-flex items-baseline gap-0.5">
       {styledText}
-      <span className="text-xs font-medium text-uncertain">?</span>
+      <Popover>
+        <PopoverTrigger
+          openOnHover
+          delay={200}
+          closeDelay={300}
+          render={<span />}
+          className="cursor-help text-xs font-medium text-uncertain hover:text-uncertain/80"
+        >
+          ?
+        </PopoverTrigger>
+        <PopoverContent
+          className={hasNotes ? "max-h-80 w-[28rem] overflow-y-auto" : "w-fit max-w-xs"}
+          align="start"
+          side="bottom"
+        >
+          {hasNotes ? (
+            <>
+              <PopoverHeader>
+                <PopoverTitle>Uncertainty Notes</PopoverTitle>
+              </PopoverHeader>
+              {source && <p className="text-xs text-muted-foreground">Source: {source}</p>}
+              <div className="space-y-2">
+                {notes.map((note, i) => (
+                  <div key={i} className="border-l-2 border-border pl-2">
+                    {note
+                      .split(/\r?\n\r?\n/)
+                      .filter(Boolean)
+                      .map((para, j) => (
+                        <p key={j} className="mb-1 text-xs leading-relaxed text-foreground/80">
+                          {para}
+                        </p>
+                      ))}
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <p className="text-xs">Uncertain — {source}</p>
+          )}
+        </PopoverContent>
+      </Popover>
     </span>
   );
 }
