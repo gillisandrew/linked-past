@@ -17,3 +17,11 @@
 - On first startup, if no `dprr.ttl` exists in the data directory, the server auto-downloads it from the latest GitHub release. Override the URL with `DPRR_DATA_URL`.
 - After first load, the Oxigraph store opens **read-only** (`Store.read_only()`) to avoid file locking. Do not add write operations to the initialized store.
 - Tests create ephemeral stores using `SAMPLE_TURTLE` from `tests/test_store.py`. Do not mock the store.
+
+## Liber Amicorum (Static Site)
+
+- `cd liber-amicorum && vp dev --port 3001` — dev server.
+- `cd liber-amicorum && vp build` — production build (prerender all pages).
+- `cd liber-amicorum && vp check` — lint and type check.
+- Requires `data/extracted/` to exist — run `uv run python scripts/extract_data.py` first.
+- Uses Vite+ (`vp`) CLI — do not use pnpm/npm directly for dev/build/test.
