@@ -25,11 +25,17 @@ const columnHelper = createColumnHelper<StatusAssertion>();
 const columns = [
   columnHelper.accessor("status", {
     header: "Status",
-    cell: (info) => (
-      <UncertaintyMarker uncertain={info.row.original.uncertain}>
-        {info.getValue()}
-      </UncertaintyMarker>
-    ),
+    cell: (info) => {
+      const row = info.row.original;
+      return (
+        <UncertaintyMarker
+          uncertain={row.uncertain}
+          notes={row.notes.length > 0 ? row.notes : undefined}
+        >
+          {info.getValue()}
+        </UncertaintyMarker>
+      );
+    },
   }),
   columnHelper.accessor("dateStart", {
     header: "From",

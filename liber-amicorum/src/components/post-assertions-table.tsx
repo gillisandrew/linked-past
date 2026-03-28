@@ -57,11 +57,17 @@ const columns = [
   columnHelper.display({
     id: "assertion",
     header: "",
-    cell: (info) => (
-      <UncertaintyMarker uncertain={info.row.original.uncertain}>
-        {info.row.original.uncertain ? "uncertain" : ""}
-      </UncertaintyMarker>
-    ),
+    cell: (info) => {
+      const row = info.row.original;
+      return (
+        <UncertaintyMarker
+          uncertain={row.uncertain}
+          notes={row.notes.length > 0 ? row.notes : undefined}
+        >
+          {row.uncertain ? "uncertain" : ""}
+        </UncertaintyMarker>
+      );
+    },
   }),
   columnHelper.accessor("sources", {
     header: "Sources",
