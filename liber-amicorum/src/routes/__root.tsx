@@ -50,7 +50,7 @@ function RootDocument({ children }: { children: ReactNode }) {
 function RootLayout() {
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="border-b-2 border-ink/10 bg-parchment/80 backdrop-blur-sm">
+      <header className="relative z-[100] border-b-2 border-ink/10 bg-parchment/80 backdrop-blur-sm">
         <nav className="mx-auto flex items-center justify-between px-6 py-4">
           <Link to="/" className="font-serif text-xl font-bold text-ink">
             Liber Amicorum
