@@ -58,14 +58,24 @@ export function SearchCommand() {
   const flatResults = useMemo(() => {
     const persons = results.filter((r) => r.type === "person");
     const offices = results.filter((r) => r.type === "office");
-    const items: Array<{ result: SearchResult; index: number; isGroupStart: boolean; group: string }> = [];
+    const items: Array<{
+      result: SearchResult;
+      index: number;
+      isGroupStart: boolean;
+      group: string;
+    }> = [];
     let idx = 0;
     for (const r of persons) {
       items.push({ result: r, index: idx++, isGroupStart: items.length === 0, group: "Persons" });
     }
     const officeStart = items.length;
     for (const r of offices) {
-      items.push({ result: r, index: idx++, isGroupStart: items.length === officeStart, group: "Offices" });
+      items.push({
+        result: r,
+        index: idx++,
+        isGroupStart: items.length === officeStart,
+        group: "Offices",
+      });
     }
     return items;
   }, [results]);

@@ -40,7 +40,8 @@ const columns = [
         <Link
           to="/offices/$officeId"
           params={{ officeId: row.original.id }}
-          className="text-link hover:text-link-light underline decoration-link/30 hover:decoration-link"
+          className="text-link hover:text-link-light underline decoration-link/30 hover:decoration-link truncate max-w-md inline-block align-bottom"
+          title={getValue()}
         >
           {getValue()}
         </Link>

@@ -49,7 +49,7 @@ function RootLayout() {
   return (
     <div className="flex min-h-screen flex-col">
       <header className="border-b border-ink/10 bg-parchment/80 backdrop-blur-sm">
-        <nav className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
+        <nav className="mx-auto flex items-center justify-between px-6 py-4">
           <Link to="/" className="font-serif text-xl font-bold text-ink">
             Liber Amicorum
           </Link>
