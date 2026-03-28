@@ -1,6 +1,7 @@
 import { HeadContent, Link, Outlet, Scripts, createRootRoute } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import appCss from "#/app.css?url";
+import { SearchCommand } from "#/components/search-command";
 
 export const Route = createRootRoute({
   head: () => ({
@@ -52,6 +53,7 @@ function RootLayout() {
           <Link to="/" className="font-serif text-xl font-bold text-ink">
             Liber Amicorum
           </Link>
+          <SearchCommand />
           <ul className="flex items-center gap-6 text-sm font-medium">
             <li>
               <Link to="/" className="text-ink/70 transition-colors hover:text-ink">
@@ -66,6 +68,11 @@ function RootLayout() {
             <li>
               <Link to="/offices" className="text-ink/70 transition-colors hover:text-ink">
                 Offices
+              </Link>
+            </li>
+            <li>
+              <Link to="/explore" className="text-ink/70 transition-colors hover:text-ink">
+                Explore
               </Link>
             </li>
           </ul>
