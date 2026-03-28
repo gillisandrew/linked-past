@@ -14,38 +14,24 @@ export function UncertaintyMarker({ uncertain, children, source, notes }: Uncert
   if (!uncertain) return <>{children}</>;
 
   const hasNotes = notes && notes.length > 0;
-  const hasTooltip = !hasNotes && !!source;
 
-  const styledContent = (
-    <span className="inline-flex items-baseline gap-0.5">
-      <span className="border-b border-dotted border-uncertain italic">{children}</span>
-      {!hasNotes && <span className="text-uncertain text-xs font-medium">?</span>}
-    </span>
-  );
+  const styledText = <span className="border-b border-dotted border-uncertain italic">{children}</span>;
 
-  // Notes present: render Popover (click to open) with a Tooltip hint
+  // Notes present: clickable ? opens a Popover with full notes
   if (hasNotes) {
     return (
       <span className="inline-flex items-baseline gap-0.5">
-        <span className="border-b border-dotted border-uncertain italic">{children}</span>
+        {styledText}
         <Popover>
-          <TooltipProvider delay={300}>
-            <Tooltip>
-              <PopoverTrigger asChild>
-                <TooltipTrigger asChild>
-                  <button
-                    type="button"
-                    className="text-uncertain hover:text-uncertain/80 cursor-pointer text-xs font-medium"
-                  >
-                    ?
-                  </button>
-                </TooltipTrigger>
-              </PopoverTrigger>
-              <TooltipContent side="top">
-                <p className="text-xs">Click for uncertainty details</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              className="cursor-pointer text-xs font-medium text-uncertain hover:text-uncertain/80"
+              title="Click for uncertainty details"
+            >
+              ?
+            </button>
+          </PopoverTrigger>
           <PopoverContent className="max-h-80 w-[28rem] overflow-y-auto" align="start">
             <div className="space-y-3">
               <p className="text-sm font-medium text-ink">Uncertainty Notes</p>
@@ -69,13 +55,16 @@ export function UncertaintyMarker({ uncertain, children, source, notes }: Uncert
     );
   }
 
-  // Source only (no notes): simple tooltip
-  if (hasTooltip) {
+  // Source only (no notes): tooltip on hover
+  if (source) {
     return (
       <TooltipProvider>
         <Tooltip delayDuration={200}>
           <TooltipTrigger asChild>
-            <span className="cursor-help">{styledContent}</span>
+            <span className="inline-flex cursor-help items-baseline gap-0.5">
+              {styledText}
+              <span className="text-xs font-medium text-uncertain">?</span>
+            </span>
           </TooltipTrigger>
           <TooltipContent align="start" side="bottom">
             <p className="text-xs">Uncertain — {source}</p>
@@ -85,6 +74,11 @@ export function UncertaintyMarker({ uncertain, children, source, notes }: Uncert
     );
   }
 
-  // No tooltip content at all
-  return styledContent;
+  // Bare uncertain marker
+  return (
+    <span className="inline-flex items-baseline gap-0.5">
+      {styledText}
+      <span className="text-xs font-medium text-uncertain">?</span>
+    </span>
+  );
 }
