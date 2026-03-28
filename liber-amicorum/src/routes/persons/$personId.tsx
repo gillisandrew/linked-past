@@ -9,6 +9,7 @@ import { PostAssertionsTable } from "#/components/post-assertions-table";
 import { StatusAssertionsTable } from "#/components/status-assertions-table";
 import { RelationshipsTable } from "#/components/relationships-table";
 import { EgoGraph } from "#/components/ego-graph";
+import { Breadcrumbs } from "#/components/breadcrumbs";
 
 export const Route = createFileRoute("/persons/$personId")({
   loader: async ({ params }) => {
@@ -35,6 +36,7 @@ function PersonPage() {
 
   return (
     <div className="mx-auto px-6 py-10 space-y-8">
+      <Breadcrumbs items={[{ label: "Persons", href: "/persons" }, { label: person.name }]} />
       {/* Header: two-column layout with infobox */}
       <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
         {/* Left column: name, era, badges */}
@@ -123,19 +125,23 @@ function PersonPage() {
       )}
 
       {/* Post Assertions */}
-      {person.postAssertions.length > 0 && (
+      {person.postAssertions.length > 0 ? (
         <section className="space-y-3">
           <h2 className="font-heading text-xl font-semibold">Offices Held</h2>
           <PostAssertionsTable data={person.postAssertions} />
         </section>
+      ) : (
+        <p className="text-sm italic text-ink-muted">No offices recorded.</p>
       )}
 
       {/* Status Assertions */}
-      {person.statusAssertions.length > 0 && (
+      {person.statusAssertions.length > 0 ? (
         <section className="space-y-3">
           <h2 className="font-heading text-xl font-semibold">Status</h2>
           <StatusAssertionsTable data={person.statusAssertions} />
         </section>
+      ) : (
+        <p className="text-sm italic text-ink-muted">No status assertions recorded.</p>
       )}
 
       {/* Date Information */}
@@ -162,7 +168,7 @@ function PersonPage() {
       )}
 
       {/* Relationships */}
-      {person.relationships.length > 0 && (
+      {person.relationships.length > 0 ? (
         <section className="space-y-3">
           <h2 className="font-heading text-xl font-semibold">Relationships</h2>
           <EgoGraph
@@ -172,6 +178,8 @@ function PersonPage() {
           />
           <RelationshipsTable data={person.relationships} />
         </section>
+      ) : (
+        <p className="text-sm italic text-ink-muted">No relationships recorded.</p>
       )}
 
       {/* Tribe Assertions */}

@@ -3,6 +3,7 @@ import { getOfficeWithDescendants } from "#/lib/data";
 import { OfficeLink } from "#/components/office-link";
 import { HolderHistogram } from "#/components/holder-histogram";
 import { HoldersTable } from "#/components/holders-table";
+import { Breadcrumbs } from "#/components/breadcrumbs";
 
 export const Route = createFileRoute("/offices/$officeId")({
   loader: async ({ params }) => {
@@ -29,6 +30,7 @@ function OfficePage() {
 
   return (
     <div className="mx-auto px-6 py-10 space-y-8">
+      <Breadcrumbs items={[{ label: "Offices", href: "/offices" }, { label: office.name }]} />
       {/* Header */}
       <div className="space-y-2">
         <h1 className="font-heading text-3xl font-bold">{office.name}</h1>

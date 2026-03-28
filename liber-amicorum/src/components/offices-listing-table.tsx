@@ -10,6 +10,7 @@ import {
 } from "@tanstack/react-table";
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
+import { ChevronDown, ChevronRight } from "lucide-react";
 import type { OfficeTreeNode } from "#/lib/types";
 import {
   Table,
@@ -32,7 +33,11 @@ const columns = [
             onClick={row.getToggleExpandedHandler()}
             className="p-0.5 text-ink-muted hover:text-ink"
           >
-            {row.getIsExpanded() ? "\u25BC" : "\u25B6"}
+            {row.getIsExpanded() ? (
+              <ChevronDown className="h-3.5 w-3.5 text-ink-muted" />
+            ) : (
+              <ChevronRight className="h-3.5 w-3.5 text-ink-muted" />
+            )}
           </button>
         ) : (
           <span className="w-4" />
@@ -102,7 +107,7 @@ export function OfficesListingTable({ data }: OfficesListingTableProps) {
       </TableHeader>
       <TableBody>
         {table.getRowModel().rows.map((row) => (
-          <TableRow key={row.id}>
+          <TableRow key={row.id} id={`office-${row.original.id}`}>
             {row.getVisibleCells().map((cell) => (
               <TableCell key={cell.id}>
                 {flexRender(cell.column.columnDef.cell, cell.getContext())}

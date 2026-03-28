@@ -11,6 +11,19 @@ export function SearchCommand() {
   const navigate = useNavigate();
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
   const containerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Global Cmd+K / Ctrl+K shortcut
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        inputRef.current?.focus();
+      }
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, []);
 
   const handleSearch = useCallback((value: string) => {
     setQuery(value);
@@ -96,6 +109,7 @@ export function SearchCommand() {
     <div ref={containerRef} className="relative">
       <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-muted" />
       <input
+        ref={inputRef}
         type="text"
         placeholder="Search persons, offices..."
         value={query}
@@ -104,8 +118,11 @@ export function SearchCommand() {
         onFocus={() => {
           if (results.length > 0 && query.length > 0) setOpen(true);
         }}
-        className="h-9 w-64 rounded-md bg-white/60 border border-ink/15 pl-9 pr-3 text-sm text-ink placeholder:text-ink/40 focus:outline-none focus:ring-1 focus:ring-link/30 focus:border-link/30"
+        className="h-9 w-64 rounded-md bg-white/60 border border-ink/15 pl-9 pr-12 text-sm text-ink placeholder:text-ink/40 focus:outline-none focus:ring-1 focus:ring-link/30 focus:border-link/30"
       />
+      <kbd className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 rounded border border-ink/10 bg-parchment-dark/50 px-1.5 py-0.5 text-[10px] text-ink-muted">
+        &#8984;K
+      </kbd>
       {open && flatResults.length > 0 && (
         <div className="absolute left-0 top-full z-[999] mt-1 w-80 rounded-lg bg-popover shadow-lg ring-1 ring-foreground/10 overflow-hidden">
           <div className="max-h-80 overflow-y-auto">

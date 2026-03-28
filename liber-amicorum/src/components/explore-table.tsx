@@ -11,6 +11,7 @@ import {
   useReactTable,
   type Column,
   type ColumnFiltersState,
+  type Header,
   type SortingState,
   type VisibilityState,
 } from "@tanstack/react-table";
@@ -20,7 +21,6 @@ import { SlidersHorizontal } from "lucide-react";
 import type { PersonIndex } from "#/lib/types";
 import { formatEra } from "#/lib/format";
 import { UncertaintyMarker } from "#/components/uncertainty-marker";
-import { Input } from "#/components/ui/input";
 import { Button } from "#/components/ui/button";
 import {
   DropdownMenu,
@@ -28,13 +28,6 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "#/components/ui/dropdown-menu";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "#/components/ui/select";
 import {
   Table,
   TableBody,
@@ -146,12 +139,6 @@ export function ExploreTable({ data }: ExploreTableProps) {
     <div className="space-y-4">
       {/* Toolbar */}
       <div className="flex items-center gap-4">
-        <Input
-          placeholder="Filter all columns..."
-          value={globalFilter}
-          onChange={(e) => setGlobalFilter(e.target.value)}
-          className="max-w-sm"
-        />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm">
@@ -173,15 +160,9 @@ export function ExploreTable({ data }: ExploreTableProps) {
               ))}
           </DropdownMenuContent>
         </DropdownMenu>
-      </div>
-
-      {/* Facet filters */}
-      <div className="flex flex-wrap items-center gap-2">
-        <FacetSelect column={table.getColumn("sex")} label="Sex" />
-        <FacetBooleanSelect column={table.getColumn("patrician")} label="Patrician" />
-        <FacetBooleanSelect column={table.getColumn("nobilis")} label="Nobilis" />
-        <FacetBooleanSelect column={table.getColumn("novus")} label="Novus" />
-        <EraRangeFilter table={table} />
+        <span className="text-sm text-ink-muted">
+          {table.getFilteredRowModel().rows.length} results
+        </span>
       </div>
 
       {/* Table */}
@@ -190,13 +171,18 @@ export function ExploreTable({ data }: ExploreTableProps) {
           {table.getHeaderGroups().map((headerGroup) => (
             <TableRow key={headerGroup.id}>
               {headerGroup.headers.map((header) => (
-                <TableHead
-                  key={header.id}
-                  className={header.column.getCanSort() ? "cursor-pointer select-none" : ""}
-                  onClick={header.column.getToggleSortingHandler()}
-                >
-                  {flexRender(header.column.columnDef.header, header.getContext())}
-                  {{ asc: " \u2191", desc: " \u2193" }[header.column.getIsSorted() as string] ?? ""}
+                <TableHead key={header.id} className="align-top">
+                  <div
+                    className={
+                      header.column.getCanSort() ? "cursor-pointer select-none" : undefined
+                    }
+                    onClick={header.column.getToggleSortingHandler()}
+                  >
+                    {flexRender(header.column.columnDef.header, header.getContext())}
+                    {{ asc: " \u2191", desc: " \u2193" }[header.column.getIsSorted() as string] ??
+                      ""}
+                  </div>
+                  <ColumnFilter header={header} />
                 </TableHead>
               ))}
             </TableRow>
@@ -216,10 +202,7 @@ export function ExploreTable({ data }: ExploreTableProps) {
       </Table>
 
       {/* Pagination */}
-      <div className="flex items-center justify-between">
-        <span className="text-sm text-ink-muted">
-          {table.getFilteredRowModel().rows.length} results
-        </span>
+      <div className="flex items-center justify-end">
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
@@ -246,78 +229,94 @@ export function ExploreTable({ data }: ExploreTableProps) {
   );
 }
 
-function FacetSelect({
-  column,
-  label,
-}: {
-  column: Column<PersonIndex, unknown> | undefined;
-  label: string;
-}) {
-  if (!column) return null;
+const TEXT_COLUMNS = new Set(["name", "nomen", "cognomen", "praenomen", "highestOffice", "origin"]);
+const BOOLEAN_COLUMNS = new Set(["patrician", "nobilis", "novus"]);
+const SELECT_COLUMNS = new Set(["sex"]);
+
+function ColumnFilter({ header }: { header: Header<PersonIndex, unknown> }) {
+  const column = header.column;
+  const id = column.id;
+
+  if (id === "era") {
+    return <EraRangeFilterInline column={column} />;
+  }
+  if (TEXT_COLUMNS.has(id)) {
+    return <TextFilterInline column={column} />;
+  }
+  if (SELECT_COLUMNS.has(id)) {
+    return <SelectFilterInline column={column} />;
+  }
+  if (BOOLEAN_COLUMNS.has(id)) {
+    return <BooleanFilterInline column={column} />;
+  }
+  return null;
+}
+
+function TextFilterInline({ column }: { column: Column<PersonIndex, unknown> }) {
+  const value = (column.getFilterValue() as string) ?? "";
+  return (
+    <input
+      type="text"
+      value={value}
+      onChange={(e) => column.setFilterValue(e.target.value || undefined)}
+      placeholder="Filter..."
+      onClick={(e) => e.stopPropagation()}
+      className="mt-1 block w-full rounded border border-ink/15 bg-white/60 px-1.5 py-0.5 text-xs text-ink placeholder:text-ink/30 focus:outline-none focus:ring-1 focus:ring-link/30"
+    />
+  );
+}
+
+function SelectFilterInline({ column }: { column: Column<PersonIndex, unknown> }) {
   const facetValues = column.getFacetedUniqueValues();
   const currentValue = (column.getFilterValue() as string) ?? "";
 
   return (
-    <Select
+    <select
       value={currentValue}
-      onValueChange={(val) => column.setFilterValue(val === "__all__" ? undefined : val)}
+      onChange={(e) => column.setFilterValue(e.target.value || undefined)}
+      onClick={(e) => e.stopPropagation()}
+      className="mt-1 block w-full rounded border border-ink/15 bg-white/60 px-1 py-0.5 text-xs text-ink focus:outline-none focus:ring-1 focus:ring-link/30"
     >
-      <SelectTrigger className="h-8 w-auto min-w-[120px] text-xs">
-        <SelectValue placeholder={label} />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="__all__">All {label}</SelectItem>
-        {[...facetValues.entries()]
-          .sort((a, b) => b[1] - a[1])
-          .map(([val, count]) => (
-            <SelectItem key={String(val)} value={String(val)}>
-              {String(val)} ({count.toLocaleString()})
-            </SelectItem>
-          ))}
-      </SelectContent>
-    </Select>
+      <option value="">All</option>
+      {[...facetValues.entries()]
+        .sort((a, b) => b[1] - a[1])
+        .map(([val, count]) => (
+          <option key={String(val)} value={String(val)}>
+            {String(val)} ({count.toLocaleString()})
+          </option>
+        ))}
+    </select>
   );
 }
 
-function FacetBooleanSelect({
-  column,
-  label,
-}: {
-  column: Column<PersonIndex, unknown> | undefined;
-  label: string;
-}) {
-  if (!column) return null;
+function BooleanFilterInline({ column }: { column: Column<PersonIndex, unknown> }) {
   const facetValues = column.getFacetedUniqueValues();
   const currentValue = column.getFilterValue();
   const yesCount = facetValues.get(true) ?? 0;
   const noCount = facetValues.get(false) ?? facetValues.get(undefined) ?? 0;
 
-  const selectValue = currentValue === true ? "yes" : currentValue === false ? "no" : "__all__";
+  const selectValue = currentValue === true ? "yes" : currentValue === false ? "no" : "";
 
   return (
-    <Select
+    <select
       value={selectValue}
-      onValueChange={(val) => {
-        if (val === "__all__") column.setFilterValue(undefined);
+      onChange={(e) => {
+        const val = e.target.value;
+        if (val === "") column.setFilterValue(undefined);
         else if (val === "yes") column.setFilterValue(true);
         else column.setFilterValue(false);
       }}
+      onClick={(e) => e.stopPropagation()}
+      className="mt-1 block w-full rounded border border-ink/15 bg-white/60 px-1 py-0.5 text-xs text-ink focus:outline-none focus:ring-1 focus:ring-link/30"
     >
-      <SelectTrigger className="h-8 w-auto min-w-[120px] text-xs">
-        <SelectValue placeholder={label} />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="__all__">All {label}</SelectItem>
-        <SelectItem value="yes">Yes ({yesCount.toLocaleString()})</SelectItem>
-        <SelectItem value="no">No ({noCount.toLocaleString()})</SelectItem>
-      </SelectContent>
-    </Select>
+      <option value="">All</option>
+      <option value="yes">Yes ({yesCount.toLocaleString()})</option>
+      <option value="no">No ({noCount.toLocaleString()})</option>
+    </select>
   );
 }
 
-function EraRangeFilter({ table }: { table: ReturnType<typeof useReactTable<PersonIndex>> }) {
-  const column = table.getColumn("era");
-  if (!column) return null;
+function EraRangeFilterInline({ column }: { column: Column<PersonIndex, unknown> }) {
   const [min, max] = column.getFacetedMinMaxValues() ?? [0, 0];
   const currentValue = (column.getFilterValue() as [number | undefined, number | undefined]) ?? [
     undefined,
@@ -325,9 +324,8 @@ function EraRangeFilter({ table }: { table: ReturnType<typeof useReactTable<Pers
   ];
 
   return (
-    <div className="flex items-center gap-1 text-xs">
-      <span className="text-ink-muted">Era:</span>
-      <Input
+    <div className="mt-1 flex items-center gap-1">
+      <input
         type="number"
         placeholder={`${min}`}
         value={currentValue[0] ?? ""}
@@ -335,10 +333,11 @@ function EraRangeFilter({ table }: { table: ReturnType<typeof useReactTable<Pers
           const val = e.target.value ? Number(e.target.value) : undefined;
           column.setFilterValue([val, currentValue[1]]);
         }}
-        className="h-8 w-20 text-xs"
+        onClick={(e) => e.stopPropagation()}
+        className="block w-14 rounded border border-ink/15 bg-white/60 px-1 py-0.5 text-xs text-ink placeholder:text-ink/30 focus:outline-none focus:ring-1 focus:ring-link/30"
       />
-      <span className="text-ink-muted">to</span>
-      <Input
+      <span className="text-[10px] text-ink-muted">-</span>
+      <input
         type="number"
         placeholder={`${max}`}
         value={currentValue[1] ?? ""}
@@ -346,7 +345,8 @@ function EraRangeFilter({ table }: { table: ReturnType<typeof useReactTable<Pers
           const val = e.target.value ? Number(e.target.value) : undefined;
           column.setFilterValue([currentValue[0], val]);
         }}
-        className="h-8 w-20 text-xs"
+        onClick={(e) => e.stopPropagation()}
+        className="block w-14 rounded border border-ink/15 bg-white/60 px-1 py-0.5 text-xs text-ink placeholder:text-ink/30 focus:outline-none focus:ring-1 focus:ring-link/30"
       />
     </div>
   );

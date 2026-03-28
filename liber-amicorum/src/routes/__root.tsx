@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { Agentation } from "agentation";
 import appCss from "#/app.css?url";
 import { SearchCommand } from "#/components/search-command";
+import { BackToTop } from "#/components/back-to-top";
 
 export const Route = createRootRoute({
   head: () => ({
@@ -58,14 +59,17 @@ function RootLayout() {
           <SearchCommand />
           <ul className="flex items-center gap-6 text-sm font-medium">
             <li>
-              <Link to="/" className="font-medium text-ink/70 transition-colors hover:text-ink">
+              <Link
+                to="/"
+                className="font-medium text-ink/70 transition-colors hover:text-ink data-[status=active]:text-ink data-[status=active]:border-b-2 data-[status=active]:border-link"
+              >
                 Home
               </Link>
             </li>
             <li>
               <Link
                 to="/persons"
-                className="font-medium text-ink/70 transition-colors hover:text-ink"
+                className="font-medium text-ink/70 transition-colors hover:text-ink data-[status=active]:text-ink data-[status=active]:border-b-2 data-[status=active]:border-link"
               >
                 Persons
               </Link>
@@ -73,7 +77,7 @@ function RootLayout() {
             <li>
               <Link
                 to="/offices"
-                className="font-medium text-ink/70 transition-colors hover:text-ink"
+                className="font-medium text-ink/70 transition-colors hover:text-ink data-[status=active]:text-ink data-[status=active]:border-b-2 data-[status=active]:border-link"
               >
                 Offices
               </Link>
@@ -81,7 +85,7 @@ function RootLayout() {
             <li>
               <Link
                 to="/sources"
-                className="font-medium text-ink/70 transition-colors hover:text-ink"
+                className="font-medium text-ink/70 transition-colors hover:text-ink data-[status=active]:text-ink data-[status=active]:border-b-2 data-[status=active]:border-link"
               >
                 Sources
               </Link>
@@ -89,7 +93,7 @@ function RootLayout() {
             <li>
               <Link
                 to="/network"
-                className="font-medium text-ink/70 transition-colors hover:text-ink"
+                className="font-medium text-ink/70 transition-colors hover:text-ink data-[status=active]:text-ink data-[status=active]:border-b-2 data-[status=active]:border-link"
               >
                 Network
               </Link>
@@ -97,7 +101,7 @@ function RootLayout() {
             <li>
               <Link
                 to="/explore"
-                className="font-medium text-ink/70 transition-colors hover:text-ink"
+                className="font-medium text-ink/70 transition-colors hover:text-ink data-[status=active]:text-ink data-[status=active]:border-b-2 data-[status=active]:border-link"
               >
                 Explore
               </Link>
@@ -151,6 +155,7 @@ function RootLayout() {
           </div>
         </div>
       </footer>
+      <BackToTop />
     </div>
   );
 }
