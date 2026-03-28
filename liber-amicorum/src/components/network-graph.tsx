@@ -220,6 +220,7 @@ export function NetworkGraph() {
 
     const { width, height } = dimensions;
     const svg = d3.select(svgRef.current);
+    svg.attr("viewBox", `0 0 ${width} ${height}`);
 
     // Stop old simulation
     if (simulationRef.current) {
@@ -602,7 +603,7 @@ export function NetworkGraph() {
             </p>
           </div>
         ) : (
-          <svg ref={svgRef} width={dimensions.width} height={dimensions.height} className="block" />
+          <svg ref={svgRef} className="block h-full w-full" />
         )}
         <div
           ref={tooltipRef}
