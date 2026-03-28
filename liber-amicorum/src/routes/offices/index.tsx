@@ -1,8 +1,24 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { getOfficesIndex } from "#/lib/data";
+import type { OfficeTreeNode } from "#/lib/types";
+import { OfficesListingTable } from "#/components/offices-listing-table";
 
 export const Route = createFileRoute("/offices/")({
-  loader: () => getOfficesIndex(),
+  loader: () => {
+    const flat = getOfficesIndex();
+    const map = new Map<string, OfficeTreeNode>(
+      flat.map((o) => [o.id, { ...o, subOffices: [] as OfficeTreeNode[] }]),
+    );
+    const roots: OfficeTreeNode[] = [];
+    for (const node of map.values()) {
+      if (node.parentId && map.has(node.parentId)) {
+        map.get(node.parentId)!.subOffices.push(node);
+      } else {
+        roots.push(node);
+      }
+    }
+    return { roots, totalCount: flat.length };
+  },
   head: () => ({
     meta: [
       { title: "Offices — Liber Amicorum" },
@@ -17,65 +33,15 @@ export const Route = createFileRoute("/offices/")({
 });
 
 function OfficesIndex() {
-  const offices = Route.useLoaderData();
-
-  // Group offices by parent (top-level offices have parentId === null)
-  const topLevel = offices.filter((o) => !o.parentId);
-  const byParent = new Map<string, typeof offices>();
-  for (const o of offices) {
-    if (o.parentId) {
-      const group = byParent.get(o.parentId) ?? [];
-      group.push(o);
-      byParent.set(o.parentId, group);
-    }
-  }
+  const { roots, totalCount } = Route.useLoaderData();
 
   return (
     <div className="mx-auto max-w-5xl px-6 py-10 space-y-6">
       <div>
         <h1 className="font-heading text-3xl font-bold">Offices</h1>
-        <p className="mt-1 text-ink-muted">{offices.length} offices, grouped by hierarchy.</p>
+        <p className="mt-1 text-ink-muted">{totalCount} offices, grouped by hierarchy.</p>
       </div>
-      <div className="space-y-4">
-        {topLevel.map((office) => (
-          <div key={office.id}>
-            <div className="flex items-baseline gap-2">
-              <Link
-                to="/offices/$officeId"
-                params={{ officeId: office.id }}
-                className="text-link hover:text-link-light underline decoration-link/30 hover:decoration-link"
-              >
-                {office.name}
-              </Link>
-              {office.abbreviation && (
-                <span className="text-xs text-ink-muted">({office.abbreviation})</span>
-              )}
-              <span className="text-xs text-ink-muted">&mdash; {office.holderCount} holders</span>
-            </div>
-            {(byParent.get(office.id) ?? []).length > 0 && (
-              <div className="ml-6 mt-1 space-y-1">
-                {(byParent.get(office.id) ?? []).map((child) => (
-                  <div key={child.id} className="flex items-baseline gap-2">
-                    <Link
-                      to="/offices/$officeId"
-                      params={{ officeId: child.id }}
-                      className="text-sm text-link hover:text-link-light underline decoration-link/30 hover:decoration-link"
-                    >
-                      {child.name}
-                    </Link>
-                    {child.abbreviation && (
-                      <span className="text-xs text-ink-muted">({child.abbreviation})</span>
-                    )}
-                    <span className="text-xs text-ink-muted">
-                      &mdash; {child.holderCount} holders
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
+      <OfficesListingTable data={roots} />
     </div>
   );
 }

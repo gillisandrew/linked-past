@@ -134,6 +134,10 @@ export interface OfficeIndex {
   children: OfficeChild[];
 }
 
+export interface OfficeTreeNode extends OfficeIndex {
+  subOffices: OfficeTreeNode[];
+}
+
 export interface SearchDoc {
   id: string;
   type: "person" | "office";
