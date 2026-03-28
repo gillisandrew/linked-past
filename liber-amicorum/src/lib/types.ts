@@ -97,6 +97,12 @@ export interface OfficeHolder {
   sources: Source[];
 }
 
+/** OfficeHolder extended with the office it belongs to (for merged parent+child views) */
+export interface OfficeHolderWithOffice extends OfficeHolder {
+  officeName: string;
+  officeId: string;
+}
+
 export interface Office {
   id: string;
   name: string;

@@ -1,11 +1,11 @@
 import { createFileRoute, notFound, Link } from "@tanstack/react-router";
-import { getOfficeById } from "#/lib/data";
+import { getOfficeWithDescendants } from "#/lib/data";
 import { OfficeLink } from "#/components/office-link";
 import { HoldersTable } from "#/components/holders-table";
 
 export const Route = createFileRoute("/offices/$officeId")({
   loader: async ({ params }) => {
-    const office = await getOfficeById(params.officeId);
+    const office = await getOfficeWithDescendants(params.officeId);
     if (!office) throw notFound();
     return office;
   },
@@ -16,7 +16,7 @@ export const Route = createFileRoute("/offices/$officeId")({
       {
         name: "description",
         content: loaderData
-          ? `${loaderData.name}${loaderData.abbreviation ? ` (${loaderData.abbreviation})` : ""} \u2014 ${loaderData.holders.length} known holders`
+          ? `${loaderData.name}${loaderData.abbreviation ? ` (${loaderData.abbreviation})` : ""} \u2014 ${loaderData.allHolders.length} known holders`
           : "",
       },
     ],
@@ -41,7 +41,10 @@ function OfficePage() {
               </span>
             </>
           )}
-          <span>&middot; {office.holders.length} known holders</span>
+          <span>&middot; {office.allHolders.length} known holders</span>
+          {office.children.length > 0 && (
+            <span>(including {office.subOfficeNames.length} sub-offices)</span>
+          )}
         </div>
       </div>
 
@@ -64,11 +67,14 @@ function OfficePage() {
         </section>
       )}
 
-      {/* Holders */}
-      {office.holders.length > 0 && (
+      {/* Holders — merged from parent + all children */}
+      {office.allHolders.length > 0 && (
         <section className="space-y-3">
           <h2 className="font-heading text-xl font-semibold">Holders</h2>
-          <HoldersTable data={office.holders} />
+          <HoldersTable
+            data={office.allHolders}
+            subOffices={office.subOfficeNames.length > 0 ? office.subOfficeNames : undefined}
+          />
         </section>
       )}
     </div>
