@@ -82,18 +82,17 @@ export function SearchCommand() {
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Input
-          placeholder="Search persons, offices..."
-          value={query}
-          onChange={(e) => handleSearch(e.target.value)}
-          onKeyDown={handleKeyDown}
-          onFocus={() => {
-            if (results.length > 0 && query.length > 0) setOpen(true);
-          }}
-          className="w-64"
-        />
-      </PopoverTrigger>
+      <PopoverTrigger
+        render={<Input />}
+        placeholder="Search persons, offices..."
+        value={query}
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSearch(e.target.value)}
+        onKeyDown={handleKeyDown}
+        onFocus={() => {
+          if (results.length > 0 && query.length > 0) setOpen(true);
+        }}
+        className="w-64"
+      />
       <PopoverContent
         className="w-80 p-0"
         align="start"
