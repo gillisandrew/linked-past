@@ -9,9 +9,8 @@ import {
   type ColumnDef,
 } from "@tanstack/react-table";
 import { useMemo, useState } from "react";
-import { Link } from "@tanstack/react-router";
-import { ExternalLink } from "lucide-react";
 import type { OfficeHolder, OfficeHolderWithOffice } from "#/lib/types";
+import { OfficeDistributionBar } from "#/components/office-distribution-bar";
 import { assertionAnchor, formatYearUncertain } from "#/lib/format";
 import { AnchorRow } from "#/components/anchor-row";
 import { PersonLink } from "#/components/person-link";
@@ -184,47 +183,17 @@ export function HoldersTable({ data, subOffices }: HoldersTableProps) {
 
   return (
     <div className="space-y-3">
-      {/* Sub-office filter */}
+      {/* Sub-office distribution bar + filter */}
       {hasSubOffices && officeOptions.length > 1 && (
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs font-medium text-ink-muted">Filter by office:</span>
-          {officeOptions.map((opt) => {
-            const active = selectedOffices.has(opt.id);
-            return (
-              <span
-                key={opt.id}
-                className={`inline-flex items-stretch rounded-full text-xs transition-colors ${
-                  active
-                    ? "bg-link/10 text-link"
-                    : "bg-ink/5 text-ink-muted"
-                }`}
-              >
-                <button
-                  onClick={() => toggleOffice(opt.id)}
-                  className={`rounded-l-full px-3 py-1 transition-colors ${
-                    active
-                      ? "hover:bg-link/20"
-                      : "hover:bg-ink/10 hover:text-ink"
-                  }`}
-                >
-                  {opt.name}
-                </button>
-                <Link
-                  to="/offices/$officeId"
-                  params={{ officeId: opt.id }}
-                  className={`flex items-center rounded-r-full px-1.5 py-1 transition-colors ${
-                    active
-                      ? "text-link/50 hover:text-link hover:bg-link/20"
-                      : "text-ink/30 hover:text-ink hover:bg-ink/10"
-                  }`}
-                  title={`Go to ${opt.name}`}
-                >
-                  <ExternalLink className="h-3 w-3" />
-                </Link>
-              </span>
-            );
-          })}
-        </div>
+        <OfficeDistributionBar
+          segments={officeOptions.map((opt) => ({
+            id: opt.id,
+            name: opt.name,
+            count: (data as OfficeHolderWithOffice[]).filter((h) => h.officeId === opt.id).length,
+          }))}
+          selectedOffices={selectedOffices}
+          onToggle={toggleOffice}
+        />
       )}
 
       <div className="text-xs text-ink-muted">
