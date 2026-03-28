@@ -54,6 +54,15 @@ function classifyRelationship(type: string): RelDirection {
   return "other";
 }
 
+/** Format relationship as "son of Name" → leads with the relationship */
+function formatRelLabel(relationType: string, relatedName: string): string {
+  const t = relationType.toLowerCase();
+  // Invert the direction label so it reads naturally from the node's perspective
+  // e.g., on a child node, "father of" means this person IS the father → show "father"
+  // on a parent node, "son of" means the root is son of this person → show "parent"
+  return `${t} ${relatedName}`;
+}
+
 // ---------------------------------------------------------------------------
 // Colors
 // ---------------------------------------------------------------------------
@@ -64,10 +73,12 @@ const COLORS = {
   spouse: "#b07080",
   edge: "rgba(37, 36, 54, 0.35)",
   edgeSpouse: "rgba(159, 90, 90, 0.5)",
+  genBandEven: "rgba(37, 36, 54, 0.03)",
+  genBandOdd: "rgba(37, 36, 54, 0.07)",
 };
 
 // ---------------------------------------------------------------------------
-// Family node type (flat graph with generation levels)
+// Family node type
 // ---------------------------------------------------------------------------
 
 interface FamilyNode {
@@ -75,6 +86,8 @@ interface FamilyNode {
   name: string;
   generation: number;
   relationType: string;
+  /** Name of the person this relationship is relative to */
+  relatedToName: string;
   direction: RelDirection;
   uncertain: boolean;
   expanded: boolean;
@@ -87,6 +100,7 @@ interface FamilyNode {
 interface FamilyGraph {
   nodes: Map<string, FamilyNode>;
   rootId: string;
+  rootName: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -101,6 +115,7 @@ function buildInitialGraph(person: Person): FamilyGraph {
     name: person.name,
     generation: 0,
     relationType: "",
+    relatedToName: "",
     direction: "descendant",
     uncertain: false,
     expanded: true,
@@ -125,6 +140,7 @@ function buildInitialGraph(person: Person): FamilyGraph {
         name,
         generation: -1,
         relationType: rel.type,
+        relatedToName: person.name,
         direction: "ancestor",
         uncertain: false,
         expanded: false,
@@ -139,6 +155,7 @@ function buildInitialGraph(person: Person): FamilyGraph {
         name,
         generation: 1,
         relationType: rel.type,
+        relatedToName: person.name,
         direction: "descendant",
         uncertain: false,
         expanded: false,
@@ -150,7 +167,7 @@ function buildInitialGraph(person: Person): FamilyGraph {
     }
   }
 
-  return { nodes, rootId: person.id };
+  return { nodes, rootId: person.id, rootName: person.name };
 }
 
 // ---------------------------------------------------------------------------
@@ -162,7 +179,7 @@ function cloneGraph(graph: FamilyGraph): FamilyGraph {
   for (const [id, node] of graph.nodes) {
     nodes.set(id, { ...node, spouses: [...node.spouses] });
   }
-  return { nodes, rootId: graph.rootId };
+  return { nodes, rootId: graph.rootId, rootName: graph.rootName };
 }
 
 function markLoading(graph: FamilyGraph, nodeId: string): FamilyGraph {
@@ -202,6 +219,7 @@ function expandGraphNode(graph: FamilyGraph, nodeId: string, personData: Person)
         name,
         generation: node.generation - 1,
         relationType: rel.type,
+        relatedToName: node.name,
         direction: "ancestor",
         uncertain: false,
         expanded: false,
@@ -216,6 +234,7 @@ function expandGraphNode(graph: FamilyGraph, nodeId: string, personData: Person)
         name,
         generation: node.generation + 1,
         relationType: rel.type,
+        relatedToName: node.name,
         direction: "descendant",
         uncertain: false,
         expanded: false,
@@ -231,18 +250,20 @@ function expandGraphNode(graph: FamilyGraph, nodeId: string, personData: Person)
 }
 
 // ---------------------------------------------------------------------------
-// React Flow node/edge data types
+// React Flow data types
 // ---------------------------------------------------------------------------
 
 interface PersonNodeData extends Record<string, unknown> {
   name: string;
-  relationType: string;
+  relLabel: string;
   direction: RelDirection;
+  generation: number;
   isRoot: boolean;
   expanded: boolean;
   loading: boolean;
   hasPersonId: boolean;
-  canExpand: boolean;
+  canExpandUp: boolean;
+  canExpandDown: boolean;
   onExpand: (nodeId: string) => void;
 }
 
@@ -257,20 +278,24 @@ interface RelEdgeData extends Record<string, unknown> {
 type RelEdge = RFEdge<RelEdgeData, "relationship">;
 
 // ---------------------------------------------------------------------------
+// Generation label helper
+// ---------------------------------------------------------------------------
+
+function generationLabel(gen: number): string {
+  if (gen === 0) return "";
+  if (gen === -1) return "Parents";
+  if (gen === -2) return "Grandparents";
+  if (gen < -2) return `${Math.abs(gen)}× Great-grandparents`;
+  if (gen === 1) return "Children";
+  if (gen === 2) return "Grandchildren";
+  return `${gen - 1}× Great-grandchildren`;
+}
+
+// ---------------------------------------------------------------------------
 // Custom Person Node
 // ---------------------------------------------------------------------------
 
 function PersonNodeComponent({ data, id }: NodeProps<PersonNode>) {
-  const isAncestor = data.direction === "ancestor";
-  const isDescendant = data.direction === "descendant" || data.direction === "spouse";
-  const canExpandUp = isAncestor && !data.expanded && !data.loading && data.hasPersonId;
-  const canExpandDown =
-    data.direction === "descendant" &&
-    !data.isRoot &&
-    !data.expanded &&
-    !data.loading &&
-    data.hasPersonId;
-
   const borderColor = data.isRoot
     ? COLORS.root
     : data.direction === "spouse"
@@ -279,16 +304,11 @@ function PersonNodeComponent({ data, id }: NodeProps<PersonNode>) {
 
   return (
     <div className="relative">
-      {/* Target handle (top) */}
-      {(isDescendant || data.isRoot) && (
-        <Handle type="target" position={Position.Top} className="!bg-ink/30 !w-2 !h-2" />
-      )}
-      {isAncestor && (
-        <Handle type="source" position={Position.Top} className="!bg-ink/30 !w-2 !h-2" />
-      )}
+      {/* Top handle — for connections coming from above */}
+      <Handle type="target" position={Position.Top} className="!bg-ink/30 !w-2 !h-2" />
 
-      {/* Expand up button */}
-      {canExpandUp && (
+      {/* Expand ancestors button */}
+      {data.canExpandUp && (
         <button
           onClick={(e) => {
             e.stopPropagation();
@@ -296,6 +316,7 @@ function PersonNodeComponent({ data, id }: NodeProps<PersonNode>) {
           }}
           className="absolute -top-7 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full flex items-center justify-center text-white z-10"
           style={{ backgroundColor: COLORS.root }}
+          title="Expand ancestors"
         >
           <ChevronUp className="w-3 h-3" />
         </button>
@@ -303,22 +324,24 @@ function PersonNodeComponent({ data, id }: NodeProps<PersonNode>) {
 
       {/* Node body */}
       <div
-        className="rounded-md px-3 py-1.5 text-center bg-white min-w-[150px]"
-        style={{
-          border: `${data.isRoot ? 2.5 : 1}px solid ${borderColor}`,
-        }}
+        className="rounded-md px-3 py-1.5 text-center bg-white min-w-[160px] max-w-[200px]"
+        style={{ border: `${data.isRoot ? 2.5 : 1}px solid ${borderColor}` }}
       >
-        <p className="text-[11px] font-medium text-ink truncate max-w-[140px]">
-          {data.name.length > 20 ? data.name.slice(0, 18) + "\u2026" : data.name}
-        </p>
-        {!data.isRoot && data.relationType && (
-          <p className="text-[8px] text-ink-muted">{data.relationType}</p>
+        {/* Relationship label first — "son of Marcus" */}
+        {!data.isRoot && data.relLabel && (
+          <p className="text-[9px] uppercase tracking-wide text-ink-muted mb-0.5">{data.relLabel}</p>
         )}
-        {data.loading && <p className="text-[10px] text-ink-muted animate-pulse">loading...</p>}
+        {/* Person name */}
+        <p className="text-[11px] font-medium text-ink truncate">{data.name}</p>
+        {/* Generation indicator */}
+        {data.isRoot && (
+          <p className="text-[8px] text-ink-muted mt-0.5">root</p>
+        )}
+        {data.loading && <p className="text-[10px] text-ink-muted animate-pulse mt-0.5">loading...</p>}
       </div>
 
-      {/* Expand down button */}
-      {canExpandDown && (
+      {/* Expand descendants button */}
+      {data.canExpandDown && (
         <button
           onClick={(e) => {
             e.stopPropagation();
@@ -326,18 +349,14 @@ function PersonNodeComponent({ data, id }: NodeProps<PersonNode>) {
           }}
           className="absolute -bottom-7 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full flex items-center justify-center text-white z-10"
           style={{ backgroundColor: COLORS.family }}
+          title="Expand descendants"
         >
           <ChevronDown className="w-3 h-3" />
         </button>
       )}
 
-      {/* Source handle (bottom) */}
-      {(isDescendant || data.isRoot) && (
-        <Handle type="source" position={Position.Bottom} className="!bg-ink/30 !w-2 !h-2" />
-      )}
-      {isAncestor && (
-        <Handle type="target" position={Position.Bottom} className="!bg-ink/30 !w-2 !h-2" />
-      )}
+      {/* Bottom handle — for connections going down */}
+      <Handle type="source" position={Position.Bottom} className="!bg-ink/30 !w-2 !h-2" />
     </div>
   );
 }
@@ -375,7 +394,7 @@ function RelationshipEdge(props: EdgeProps<RelEdge>) {
 }
 
 // ---------------------------------------------------------------------------
-// Node/edge type registrations
+// Type registrations
 // ---------------------------------------------------------------------------
 
 const nodeTypes: NodeTypes = { person: PersonNodeComponent };
@@ -385,30 +404,22 @@ const edgeTypes: EdgeTypes = { relationship: RelationshipEdge };
 // Dagre layout
 // ---------------------------------------------------------------------------
 
-const NODE_W = 170;
-const NODE_H = 50;
+const NODE_W = 180;
+const NODE_H = 55;
 
 function layoutTree(
   nodes: PersonNode[],
   edges: RelEdge[],
 ): { nodes: PersonNode[]; edges: RelEdge[] } {
   const g = new dagre.graphlib.Graph().setDefaultEdgeLabel(() => ({}));
-  g.setGraph({ rankdir: "TB", ranksep: 80, nodesep: 40 });
+  g.setGraph({ rankdir: "TB", ranksep: 90, nodesep: 40 });
 
   for (const node of nodes) {
     g.setNode(node.id, { width: NODE_W, height: NODE_H });
   }
 
   for (const edge of edges) {
-    // For ancestor edges, the source is the child and target is the parent
-    // but dagre should lay out parent above child, so we reverse
-    if (edge.data?.isSpouse) {
-      // Spouse edges: don't add to dagre for rank calc, just position them
-      // Actually we still add them so dagre puts them close
-      g.setEdge(edge.source, edge.target);
-    } else {
-      g.setEdge(edge.source, edge.target);
-    }
+    g.setEdge(edge.source, edge.target);
   }
 
   dagre.layout(g);
@@ -425,7 +436,8 @@ function layoutTree(
 }
 
 // ---------------------------------------------------------------------------
-// Convert FamilyGraph to React Flow nodes/edges
+// Convert FamilyGraph → React Flow nodes/edges
+// All edges flow top→bottom (source=parent, target=child)
 // ---------------------------------------------------------------------------
 
 function graphToReactFlow(
@@ -434,31 +446,35 @@ function graphToReactFlow(
 ): { nodes: PersonNode[]; edges: RelEdge[] } {
   const rfNodes: PersonNode[] = [];
   const rfEdges: RelEdge[] = [];
-  const allNodeIds = new Set<string>();
 
-  // First, collect all nodes including spouses
+  // Collect all node IDs including spouses
+  const allNodeIds = new Set<string>();
   for (const node of graph.nodes.values()) {
     allNodeIds.add(node.id);
-    for (const sp of node.spouses) {
-      allNodeIds.add(sp.id);
-    }
+    for (const sp of node.spouses) allNodeIds.add(sp.id);
   }
 
   // Add main nodes
   for (const node of graph.nodes.values()) {
+    const isRoot = node.id === graph.rootId;
+    const isAncestor = node.direction === "ancestor";
+    const isDescendant = node.direction === "descendant";
+
     rfNodes.push({
       id: node.id,
       type: "person",
       position: { x: 0, y: 0 },
       data: {
         name: node.name,
-        relationType: node.relationType,
+        relLabel: isRoot ? "" : formatRelLabel(node.relationType, node.relatedToName),
         direction: node.direction,
-        isRoot: node.id === graph.rootId,
+        generation: node.generation,
+        isRoot,
         expanded: node.expanded,
         loading: node.loading,
         hasPersonId: node.hasPersonId,
-        canExpand: node.hasPersonId && !node.expanded,
+        canExpandUp: isAncestor && !node.expanded && !node.loading && node.hasPersonId,
+        canExpandDown: isDescendant && !isRoot && !node.expanded && !node.loading && node.hasPersonId,
         onExpand,
       },
     });
@@ -472,13 +488,15 @@ function graphToReactFlow(
           position: { x: 0, y: 0 },
           data: {
             name: sp.name,
-            relationType: sp.type,
+            relLabel: sp.type,
             direction: "spouse",
+            generation: node.generation,
             isRoot: false,
             expanded: false,
             loading: false,
             hasPersonId: sp.hasPersonId,
-            canExpand: false,
+            canExpandUp: false,
+            canExpandDown: false,
             onExpand,
           },
         });
@@ -486,56 +504,45 @@ function graphToReactFlow(
     }
   }
 
-  // Add parent-child edges
+  // Add edges — ALWAYS source=parent (above), target=child (below)
   for (const node of graph.nodes.values()) {
     if (node.parentNodeId && allNodeIds.has(node.parentNodeId)) {
       if (node.direction === "ancestor") {
-        // Ancestor: parent (this node) is above the parentNodeId (which is the root/child)
-        // Edge goes from ancestor down to child
+        // This node is an ancestor (above). parentNodeId is the child (below).
+        // Edge: source=this ancestor, target=parentNodeId (child)
         rfEdges.push({
           id: `e-${node.id}-${node.parentNodeId}`,
           source: node.id,
           target: node.parentNodeId,
           type: "relationship",
-          data: {
-            relationType: node.relationType,
-            isSpouse: false,
-            isDivorced: false,
-          },
+          data: { relationType: node.relationType, isSpouse: false, isDivorced: false },
         });
       } else {
-        // Descendant: parentNodeId is above, this node is below
+        // This node is a descendant (below). parentNodeId is the parent (above).
+        // Edge: source=parentNodeId (parent), target=this descendant
         rfEdges.push({
           id: `e-${node.parentNodeId}-${node.id}`,
           source: node.parentNodeId,
           target: node.id,
           type: "relationship",
-          data: {
-            relationType: node.relationType,
-            isSpouse: false,
-            isDivorced: false,
-          },
+          data: { relationType: node.relationType, isSpouse: false, isDivorced: false },
         });
       }
     }
 
-    // Add spouse edges
+    // Spouse edges
     for (const sp of node.spouses) {
       rfEdges.push({
         id: `e-spouse-${node.id}-${sp.id}`,
         source: node.id,
         target: sp.id,
         type: "relationship",
-        data: {
-          relationType: sp.type,
-          isSpouse: true,
-          isDivorced: sp.type === "divorced from",
-        },
+        data: { relationType: sp.type, isSpouse: true, isDivorced: sp.type === "divorced from" },
       });
     }
   }
 
-  // Deduplicate nodes by id
+  // Deduplicate nodes
   const seen = new Set<string>();
   const uniqueNodes = rfNodes.filter((n) => {
     if (seen.has(n.id)) return false;
@@ -547,7 +554,63 @@ function graphToReactFlow(
 }
 
 // ---------------------------------------------------------------------------
-// Inner component (needs ReactFlowProvider above it)
+// Generation background bands (rendered behind the React Flow canvas)
+// ---------------------------------------------------------------------------
+
+function GenerationBands({ nodes }: { nodes: PersonNode[] }) {
+  if (nodes.length === 0) return null;
+
+  // Group nodes by generation and find Y bounds per generation
+  const genBounds = new Map<number, { minY: number; maxY: number }>();
+  for (const node of nodes) {
+    const gen = node.data.generation;
+    const y = node.position.y;
+    const existing = genBounds.get(gen);
+    if (existing) {
+      existing.minY = Math.min(existing.minY, y);
+      existing.maxY = Math.max(existing.maxY, y + NODE_H);
+    } else {
+      genBounds.set(gen, { minY: y, maxY: y + NODE_H });
+    }
+  }
+
+  const bands = Array.from(genBounds.entries()).sort((a, b) => a[0] - b[0]);
+
+  return (
+    <svg className="pointer-events-none absolute inset-0 w-full h-full overflow-visible">
+      {bands.map(([gen, bounds]) => {
+        const padding = 20;
+        const label = generationLabel(gen);
+        const isEven = Math.abs(gen) % 2 === 0;
+        return (
+          <g key={gen}>
+            <rect
+              x={-5000}
+              y={bounds.minY - padding}
+              width={10000}
+              height={bounds.maxY - bounds.minY + padding * 2}
+              fill={isEven ? COLORS.genBandEven : COLORS.genBandOdd}
+            />
+            {label && (
+              <text
+                x={-4980}
+                y={bounds.minY - padding + 14}
+                className="text-[10px]"
+                fill="rgba(37, 36, 54, 0.3)"
+                fontStyle="italic"
+              >
+                {label}
+              </text>
+            )}
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Inner component
 // ---------------------------------------------------------------------------
 
 function FamilyTreeInner({ person }: { person: Person }) {
@@ -579,9 +642,7 @@ function FamilyTreeInner({ person }: { person: Person }) {
 
   const { nodes, edges } = useMemo(() => graphToReactFlow(graph, expandNode), [graph, expandNode]);
 
-  // Fit view after nodes change
   useEffect(() => {
-    // Small delay to let React Flow measure nodes
     const t = setTimeout(() => fitView({ padding: 0.2, duration: 300 }), 50);
     return () => clearTimeout(t);
   }, [nodes, edges, fitView]);
@@ -591,48 +652,30 @@ function FamilyTreeInner({ person }: { person: Person }) {
       {/* Legend */}
       <div className="flex flex-wrap items-center gap-4 text-xs text-ink-muted">
         <span className="flex items-center gap-1.5">
-          <span
-            className="inline-block w-2.5 h-2.5 rounded-sm border"
-            style={{ borderColor: COLORS.family }}
-          />
-          <svg width="20" height="2">
-            <line x1="0" y1="1" x2="20" y2="1" stroke={COLORS.edge} strokeWidth="1.5" />
-          </svg>
+          <span className="inline-block w-2.5 h-2.5 rounded-sm border" style={{ borderColor: COLORS.family }} />
           Family
         </span>
         <span className="flex items-center gap-1.5">
-          <span
-            className="inline-block w-2.5 h-2.5 rounded-sm border"
-            style={{ borderColor: COLORS.spouse }}
-          />
-          <svg width="20" height="6">
-            <line x1="0" y1="1" x2="20" y2="1" stroke={COLORS.edgeSpouse} strokeWidth="1" />
-            <line x1="0" y1="4" x2="20" y2="4" stroke={COLORS.edgeSpouse} strokeWidth="1" />
-          </svg>
+          <span className="inline-block w-2.5 h-2.5 rounded-sm border" style={{ borderColor: COLORS.spouse }} />
           Marriage
         </span>
         <span className="flex items-center gap-1.5">
-          <span
-            className="inline-block w-3 h-3 rounded-full flex items-center justify-center"
-            style={{ backgroundColor: COLORS.root }}
-          >
+          <span className="inline-block w-3 h-3 rounded-full flex items-center justify-center" style={{ backgroundColor: COLORS.root }}>
             <ChevronUp className="w-2.5 h-2.5 text-white" />
           </span>
           Expand ancestors
         </span>
         <span className="flex items-center gap-1.5">
-          <span
-            className="inline-block w-3 h-3 rounded-full flex items-center justify-center"
-            style={{ backgroundColor: COLORS.family }}
-          >
+          <span className="inline-block w-3 h-3 rounded-full flex items-center justify-center" style={{ backgroundColor: COLORS.family }}>
             <ChevronDown className="w-2.5 h-2.5 text-white" />
           </span>
           Expand descendants
         </span>
+        <span className="text-[10px] italic">Double-click a node to navigate</span>
       </div>
 
       {/* Tree */}
-      <div className="rounded-lg border border-ink/10 bg-white/50" style={{ height: 500 }}>
+      <div className="rounded-lg border border-ink/10 bg-white/50 relative" style={{ height: 500 }}>
         <ReactFlow
           nodes={nodes}
           edges={edges}
@@ -650,14 +693,16 @@ function FamilyTreeInner({ person }: { person: Person }) {
               navigate({ to: "/persons/$personId", params: { personId: node.id } });
             }
           }}
-        />
+        >
+          <GenerationBands nodes={nodes} />
+        </ReactFlow>
       </div>
     </div>
   );
 }
 
 // ---------------------------------------------------------------------------
-// Exported component (wraps with ReactFlowProvider)
+// Exported component
 // ---------------------------------------------------------------------------
 
 interface FamilyTreeProps {
