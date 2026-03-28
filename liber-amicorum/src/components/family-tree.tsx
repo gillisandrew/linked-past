@@ -1,6 +1,7 @@
 import * as d3 from "d3";
 import { useRef, useEffect, useState, useCallback } from "react";
 import { Link } from "@tanstack/react-router";
+import { ChevronUp, ChevronDown } from "lucide-react";
 import { getPersonById } from "#/lib/data";
 import type { Person } from "#/lib/types";
 
@@ -8,20 +9,20 @@ import type { Person } from "#/lib/types";
 // Relationship classification
 // ---------------------------------------------------------------------------
 
-type RelCategory = "parent" | "child" | "spouse" | "other";
+type RelDirection = "ancestor" | "descendant" | "spouse" | "other";
 
-const SPOUSE_TYPES = new Set(["married to", "divorced from"]);
+const SPOUSE_TYPES = new Set(["married to", "divorced from", "wife of", "husband of"]);
 
-// Types that imply "this person is above me in the tree" (I am their child)
 const ANCESTOR_TYPES = new Set([
   "son of",
   "daughter of",
+  "adopted son of",
+  "adopted daughter of",
   "grandson of",
   "granddaughter of",
   "great-grandson of",
 ]);
 
-// Types that imply "this person is below me in the tree" (I am their parent)
 const DESCENDANT_TYPES = new Set([
   "father of",
   "mother of",
@@ -30,10 +31,10 @@ const DESCENDANT_TYPES = new Set([
   "great-grandfather of",
 ]);
 
-function classifyForTree(type: string): RelCategory {
+function classifyRelationship(type: string): RelDirection {
   const t = type.toLowerCase();
-  if (ANCESTOR_TYPES.has(t)) return "parent";
-  if (DESCENDANT_TYPES.has(t)) return "child";
+  if (ANCESTOR_TYPES.has(t)) return "ancestor";
+  if (DESCENDANT_TYPES.has(t)) return "descendant";
   if (SPOUSE_TYPES.has(t)) return "spouse";
   return "other";
 }
@@ -54,149 +55,137 @@ const COLORS = {
   textMuted: "rgba(37, 36, 54, 0.55)",
   expandBtn: "#a0785a",
   expandBtnHover: "#8a6548",
+  expandBtnUp: "#6b7c6e",
+  expandBtnUpHover: "#566654",
   loadingSpinner: "#a0785a",
+  generationBand: "rgba(37, 36, 54, 0.03)",
+  generationLine: "rgba(37, 36, 54, 0.08)",
+  generationLabel: "rgba(37, 36, 54, 0.3)",
 };
 
 // ---------------------------------------------------------------------------
-// Tree node type
+// Family node type (flat graph with generation levels)
 // ---------------------------------------------------------------------------
 
-interface TreeNode {
+interface FamilyNode {
   id: string;
   name: string;
-  relationship: string;
-  category: RelCategory;
+  generation: number; // relative to root: negative = ancestors, positive = descendants
+  relationType: string; // relationship label that introduced this node
+  direction: RelDirection; // ancestor or descendant direction
   uncertain: boolean;
-  children: TreeNode[];
-  spouses: { id: string; name: string; type: string; uncertain: boolean }[];
   expanded: boolean;
   loading: boolean;
-  hasRelatedPersonId: boolean; // can we navigate / expand?
+  hasPersonId: boolean; // can we navigate / expand?
+  parentNodeId: string | null; // the node that introduced this one (for drawing edges)
+  spouses: { id: string; name: string; type: string; hasPersonId: boolean }[];
+}
+
+interface FamilyGraph {
+  nodes: Map<string, FamilyNode>;
+  rootId: string;
 }
 
 // ---------------------------------------------------------------------------
-// Build initial tree from person data
+// Build initial graph from person data
 // ---------------------------------------------------------------------------
 
-function buildInitialTree(person: Person): TreeNode {
-  const parents: TreeNode[] = [];
-  const children: TreeNode[] = [];
-  const others: TreeNode[] = [];
-  const spouses: TreeNode["spouses"] = [];
+function buildInitialGraph(person: Person): FamilyGraph {
+  const nodes = new Map<string, FamilyNode>();
+
+  const rootNode: FamilyNode = {
+    id: person.id,
+    name: person.name,
+    generation: 0,
+    relationType: "",
+    direction: "descendant",
+    uncertain: false,
+    expanded: true,
+    loading: false,
+    hasPersonId: true,
+    parentNodeId: null,
+    spouses: [],
+  };
+  nodes.set(person.id, rootNode);
 
   for (const rel of person.relationships) {
-    const cat = classifyForTree(rel.type);
+    const dir = classifyRelationship(rel.type);
     const id = rel.relatedPersonId ?? `unknown-${rel.type}-${rel.relatedPersonName}`;
     const name = rel.relatedPersonName ?? "Unknown";
     const hasId = rel.relatedPersonId != null;
 
-    if (cat === "spouse") {
-      spouses.push({ id, name, type: rel.type, uncertain: false });
-    } else {
-      const node: TreeNode = {
+    if (dir === "spouse") {
+      rootNode.spouses.push({ id, name, type: rel.type, hasPersonId: hasId });
+    } else if (dir === "ancestor") {
+      nodes.set(id, {
         id,
         name,
-        relationship: rel.type,
-        category: cat,
+        generation: -1,
+        relationType: rel.type,
+        direction: "ancestor",
         uncertain: false,
-        children: [],
-        spouses: [],
         expanded: false,
         loading: false,
-        hasRelatedPersonId: hasId,
-      };
-      if (cat === "parent") parents.push(node);
-      else if (cat === "child") children.push(node);
-      else others.push(node);
+        hasPersonId: hasId,
+        parentNodeId: person.id,
+        spouses: [],
+      });
+    } else if (dir === "descendant") {
+      nodes.set(id, {
+        id,
+        name,
+        generation: 1,
+        relationType: rel.type,
+        direction: "descendant",
+        uncertain: false,
+        expanded: false,
+        loading: false,
+        hasPersonId: hasId,
+        parentNodeId: person.id,
+        spouses: [],
+      });
     }
+    // "other" relationships are skipped for tree layout
   }
 
-  // Root node: current person
-  // Tree structure: parents are "above" (we invert by making root the center)
-  // We build: parents -> [ROOT] -> children + others
-  const root: TreeNode = {
-    id: person.id,
-    name: person.name,
-    relationship: "",
-    category: "parent", // unused for root
-    uncertain: false,
-    children: [...children, ...others],
-    spouses,
-    expanded: true,
-    loading: false,
-    hasRelatedPersonId: true,
-  };
-
-  // If there are parents, we need to restructure:
-  // grandparent -> parent -> ROOT -> children
-  // But since we only have one level initially, just make parents children too
-  // but displayed above. We'll use a "generation" concept in layout.
-  // For D3 tree, we need a single root. Strategy: virtual root with parents and
-  // the person node as children, then person node has its children.
-  // Actually, simpler: treat the person as root. Parents go "up" (we'll render
-  // the tree top-down with parents above). We'll use a wrapper node.
-
-  if (parents.length > 0) {
-    // Create a virtual structure: each parent is above root
-    // For display, we'll handle this by making the tree root a virtual node
-    // with parents as one branch and the person + children as another.
-    // But D3 tree wants a single root. Let's just put parents as children
-    // of root with a special marker, and in rendering flip them above.
-    // Actually, let's keep it simple: treat everything as children of root
-    // and use the category to position them. Parents will be rendered above.
-    root.children = [...parents, ...children, ...others];
-  }
-
-  return root;
+  return { nodes, rootId: person.id };
 }
 
 // ---------------------------------------------------------------------------
-// Tree manipulation helpers
+// Graph manipulation helpers
 // ---------------------------------------------------------------------------
 
-function findNode(tree: TreeNode, id: string): TreeNode | null {
-  if (tree.id === id) return tree;
-  for (const child of tree.children) {
-    const found = findNode(child, id);
-    if (found) return found;
+function cloneGraph(graph: FamilyGraph): FamilyGraph {
+  const nodes = new Map<string, FamilyNode>();
+  for (const [id, node] of graph.nodes) {
+    nodes.set(id, { ...node, spouses: [...node.spouses] });
   }
-  return null;
+  return { nodes, rootId: graph.rootId };
 }
 
-function cloneTree(tree: TreeNode): TreeNode {
-  return {
-    ...tree,
-    children: tree.children.map(cloneTree),
-    spouses: [...tree.spouses],
-  };
-}
-
-function markLoading(tree: TreeNode, nodeId: string): TreeNode {
-  const clone = cloneTree(tree);
-  const node = findNode(clone, nodeId);
+function markLoading(graph: FamilyGraph, nodeId: string): FamilyGraph {
+  const clone = cloneGraph(graph);
+  const node = clone.nodes.get(nodeId);
   if (node) node.loading = true;
   return clone;
 }
 
-function expandTreeNode(tree: TreeNode, nodeId: string, personData: Person): TreeNode {
-  const clone = cloneTree(tree);
-  const node = findNode(clone, nodeId);
+function expandGraphNode(graph: FamilyGraph, nodeId: string, personData: Person): FamilyGraph {
+  const clone = cloneGraph(graph);
+  const node = clone.nodes.get(nodeId);
   if (!node) return clone;
 
   node.loading = false;
   node.expanded = true;
 
-  // Collect IDs already in the tree to avoid duplicates
-  const existingIds = new Set<string>();
-  function collectIds(n: TreeNode) {
-    existingIds.add(n.id);
-    n.children.forEach(collectIds);
-    n.spouses.forEach((s) => existingIds.add(s.id));
+  const existingIds = new Set(clone.nodes.keys());
+  // Also track spouse IDs already present on any node
+  for (const n of clone.nodes.values()) {
+    for (const s of n.spouses) existingIds.add(s.id);
   }
-  collectIds(clone);
 
   for (const rel of personData.relationships) {
-    const cat = classifyForTree(rel.type);
+    const dir = classifyRelationship(rel.type);
     const id = rel.relatedPersonId ?? `unknown-${rel.type}-${rel.relatedPersonName}`;
     const name = rel.relatedPersonName ?? "Unknown";
     const hasId = rel.relatedPersonId != null;
@@ -204,21 +193,44 @@ function expandTreeNode(tree: TreeNode, nodeId: string, personData: Person): Tre
     if (existingIds.has(id)) continue;
     existingIds.add(id);
 
-    if (cat === "spouse") {
-      node.spouses.push({ id, name, type: rel.type, uncertain: false });
-    } else {
-      node.children.push({
+    if (dir === "spouse") {
+      node.spouses.push({ id, name, type: rel.type, hasPersonId: hasId });
+    } else if (dir === "ancestor" && node.direction === "ancestor") {
+      // Expanding an ancestor node: look for further ancestors (parents)
+      clone.nodes.set(id, {
         id,
         name,
-        relationship: rel.type,
-        category: cat,
+        generation: node.generation - 1,
+        relationType: rel.type,
+        direction: "ancestor",
         uncertain: false,
-        children: [],
-        spouses: [],
         expanded: false,
         loading: false,
-        hasRelatedPersonId: hasId,
+        hasPersonId: hasId,
+        parentNodeId: nodeId,
+        spouses: [],
       });
+    } else if (dir === "descendant" && node.direction === "descendant") {
+      // Expanding a descendant node: look for further descendants (children)
+      clone.nodes.set(id, {
+        id,
+        name,
+        generation: node.generation + 1,
+        relationType: rel.type,
+        direction: "descendant",
+        uncertain: false,
+        expanded: false,
+        loading: false,
+        hasPersonId: hasId,
+        parentNodeId: nodeId,
+        spouses: [],
+      });
+    } else if (dir === "ancestor" && node.direction === "descendant") {
+      // A descendant node reveals a parent -- that goes upward but we only track
+      // if we are currently in the root. For non-root descendants, skip ancestors.
+    } else if (dir === "descendant" && node.direction === "ancestor") {
+      // An ancestor node reveals children -- those go downward but we only track
+      // them for the root's immediate context. Skip for non-root ancestors.
     }
   }
 
@@ -229,12 +241,172 @@ function expandTreeNode(tree: TreeNode, nodeId: string, personData: Person): Tre
 // Layout constants
 // ---------------------------------------------------------------------------
 
-const NODE_W = 140;
-const NODE_H = 36;
+const NODE_W = 150;
+const NODE_H = 38;
 const NODE_RX = 6;
-const EXPAND_R = 9;
-const VERTICAL_GAP = 70;
-const HORIZONTAL_GAP = 20;
+const EXPAND_R = 10;
+const GEN_HEIGHT = 110; // vertical spacing between generations
+const H_GAP = 30; // horizontal gap between nodes
+
+// ---------------------------------------------------------------------------
+// Generation label
+// ---------------------------------------------------------------------------
+
+function generationLabel(gen: number): string {
+  if (gen === 0) return "Self";
+  if (gen === -1) return "Parent";
+  if (gen === -2) return "Grandparent";
+  if (gen < -2) return `${"Great-".repeat(-gen - 2)}Grandparent`;
+  if (gen === 1) return "Child";
+  if (gen === 2) return "Grandchild";
+  return `${"Great-".repeat(gen - 2)}Grandchild`;
+}
+
+// ---------------------------------------------------------------------------
+// Custom layout: position nodes by generation
+// ---------------------------------------------------------------------------
+
+interface LayoutNode {
+  id: string;
+  x: number;
+  y: number;
+  data: FamilyNode;
+}
+
+interface LayoutEdge {
+  sourceId: string;
+  targetId: string;
+  label: string;
+}
+
+interface Layout {
+  nodes: LayoutNode[];
+  edges: LayoutEdge[];
+  generations: Map<number, LayoutNode[]>;
+  minGen: number;
+  maxGen: number;
+  width: number;
+  height: number;
+}
+
+function computeLayout(graph: FamilyGraph): Layout {
+  // Group nodes by generation
+  const genGroups = new Map<number, FamilyNode[]>();
+  for (const node of graph.nodes.values()) {
+    const gen = node.generation;
+    if (!genGroups.has(gen)) genGroups.set(gen, []);
+    genGroups.get(gen)!.push(node);
+  }
+
+  const gens = [...genGroups.keys()].sort((a, b) => a - b);
+  const minGen = gens.length > 0 ? gens[0] : 0;
+  const maxGen = gens.length > 0 ? gens[gens.length - 1] : 0;
+
+  // Y position: generation 0 is in the middle. Ancestors go up (negative gen),
+  // descendants go down (positive gen).
+  // We'll compute Y such that gen 0 is at a known position.
+  const genOffsetY = -minGen; // shift so minGen maps to row 0
+
+  const layoutNodes: LayoutNode[] = [];
+  const layoutGenerations = new Map<number, LayoutNode[]>();
+  const nodeMap = new Map<string, LayoutNode>();
+
+  for (const gen of gens) {
+    const nodesInGen = genGroups.get(gen)!;
+
+    // Count total items including spouses for width calculation
+    let totalSlots = 0;
+    for (const n of nodesInGen) {
+      totalSlots += 1 + n.spouses.length;
+    }
+
+    const rowWidth = totalSlots * (NODE_W + H_GAP) - H_GAP;
+    let currentX = -rowWidth / 2;
+    const y = (gen + genOffsetY) * GEN_HEIGHT;
+    const genLayoutNodes: LayoutNode[] = [];
+
+    for (const node of nodesInGen) {
+      const ln: LayoutNode = {
+        id: node.id,
+        x: currentX + NODE_W / 2,
+        y,
+        data: node,
+      };
+      layoutNodes.push(ln);
+      genLayoutNodes.push(ln);
+      nodeMap.set(node.id, ln);
+      currentX += NODE_W + H_GAP;
+
+      // Spouses are positioned right next to this node
+      for (const spouse of node.spouses) {
+        const sln: LayoutNode = {
+          id: spouse.id,
+          x: currentX + NODE_W / 2,
+          y,
+          data: {
+            id: spouse.id,
+            name: spouse.name,
+            generation: node.generation,
+            relationType: spouse.type,
+            direction: "spouse" as RelDirection,
+            uncertain: false,
+            expanded: false,
+            loading: false,
+            hasPersonId: spouse.hasPersonId,
+            parentNodeId: null,
+            spouses: [],
+          },
+        };
+        layoutNodes.push(sln);
+        genLayoutNodes.push(sln);
+        nodeMap.set(spouse.id, sln);
+        currentX += NODE_W + H_GAP;
+      }
+    }
+
+    layoutGenerations.set(gen, genLayoutNodes);
+  }
+
+  // Build edges from parentNodeId links
+  const edges: LayoutEdge[] = [];
+  for (const node of graph.nodes.values()) {
+    if (node.parentNodeId && nodeMap.has(node.parentNodeId) && nodeMap.has(node.id)) {
+      edges.push({
+        sourceId: node.parentNodeId,
+        targetId: node.id,
+        label: node.relationType,
+      });
+    }
+  }
+
+  // Compute bounds
+  let minX = Infinity;
+  let maxX = -Infinity;
+  for (const ln of layoutNodes) {
+    if (ln.x - NODE_W / 2 < minX) minX = ln.x - NODE_W / 2;
+    if (ln.x + NODE_W / 2 > maxX) maxX = ln.x + NODE_W / 2;
+  }
+
+  const pad = 80;
+  const width = Math.max(400, maxX - minX + pad * 2);
+  const height = Math.max(300, (maxGen - minGen + 1) * GEN_HEIGHT + pad * 2);
+
+  // Re-center: shift all nodes so the layout is centered in the width
+  const centerShift = -(minX + maxX) / 2;
+  for (const ln of layoutNodes) {
+    ln.x += centerShift;
+  }
+
+  return {
+    nodes: layoutNodes,
+    edges,
+    generations: layoutGenerations,
+    minGen,
+    maxGen,
+    width,
+    height,
+  };
+}
 
 // ---------------------------------------------------------------------------
 // Component
@@ -247,12 +419,12 @@ interface FamilyTreeProps {
 export function FamilyTree({ person }: FamilyTreeProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [tree, setTree] = useState<TreeNode>(() => buildInitialTree(person));
+  const [graph, setGraph] = useState<FamilyGraph>(() => buildInitialGraph(person));
   const [containerWidth, setContainerWidth] = useState(800);
 
-  // Reset tree when person changes
+  // Reset graph when person changes
   useEffect(() => {
-    setTree(buildInitialTree(person));
+    setGraph(buildInitialGraph(person));
   }, [person]);
 
   // Measure container
@@ -268,13 +440,12 @@ export function FamilyTree({ person }: FamilyTreeProps) {
   }, []);
 
   const expandNode = useCallback(async (nodeId: string) => {
-    setTree((prev) => markLoading(prev, nodeId));
+    setGraph((prev) => markLoading(prev, nodeId));
     const personData = await getPersonById(nodeId);
     if (!personData) {
-      // If load fails, just mark as expanded with no children
-      setTree((prev) => {
-        const clone = cloneTree(prev);
-        const node = findNode(clone, nodeId);
+      setGraph((prev) => {
+        const clone = cloneGraph(prev);
+        const node = clone.nodes.get(nodeId);
         if (node) {
           node.loading = false;
           node.expanded = true;
@@ -283,7 +454,7 @@ export function FamilyTree({ person }: FamilyTreeProps) {
       });
       return;
     }
-    setTree((prev) => expandTreeNode(prev, nodeId, personData));
+    setGraph((prev) => expandGraphNode(prev, nodeId, personData));
   }, []);
 
   // D3 rendering
@@ -293,45 +464,18 @@ export function FamilyTree({ person }: FamilyTreeProps) {
     const svg = d3.select(svgRef.current);
     svg.selectAll("*").remove();
 
-    // Convert our tree to d3 hierarchy
-    const hierarchy = d3.hierarchy(tree, (d) => (d.children.length > 0 ? d.children : null));
+    const layout = computeLayout(graph);
 
-    // Layout
-    const treeLayout = d3
-      .tree<TreeNode>()
-      .nodeSize([NODE_W + HORIZONTAL_GAP, NODE_H + VERTICAL_GAP])
-      .separation(() => 1);
-
-    const root = treeLayout(hierarchy);
-
-    // Compute bounds
-    const nodes = root.descendants();
-    const links = root.links();
-
-    let minX = Infinity,
-      maxX = -Infinity,
-      minY = Infinity,
-      maxY = -Infinity;
-    for (const n of nodes) {
-      if (n.x - NODE_W / 2 < minX) minX = n.x - NODE_W / 2;
-      if (n.x + NODE_W / 2 > maxX) maxX = n.x + NODE_W / 2;
-      if (n.y - NODE_H / 2 < minY) minY = n.y - NODE_H / 2;
-      if (n.y + NODE_H / 2 > maxY) maxY = n.y + NODE_H / 2;
-    }
-
-    // Add padding for spouse labels and expand buttons
-    const pad = 40;
-    const treeW = maxX - minX + pad * 2;
-    const treeH = maxY - minY + pad * 2;
-
-    const svgW = Math.max(containerWidth, treeW);
-    const svgH = Math.max(300, treeH);
+    const svgW = Math.max(containerWidth, layout.width);
+    const svgH = Math.max(300, layout.height);
 
     svg.attr("width", svgW).attr("height", svgH);
 
-    // Center the tree
-    const offsetX = svgW / 2 - (minX + maxX) / 2;
-    const offsetY = pad - minY;
+    // Center offset: put generation 0 in the middle vertically
+    const genOffsetY = -layout.minGen;
+    const rootY = genOffsetY * GEN_HEIGHT;
+    const offsetX = svgW / 2;
+    const offsetY = svgH / 2 - rootY + (layout.minGen < 0 ? 0 : 40);
 
     const g = svg.append("g").attr("transform", `translate(${offsetX},${offsetY})`);
 
@@ -343,129 +487,152 @@ export function FamilyTree({ person }: FamilyTreeProps) {
         g.attr("transform", event.transform);
       });
     svg.call(zoom);
-    // Set initial transform
     svg.call(zoom.transform, d3.zoomIdentity.translate(offsetX, offsetY));
 
-    // ---------------------------------------------------------------------------
-    // Draw links (edges)
-    // ---------------------------------------------------------------------------
-    g.append("g")
-      .selectAll("path")
-      .data(links)
-      .join("path")
-      .attr("d", (d) => {
-        const sx = d.source.x;
-        const sy = d.source.y + NODE_H / 2;
-        const tx = d.target.x;
-        const ty = d.target.y - NODE_H / 2;
-        const my = (sy + ty) / 2;
-        return `M${sx},${sy} C${sx},${my} ${tx},${my} ${tx},${ty}`;
-      })
-      .attr("fill", "none")
-      .attr("stroke", (d) => {
-        const cat = d.target.data.category;
-        if (cat === "other") return COLORS.edgeOther;
-        return COLORS.edge;
-      })
-      .attr("stroke-width", 1.5)
-      .attr("stroke-dasharray", (d) => {
-        if (d.target.data.uncertain) return "5,3";
-        if (d.target.data.category === "other") return "3,3";
-        return "";
-      });
-
-    // Edge labels on hover
-    const edgeLabels = g
-      .append("g")
-      .selectAll("text")
-      .data(links)
-      .join("text")
-      .attr("x", (d) => (d.source.x + d.target.x) / 2)
-      .attr("y", (d) => (d.source.y + d.target.y) / 2)
-      .attr("text-anchor", "middle")
-      .attr("font-size", 9)
-      .attr("fill", COLORS.textMuted)
-      .attr("opacity", 0)
-      .text((d) => d.target.data.relationship);
-
-    // ---------------------------------------------------------------------------
-    // Draw spouse connections
-    // ---------------------------------------------------------------------------
-    for (const node of nodes) {
-      const d = node.data;
-      if (d.spouses.length === 0) continue;
-
-      const baseX = node.x + NODE_W / 2 + 4;
-      const baseY = node.y;
-
-      d.spouses.forEach((spouse, i) => {
-        const spouseX = baseX + 10;
-        const spouseY = baseY - (d.spouses.length - 1) * 10 + i * 20;
-
-        // Double line for marriage
-        g.append("line")
-          .attr("x1", node.x + NODE_W / 2)
-          .attr("y1", node.y)
-          .attr("x2", spouseX)
-          .attr("y2", spouseY)
-          .attr("stroke", COLORS.edgeSpouse)
-          .attr("stroke-width", 1)
-          .attr("stroke-dasharray", spouse.type === "divorced from" ? "3,3" : "");
-        g.append("line")
-          .attr("x1", node.x + NODE_W / 2)
-          .attr("y1", node.y + 3)
-          .attr("x2", spouseX)
-          .attr("y2", spouseY + 3)
-          .attr("stroke", COLORS.edgeSpouse)
-          .attr("stroke-width", 1)
-          .attr("stroke-dasharray", spouse.type === "divorced from" ? "3,3" : "");
-
-        // Spouse label
-        const spouseGroup = g.append("g").attr("transform", `translate(${spouseX},${spouseY})`);
-
-        const isNavigable = !spouse.id.startsWith("unknown-");
-
-        spouseGroup
-          .append("rect")
-          .attr("x", 0)
-          .attr("y", -NODE_H / 2 + 4)
-          .attr("width", NODE_W - 20)
-          .attr("height", NODE_H - 8)
-          .attr("rx", NODE_RX)
-          .attr("fill", "white")
-          .attr("stroke", COLORS.spouse)
-          .attr("stroke-width", 1)
-          .style("cursor", isNavigable ? "pointer" : "default");
-
-        spouseGroup
-          .append("text")
-          .attr("x", (NODE_W - 20) / 2)
-          .attr("y", 4)
-          .attr("text-anchor", "middle")
-          .attr("font-size", 10)
-          .attr("fill", COLORS.text)
-          .style("cursor", isNavigable ? "pointer" : "default")
-          .text(spouse.name.length > 18 ? spouse.name.slice(0, 16) + "..." : spouse.name);
-
-        // Spouse type label
-        spouseGroup
-          .append("text")
-          .attr("x", (NODE_W - 20) / 2)
-          .attr("y", -NODE_H / 2 + 1)
-          .attr("text-anchor", "middle")
-          .attr("font-size", 8)
-          .attr("fill", COLORS.textMuted)
-          .text(spouse.type);
-      });
+    // Build node lookup for layout
+    const nodeMap = new Map<string, LayoutNode>();
+    for (const ln of layout.nodes) {
+      nodeMap.set(ln.id, ln);
     }
 
-    // ---------------------------------------------------------------------------
+    // -----------------------------------------------------------------------
+    // Draw generation bands and labels
+    // -----------------------------------------------------------------------
+    const genBandGroup = g.append("g").attr("class", "gen-bands");
+    const bandHalfH = GEN_HEIGHT / 2;
+
+    // Compute the horizontal extent for bands
+    let bandMinX = -svgW;
+    let bandMaxX = svgW;
+    for (const ln of layout.nodes) {
+      if (ln.x - NODE_W < bandMinX) bandMinX = ln.x - NODE_W;
+      if (ln.x + NODE_W > bandMaxX) bandMaxX = ln.x + NODE_W;
+    }
+    bandMinX -= 200;
+    bandMaxX += 200;
+
+    for (let gen = layout.minGen; gen <= layout.maxGen; gen++) {
+      const y = (gen + genOffsetY) * GEN_HEIGHT;
+
+      // Alternating band
+      if (gen % 2 !== 0) {
+        genBandGroup
+          .append("rect")
+          .attr("x", bandMinX)
+          .attr("y", y - bandHalfH)
+          .attr("width", bandMaxX - bandMinX)
+          .attr("height", GEN_HEIGHT)
+          .attr("fill", COLORS.generationBand)
+          .attr("pointer-events", "none");
+      }
+
+      // Horizontal separator line
+      genBandGroup
+        .append("line")
+        .attr("x1", bandMinX)
+        .attr("y1", y - bandHalfH)
+        .attr("x2", bandMaxX)
+        .attr("y2", y - bandHalfH)
+        .attr("stroke", COLORS.generationLine)
+        .attr("stroke-width", 1)
+        .attr("pointer-events", "none");
+
+      // Generation label on left
+      genBandGroup
+        .append("text")
+        .attr("x", bandMinX + 8)
+        .attr("y", y + 4)
+        .attr("font-size", 10)
+        .attr("fill", COLORS.generationLabel)
+        .attr("font-style", "italic")
+        .attr("pointer-events", "none")
+        .text(generationLabel(gen));
+    }
+
+    // -----------------------------------------------------------------------
+    // Draw edges (parent-child links)
+    // -----------------------------------------------------------------------
+    const edgeGroup = g.append("g");
+    const edgeLabelGroup = g.append("g");
+
+    for (const edge of layout.edges) {
+      const source = nodeMap.get(edge.sourceId);
+      const target = nodeMap.get(edge.targetId);
+      if (!source || !target) continue;
+
+      // For ancestor direction (target above source), edge exits top of source
+      const isUpward = target.data.generation < source.data.generation;
+      const sy = source.y + (isUpward ? -NODE_H / 2 : NODE_H / 2);
+      const ty = target.y + (isUpward ? NODE_H / 2 : -NODE_H / 2);
+      const my = (sy + ty) / 2;
+
+      edgeGroup
+        .append("path")
+        .attr("d", `M${source.x},${sy} C${source.x},${my} ${target.x},${my} ${target.x},${ty}`)
+        .attr("fill", "none")
+        .attr("stroke", COLORS.edge)
+        .attr("stroke-width", 1.5);
+
+      // Edge label (hidden by default, shown on hover)
+      edgeLabelGroup
+        .append("text")
+        .attr("x", (source.x + target.x) / 2)
+        .attr("y", (sy + ty) / 2)
+        .attr("text-anchor", "middle")
+        .attr("font-size", 9)
+        .attr("fill", COLORS.textMuted)
+        .attr("opacity", 0)
+        .attr("data-source", edge.sourceId)
+        .attr("data-target", edge.targetId)
+        .text(edge.label);
+    }
+
+    // -----------------------------------------------------------------------
+    // Draw spouse connectors (horizontal double line)
+    // -----------------------------------------------------------------------
+    for (const node of graph.nodes.values()) {
+      if (node.spouses.length === 0) continue;
+      const ln = nodeMap.get(node.id);
+      if (!ln) continue;
+
+      for (const spouse of node.spouses) {
+        const sln = nodeMap.get(spouse.id);
+        if (!sln) continue;
+
+        const isDivorced = spouse.type === "divorced from";
+        const x1 = ln.x + NODE_W / 2;
+        const x2 = sln.x - NODE_W / 2;
+        const cy = ln.y;
+
+        // Double line
+        edgeGroup
+          .append("line")
+          .attr("x1", x1)
+          .attr("y1", cy - 2)
+          .attr("x2", x2)
+          .attr("y2", cy - 2)
+          .attr("stroke", COLORS.edgeSpouse)
+          .attr("stroke-width", 1)
+          .attr("stroke-dasharray", isDivorced ? "3,3" : "");
+        edgeGroup
+          .append("line")
+          .attr("x1", x1)
+          .attr("y1", cy + 2)
+          .attr("x2", x2)
+          .attr("y2", cy + 2)
+          .attr("stroke", COLORS.edgeSpouse)
+          .attr("stroke-width", 1)
+          .attr("stroke-dasharray", isDivorced ? "3,3" : "");
+      }
+    }
+
+    // -----------------------------------------------------------------------
     // Draw nodes
-    // ---------------------------------------------------------------------------
+    // -----------------------------------------------------------------------
     const nodeGroups = g
       .append("g")
-      .selectAll<SVGGElement, d3.HierarchyPointNode<TreeNode>>("g")
-      .data(nodes)
+      .selectAll<SVGGElement, LayoutNode>("g")
+      .data(layout.nodes)
       .join("g")
       .attr("transform", (d) => `translate(${d.x},${d.y})`);
 
@@ -480,34 +647,33 @@ export function FamilyTree({ person }: FamilyTreeProps) {
       .attr("fill", "white")
       .attr("stroke", (d) => {
         if (d.data.id === person.id) return COLORS.root;
-        if (d.data.category === "spouse") return COLORS.spouse;
-        if (d.data.category === "other") return COLORS.other;
+        if (d.data.direction === "spouse") return COLORS.spouse;
         return COLORS.family;
       })
-      .attr("stroke-width", (d) => (d.data.id === person.id ? 2 : 1));
+      .attr("stroke-width", (d) => (d.data.id === person.id ? 2.5 : 1));
 
     // Node names
     nodeGroups
       .append("text")
       .attr("text-anchor", "middle")
-      .attr("dy", 1)
+      .attr("dy", (d) => (d.data.id !== person.id && d.data.relationType ? -2 : 1))
       .attr("font-size", (d) => (d.data.id === person.id ? 12 : 11))
       .attr("font-weight", (d) => (d.data.id === person.id ? "600" : "400"))
       .attr("fill", COLORS.text)
       .text((d) => {
         const name = d.data.name;
-        return name.length > 18 ? name.slice(0, 16) + "..." : name;
+        return name.length > 20 ? name.slice(0, 18) + "\u2026" : name;
       });
 
     // Relationship label below name (for non-root)
     nodeGroups
-      .filter((d) => d.data.id !== person.id && d.data.relationship !== "")
+      .filter((d) => d.data.id !== person.id && d.data.relationType !== "")
       .append("text")
       .attr("text-anchor", "middle")
-      .attr("dy", 12)
+      .attr("dy", 10)
       .attr("font-size", 8)
       .attr("fill", COLORS.textMuted)
-      .text((d) => d.data.relationship);
+      .text((d) => d.data.relationType);
 
     // Uncertainty badge
     nodeGroups
@@ -521,12 +687,12 @@ export function FamilyTree({ person }: FamilyTreeProps) {
       .attr("fill", COLORS.spouse)
       .text("?");
 
-    // Loading spinner (simple rotating circle)
+    // Loading spinner
     nodeGroups
       .filter((d) => d.data.loading)
       .append("circle")
       .attr("cx", 0)
-      .attr("cy", NODE_H / 2 + 12)
+      .attr("cy", (d) => (d.data.direction === "ancestor" ? -NODE_H / 2 - 14 : NODE_H / 2 + 14))
       .attr("r", 4)
       .attr("fill", "none")
       .attr("stroke", COLORS.loadingSpinner)
@@ -534,12 +700,59 @@ export function FamilyTree({ person }: FamilyTreeProps) {
       .attr("stroke-dasharray", "6,6")
       .attr("class", "animate-spin-slow");
 
-    // Expand button (+) for non-expanded nodes with a person ID
-    const expandable = nodeGroups.filter(
-      (d) => !d.data.expanded && !d.data.loading && d.data.hasRelatedPersonId,
+    // -----------------------------------------------------------------------
+    // Expand buttons: upward for ancestors, downward for descendants
+    // -----------------------------------------------------------------------
+
+    // Ancestor expand (upward arrow) - nodes with direction "ancestor" that aren't expanded
+    const expandableUp = nodeGroups.filter(
+      (d) =>
+        d.data.direction === "ancestor" &&
+        !d.data.expanded &&
+        !d.data.loading &&
+        d.data.hasPersonId,
     );
 
-    expandable
+    expandableUp
+      .append("circle")
+      .attr("cy", -NODE_H / 2 - 14)
+      .attr("r", EXPAND_R)
+      .attr("fill", COLORS.expandBtnUp)
+      .attr("stroke", "white")
+      .attr("stroke-width", 1.5)
+      .style("cursor", "pointer")
+      .on("mouseenter", function () {
+        d3.select(this).attr("fill", COLORS.expandBtnUpHover);
+      })
+      .on("mouseleave", function () {
+        d3.select(this).attr("fill", COLORS.expandBtnUp);
+      })
+      .on("click", (_event, d) => {
+        _event.stopPropagation();
+        expandNode(d.data.id);
+      });
+
+    // Upward chevron (▲ shape via path)
+    expandableUp
+      .append("path")
+      .attr("d", `M-4,${-NODE_H / 2 - 11}L0,${-NODE_H / 2 - 17}L4,${-NODE_H / 2 - 11}`)
+      .attr("fill", "none")
+      .attr("stroke", "white")
+      .attr("stroke-width", 2)
+      .attr("stroke-linecap", "round")
+      .attr("stroke-linejoin", "round")
+      .style("pointer-events", "none");
+
+    // Descendant expand (downward arrow)
+    const expandableDown = nodeGroups.filter(
+      (d) =>
+        d.data.direction === "descendant" &&
+        !d.data.expanded &&
+        !d.data.loading &&
+        d.data.hasPersonId,
+    );
+
+    expandableDown
       .append("circle")
       .attr("cy", NODE_H / 2 + 14)
       .attr("r", EXPAND_R)
@@ -558,44 +771,35 @@ export function FamilyTree({ person }: FamilyTreeProps) {
         expandNode(d.data.id);
       });
 
-    expandable
-      .append("text")
-      .attr("y", NODE_H / 2 + 14)
-      .attr("text-anchor", "middle")
-      .attr("dy", 4)
-      .attr("font-size", 13)
-      .attr("font-weight", "bold")
-      .attr("fill", "white")
-      .style("cursor", "pointer")
-      .style("pointer-events", "none")
-      .text("+");
+    // Downward chevron (▼ shape via path)
+    expandableDown
+      .append("path")
+      .attr("d", `M-4,${NODE_H / 2 + 11}L0,${NODE_H / 2 + 17}L4,${NODE_H / 2 + 11}`)
+      .attr("fill", "none")
+      .attr("stroke", "white")
+      .attr("stroke-width", 2)
+      .attr("stroke-linecap", "round")
+      .attr("stroke-linejoin", "round")
+      .style("pointer-events", "none");
 
-    // ---------------------------------------------------------------------------
-    // Hover: show edge label
-    // ---------------------------------------------------------------------------
+    // -----------------------------------------------------------------------
+    // Hover: show edge labels
+    // -----------------------------------------------------------------------
     nodeGroups
       .on("mouseenter", function (_event, d) {
-        // Show edge labels for edges connected to this node
-        edgeLabels.attr("opacity", (link) => (link.source === d || link.target === d ? 1 : 0));
-        // Highlight stroke
+        edgeLabelGroup.selectAll("text").attr("opacity", function () {
+          const el = d3.select(this);
+          return el.attr("data-source") === d.id || el.attr("data-target") === d.id ? 1 : 0;
+        });
         d3.select(this).select("rect").attr("stroke-width", 2.5);
       })
       .on("mouseleave", function (_event, d) {
-        edgeLabels.attr("opacity", 0);
+        edgeLabelGroup.selectAll("text").attr("opacity", 0);
         d3.select(this)
           .select("rect")
-          .attr("stroke-width", d.data.id === person.id ? 2 : 1);
+          .attr("stroke-width", d.data.id === person.id ? 2.5 : 1);
       });
-  }, [tree, containerWidth, person.id, expandNode]);
-
-  // Count total nodes for height estimation
-  function countNodes(n: TreeNode): number {
-    let c = 1;
-    for (const child of n.children) c += countNodes(child);
-    return c;
-  }
-  const totalNodes = countNodes(tree);
-  const estimatedHeight = Math.max(300, Math.min(600, totalNodes * 40 + 100));
+  }, [graph, containerWidth, person.id, expandNode]);
 
   return (
     <div className="w-full space-y-2">
@@ -624,40 +828,33 @@ export function FamilyTree({ person }: FamilyTreeProps) {
         </span>
         <span className="flex items-center gap-1.5">
           <span
-            className="inline-block w-2.5 h-2.5 rounded-sm border"
-            style={{ borderColor: COLORS.other }}
-          />
-          <svg width="20" height="2">
-            <line
-              x1="0"
-              y1="1"
-              x2="20"
-              y2="1"
-              stroke={COLORS.edgeOther}
-              strokeWidth="1.5"
-              strokeDasharray="3,3"
-            />
-          </svg>
-          Other
+            className="inline-block w-3 h-3 rounded-full flex items-center justify-center"
+            style={{ backgroundColor: COLORS.expandBtnUp }}
+          >
+            <ChevronUp className="w-2.5 h-2.5 text-white" />
+          </span>
+          Expand ancestors
         </span>
         <span className="flex items-center gap-1.5">
           <span
-            className="inline-block w-3.5 h-3.5 rounded-full text-center leading-[14px] text-[9px] font-bold"
-            style={{ backgroundColor: COLORS.expandBtn, color: "white" }}
+            className="inline-block w-3 h-3 rounded-full flex items-center justify-center"
+            style={{ backgroundColor: COLORS.expandBtn }}
           >
-            +
+            <ChevronDown className="w-2.5 h-2.5 text-white" />
           </span>
-          Click to expand
+          Expand descendants
         </span>
       </div>
 
       {/* Navigable node list (for accessibility) */}
       <div className="sr-only">
-        {tree.children.map((child) => (
-          <Link key={child.id} to="/persons/$personId" params={{ personId: child.id }}>
-            {child.name} ({child.relationship})
-          </Link>
-        ))}
+        {[...graph.nodes.values()]
+          .filter((n) => n.id !== person.id && n.hasPersonId)
+          .map((n) => (
+            <Link key={n.id} to="/persons/$personId" params={{ personId: n.id }}>
+              {n.name} ({n.relationType})
+            </Link>
+          ))}
       </div>
 
       {/* Tree SVG */}
@@ -666,7 +863,7 @@ export function FamilyTree({ person }: FamilyTreeProps) {
         className="relative overflow-auto rounded-lg border border-ink/10 bg-white/50"
         style={{ maxHeight: 500 }}
       >
-        <svg ref={svgRef} width={containerWidth} height={estimatedHeight} className="block" />
+        <svg ref={svgRef} width={containerWidth} height={400} className="block" />
       </div>
     </div>
   );
