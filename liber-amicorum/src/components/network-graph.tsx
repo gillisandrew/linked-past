@@ -1,26 +1,19 @@
-import * as d3 from "d3";
 import { useRef, useEffect, useState, useMemo, useCallback } from "react";
 import { useNavigate } from "@tanstack/react-router";
+import {
+  ReactFlow,
+  Handle,
+  Position,
+  ReactFlowProvider,
+  useReactFlow,
+  type Node as RFNode,
+  type Edge as RFEdge,
+  type NodeProps,
+  type NodeTypes,
+} from "@xyflow/react";
+import * as d3 from "d3";
 import { getNetworkData } from "#/lib/data";
 import type { NetworkData, NetworkNode, NetworkEdge } from "#/lib/types";
-
-// ---------------------------------------------------------------------------
-// Types for D3 simulation (mutable positions added by d3-force)
-// ---------------------------------------------------------------------------
-
-interface SimNode extends NetworkNode {
-  x?: number;
-  y?: number;
-  fx?: number | null;
-  fy?: number | null;
-  connectionCount: number;
-}
-
-interface SimEdge {
-  source: SimNode;
-  target: SimNode;
-  type: string;
-}
 
 // ---------------------------------------------------------------------------
 // Relationship classification
@@ -86,18 +79,164 @@ const EDGE_STYLES: Record<RelCategory, { color: string; dasharray: string }> = {
 };
 
 // ---------------------------------------------------------------------------
-// Component
+// D3-force simulation types
 // ---------------------------------------------------------------------------
 
-export function NetworkGraph() {
-  const svgRef = useRef<SVGSVGElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const tooltipRef = useRef<HTMLDivElement>(null);
+interface SimNode extends NetworkNode {
+  x?: number;
+  y?: number;
+  fx?: number | null;
+  fy?: number | null;
+  connectionCount: number;
+}
+
+interface SimEdge {
+  source: string | SimNode;
+  target: string | SimNode;
+  type: string;
+}
+
+// ---------------------------------------------------------------------------
+// React Flow custom node data
+// ---------------------------------------------------------------------------
+
+interface NetworkNodeData extends Record<string, unknown> {
+  name: string;
+  nomen: string | null;
+  eraFrom: number | null;
+  eraTo: number | null;
+  size: number;
+  color: string;
+  showLabel: boolean;
+  connectionCount: number;
+}
+
+type NetNode = RFNode<NetworkNodeData, "network">;
+type NetEdge = RFEdge<Record<string, unknown>>;
+
+// ---------------------------------------------------------------------------
+// Custom Network Node
+// ---------------------------------------------------------------------------
+
+function NetworkNodeComponent({ data }: NodeProps<NetNode>) {
+  const eraStr =
+    data.eraFrom != null && data.eraTo != null
+      ? `${Math.abs(data.eraFrom)} \u2013 ${Math.abs(data.eraTo)} BC`
+      : data.eraFrom != null
+        ? `fl. ${Math.abs(data.eraFrom)} BC`
+        : "";
+
+  const titleParts = [data.name];
+  if (data.nomen) titleParts.push(`gens ${data.nomen}`);
+  if (eraStr) titleParts.push(eraStr);
+  titleParts.push(`${data.connectionCount} connections`);
+
+  return (
+    <div
+      className="rounded-full flex items-center justify-center cursor-pointer relative"
+      style={{
+        width: data.size,
+        height: data.size,
+        backgroundColor: data.color,
+      }}
+      title={titleParts.join("\n")}
+    >
+      {data.showLabel && (
+        <span className="absolute top-full mt-1 whitespace-nowrap text-[9px] text-ink pointer-events-none left-1/2 -translate-x-1/2">
+          {data.name}
+        </span>
+      )}
+      <Handle type="source" position={Position.Right} className="!opacity-0 !w-0 !h-0" />
+      <Handle type="target" position={Position.Left} className="!opacity-0 !w-0 !h-0" />
+    </div>
+  );
+}
+
+const nodeTypes: NodeTypes = { network: NetworkNodeComponent };
+
+// ---------------------------------------------------------------------------
+// Run D3-force simulation synchronously to get positions
+// ---------------------------------------------------------------------------
+
+function computeForceLayout(
+  rawNodes: NetworkNode[],
+  rawEdges: NetworkEdge[],
+  width: number,
+  height: number,
+): { simNodes: SimNode[]; simEdges: SimEdge[] } {
+  // Count connections per node
+  const connectionCount = new Map<string, number>();
+  for (const e of rawEdges) {
+    connectionCount.set(e.source, (connectionCount.get(e.source) ?? 0) + 1);
+    connectionCount.set(e.target, (connectionCount.get(e.target) ?? 0) + 1);
+  }
+
+  const simNodes: SimNode[] = rawNodes.map((n) => ({
+    ...n,
+    connectionCount: connectionCount.get(n.id) ?? 0,
+  }));
+
+  const nodeIds = new Set(simNodes.map((n) => n.id));
+  const simEdges: SimEdge[] = rawEdges
+    .filter((e) => nodeIds.has(e.source) && nodeIds.has(e.target))
+    .map((e) => ({ source: e.source, target: e.target, type: e.type }));
+
+  const nodeCount = simNodes.length;
+  let chargeStrength: number;
+  let linkDistance: number;
+  if (nodeCount < 100) {
+    chargeStrength = -300;
+    linkDistance = 100;
+  } else if (nodeCount <= 500) {
+    chargeStrength = -200;
+    linkDistance = 80;
+  } else {
+    chargeStrength = -100;
+    linkDistance = 50;
+  }
+
+  const maxConn = d3.max(simNodes, (n) => n.connectionCount) ?? 1;
+  const radiusScale = d3.scaleSqrt().domain([0, maxConn]).range([3, 11]);
+
+  const simulation = d3
+    .forceSimulation<SimNode>(simNodes)
+    .force(
+      "link",
+      d3
+        .forceLink<SimNode, SimEdge>(simEdges)
+        .id((d) => d.id)
+        .distance(linkDistance),
+    )
+    .force("charge", d3.forceManyBody().strength(chargeStrength))
+    .force("center", d3.forceCenter(width / 2, height / 2))
+    .force(
+      "collision",
+      d3.forceCollide<SimNode>().radius((d) => radiusScale(d.connectionCount) + 2),
+    )
+    .stop();
+
+  // Run simulation synchronously
+  const iterations = Math.ceil(
+    Math.log(simulation.alphaMin()) / Math.log(1 - simulation.alphaDecay()),
+  );
+  for (let i = 0; i < iterations; i++) {
+    simulation.tick();
+  }
+
+  return { simNodes, simEdges };
+}
+
+// ---------------------------------------------------------------------------
+// Inner component
+// ---------------------------------------------------------------------------
+
+function NetworkGraphInner() {
   const [allData, setAllData] = useState<NetworkData | null>(null);
   const [loading, setLoading] = useState(true);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 960, height: 600 });
   const navigate = useNavigate();
-  const simulationRef = useRef<d3.Simulation<SimNode, SimEdge> | null>(null);
+  const { fitView } = useReactFlow();
 
   // Filter state
   const [eraFrom, setEraFrom] = useState<number | null>(null);
@@ -115,7 +254,7 @@ export function NetworkGraph() {
     });
   }, []);
 
-  // Measure container with ResizeObserver
+  // Measure container
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -130,7 +269,6 @@ export function NetworkGraph() {
     });
     observer.observe(el);
 
-    // Initial measure
     const rect = el.getBoundingClientRect();
     if (rect.width > 0 && rect.height > 0) {
       setDimensions({ width: rect.width, height: rect.height });
@@ -204,265 +342,72 @@ export function NetworkGraph() {
     return { nodes, edges };
   }, [allData, eraFrom, eraTo, gensFilter, showFamily, showMarriage, showPolitical]);
 
-  // Build the graph
-  useEffect(() => {
-    if (!svgRef.current || filteredData.nodes.length === 0) {
-      // Clear if no data
-      if (svgRef.current) {
-        d3.select(svgRef.current).selectAll("*").remove();
-      }
-      if (simulationRef.current) {
-        simulationRef.current.stop();
-        simulationRef.current = null;
-      }
-      return;
+  // Build React Flow nodes/edges from force layout
+  const { rfNodes, rfEdges } = useMemo(() => {
+    if (filteredData.nodes.length === 0) {
+      return { rfNodes: [] as NetNode[], rfEdges: [] as NetEdge[] };
     }
 
     const { width, height } = dimensions;
-    const svg = d3.select(svgRef.current);
-    svg.attr("viewBox", `0 0 ${width} ${height}`);
+    const { simNodes } = computeForceLayout(filteredData.nodes, filteredData.edges, width, height);
 
-    // Stop old simulation
-    if (simulationRef.current) {
-      simulationRef.current.stop();
-      simulationRef.current = null;
-    }
-
-    // Clear previous render
-    svg.selectAll("*").remove();
-
-    // Count connections per node within filtered set
-    const connectionCount = new Map<string, number>();
-    for (const e of filteredData.edges) {
-      connectionCount.set(e.source, (connectionCount.get(e.source) ?? 0) + 1);
-      connectionCount.set(e.target, (connectionCount.get(e.target) ?? 0) + 1);
-    }
-
-    // Build sim nodes/edges
-    const nodes: SimNode[] = filteredData.nodes.map((n) => ({
-      ...n,
-      connectionCount: connectionCount.get(n.id) ?? 0,
-    }));
-
-    const nodeMap = new Map(nodes.map((n) => [n.id, n]));
-    const edges: SimEdge[] = filteredData.edges
-      .filter((e) => nodeMap.has(e.source) && nodeMap.has(e.target))
-      .map((e) => ({
-        source: nodeMap.get(e.source)!,
-        target: nodeMap.get(e.target)!,
-        type: e.type,
-      }));
-
-    const nodeCount = nodes.length;
-    const showLabels = nodeCount < 100;
-
-    // Nomen color scale
-    const nomina = [...new Set(nodes.map((n) => n.nomen).filter(Boolean))] as string[];
+    const showLabels = simNodes.length < 100;
+    const nomina = [...new Set(simNodes.map((n) => n.nomen).filter(Boolean))] as string[];
     const nomenColor = d3.scaleOrdinal<string>().domain(nomina).range(NOMEN_COLORS);
+    const maxConn = d3.max(simNodes, (n) => n.connectionCount) ?? 1;
+    const radiusScale = d3.scaleSqrt().domain([0, maxConn]).range([6, 22]);
 
-    // Node radius scale
-    const maxConn = d3.max(nodes, (n) => n.connectionCount) ?? 1;
-    const radiusScale = d3.scaleSqrt().domain([0, maxConn]).range([3, 11]);
-
-    // Container group for zoom/pan
-    const g = svg.append("g");
-
-    // Zoom behavior
-    const zoom = d3
-      .zoom<SVGSVGElement, unknown>()
-      .scaleExtent([0.1, 8])
-      .on("zoom", (event) => {
-        g.attr("transform", event.transform);
-      });
-    svg.call(zoom);
-
-    // Edges
-    const edgeSelection = g
-      .append("g")
-      .attr("class", "edges")
-      .selectAll("line")
-      .data(edges)
-      .join("line")
-      .attr("stroke", (d) => EDGE_STYLES[classifyRelationship(d.type)].color)
-      .attr("stroke-dasharray", (d) => EDGE_STYLES[classifyRelationship(d.type)].dasharray)
-      .attr("stroke-width", 0.8)
-      .attr("stroke-opacity", 0.2);
-
-    // Nodes
-    const nodeSelection = g
-      .append("g")
-      .attr("class", "nodes")
-      .selectAll("circle")
-      .data(nodes)
-      .join("circle")
-      .attr("r", (d) => radiusScale(d.connectionCount))
-      .attr("fill", (d) => (d.nomen ? nomenColor(d.nomen) : "#999"))
-      .attr("stroke", "rgba(37, 36, 54, 0.3)")
-      .attr("stroke-width", 0.5)
-      .style("cursor", "pointer");
-
-    // Labels (only when few nodes)
-    let labelSelection: d3.Selection<SVGTextElement, SimNode, SVGGElement, unknown> | null = null;
-    if (showLabels) {
-      labelSelection = g
-        .append("g")
-        .attr("class", "labels")
-        .selectAll("text")
-        .data(nodes)
-        .join("text")
-        .text((d) => d.name || d.id)
-        .attr("font-size", 9)
-        .attr("dx", (d) => radiusScale(d.connectionCount) + 3)
-        .attr("dy", "0.35em")
-        .attr("fill", "rgba(37, 36, 54, 0.7)")
-        .style("pointer-events", "none");
-    }
-
-    // Tooltip
-    const tooltip = d3.select(tooltipRef.current);
-
-    // Hover interaction
-    nodeSelection
-      .on("mouseenter", function (event, d) {
-        const connectedNodeIds = new Set<string>();
-        connectedNodeIds.add(d.id);
-        edgeSelection
-          .attr("stroke-opacity", (e) => {
-            const srcId = (e.source as SimNode).id;
-            const tgtId = (e.target as SimNode).id;
-            if (srcId === d.id || tgtId === d.id) {
-              connectedNodeIds.add(srcId);
-              connectedNodeIds.add(tgtId);
-              return 0.8;
-            }
-            return 0.03;
-          })
-          .attr("stroke-width", (e) => {
-            const srcId = (e.source as SimNode).id;
-            const tgtId = (e.target as SimNode).id;
-            return srcId === d.id || tgtId === d.id ? 1.5 : 0.8;
-          });
-
-        nodeSelection.attr("opacity", (n) => (connectedNodeIds.has(n.id) ? 1 : 0.1));
-        if (labelSelection) {
-          labelSelection.attr("opacity", (n) => (connectedNodeIds.has(n.id) ? 1 : 0.1));
-        }
-
-        d3.select(this).attr("stroke", "#333").attr("stroke-width", 2);
-
-        const eraStr =
-          d.eraFrom != null && d.eraTo != null
-            ? `${Math.abs(d.eraFrom)} \u2013 ${Math.abs(d.eraTo)} BC`
-            : d.eraFrom != null
-              ? `fl. ${Math.abs(d.eraFrom)} BC`
-              : "";
-
-        tooltip
-          .style("display", "block")
-          .style("left", `${event.pageX + 12}px`)
-          .style("top", `${event.pageY - 10}px`)
-          .html(
-            `<div class="font-heading font-bold">${d.name || d.id}</div>` +
-              (d.nomen ? `<div class="text-xs text-ink-muted">gens ${d.nomen}</div>` : "") +
-              (eraStr ? `<div class="text-xs text-ink-muted">${eraStr}</div>` : "") +
-              `<div class="text-xs text-ink-muted">${d.connectionCount} connections</div>`,
-          );
-      })
-      .on("mousemove", (event) => {
-        tooltip.style("left", `${event.pageX + 12}px`).style("top", `${event.pageY - 10}px`);
-      })
-      .on("mouseleave", function () {
-        edgeSelection.attr("stroke-opacity", 0.2).attr("stroke-width", 0.8);
-        nodeSelection.attr("opacity", 1);
-        if (labelSelection) {
-          labelSelection.attr("opacity", 1);
-        }
-        d3.select(this).attr("stroke", "rgba(37, 36, 54, 0.3)").attr("stroke-width", 0.5);
-        tooltip.style("display", "none");
-      });
-
-    // Click to navigate
-    nodeSelection.on("click", (_event, d) => {
-      navigate({ to: "/persons/$personId", params: { personId: d.id } });
+    const rfNodes: NetNode[] = simNodes.map((n) => {
+      const size = radiusScale(n.connectionCount);
+      return {
+        id: n.id,
+        type: "network",
+        position: { x: (n.x ?? 0) - size / 2, y: (n.y ?? 0) - size / 2 },
+        data: {
+          name: n.name,
+          nomen: n.nomen,
+          eraFrom: n.eraFrom,
+          eraTo: n.eraTo,
+          size,
+          color: n.nomen ? nomenColor(n.nomen) : "#999",
+          showLabel: showLabels,
+          connectionCount: n.connectionCount,
+        },
+      };
     });
 
-    // Drag behavior
-    const simulation = d3.forceSimulation<SimNode>(nodes);
-
-    const drag = d3
-      .drag<SVGCircleElement, SimNode>()
-      .on("start", (event, d) => {
-        if (!event.active) simulation.alphaTarget(0.3).restart();
-        d.fx = d.x;
-        d.fy = d.y;
+    const rfEdges: NetEdge[] = filteredData.edges
+      .filter((e) => {
+        const nodeIds = new Set(simNodes.map((n) => n.id));
+        return nodeIds.has(e.source) && nodeIds.has(e.target);
       })
-      .on("drag", (event, d) => {
-        d.fx = event.x;
-        d.fy = event.y;
-      })
-      .on("end", (event, d) => {
-        if (!event.active) simulation.alphaTarget(0);
-        d.fx = null;
-        d.fy = null;
+      .map((e, i) => {
+        const cat = classifyRelationship(e.type);
+        const style = EDGE_STYLES[cat];
+        return {
+          id: `net-e-${i}`,
+          source: e.source,
+          target: e.target,
+          style: {
+            stroke: style.color,
+            strokeDasharray: style.dasharray || undefined,
+            strokeWidth: 0.8,
+            opacity: 0.4,
+          },
+        };
       });
 
-    nodeSelection.call(drag);
+    return { rfNodes, rfEdges };
+  }, [filteredData, dimensions]);
 
-    // Adaptive force parameters
-    let chargeStrength: number;
-    let linkDistance: number;
-    if (nodeCount < 100) {
-      chargeStrength = -300;
-      linkDistance = 100;
-    } else if (nodeCount <= 500) {
-      chargeStrength = -200;
-      linkDistance = 80;
-    } else {
-      chargeStrength = -100;
-      linkDistance = 50;
+  // Fit view when data changes
+  useEffect(() => {
+    if (rfNodes.length > 0) {
+      const t = setTimeout(() => fitView({ padding: 0.05, duration: 300 }), 50);
+      return () => clearTimeout(t);
     }
+  }, [rfNodes, rfEdges, fitView]);
 
-    // Force simulation
-    simulation
-      .force(
-        "link",
-        d3
-          .forceLink<SimNode, SimEdge>(edges)
-          .id((d) => d.id)
-          .distance(linkDistance),
-      )
-      .force("charge", d3.forceManyBody().strength(chargeStrength))
-      .force("center", d3.forceCenter(width / 2, height / 2))
-      .force(
-        "collision",
-        d3.forceCollide<SimNode>().radius((d) => radiusScale(d.connectionCount) + 2),
-      )
-      .on("tick", () => {
-        edgeSelection
-          .attr("x1", (d) => d.source.x!)
-          .attr("y1", (d) => d.source.y!)
-          .attr("x2", (d) => d.target.x!)
-          .attr("y2", (d) => d.target.y!);
-
-        nodeSelection.attr("cx", (d) => d.x!).attr("cy", (d) => d.y!);
-
-        if (labelSelection) {
-          labelSelection.attr("x", (d) => d.x!).attr("y", (d) => d.y!);
-        }
-      });
-
-    simulationRef.current = simulation;
-
-    simulation.on("end", () => {
-      simulation.stop();
-    });
-
-    return () => {
-      simulation.stop();
-    };
-  }, [filteredData, dimensions, navigate]);
-
-  // Era input handler — parse BC year string to a number
   const handleEraInput = useCallback(
     (setter: (v: number | null) => void) => (e: React.ChangeEvent<HTMLInputElement>) => {
       const raw = e.target.value.trim();
@@ -603,14 +548,35 @@ export function NetworkGraph() {
             </p>
           </div>
         ) : (
-          <svg ref={svgRef} className="block h-full w-full" />
+          <ReactFlow
+            nodes={rfNodes}
+            edges={rfEdges}
+            nodeTypes={nodeTypes}
+            fitView
+            minZoom={0.1}
+            maxZoom={8}
+            proOptions={{ hideAttribution: true }}
+            nodesDraggable={false}
+            nodesConnectable={false}
+            elementsSelectable={false}
+            onNodeClick={(_event, node) => {
+              navigate({ to: "/persons/$personId", params: { personId: node.id } });
+            }}
+          />
         )}
-        <div
-          ref={tooltipRef}
-          className="pointer-events-none fixed z-50 hidden rounded border border-ink/10 bg-parchment px-3 py-2 shadow-lg"
-          style={{ display: "none" }}
-        />
       </div>
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Exported component
+// ---------------------------------------------------------------------------
+
+export function NetworkGraph() {
+  return (
+    <ReactFlowProvider>
+      <NetworkGraphInner />
+    </ReactFlowProvider>
   );
 }

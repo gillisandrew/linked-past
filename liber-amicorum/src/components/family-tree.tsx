@@ -1,6 +1,21 @@
-import * as d3 from "d3";
-import { useRef, useEffect, useState, useCallback } from "react";
-import { Link } from "@tanstack/react-router";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { useNavigate } from "@tanstack/react-router";
+import {
+  ReactFlow,
+  Handle,
+  Position,
+  BaseEdge,
+  getBezierPath,
+  ReactFlowProvider,
+  useReactFlow,
+  type Node as RFNode,
+  type Edge as RFEdge,
+  type NodeProps,
+  type EdgeProps,
+  type NodeTypes,
+  type EdgeTypes,
+} from "@xyflow/react";
+import dagre from "@dagrejs/dagre";
 import { ChevronUp, ChevronDown } from "lucide-react";
 import { getPersonById } from "#/lib/data";
 import type { Person } from "#/lib/types";
@@ -47,20 +62,8 @@ const COLORS = {
   root: "#6b7c6e",
   family: "#a0785a",
   spouse: "#b07080",
-  other: "#5a8a8a",
   edge: "rgba(37, 36, 54, 0.35)",
   edgeSpouse: "rgba(159, 90, 90, 0.5)",
-  edgeOther: "rgba(80, 130, 130, 0.4)",
-  text: "rgba(37, 36, 54, 0.85)",
-  textMuted: "rgba(37, 36, 54, 0.55)",
-  expandBtn: "#a0785a",
-  expandBtnHover: "#8a6548",
-  expandBtnUp: "#6b7c6e",
-  expandBtnUpHover: "#566654",
-  loadingSpinner: "#a0785a",
-  generationBand: "rgba(37, 36, 54, 0.03)",
-  generationLine: "rgba(37, 36, 54, 0.08)",
-  generationLabel: "rgba(37, 36, 54, 0.3)",
 };
 
 // ---------------------------------------------------------------------------
@@ -70,14 +73,14 @@ const COLORS = {
 interface FamilyNode {
   id: string;
   name: string;
-  generation: number; // relative to root: negative = ancestors, positive = descendants
-  relationType: string; // relationship label that introduced this node
-  direction: RelDirection; // ancestor or descendant direction
+  generation: number;
+  relationType: string;
+  direction: RelDirection;
   uncertain: boolean;
   expanded: boolean;
   loading: boolean;
-  hasPersonId: boolean; // can we navigate / expand?
-  parentNodeId: string | null; // the node that introduced this one (for drawing edges)
+  hasPersonId: boolean;
+  parentNodeId: string | null;
   spouses: { id: string; name: string; type: string; hasPersonId: boolean }[];
 }
 
@@ -145,7 +148,6 @@ function buildInitialGraph(person: Person): FamilyGraph {
         spouses: [],
       });
     }
-    // "other" relationships are skipped for tree layout
   }
 
   return { nodes, rootId: person.id };
@@ -179,7 +181,6 @@ function expandGraphNode(graph: FamilyGraph, nodeId: string, personData: Person)
   node.expanded = true;
 
   const existingIds = new Set(clone.nodes.keys());
-  // Also track spouse IDs already present on any node
   for (const n of clone.nodes.values()) {
     for (const s of n.spouses) existingIds.add(s.id);
   }
@@ -196,7 +197,6 @@ function expandGraphNode(graph: FamilyGraph, nodeId: string, personData: Person)
     if (dir === "spouse") {
       node.spouses.push({ id, name, type: rel.type, hasPersonId: hasId });
     } else if (dir === "ancestor" && node.direction === "ancestor") {
-      // Expanding an ancestor node: look for further ancestors (parents)
       clone.nodes.set(id, {
         id,
         name,
@@ -211,7 +211,6 @@ function expandGraphNode(graph: FamilyGraph, nodeId: string, personData: Person)
         spouses: [],
       });
     } else if (dir === "descendant" && node.direction === "descendant") {
-      // Expanding a descendant node: look for further descendants (children)
       clone.nodes.set(id, {
         id,
         name,
@@ -225,12 +224,6 @@ function expandGraphNode(graph: FamilyGraph, nodeId: string, personData: Person)
         parentNodeId: nodeId,
         spouses: [],
       });
-    } else if (dir === "ancestor" && node.direction === "descendant") {
-      // A descendant node reveals a parent -- that goes upward but we only track
-      // if we are currently in the root. For non-root descendants, skip ancestors.
-    } else if (dir === "descendant" && node.direction === "ancestor") {
-      // An ancestor node reveals children -- those go downward but we only track
-      // them for the root's immediate context. Skip for non-root ancestors.
     }
   }
 
@@ -238,206 +231,333 @@ function expandGraphNode(graph: FamilyGraph, nodeId: string, personData: Person)
 }
 
 // ---------------------------------------------------------------------------
-// Layout constants
+// React Flow node/edge data types
 // ---------------------------------------------------------------------------
 
-const NODE_W = 150;
-const NODE_H = 38;
-const NODE_RX = 6;
-const EXPAND_R = 10;
-const GEN_HEIGHT = 110; // vertical spacing between generations
-const H_GAP = 30; // horizontal gap between nodes
+interface PersonNodeData extends Record<string, unknown> {
+  name: string;
+  relationType: string;
+  direction: RelDirection;
+  isRoot: boolean;
+  expanded: boolean;
+  loading: boolean;
+  hasPersonId: boolean;
+  canExpand: boolean;
+  onExpand: (nodeId: string) => void;
+}
+
+type PersonNode = RFNode<PersonNodeData, "person">;
+
+interface RelEdgeData extends Record<string, unknown> {
+  relationType: string;
+  isSpouse: boolean;
+  isDivorced: boolean;
+}
+
+type RelEdge = RFEdge<RelEdgeData, "relationship">;
 
 // ---------------------------------------------------------------------------
-// Generation label
+// Custom Person Node
 // ---------------------------------------------------------------------------
 
-function generationLabel(gen: number): string {
-  if (gen === 0) return "Self";
-  if (gen === -1) return "Parent";
-  if (gen === -2) return "Grandparent";
-  if (gen < -2) return `${"Great-".repeat(-gen - 2)}Grandparent`;
-  if (gen === 1) return "Child";
-  if (gen === 2) return "Grandchild";
-  return `${"Great-".repeat(gen - 2)}Grandchild`;
+function PersonNodeComponent({ data, id }: NodeProps<PersonNode>) {
+  const isAncestor = data.direction === "ancestor";
+  const isDescendant = data.direction === "descendant" || data.direction === "spouse";
+  const canExpandUp = isAncestor && !data.expanded && !data.loading && data.hasPersonId;
+  const canExpandDown =
+    data.direction === "descendant" &&
+    !data.isRoot &&
+    !data.expanded &&
+    !data.loading &&
+    data.hasPersonId;
+
+  const borderColor = data.isRoot
+    ? COLORS.root
+    : data.direction === "spouse"
+      ? COLORS.spouse
+      : COLORS.family;
+
+  return (
+    <div className="relative">
+      {/* Target handle (top) */}
+      {(isDescendant || data.isRoot) && (
+        <Handle type="target" position={Position.Top} className="!bg-ink/30 !w-2 !h-2" />
+      )}
+      {isAncestor && (
+        <Handle type="source" position={Position.Top} className="!bg-ink/30 !w-2 !h-2" />
+      )}
+
+      {/* Expand up button */}
+      {canExpandUp && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            data.onExpand(id);
+          }}
+          className="absolute -top-7 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full flex items-center justify-center text-white z-10"
+          style={{ backgroundColor: COLORS.root }}
+        >
+          <ChevronUp className="w-3 h-3" />
+        </button>
+      )}
+
+      {/* Node body */}
+      <div
+        className="rounded-md px-3 py-1.5 text-center bg-white min-w-[150px]"
+        style={{
+          border: `${data.isRoot ? 2.5 : 1}px solid ${borderColor}`,
+        }}
+      >
+        <p className="text-[11px] font-medium text-ink truncate max-w-[140px]">
+          {data.name.length > 20 ? data.name.slice(0, 18) + "\u2026" : data.name}
+        </p>
+        {!data.isRoot && data.relationType && (
+          <p className="text-[8px] text-ink-muted">{data.relationType}</p>
+        )}
+        {data.loading && <p className="text-[10px] text-ink-muted animate-pulse">loading...</p>}
+      </div>
+
+      {/* Expand down button */}
+      {canExpandDown && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            data.onExpand(id);
+          }}
+          className="absolute -bottom-7 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full flex items-center justify-center text-white z-10"
+          style={{ backgroundColor: COLORS.family }}
+        >
+          <ChevronDown className="w-3 h-3" />
+        </button>
+      )}
+
+      {/* Source handle (bottom) */}
+      {(isDescendant || data.isRoot) && (
+        <Handle type="source" position={Position.Bottom} className="!bg-ink/30 !w-2 !h-2" />
+      )}
+      {isAncestor && (
+        <Handle type="target" position={Position.Bottom} className="!bg-ink/30 !w-2 !h-2" />
+      )}
+    </div>
+  );
 }
 
 // ---------------------------------------------------------------------------
-// Custom layout: position nodes by generation
+// Custom Relationship Edge
 // ---------------------------------------------------------------------------
 
-interface LayoutNode {
-  id: string;
-  x: number;
-  y: number;
-  data: FamilyNode;
+function RelationshipEdge(props: EdgeProps<RelEdge>) {
+  const { sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition, data } = props;
+  const [path, labelX, labelY] = getBezierPath({
+    sourceX,
+    sourceY,
+    sourcePosition,
+    targetX,
+    targetY,
+    targetPosition,
+  });
+
+  const isSpouse = data?.isSpouse ?? false;
+  const isDivorced = data?.isDivorced ?? false;
+
+  return (
+    <BaseEdge
+      path={path}
+      labelX={labelX}
+      labelY={labelY}
+      style={{
+        stroke: isSpouse ? COLORS.edgeSpouse : COLORS.edge,
+        strokeDasharray: isDivorced ? "4,3" : isSpouse ? "2,0" : undefined,
+        strokeWidth: isSpouse ? 1 : 1.5,
+      }}
+    />
+  );
 }
 
-interface LayoutEdge {
-  sourceId: string;
-  targetId: string;
-  label: string;
-}
+// ---------------------------------------------------------------------------
+// Node/edge type registrations
+// ---------------------------------------------------------------------------
 
-interface Layout {
-  nodes: LayoutNode[];
-  edges: LayoutEdge[];
-  generations: Map<number, LayoutNode[]>;
-  minGen: number;
-  maxGen: number;
-  width: number;
-  height: number;
-}
+const nodeTypes: NodeTypes = { person: PersonNodeComponent };
+const edgeTypes: EdgeTypes = { relationship: RelationshipEdge };
 
-function computeLayout(graph: FamilyGraph): Layout {
-  // Group nodes by generation
-  const genGroups = new Map<number, FamilyNode[]>();
-  for (const node of graph.nodes.values()) {
-    const gen = node.generation;
-    if (!genGroups.has(gen)) genGroups.set(gen, []);
-    genGroups.get(gen)!.push(node);
+// ---------------------------------------------------------------------------
+// Dagre layout
+// ---------------------------------------------------------------------------
+
+const NODE_W = 170;
+const NODE_H = 50;
+
+function layoutTree(
+  nodes: PersonNode[],
+  edges: RelEdge[],
+): { nodes: PersonNode[]; edges: RelEdge[] } {
+  const g = new dagre.graphlib.Graph().setDefaultEdgeLabel(() => ({}));
+  g.setGraph({ rankdir: "TB", ranksep: 80, nodesep: 40 });
+
+  for (const node of nodes) {
+    g.setNode(node.id, { width: NODE_W, height: NODE_H });
   }
 
-  const gens = [...genGroups.keys()].sort((a, b) => a - b);
-  const minGen = gens.length > 0 ? gens[0] : 0;
-  const maxGen = gens.length > 0 ? gens[gens.length - 1] : 0;
-
-  // Y position: generation 0 is in the middle. Ancestors go up (negative gen),
-  // descendants go down (positive gen).
-  // We'll compute Y such that gen 0 is at a known position.
-  const genOffsetY = -minGen; // shift so minGen maps to row 0
-
-  const layoutNodes: LayoutNode[] = [];
-  const layoutGenerations = new Map<number, LayoutNode[]>();
-  const nodeMap = new Map<string, LayoutNode>();
-
-  for (const gen of gens) {
-    const nodesInGen = genGroups.get(gen)!;
-
-    // Count total items including spouses for width calculation
-    let totalSlots = 0;
-    for (const n of nodesInGen) {
-      totalSlots += 1 + n.spouses.length;
+  for (const edge of edges) {
+    // For ancestor edges, the source is the child and target is the parent
+    // but dagre should lay out parent above child, so we reverse
+    if (edge.data?.isSpouse) {
+      // Spouse edges: don't add to dagre for rank calc, just position them
+      // Actually we still add them so dagre puts them close
+      g.setEdge(edge.source, edge.target);
+    } else {
+      g.setEdge(edge.source, edge.target);
     }
+  }
 
-    const rowWidth = totalSlots * (NODE_W + H_GAP) - H_GAP;
-    let currentX = -rowWidth / 2;
-    const y = (gen + genOffsetY) * GEN_HEIGHT;
-    const genLayoutNodes: LayoutNode[] = [];
+  dagre.layout(g);
 
-    for (const node of nodesInGen) {
-      const ln: LayoutNode = {
-        id: node.id,
-        x: currentX + NODE_W / 2,
-        y,
-        data: node,
-      };
-      layoutNodes.push(ln);
-      genLayoutNodes.push(ln);
-      nodeMap.set(node.id, ln);
-      currentX += NODE_W + H_GAP;
+  const layoutedNodes = nodes.map((node) => {
+    const pos = g.node(node.id);
+    return {
+      ...node,
+      position: { x: pos.x - NODE_W / 2, y: pos.y - NODE_H / 2 },
+    };
+  });
 
-      // Spouses are positioned right next to this node
-      for (const spouse of node.spouses) {
-        const sln: LayoutNode = {
-          id: spouse.id,
-          x: currentX + NODE_W / 2,
-          y,
+  return { nodes: layoutedNodes, edges };
+}
+
+// ---------------------------------------------------------------------------
+// Convert FamilyGraph to React Flow nodes/edges
+// ---------------------------------------------------------------------------
+
+function graphToReactFlow(
+  graph: FamilyGraph,
+  onExpand: (nodeId: string) => void,
+): { nodes: PersonNode[]; edges: RelEdge[] } {
+  const rfNodes: PersonNode[] = [];
+  const rfEdges: RelEdge[] = [];
+  const allNodeIds = new Set<string>();
+
+  // First, collect all nodes including spouses
+  for (const node of graph.nodes.values()) {
+    allNodeIds.add(node.id);
+    for (const sp of node.spouses) {
+      allNodeIds.add(sp.id);
+    }
+  }
+
+  // Add main nodes
+  for (const node of graph.nodes.values()) {
+    rfNodes.push({
+      id: node.id,
+      type: "person",
+      position: { x: 0, y: 0 },
+      data: {
+        name: node.name,
+        relationType: node.relationType,
+        direction: node.direction,
+        isRoot: node.id === graph.rootId,
+        expanded: node.expanded,
+        loading: node.loading,
+        hasPersonId: node.hasPersonId,
+        canExpand: node.hasPersonId && !node.expanded,
+        onExpand,
+      },
+    });
+
+    // Add spouse nodes
+    for (const sp of node.spouses) {
+      if (!graph.nodes.has(sp.id)) {
+        rfNodes.push({
+          id: sp.id,
+          type: "person",
+          position: { x: 0, y: 0 },
           data: {
-            id: spouse.id,
-            name: spouse.name,
-            generation: node.generation,
-            relationType: spouse.type,
-            direction: "spouse" as RelDirection,
-            uncertain: false,
+            name: sp.name,
+            relationType: sp.type,
+            direction: "spouse",
+            isRoot: false,
             expanded: false,
             loading: false,
-            hasPersonId: spouse.hasPersonId,
-            parentNodeId: null,
-            spouses: [],
+            hasPersonId: sp.hasPersonId,
+            canExpand: false,
+            onExpand,
           },
-        };
-        layoutNodes.push(sln);
-        genLayoutNodes.push(sln);
-        nodeMap.set(spouse.id, sln);
-        currentX += NODE_W + H_GAP;
+        });
+      }
+    }
+  }
+
+  // Add parent-child edges
+  for (const node of graph.nodes.values()) {
+    if (node.parentNodeId && allNodeIds.has(node.parentNodeId)) {
+      if (node.direction === "ancestor") {
+        // Ancestor: parent (this node) is above the parentNodeId (which is the root/child)
+        // Edge goes from ancestor down to child
+        rfEdges.push({
+          id: `e-${node.id}-${node.parentNodeId}`,
+          source: node.id,
+          target: node.parentNodeId,
+          type: "relationship",
+          data: {
+            relationType: node.relationType,
+            isSpouse: false,
+            isDivorced: false,
+          },
+        });
+      } else {
+        // Descendant: parentNodeId is above, this node is below
+        rfEdges.push({
+          id: `e-${node.parentNodeId}-${node.id}`,
+          source: node.parentNodeId,
+          target: node.id,
+          type: "relationship",
+          data: {
+            relationType: node.relationType,
+            isSpouse: false,
+            isDivorced: false,
+          },
+        });
       }
     }
 
-    layoutGenerations.set(gen, genLayoutNodes);
-  }
-
-  // Build edges from parentNodeId links
-  const edges: LayoutEdge[] = [];
-  for (const node of graph.nodes.values()) {
-    if (node.parentNodeId && nodeMap.has(node.parentNodeId) && nodeMap.has(node.id)) {
-      edges.push({
-        sourceId: node.parentNodeId,
-        targetId: node.id,
-        label: node.relationType,
+    // Add spouse edges
+    for (const sp of node.spouses) {
+      rfEdges.push({
+        id: `e-spouse-${node.id}-${sp.id}`,
+        source: node.id,
+        target: sp.id,
+        type: "relationship",
+        data: {
+          relationType: sp.type,
+          isSpouse: true,
+          isDivorced: sp.type === "divorced from",
+        },
       });
     }
   }
 
-  // Compute bounds
-  let minX = Infinity;
-  let maxX = -Infinity;
-  for (const ln of layoutNodes) {
-    if (ln.x - NODE_W / 2 < minX) minX = ln.x - NODE_W / 2;
-    if (ln.x + NODE_W / 2 > maxX) maxX = ln.x + NODE_W / 2;
-  }
+  // Deduplicate nodes by id
+  const seen = new Set<string>();
+  const uniqueNodes = rfNodes.filter((n) => {
+    if (seen.has(n.id)) return false;
+    seen.add(n.id);
+    return true;
+  });
 
-  const pad = 80;
-  const width = Math.max(400, maxX - minX + pad * 2);
-  const height = Math.max(300, (maxGen - minGen + 1) * GEN_HEIGHT + pad * 2);
-
-  // Re-center: shift all nodes so the layout is centered in the width
-  const centerShift = -(minX + maxX) / 2;
-  for (const ln of layoutNodes) {
-    ln.x += centerShift;
-  }
-
-  return {
-    nodes: layoutNodes,
-    edges,
-    generations: layoutGenerations,
-    minGen,
-    maxGen,
-    width,
-    height,
-  };
+  return layoutTree(uniqueNodes, rfEdges);
 }
 
 // ---------------------------------------------------------------------------
-// Component
+// Inner component (needs ReactFlowProvider above it)
 // ---------------------------------------------------------------------------
 
-interface FamilyTreeProps {
-  person: Person;
-}
-
-export function FamilyTree({ person }: FamilyTreeProps) {
-  const svgRef = useRef<SVGSVGElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+function FamilyTreeInner({ person }: { person: Person }) {
   const [graph, setGraph] = useState<FamilyGraph>(() => buildInitialGraph(person));
-  const [containerWidth, setContainerWidth] = useState(800);
+  const { fitView } = useReactFlow();
+  const navigate = useNavigate();
 
-  // Reset graph when person changes
   useEffect(() => {
     setGraph(buildInitialGraph(person));
   }, [person]);
-
-  // Measure container
-  useEffect(() => {
-    function measure() {
-      if (containerRef.current) {
-        setContainerWidth(containerRef.current.getBoundingClientRect().width);
-      }
-    }
-    measure();
-    window.addEventListener("resize", measure);
-    return () => window.removeEventListener("resize", measure);
-  }, []);
 
   const expandNode = useCallback(async (nodeId: string) => {
     setGraph((prev) => markLoading(prev, nodeId));
@@ -457,349 +577,14 @@ export function FamilyTree({ person }: FamilyTreeProps) {
     setGraph((prev) => expandGraphNode(prev, nodeId, personData));
   }, []);
 
-  // D3 rendering
+  const { nodes, edges } = useMemo(() => graphToReactFlow(graph, expandNode), [graph, expandNode]);
+
+  // Fit view after nodes change
   useEffect(() => {
-    if (!svgRef.current) return;
-
-    const svg = d3.select(svgRef.current);
-    svg.selectAll("*").remove();
-
-    const layout = computeLayout(graph);
-
-    const svgW = Math.max(containerWidth, layout.width);
-    const svgH = Math.max(300, layout.height);
-
-    svg.attr("width", svgW).attr("height", svgH);
-
-    // Center offset: put generation 0 in the middle vertically
-    const genOffsetY = -layout.minGen;
-    const rootY = genOffsetY * GEN_HEIGHT;
-    const offsetX = svgW / 2;
-    const offsetY = svgH / 2 - rootY + (layout.minGen < 0 ? 0 : 40);
-
-    const g = svg.append("g").attr("transform", `translate(${offsetX},${offsetY})`);
-
-    // Add zoom
-    const zoom = d3
-      .zoom<SVGSVGElement, unknown>()
-      .scaleExtent([0.3, 3])
-      .on("zoom", (event) => {
-        g.attr("transform", event.transform);
-      });
-    svg.call(zoom);
-    svg.call(zoom.transform, d3.zoomIdentity.translate(offsetX, offsetY));
-
-    // Build node lookup for layout
-    const nodeMap = new Map<string, LayoutNode>();
-    for (const ln of layout.nodes) {
-      nodeMap.set(ln.id, ln);
-    }
-
-    // -----------------------------------------------------------------------
-    // Draw generation bands and labels
-    // -----------------------------------------------------------------------
-    const genBandGroup = g.append("g").attr("class", "gen-bands");
-    const bandHalfH = GEN_HEIGHT / 2;
-
-    // Compute the horizontal extent for bands
-    let bandMinX = -svgW;
-    let bandMaxX = svgW;
-    for (const ln of layout.nodes) {
-      if (ln.x - NODE_W < bandMinX) bandMinX = ln.x - NODE_W;
-      if (ln.x + NODE_W > bandMaxX) bandMaxX = ln.x + NODE_W;
-    }
-    bandMinX -= 200;
-    bandMaxX += 200;
-
-    for (let gen = layout.minGen; gen <= layout.maxGen; gen++) {
-      const y = (gen + genOffsetY) * GEN_HEIGHT;
-
-      // Alternating band
-      if (gen % 2 !== 0) {
-        genBandGroup
-          .append("rect")
-          .attr("x", bandMinX)
-          .attr("y", y - bandHalfH)
-          .attr("width", bandMaxX - bandMinX)
-          .attr("height", GEN_HEIGHT)
-          .attr("fill", COLORS.generationBand)
-          .attr("pointer-events", "none");
-      }
-
-      // Horizontal separator line
-      genBandGroup
-        .append("line")
-        .attr("x1", bandMinX)
-        .attr("y1", y - bandHalfH)
-        .attr("x2", bandMaxX)
-        .attr("y2", y - bandHalfH)
-        .attr("stroke", COLORS.generationLine)
-        .attr("stroke-width", 1)
-        .attr("pointer-events", "none");
-
-      // Generation label on left
-      genBandGroup
-        .append("text")
-        .attr("x", bandMinX + 8)
-        .attr("y", y + 4)
-        .attr("font-size", 10)
-        .attr("fill", COLORS.generationLabel)
-        .attr("font-style", "italic")
-        .attr("pointer-events", "none")
-        .text(generationLabel(gen));
-    }
-
-    // -----------------------------------------------------------------------
-    // Draw edges (parent-child links)
-    // -----------------------------------------------------------------------
-    const edgeGroup = g.append("g");
-    const edgeLabelGroup = g.append("g");
-
-    for (const edge of layout.edges) {
-      const source = nodeMap.get(edge.sourceId);
-      const target = nodeMap.get(edge.targetId);
-      if (!source || !target) continue;
-
-      // For ancestor direction (target above source), edge exits top of source
-      const isUpward = target.data.generation < source.data.generation;
-      const sy = source.y + (isUpward ? -NODE_H / 2 : NODE_H / 2);
-      const ty = target.y + (isUpward ? NODE_H / 2 : -NODE_H / 2);
-      const my = (sy + ty) / 2;
-
-      edgeGroup
-        .append("path")
-        .attr("d", `M${source.x},${sy} C${source.x},${my} ${target.x},${my} ${target.x},${ty}`)
-        .attr("fill", "none")
-        .attr("stroke", COLORS.edge)
-        .attr("stroke-width", 1.5);
-
-      // Edge label (hidden by default, shown on hover)
-      edgeLabelGroup
-        .append("text")
-        .attr("x", (source.x + target.x) / 2)
-        .attr("y", (sy + ty) / 2)
-        .attr("text-anchor", "middle")
-        .attr("font-size", 9)
-        .attr("fill", COLORS.textMuted)
-        .attr("opacity", 0)
-        .attr("data-source", edge.sourceId)
-        .attr("data-target", edge.targetId)
-        .text(edge.label);
-    }
-
-    // -----------------------------------------------------------------------
-    // Draw spouse connectors (horizontal double line)
-    // -----------------------------------------------------------------------
-    for (const node of graph.nodes.values()) {
-      if (node.spouses.length === 0) continue;
-      const ln = nodeMap.get(node.id);
-      if (!ln) continue;
-
-      for (const spouse of node.spouses) {
-        const sln = nodeMap.get(spouse.id);
-        if (!sln) continue;
-
-        const isDivorced = spouse.type === "divorced from";
-        const x1 = ln.x + NODE_W / 2;
-        const x2 = sln.x - NODE_W / 2;
-        const cy = ln.y;
-
-        // Double line
-        edgeGroup
-          .append("line")
-          .attr("x1", x1)
-          .attr("y1", cy - 2)
-          .attr("x2", x2)
-          .attr("y2", cy - 2)
-          .attr("stroke", COLORS.edgeSpouse)
-          .attr("stroke-width", 1)
-          .attr("stroke-dasharray", isDivorced ? "3,3" : "");
-        edgeGroup
-          .append("line")
-          .attr("x1", x1)
-          .attr("y1", cy + 2)
-          .attr("x2", x2)
-          .attr("y2", cy + 2)
-          .attr("stroke", COLORS.edgeSpouse)
-          .attr("stroke-width", 1)
-          .attr("stroke-dasharray", isDivorced ? "3,3" : "");
-      }
-    }
-
-    // -----------------------------------------------------------------------
-    // Draw nodes
-    // -----------------------------------------------------------------------
-    const nodeGroups = g
-      .append("g")
-      .selectAll<SVGGElement, LayoutNode>("g")
-      .data(layout.nodes)
-      .join("g")
-      .attr("transform", (d) => `translate(${d.x},${d.y})`);
-
-    // Node rectangles
-    nodeGroups
-      .append("rect")
-      .attr("x", -NODE_W / 2)
-      .attr("y", -NODE_H / 2)
-      .attr("width", NODE_W)
-      .attr("height", NODE_H)
-      .attr("rx", NODE_RX)
-      .attr("fill", "white")
-      .attr("stroke", (d) => {
-        if (d.data.id === person.id) return COLORS.root;
-        if (d.data.direction === "spouse") return COLORS.spouse;
-        return COLORS.family;
-      })
-      .attr("stroke-width", (d) => (d.data.id === person.id ? 2.5 : 1));
-
-    // Node names
-    nodeGroups
-      .append("text")
-      .attr("text-anchor", "middle")
-      .attr("dy", (d) => (d.data.id !== person.id && d.data.relationType ? -2 : 1))
-      .attr("font-size", (d) => (d.data.id === person.id ? 12 : 11))
-      .attr("font-weight", (d) => (d.data.id === person.id ? "600" : "400"))
-      .attr("fill", COLORS.text)
-      .text((d) => {
-        const name = d.data.name;
-        return name.length > 20 ? name.slice(0, 18) + "\u2026" : name;
-      });
-
-    // Relationship label below name (for non-root)
-    nodeGroups
-      .filter((d) => d.data.id !== person.id && d.data.relationType !== "")
-      .append("text")
-      .attr("text-anchor", "middle")
-      .attr("dy", 10)
-      .attr("font-size", 8)
-      .attr("fill", COLORS.textMuted)
-      .text((d) => d.data.relationType);
-
-    // Uncertainty badge
-    nodeGroups
-      .filter((d) => d.data.uncertain)
-      .append("text")
-      .attr("x", NODE_W / 2 - 4)
-      .attr("y", -NODE_H / 2 + 10)
-      .attr("text-anchor", "middle")
-      .attr("font-size", 10)
-      .attr("font-weight", "bold")
-      .attr("fill", COLORS.spouse)
-      .text("?");
-
-    // Loading spinner
-    nodeGroups
-      .filter((d) => d.data.loading)
-      .append("circle")
-      .attr("cx", 0)
-      .attr("cy", (d) => (d.data.direction === "ancestor" ? -NODE_H / 2 - 14 : NODE_H / 2 + 14))
-      .attr("r", 4)
-      .attr("fill", "none")
-      .attr("stroke", COLORS.loadingSpinner)
-      .attr("stroke-width", 1.5)
-      .attr("stroke-dasharray", "6,6")
-      .attr("class", "animate-spin-slow");
-
-    // -----------------------------------------------------------------------
-    // Expand buttons: upward for ancestors, downward for descendants
-    // -----------------------------------------------------------------------
-
-    // Ancestor expand (upward arrow) - nodes with direction "ancestor" that aren't expanded
-    const expandableUp = nodeGroups.filter(
-      (d) =>
-        d.data.direction === "ancestor" &&
-        !d.data.expanded &&
-        !d.data.loading &&
-        d.data.hasPersonId,
-    );
-
-    expandableUp
-      .append("circle")
-      .attr("cy", -NODE_H / 2 - 14)
-      .attr("r", EXPAND_R)
-      .attr("fill", COLORS.expandBtnUp)
-      .attr("stroke", "white")
-      .attr("stroke-width", 1.5)
-      .style("cursor", "pointer")
-      .on("mouseenter", function () {
-        d3.select(this).attr("fill", COLORS.expandBtnUpHover);
-      })
-      .on("mouseleave", function () {
-        d3.select(this).attr("fill", COLORS.expandBtnUp);
-      })
-      .on("click", (_event, d) => {
-        _event.stopPropagation();
-        expandNode(d.data.id);
-      });
-
-    // Upward chevron (▲ shape via path)
-    expandableUp
-      .append("path")
-      .attr("d", `M-4,${-NODE_H / 2 - 11}L0,${-NODE_H / 2 - 17}L4,${-NODE_H / 2 - 11}`)
-      .attr("fill", "none")
-      .attr("stroke", "white")
-      .attr("stroke-width", 2)
-      .attr("stroke-linecap", "round")
-      .attr("stroke-linejoin", "round")
-      .style("pointer-events", "none");
-
-    // Descendant expand (downward arrow)
-    const expandableDown = nodeGroups.filter(
-      (d) =>
-        d.data.direction === "descendant" &&
-        !d.data.expanded &&
-        !d.data.loading &&
-        d.data.hasPersonId,
-    );
-
-    expandableDown
-      .append("circle")
-      .attr("cy", NODE_H / 2 + 14)
-      .attr("r", EXPAND_R)
-      .attr("fill", COLORS.expandBtn)
-      .attr("stroke", "white")
-      .attr("stroke-width", 1.5)
-      .style("cursor", "pointer")
-      .on("mouseenter", function () {
-        d3.select(this).attr("fill", COLORS.expandBtnHover);
-      })
-      .on("mouseleave", function () {
-        d3.select(this).attr("fill", COLORS.expandBtn);
-      })
-      .on("click", (_event, d) => {
-        _event.stopPropagation();
-        expandNode(d.data.id);
-      });
-
-    // Downward chevron (▼ shape via path)
-    expandableDown
-      .append("path")
-      .attr("d", `M-4,${NODE_H / 2 + 11}L0,${NODE_H / 2 + 17}L4,${NODE_H / 2 + 11}`)
-      .attr("fill", "none")
-      .attr("stroke", "white")
-      .attr("stroke-width", 2)
-      .attr("stroke-linecap", "round")
-      .attr("stroke-linejoin", "round")
-      .style("pointer-events", "none");
-
-    // -----------------------------------------------------------------------
-    // Hover: show edge labels
-    // -----------------------------------------------------------------------
-    nodeGroups
-      .on("mouseenter", function (_event, d) {
-        edgeLabelGroup.selectAll("text").attr("opacity", function () {
-          const el = d3.select(this);
-          return el.attr("data-source") === d.id || el.attr("data-target") === d.id ? 1 : 0;
-        });
-        d3.select(this).select("rect").attr("stroke-width", 2.5);
-      })
-      .on("mouseleave", function (_event, d) {
-        edgeLabelGroup.selectAll("text").attr("opacity", 0);
-        d3.select(this)
-          .select("rect")
-          .attr("stroke-width", d.data.id === person.id ? 2.5 : 1);
-      });
-  }, [graph, containerWidth, person.id, expandNode]);
+    // Small delay to let React Flow measure nodes
+    const t = setTimeout(() => fitView({ padding: 0.2, duration: 300 }), 50);
+    return () => clearTimeout(t);
+  }, [nodes, edges, fitView]);
 
   return (
     <div className="w-full space-y-2">
@@ -829,7 +614,7 @@ export function FamilyTree({ person }: FamilyTreeProps) {
         <span className="flex items-center gap-1.5">
           <span
             className="inline-block w-3 h-3 rounded-full flex items-center justify-center"
-            style={{ backgroundColor: COLORS.expandBtnUp }}
+            style={{ backgroundColor: COLORS.root }}
           >
             <ChevronUp className="w-2.5 h-2.5 text-white" />
           </span>
@@ -838,7 +623,7 @@ export function FamilyTree({ person }: FamilyTreeProps) {
         <span className="flex items-center gap-1.5">
           <span
             className="inline-block w-3 h-3 rounded-full flex items-center justify-center"
-            style={{ backgroundColor: COLORS.expandBtn }}
+            style={{ backgroundColor: COLORS.family }}
           >
             <ChevronDown className="w-2.5 h-2.5 text-white" />
           </span>
@@ -846,25 +631,43 @@ export function FamilyTree({ person }: FamilyTreeProps) {
         </span>
       </div>
 
-      {/* Navigable node list (for accessibility) */}
-      <div className="sr-only">
-        {[...graph.nodes.values()]
-          .filter((n) => n.id !== person.id && n.hasPersonId)
-          .map((n) => (
-            <Link key={n.id} to="/persons/$personId" params={{ personId: n.id }}>
-              {n.name} ({n.relationType})
-            </Link>
-          ))}
-      </div>
-
-      {/* Tree SVG */}
-      <div
-        ref={containerRef}
-        className="relative overflow-auto rounded-lg border border-ink/10 bg-white/50"
-        style={{ maxHeight: 500 }}
-      >
-        <svg ref={svgRef} width={containerWidth} height={400} className="block" />
+      {/* Tree */}
+      <div className="rounded-lg border border-ink/10 bg-white/50" style={{ height: 500 }}>
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
+          fitView
+          minZoom={0.2}
+          maxZoom={3}
+          proOptions={{ hideAttribution: true }}
+          nodesDraggable={false}
+          nodesConnectable={false}
+          elementsSelectable={false}
+          onNodeDoubleClick={(_event, node) => {
+            if (node.id !== person.id && node.data.hasPersonId) {
+              navigate({ to: "/persons/$personId", params: { personId: node.id } });
+            }
+          }}
+        />
       </div>
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Exported component (wraps with ReactFlowProvider)
+// ---------------------------------------------------------------------------
+
+interface FamilyTreeProps {
+  person: Person;
+}
+
+export function FamilyTree({ person }: FamilyTreeProps) {
+  return (
+    <ReactFlowProvider>
+      <FamilyTreeInner person={person} />
+    </ReactFlowProvider>
   );
 }
