@@ -25,3 +25,9 @@
 - `cd liber-amicorum && vp check` — lint and type check.
 - Requires `data/extracted/` to exist — run `uv run python scripts/extract_data.py` first.
 - Uses Vite+ (`vp`) CLI — do not use pnpm/npm directly for dev/build/test.
+
+## Watch Mode
+
+When I say "watch mode", call agentation_watch_annotations in a loop.
+For each annotation: acknowledge it, make the fix, then resolve it with a summary.
+Commit the changes then continue watching until I say stop or timeout is reached.
