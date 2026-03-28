@@ -30,27 +30,45 @@ const columns = [
   }),
   columnHelper.accessor("dateStart", {
     header: "From",
-    cell: (info) => (
-      <UncertaintyMarker uncertain={info.row.original.dateStartUncertain}>
-        {formatYearUncertain(info.getValue(), false) ?? "\u2014"}
-      </UncertaintyMarker>
-    ),
+    cell: (info) => {
+      const row = info.row.original;
+      return (
+        <UncertaintyMarker
+          uncertain={row.dateStartUncertain}
+          notes={row.notes.length > 0 ? row.notes : undefined}
+        >
+          {formatYearUncertain(info.getValue(), false) ?? "\u2014"}
+        </UncertaintyMarker>
+      );
+    },
   }),
   columnHelper.accessor("dateEnd", {
     header: "To",
-    cell: (info) => (
-      <UncertaintyMarker uncertain={info.row.original.dateEndUncertain}>
-        {formatYearUncertain(info.getValue(), false) ?? "\u2014"}
-      </UncertaintyMarker>
-    ),
+    cell: (info) => {
+      const row = info.row.original;
+      return (
+        <UncertaintyMarker
+          uncertain={row.dateEndUncertain}
+          notes={row.notes.length > 0 ? row.notes : undefined}
+        >
+          {formatYearUncertain(info.getValue(), false) ?? "\u2014"}
+        </UncertaintyMarker>
+      );
+    },
   }),
   columnHelper.accessor("province", {
     header: "Province",
     cell: (info) => {
       const val = info.getValue();
       if (!val) return "\u2014";
+      const row = info.row.original;
       return (
-        <UncertaintyMarker uncertain={info.row.original.provinceUncertain}>{val}</UncertaintyMarker>
+        <UncertaintyMarker
+          uncertain={row.provinceUncertain}
+          notes={row.notes.length > 0 ? row.notes : undefined}
+        >
+          {val}
+        </UncertaintyMarker>
       );
     },
   }),

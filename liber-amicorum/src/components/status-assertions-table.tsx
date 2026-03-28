@@ -39,18 +39,29 @@ const columns = [
   }),
   columnHelper.accessor("dateStart", {
     header: "From",
-    cell: (info) => (
-      <UncertaintyMarker uncertain={info.row.original.dateStartUncertain}>
-        {formatYearUncertain(info.getValue(), false) ?? "\u2014"}
-      </UncertaintyMarker>
-    ),
+    cell: (info) => {
+      const row = info.row.original;
+      return (
+        <UncertaintyMarker
+          uncertain={row.dateStartUncertain}
+          notes={row.notes.length > 0 ? row.notes : undefined}
+        >
+          {formatYearUncertain(info.getValue(), false) ?? "\u2014"}
+        </UncertaintyMarker>
+      );
+    },
   }),
   columnHelper.accessor("dateEnd", {
     header: "To",
-    cell: (info) => (
-      <UncertaintyMarker uncertain={info.row.original.dateEndUncertain}>
-        {formatYearUncertain(info.getValue(), false) ?? "\u2014"}
-      </UncertaintyMarker>
+    cell: (info) => {
+      const row = info.row.original;
+      return (
+        <UncertaintyMarker
+          uncertain={row.dateEndUncertain}
+          notes={row.notes.length > 0 ? row.notes : undefined}
+        >
+          {formatYearUncertain(info.getValue(), false) ?? "\u2014"}
+        </UncertaintyMarker>
     ),
   }),
   columnHelper.accessor("sources", {
