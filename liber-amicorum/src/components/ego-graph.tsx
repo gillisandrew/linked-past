@@ -39,6 +39,14 @@ const EDGE_STYLES: Record<RelCategory, { color: string; dasharray: string }> = {
   political: { color: "rgba(80, 130, 130, 0.5)", dasharray: "2,3" },
 };
 
+const NODE_COLORS: Record<RelCategory, string> = {
+  family: "#a0785a", // terracotta/ochre
+  marriage: "#b07080", // rose/pink
+  political: "#5a8a8a", // teal
+};
+
+const CENTER_NODE_COLOR = "#6b7c6e";
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -53,6 +61,7 @@ interface SimNode {
   id: string;
   name: string;
   isCenter: boolean;
+  category: RelCategory;
   x?: number;
   y?: number;
   fx?: number | null;
@@ -66,6 +75,8 @@ interface SimEdge {
   label: string;
 }
 
+const GRAPH_HEIGHT = 250;
+
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
@@ -73,7 +84,7 @@ interface SimEdge {
 export function EgoGraph({ personId, personName, relationships }: EgoGraphProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [dimensions, setDimensions] = useState({ width: 600, height: 300 });
+  const [dimensions, setDimensions] = useState({ width: 600, height: GRAPH_HEIGHT });
   const navigate = useNavigate();
 
   // Measure container width
@@ -81,7 +92,7 @@ export function EgoGraph({ personId, personName, relationships }: EgoGraphProps)
     function measure() {
       if (containerRef.current) {
         const rect = containerRef.current.getBoundingClientRect();
-        setDimensions({ width: rect.width, height: 300 });
+        setDimensions({ width: rect.width, height: GRAPH_HEIGHT });
       }
     }
     measure();
@@ -97,12 +108,8 @@ export function EgoGraph({ personId, personName, relationships }: EgoGraphProps)
     svg.selectAll("*").remove();
 
     // Build nodes: center + unique related persons
-    const centerNode: SimNode = {
-      id: personId,
-      name: personName,
-      isCenter: true,
-    };
-
+    // Determine each peripheral node's category from its relationship to center
+    const nodeCategories = new Map<string, RelCategory>();
     const seen = new Set<string>();
     const peripheralNodes: SimNode[] = [];
     const edges: { sourceId: string; targetId: string; type: string; label: string }[] = [];
@@ -110,13 +117,17 @@ export function EgoGraph({ personId, personName, relationships }: EgoGraphProps)
     for (const rel of relationships) {
       const relId = rel.relatedPersonId ?? `unknown-${rel.type}-${rel.relatedPersonName}`;
       const relName = rel.relatedPersonName ?? "Unknown";
+      const cat = classifyRelationship(rel.type);
 
       if (!seen.has(relId)) {
         seen.add(relId);
+        // Use first relationship category for node color
+        nodeCategories.set(relId, cat);
         peripheralNodes.push({
           id: relId,
           name: relName,
           isCenter: false,
+          category: cat,
         });
       }
 
@@ -127,6 +138,13 @@ export function EgoGraph({ personId, personName, relationships }: EgoGraphProps)
         label: rel.type,
       });
     }
+
+    const centerNode: SimNode = {
+      id: personId,
+      name: personName,
+      isCenter: true,
+      category: "family", // unused for center
+    };
 
     const nodes: SimNode[] = [centerNode, ...peripheralNodes];
     const nodeMap = new Map(nodes.map((n) => [n.id, n]));
@@ -139,6 +157,17 @@ export function EgoGraph({ personId, personName, relationships }: EgoGraphProps)
         type: e.type,
         label: e.label,
       }));
+
+    // Build adjacency: for each node, which edges connect to it
+    const nodeEdgeMap = new Map<string, number[]>();
+    simEdges.forEach((_, i) => {
+      const s = simEdges[i].source.id;
+      const t = simEdges[i].target.id;
+      if (!nodeEdgeMap.has(s)) nodeEdgeMap.set(s, []);
+      if (!nodeEdgeMap.has(t)) nodeEdgeMap.set(t, []);
+      nodeEdgeMap.get(s)!.push(i);
+      nodeEdgeMap.get(t)!.push(i);
+    });
 
     // Container group for zoom/pan
     const g = svg.append("g");
@@ -161,26 +190,27 @@ export function EgoGraph({ personId, personName, relationships }: EgoGraphProps)
       .attr("stroke-dasharray", (d) => EDGE_STYLES[classifyRelationship(d.type)].dasharray)
       .attr("stroke-width", 1.2);
 
-    // Edge labels
+    // Edge labels -- hidden by default
     const edgeLabelSelection = g
       .append("g")
       .selectAll("text")
       .data(simEdges)
       .join("text")
       .attr("font-size", 9)
-      .attr("fill", "rgba(37, 36, 54, 0.5)")
+      .attr("fill", "rgba(37, 36, 54, 0.7)")
       .attr("text-anchor", "middle")
       .attr("dy", -4)
+      .attr("opacity", 0)
       .text((d) => d.label);
 
-    // Nodes
+    // Nodes -- colored by relationship category
     const nodeSelection = g
       .append("g")
       .selectAll<SVGCircleElement, SimNode>("circle")
       .data(nodes)
       .join("circle")
       .attr("r", (d) => (d.isCenter ? 10 : 6))
-      .attr("fill", (d) => (d.isCenter ? "#6b7c6e" : "#8b7355"))
+      .attr("fill", (d) => (d.isCenter ? CENTER_NODE_COLOR : NODE_COLORS[d.category]))
       .attr("stroke", (d) => (d.isCenter ? "rgba(37, 36, 54, 0.6)" : "rgba(37, 36, 54, 0.3)"))
       .attr("stroke-width", (d) => (d.isCenter ? 2 : 1))
       .style("cursor", (d) =>
@@ -200,6 +230,29 @@ export function EgoGraph({ personId, personName, relationships }: EgoGraphProps)
       .attr("dy", (d) => (d.isCenter ? -16 : -12))
       .text((d) => d.name);
 
+    // ---------------------------------------------------------------------------
+    // Hover: show edge labels for connected edges, highlight node
+    // ---------------------------------------------------------------------------
+
+    function highlightNode(nodeId: string) {
+      const connectedEdgeIndices = nodeEdgeMap.get(nodeId) ?? [];
+      // Show labels for connected edges
+      edgeLabelSelection
+        .transition()
+        .duration(150)
+        .attr("opacity", (_d, i) => (connectedEdgeIndices.includes(i) ? 1 : 0));
+      // Thicken connected edges
+      edgeSelection
+        .transition()
+        .duration(150)
+        .attr("stroke-width", (_d, i) => (connectedEdgeIndices.includes(i) ? 2.5 : 1.2));
+    }
+
+    function clearHighlight() {
+      edgeLabelSelection.transition().duration(200).attr("opacity", 0);
+      edgeSelection.transition().duration(200).attr("stroke-width", 1.2);
+    }
+
     // Click to navigate
     nodeSelection.on("click", (_event, d) => {
       if (!d.isCenter && d.id && !d.id.startsWith("unknown-")) {
@@ -207,17 +260,33 @@ export function EgoGraph({ personId, personName, relationships }: EgoGraphProps)
       }
     });
 
-    // Hover highlight
+    // Hover highlight on nodes
     nodeSelection
       .on("mouseenter", function (_event, d) {
+        highlightNode(d.id);
         if (!d.isCenter && d.id && !d.id.startsWith("unknown-")) {
           d3.select(this).attr("stroke-width", 2.5).attr("stroke", "#333");
         }
       })
       .on("mouseleave", function (_event, d) {
+        clearHighlight();
         d3.select(this)
           .attr("stroke-width", d.isCenter ? 2 : 1)
           .attr("stroke", d.isCenter ? "rgba(37, 36, 54, 0.6)" : "rgba(37, 36, 54, 0.3)");
+      });
+
+    // Hover highlight on edges
+    edgeSelection
+      .on("mouseenter", function (_event, d) {
+        const idx = simEdges.indexOf(d);
+        edgeLabelSelection
+          .transition()
+          .duration(150)
+          .attr("opacity", (_d, i) => (i === idx ? 1 : 0));
+        d3.select(this).transition().duration(150).attr("stroke-width", 2.5);
+      })
+      .on("mouseleave", function () {
+        clearHighlight();
       });
 
     // Drag
@@ -286,12 +355,20 @@ export function EgoGraph({ personId, personName, relationships }: EgoGraphProps)
       {/* Legend */}
       <div className="flex flex-wrap items-center gap-4 text-xs text-ink-muted mb-2">
         <span className="flex items-center gap-1.5">
+          <span
+            className="inline-block w-2.5 h-2.5 rounded-full"
+            style={{ backgroundColor: NODE_COLORS.family }}
+          />
           <svg width="20" height="2">
             <line x1="0" y1="1" x2="20" y2="1" stroke="rgba(37,36,54,0.4)" strokeWidth="1.5" />
           </svg>
           Family
         </span>
         <span className="flex items-center gap-1.5">
+          <span
+            className="inline-block w-2.5 h-2.5 rounded-full"
+            style={{ backgroundColor: NODE_COLORS.marriage }}
+          />
           <svg width="20" height="2">
             <line
               x1="0"
@@ -306,6 +383,10 @@ export function EgoGraph({ personId, personName, relationships }: EgoGraphProps)
           Marriage
         </span>
         <span className="flex items-center gap-1.5">
+          <span
+            className="inline-block w-2.5 h-2.5 rounded-full"
+            style={{ backgroundColor: NODE_COLORS.political }}
+          />
           <svg width="20" height="2">
             <line
               x1="0"
@@ -323,7 +404,7 @@ export function EgoGraph({ personId, personName, relationships }: EgoGraphProps)
       <div
         ref={containerRef}
         className="relative overflow-hidden rounded-lg border border-ink/10"
-        style={{ height: 300 }}
+        style={{ height: GRAPH_HEIGHT }}
       >
         <svg ref={svgRef} width={dimensions.width} height={dimensions.height} className="block" />
       </div>

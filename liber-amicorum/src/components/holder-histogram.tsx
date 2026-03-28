@@ -4,7 +4,11 @@ import type { OfficeHolderWithOffice } from "#/lib/types";
 const BAR_COLOR = "oklch(0.55 0.10 250)";
 
 const HATCH_OVERLAY =
-  "repeating-linear-gradient(45deg, transparent, transparent 3px, rgba(255,255,255,0.3) 3px, rgba(255,255,255,0.3) 6px)";
+  "repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(255,255,255,0.4) 2px, rgba(255,255,255,0.4) 4px)";
+
+/** Fixed range: 509 BC (year -509) to 27 BC (year -27) */
+const RANGE_START = -509;
+const RANGE_END = -27;
 
 interface HolderHistogramProps {
   holders: OfficeHolderWithOffice[];
@@ -20,7 +24,6 @@ function bucketByDecade(holders: OfficeHolderWithOffice[]): DecadeBucket[] {
   const map = new Map<number, { certain: number; uncertain: number }>();
 
   for (const h of holders) {
-    // Use dateStart as the primary date, fall back to dateEnd
     const year = h.dateStart ?? h.dateEnd;
     if (year == null) continue;
     const decade = Math.floor(year / 10) * 10;
@@ -33,14 +36,11 @@ function bucketByDecade(holders: OfficeHolderWithOffice[]): DecadeBucket[] {
     map.set(decade, entry);
   }
 
-  if (map.size === 0) return [];
-
-  // Fill in empty decades so the histogram is continuous
-  const decades = [...map.keys()].sort((a, b) => a - b);
-  const min = decades[0];
-  const max = decades[decades.length - 1];
+  // Fixed range from 509 BC to 27 BC, bucketed by decade
+  const startDecade = Math.floor(RANGE_START / 10) * 10; // -510
+  const endDecade = Math.floor(RANGE_END / 10) * 10; // -30
   const result: DecadeBucket[] = [];
-  for (let d = min; d <= max; d += 10) {
+  for (let d = startDecade; d <= endDecade; d += 10) {
     const entry = map.get(d);
     result.push({
       decade: d,
@@ -53,14 +53,12 @@ function bucketByDecade(holders: OfficeHolderWithOffice[]): DecadeBucket[] {
 
 export function HolderHistogram({ holders }: HolderHistogramProps) {
   const buckets = bucketByDecade(holders);
-  if (buckets.length === 0) return null;
 
   const maxCount = Math.max(...buckets.map((b) => b.certain + b.uncertain));
   if (maxCount === 0) return null;
 
-  // Determine label interval: show decade labels every 50 or 100 years
-  const totalSpan = buckets[buckets.length - 1].decade - buckets[0].decade;
-  const labelStep = totalSpan <= 200 ? 50 : 100;
+  // Show decade labels every 100 years across the fixed range
+  const labelStep = 100;
 
   return (
     <div className="w-full">
@@ -68,13 +66,15 @@ export function HolderHistogram({ holders }: HolderHistogramProps) {
       <div className="flex items-end gap-px" style={{ height: 100 }}>
         {buckets.map((b) => {
           const total = b.certain + b.uncertain;
-          const totalHeight = (total / maxCount) * 100;
-          const certainHeight = (b.certain / maxCount) * 100;
-          const uncertainHeight = (b.uncertain / maxCount) * 100;
+          const totalPct = (total / maxCount) * 100;
+          const certainPct = total > 0 ? (b.certain / total) * 100 : 0;
+          const uncertainPct = total > 0 ? (b.uncertain / total) * 100 : 0;
           const tooltip =
-            `${total} holder${total !== 1 ? "s" : ""}` +
-            (b.uncertain > 0 ? ` (${b.uncertain} uncertain)` : "") +
-            ` in ${formatYear(b.decade)}s`;
+            total > 0
+              ? `${total} holder${total !== 1 ? "s" : ""}` +
+                (b.uncertain > 0 ? ` (${b.uncertain} uncertain)` : "") +
+                ` in ${formatYear(b.decade)}s`
+              : `${formatYear(b.decade)}s`;
 
           return (
             <div
@@ -83,31 +83,30 @@ export function HolderHistogram({ holders }: HolderHistogramProps) {
               style={{ height: "100%" }}
               title={tooltip}
             >
-              {/* Uncertain portion (top, hatched) */}
-              {b.uncertain > 0 && (
-                <div
-                  className="w-full relative"
-                  style={{ height: `${(uncertainHeight / totalHeight) * 100}%` }}
-                >
-                  <div
-                    className="absolute inset-0"
-                    style={{ backgroundColor: BAR_COLOR, opacity: 0.5 }}
-                  />
-                  <div className="absolute inset-0" style={{ background: HATCH_OVERLAY }} />
+              {total > 0 && (
+                <div className="w-full flex flex-col" style={{ height: `${totalPct}%` }}>
+                  {/* Uncertain portion (top, hatched) */}
+                  {b.uncertain > 0 && (
+                    <div className="w-full relative" style={{ height: `${uncertainPct}%` }}>
+                      <div
+                        className="absolute inset-0"
+                        style={{ backgroundColor: BAR_COLOR, opacity: 0.5 }}
+                      />
+                      <div className="absolute inset-0" style={{ background: HATCH_OVERLAY }} />
+                    </div>
+                  )}
+                  {/* Certain portion (bottom, solid) */}
+                  {b.certain > 0 && (
+                    <div
+                      className="w-full flex-1"
+                      style={{
+                        height: `${certainPct}%`,
+                        backgroundColor: BAR_COLOR,
+                      }}
+                    />
+                  )}
                 </div>
               )}
-              {/* Certain portion (bottom, solid) */}
-              {b.certain > 0 && (
-                <div
-                  className="w-full"
-                  style={{
-                    height: `${(certainHeight / totalHeight) * 100}%`,
-                    backgroundColor: BAR_COLOR,
-                  }}
-                />
-              )}
-              {/* Empty spacer to push bars to bottom */}
-              {total === 0 && <div className="w-full" />}
             </div>
           );
         })}
