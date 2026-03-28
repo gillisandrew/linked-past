@@ -55,11 +55,10 @@ function classifyRelationship(type: string): RelDirection {
 }
 
 /** Format relationship as "son of Name" → leads with the relationship */
-function formatRelLabel(relationType: string, relatedName: string): string {
+function formatRelLabel(relationType: string, relatedName: string | null | undefined): string {
+  if (!relationType) return "";
   const t = relationType.toLowerCase();
-  // Invert the direction label so it reads naturally from the node's perspective
-  // e.g., on a child node, "father of" means this person IS the father → show "father"
-  // on a parent node, "son of" means the root is son of this person → show "parent"
+  if (!relatedName) return t;
   return `${t} ${relatedName}`;
 }
 
@@ -140,7 +139,7 @@ function buildInitialGraph(person: Person): FamilyGraph {
         name,
         generation: -1,
         relationType: rel.type,
-        relatedToName: person.name,
+        relatedToName: person.name ?? "",
         direction: "ancestor",
         uncertain: false,
         expanded: false,
@@ -155,7 +154,7 @@ function buildInitialGraph(person: Person): FamilyGraph {
         name,
         generation: 1,
         relationType: rel.type,
-        relatedToName: person.name,
+        relatedToName: person.name ?? "",
         direction: "descendant",
         uncertain: false,
         expanded: false,
@@ -219,7 +218,7 @@ function expandGraphNode(graph: FamilyGraph, nodeId: string, personData: Person)
         name,
         generation: node.generation - 1,
         relationType: rel.type,
-        relatedToName: node.name,
+        relatedToName: node.name ?? "",
         direction: "ancestor",
         uncertain: false,
         expanded: false,
@@ -234,7 +233,7 @@ function expandGraphNode(graph: FamilyGraph, nodeId: string, personData: Person)
         name,
         generation: node.generation + 1,
         relationType: rel.type,
-        relatedToName: node.name,
+        relatedToName: node.name ?? "",
         direction: "descendant",
         uncertain: false,
         expanded: false,
