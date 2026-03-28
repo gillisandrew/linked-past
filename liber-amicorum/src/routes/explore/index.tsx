@@ -1,16 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { getAllPersons } from "#/lib/data";
+import { getPersonsIndex } from "#/lib/data";
 import { ExploreTable } from "#/components/explore-table";
 
 export const Route = createFileRoute("/explore/")({
-  loader: () => getAllPersons(),
+  loader: () => getPersonsIndex(),
   head: () => ({
     meta: [
       { title: "Explore — Liber Amicorum" },
       {
         name: "description",
-        content:
-          "Search, sort, and filter the full DPRR dataset of Roman Republican individuals.",
+        content: "Search, sort, and filter the full DPRR dataset of Roman Republican individuals.",
       },
     ],
   }),

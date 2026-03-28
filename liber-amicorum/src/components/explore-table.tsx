@@ -12,7 +12,7 @@ import {
 } from "@tanstack/react-table";
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import type { Person } from "#/lib/types";
+import type { PersonIndex } from "#/lib/types";
 import { formatEra } from "#/lib/format";
 import { UncertaintyMarker } from "#/components/uncertainty-marker";
 import { Input } from "#/components/ui/input";
@@ -32,7 +32,7 @@ import {
   TableRow,
 } from "#/components/ui/table";
 
-const columnHelper = createColumnHelper<Person>();
+const columnHelper = createColumnHelper<PersonIndex>();
 
 const columns = [
   columnHelper.accessor("name", {
@@ -92,7 +92,7 @@ const columns = [
 ];
 
 interface ExploreTableProps {
-  data: Person[];
+  data: PersonIndex[];
 }
 
 export function ExploreTable({ data }: ExploreTableProps) {

@@ -107,6 +107,33 @@ export interface Office {
   holders: OfficeHolder[];
 }
 
+export interface PersonIndex {
+  id: string;
+  name: string;
+  nomen: string | null;
+  cognomen: string | null;
+  praenomen: string | null;
+  eraFrom: number | null;
+  eraTo: number | null;
+  sex: string | null;
+  highestOffice: string | null;
+  patrician: boolean;
+  nobilis: boolean;
+  novus: boolean;
+  origin: string | null;
+  patricianUncertain: boolean;
+}
+
+export interface OfficeIndex {
+  id: string;
+  name: string;
+  abbreviation: string | null;
+  parentId: string | null;
+  parentName: string | null;
+  holderCount: number;
+  children: OfficeChild[];
+}
+
 export interface SearchDoc {
   id: string;
   type: "person" | "office";

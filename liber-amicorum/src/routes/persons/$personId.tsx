@@ -9,8 +9,8 @@ import { PostAssertionsTable } from "#/components/post-assertions-table";
 import { StatusAssertionsTable } from "#/components/status-assertions-table";
 
 export const Route = createFileRoute("/persons/$personId")({
-  loader: ({ params }) => {
-    const person = getPersonById(params.personId);
+  loader: async ({ params }) => {
+    const person = await getPersonById(params.personId);
     if (!person) throw notFound();
     return person;
   },

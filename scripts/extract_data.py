@@ -574,6 +574,49 @@ ORDER BY ?officeName ?dateStart ?dprrId
 # ---------------------------------------------------------------------------
 
 
+def build_persons_index(persons: list[dict]) -> list[dict]:
+    """Build a lightweight person index with only listing-level fields."""
+    index: list[dict] = []
+    for p in persons:
+        index.append(
+            {
+                "id": p["id"],
+                "name": p["name"],
+                "nomen": p.get("nomen"),
+                "cognomen": p.get("cognomen"),
+                "praenomen": p.get("praenomen"),
+                "eraFrom": p.get("eraFrom"),
+                "eraTo": p.get("eraTo"),
+                "sex": p.get("sex"),
+                "highestOffice": p.get("highestOffice"),
+                "patrician": p.get("patrician", False),
+                "nobilis": p.get("nobilis", False),
+                "novus": p.get("novus", False),
+                "origin": p.get("origin"),
+                "patricianUncertain": p.get("patricianUncertain", False),
+            }
+        )
+    return index
+
+
+def build_offices_index(offices: list[dict]) -> list[dict]:
+    """Build a lightweight office index with only listing-level fields."""
+    index: list[dict] = []
+    for o in offices:
+        index.append(
+            {
+                "id": o["id"],
+                "name": o["name"],
+                "abbreviation": o.get("abbreviation"),
+                "parentId": o.get("parentId"),
+                "parentName": o.get("parentName"),
+                "holderCount": len(o.get("holders", [])),
+                "children": o.get("children", []),
+            }
+        )
+    return index
+
+
 def build_search_index(persons: list[dict], offices: list[dict]) -> list[dict]:
     """Build a flat search index from persons and offices."""
     index: list[dict] = []
@@ -643,15 +686,43 @@ def main() -> None:
     offices = extract_offices(store, prefix_map)
     print(f"  {len(offices)} offices")
 
-    print("Building search index ...")
+    print("Building indexes ...")
+    persons_index = build_persons_index(persons)
+    offices_index = build_offices_index(offices)
     search_index = build_search_index(persons, offices)
-    print(f"  {len(search_index)} entries")
+    print(f"  {len(search_index)} search entries")
 
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
+    # Remove legacy monolithic files if they exist
+    for legacy in ("persons.json", "offices.json"):
+        legacy_path = OUTPUT_DIR / legacy
+        if legacy_path.exists():
+            legacy_path.unlink()
+            print(f"Removed legacy {legacy_path}")
+
+    # Write individual person files
+    persons_dir = OUTPUT_DIR / "persons"
+    persons_dir.mkdir(parents=True, exist_ok=True)
+    for p in persons:
+        out_path = persons_dir / f"{p['id']}.json"
+        with open(out_path, "w") as f:
+            json.dump(p, f, indent=2, ensure_ascii=False)
+    print(f"Wrote {len(persons)} individual person files to {persons_dir}/")
+
+    # Write individual office files
+    offices_dir = OUTPUT_DIR / "offices"
+    offices_dir.mkdir(parents=True, exist_ok=True)
+    for o in offices:
+        out_path = offices_dir / f"{o['id']}.json"
+        with open(out_path, "w") as f:
+            json.dump(o, f, indent=2, ensure_ascii=False)
+    print(f"Wrote {len(offices)} individual office files to {offices_dir}/")
+
+    # Write index files
     for name, data in [
-        ("persons.json", persons),
-        ("offices.json", offices),
+        ("persons-index.json", persons_index),
+        ("offices-index.json", offices_index),
         ("search-index.json", search_index),
     ]:
         out_path = OUTPUT_DIR / name

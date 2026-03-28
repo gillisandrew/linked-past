@@ -10,6 +10,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
 
 from extract_data import (  # noqa: E402
+    build_offices_index,
+    build_persons_index,
     build_search_index,
     extract_offices,
     extract_persons,
@@ -347,3 +349,62 @@ class TestBuildSearchIndex:
         offices = extract_offices(store, _prefix_map())
         index = build_search_index(persons, offices)
         assert len(index) == len(persons) + len(offices)
+
+
+class TestBuildPersonsIndex:
+    def test_returns_correct_count(self):
+        store = _make_store()
+        persons = extract_persons(store, _prefix_map())
+        index = build_persons_index(persons)
+        assert len(index) == len(persons)
+
+    def test_entry_has_listing_fields(self):
+        store = _make_store()
+        persons = extract_persons(store, _prefix_map())
+        index = build_persons_index(persons)
+        brutus = next(e for e in index if e["id"] == "IUNI0001")
+
+        assert brutus["name"] == "L. Iunius Brutus"
+        assert brutus["nomen"] == "Iunius"
+        assert brutus["cognomen"] == "Brutus"
+        assert brutus["eraFrom"] == -509
+        assert brutus["eraTo"] == -509
+        assert brutus["patrician"] is True
+        assert brutus["patricianUncertain"] is False
+
+    def test_entry_omits_detail_fields(self):
+        store = _make_store()
+        persons = extract_persons(store, _prefix_map())
+        index = build_persons_index(persons)
+        brutus = next(e for e in index if e["id"] == "IUNI0001")
+
+        for key in ("postAssertions", "relationships", "statusAssertions",
+                     "dateInformation", "tribeAssertions", "notes"):
+            assert key not in brutus
+
+
+class TestBuildOfficesIndex:
+    def test_returns_correct_count(self):
+        store = _make_store()
+        offices = extract_offices(store, _prefix_map())
+        index = build_offices_index(offices)
+        assert len(index) == len(offices)
+
+    def test_entry_has_listing_fields(self):
+        store = _make_store()
+        offices = extract_offices(store, _prefix_map())
+        index = build_offices_index(offices)
+        consul = next(e for e in index if e["id"] == "consul")
+
+        assert consul["name"] == "consul"
+        assert "holderCount" in consul
+        assert consul["holderCount"] == 2
+        assert "children" in consul
+
+    def test_entry_omits_holders_array(self):
+        store = _make_store()
+        offices = extract_offices(store, _prefix_map())
+        index = build_offices_index(offices)
+        consul = next(e for e in index if e["id"] == "consul")
+
+        assert "holders" not in consul

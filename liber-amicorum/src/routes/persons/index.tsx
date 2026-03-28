@@ -1,10 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { getAllPersons } from "#/lib/data";
+import { getPersonsIndex } from "#/lib/data";
 import { formatEra } from "#/lib/format";
 
 export const Route = createFileRoute("/persons/")({
-  loader: () =>
-    getAllPersons().sort((a, b) => (a.nomen ?? "").localeCompare(b.nomen ?? "")),
+  loader: () => getPersonsIndex().sort((a, b) => (a.nomen ?? "").localeCompare(b.nomen ?? "")),
   head: () => ({
     meta: [
       { title: "Persons — Liber Amicorum" },

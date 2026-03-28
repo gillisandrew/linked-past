@@ -1,8 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { getAllOffices } from "#/lib/data";
+import { getOfficesIndex } from "#/lib/data";
 
 export const Route = createFileRoute("/offices/")({
-  loader: () => getAllOffices(),
+  loader: () => getOfficesIndex(),
   head: () => ({
     meta: [
       { title: "Offices — Liber Amicorum" },
@@ -50,9 +50,7 @@ function OfficesIndex() {
               {office.abbreviation && (
                 <span className="text-xs text-ink-muted">({office.abbreviation})</span>
               )}
-              <span className="text-xs text-ink-muted">
-                &mdash; {office.holders.length} holders
-              </span>
+              <span className="text-xs text-ink-muted">&mdash; {office.holderCount} holders</span>
             </div>
             {(byParent.get(office.id) ?? []).length > 0 && (
               <div className="ml-6 mt-1 space-y-1">
@@ -69,7 +67,7 @@ function OfficesIndex() {
                       <span className="text-xs text-ink-muted">({child.abbreviation})</span>
                     )}
                     <span className="text-xs text-ink-muted">
-                      &mdash; {child.holders.length} holders
+                      &mdash; {child.holderCount} holders
                     </span>
                   </div>
                 ))}

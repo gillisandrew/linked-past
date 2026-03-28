@@ -4,8 +4,8 @@ import { OfficeLink } from "#/components/office-link";
 import { HoldersTable } from "#/components/holders-table";
 
 export const Route = createFileRoute("/offices/$officeId")({
-  loader: ({ params }) => {
-    const office = getOfficeById(params.officeId);
+  loader: async ({ params }) => {
+    const office = await getOfficeById(params.officeId);
     if (!office) throw notFound();
     return office;
   },
