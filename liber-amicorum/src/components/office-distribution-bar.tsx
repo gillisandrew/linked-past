@@ -6,9 +6,9 @@ import { ExternalLink } from "lucide-react";
 const SEGMENT_COLORS = [
   "oklch(0.55 0.10 250)", // deep blue
   "oklch(0.55 0.10 150)", // sage green
-  "oklch(0.55 0.08 30)",  // terracotta
+  "oklch(0.55 0.08 30)", // terracotta
   "oklch(0.55 0.10 290)", // plum
-  "oklch(0.55 0.08 80)",  // ochre
+  "oklch(0.55 0.08 80)", // ochre
   "oklch(0.55 0.10 200)", // teal
   "oklch(0.55 0.08 350)", // rose
   "oklch(0.55 0.10 120)", // olive
