@@ -2,16 +2,21 @@ import {
   createColumnHelper,
   flexRender,
   getCoreRowModel,
+  getFacetedMinMaxValues,
+  getFacetedRowModel,
+  getFacetedUniqueValues,
   getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
+  type Column,
   type ColumnFiltersState,
   type SortingState,
   type VisibilityState,
 } from "@tanstack/react-table";
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
+import { SlidersHorizontal } from "lucide-react";
 import type { PersonIndex } from "#/lib/types";
 import { formatEra } from "#/lib/format";
 import { UncertaintyMarker } from "#/components/uncertainty-marker";
@@ -23,6 +28,13 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "#/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "#/components/ui/select";
 import {
   Table,
   TableBody,
@@ -56,11 +68,19 @@ const columns = [
   columnHelper.accessor("praenomen", {
     header: "Praenomen",
   }),
-  columnHelper.display({
+  columnHelper.accessor("eraFrom", {
     id: "era",
     header: "Era",
     cell: (info) => formatEra(info.row.original.eraFrom, info.row.original.eraTo),
     sortingFn: (a, b) => (a.original.eraFrom ?? 0) - (b.original.eraFrom ?? 0),
+    filterFn: (row, _columnId, filterValue: [number | undefined, number | undefined]) => {
+      const [min, max] = filterValue;
+      const from = row.original.eraFrom;
+      if (from == null) return false;
+      if (min != null && from < min) return false;
+      if (max != null && from > max) return false;
+      return true;
+    },
   }),
   columnHelper.accessor("sex", {
     header: "Sex",
@@ -110,6 +130,9 @@ export function ExploreTable({ data }: ExploreTableProps) {
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
+    getFacetedRowModel: getFacetedRowModel(),
+    getFacetedUniqueValues: getFacetedUniqueValues(),
+    getFacetedMinMaxValues: getFacetedMinMaxValues(),
     getPaginationRowModel: getPaginationRowModel(),
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
@@ -132,7 +155,7 @@ export function ExploreTable({ data }: ExploreTableProps) {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm">
-              Columns
+              <SlidersHorizontal className="h-4 w-4 mr-1" /> Columns
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
@@ -150,6 +173,15 @@ export function ExploreTable({ data }: ExploreTableProps) {
               ))}
           </DropdownMenuContent>
         </DropdownMenu>
+      </div>
+
+      {/* Facet filters */}
+      <div className="flex flex-wrap items-center gap-2">
+        <FacetSelect column={table.getColumn("sex")} label="Sex" />
+        <FacetBooleanSelect column={table.getColumn("patrician")} label="Patrician" />
+        <FacetBooleanSelect column={table.getColumn("nobilis")} label="Nobilis" />
+        <FacetBooleanSelect column={table.getColumn("novus")} label="Novus" />
+        <EraRangeFilter table={table} />
       </div>
 
       {/* Table */}
@@ -210,6 +242,112 @@ export function ExploreTable({ data }: ExploreTableProps) {
           </Button>
         </div>
       </div>
+    </div>
+  );
+}
+
+function FacetSelect({
+  column,
+  label,
+}: {
+  column: Column<PersonIndex, unknown> | undefined;
+  label: string;
+}) {
+  if (!column) return null;
+  const facetValues = column.getFacetedUniqueValues();
+  const currentValue = (column.getFilterValue() as string) ?? "";
+
+  return (
+    <Select
+      value={currentValue}
+      onValueChange={(val) => column.setFilterValue(val === "__all__" ? undefined : val)}
+    >
+      <SelectTrigger className="h-8 w-auto min-w-[120px] text-xs">
+        <SelectValue placeholder={label} />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="__all__">All {label}</SelectItem>
+        {[...facetValues.entries()]
+          .sort((a, b) => b[1] - a[1])
+          .map(([val, count]) => (
+            <SelectItem key={String(val)} value={String(val)}>
+              {String(val)} ({count.toLocaleString()})
+            </SelectItem>
+          ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
+function FacetBooleanSelect({
+  column,
+  label,
+}: {
+  column: Column<PersonIndex, unknown> | undefined;
+  label: string;
+}) {
+  if (!column) return null;
+  const facetValues = column.getFacetedUniqueValues();
+  const currentValue = column.getFilterValue();
+  const yesCount = facetValues.get(true) ?? 0;
+  const noCount = facetValues.get(false) ?? facetValues.get(undefined) ?? 0;
+
+  const selectValue = currentValue === true ? "yes" : currentValue === false ? "no" : "__all__";
+
+  return (
+    <Select
+      value={selectValue}
+      onValueChange={(val) => {
+        if (val === "__all__") column.setFilterValue(undefined);
+        else if (val === "yes") column.setFilterValue(true);
+        else column.setFilterValue(false);
+      }}
+    >
+      <SelectTrigger className="h-8 w-auto min-w-[120px] text-xs">
+        <SelectValue placeholder={label} />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="__all__">All {label}</SelectItem>
+        <SelectItem value="yes">Yes ({yesCount.toLocaleString()})</SelectItem>
+        <SelectItem value="no">No ({noCount.toLocaleString()})</SelectItem>
+      </SelectContent>
+    </Select>
+  );
+}
+
+function EraRangeFilter({ table }: { table: ReturnType<typeof useReactTable<PersonIndex>> }) {
+  const column = table.getColumn("era");
+  if (!column) return null;
+  const [min, max] = column.getFacetedMinMaxValues() ?? [0, 0];
+  const currentValue = (column.getFilterValue() as [number | undefined, number | undefined]) ?? [
+    undefined,
+    undefined,
+  ];
+
+  return (
+    <div className="flex items-center gap-1 text-xs">
+      <span className="text-ink-muted">Era:</span>
+      <Input
+        type="number"
+        placeholder={`${min}`}
+        value={currentValue[0] ?? ""}
+        onChange={(e) => {
+          const val = e.target.value ? Number(e.target.value) : undefined;
+          column.setFilterValue([val, currentValue[1]]);
+        }}
+        className="h-8 w-20 text-xs"
+      />
+      <span className="text-ink-muted">to</span>
+      <Input
+        type="number"
+        placeholder={`${max}`}
+        value={currentValue[1] ?? ""}
+        onChange={(e) => {
+          const val = e.target.value ? Number(e.target.value) : undefined;
+          column.setFilterValue([currentValue[0], val]);
+        }}
+        className="h-8 w-20 text-xs"
+      />
     </div>
   );
 }

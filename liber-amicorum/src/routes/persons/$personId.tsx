@@ -68,7 +68,8 @@ function PersonPage() {
         </div>
 
         {/* Right column: infobox */}
-        <div className="border border-ink/10 rounded-lg p-4 bg-white/30 md:w-72 shrink-0">
+        <div className="border border-ink/20 rounded-lg p-4 bg-parchment-dark/30 md:w-72 shrink-0">
+          <p className="text-xs uppercase tracking-wide text-ink-muted mb-3">Quick Reference</p>
           <dl className="space-y-2 text-sm">
             <div className="flex justify-between gap-2">
               <dt className="text-ink-muted">DPRR ID</dt>

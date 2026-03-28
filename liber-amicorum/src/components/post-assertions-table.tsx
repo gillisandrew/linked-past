@@ -27,7 +27,11 @@ const columnHelper = createColumnHelper<PostAssertion>();
 const columns = [
   columnHelper.accessor("office", {
     header: "Office",
-    cell: (info) => <OfficeLink id={info.row.original.officeId} name={info.getValue()} />,
+    cell: (info) => (
+      <div className="max-w-xs truncate" title={info.getValue()}>
+        <OfficeLink id={info.row.original.officeId} name={info.getValue()} />
+      </div>
+    ),
   }),
   columnHelper.accessor("dateStart", {
     header: "From",
@@ -105,8 +109,11 @@ interface PostAssertionsTableProps {
   data: PostAssertion[];
 }
 
+const COLLAPSE_THRESHOLD = 10;
+
 export function PostAssertionsTable({ data }: PostAssertionsTableProps) {
   const [sorting, setSorting] = useState<SortingState>([]);
+  const [expanded, setExpanded] = useState(false);
 
   const table = useReactTable({
     data,
@@ -119,38 +126,53 @@ export function PostAssertionsTable({ data }: PostAssertionsTableProps) {
 
   if (data.length === 0) return null;
 
+  const allRows = table.getRowModel().rows;
+  const canCollapse = allRows.length > COLLAPSE_THRESHOLD;
+  const visibleRows = canCollapse && !expanded ? allRows.slice(0, COLLAPSE_THRESHOLD) : allRows;
+
   return (
-    <Table>
-      <TableHeader>
-        {table.getHeaderGroups().map((headerGroup) => (
-          <TableRow key={headerGroup.id}>
-            {headerGroup.headers.map((header) => (
-              <TableHead
-                key={header.id}
-                className={header.column.getCanSort() ? "cursor-pointer select-none" : ""}
-                onClick={header.column.getToggleSortingHandler()}
-              >
-                {flexRender(header.column.columnDef.header, header.getContext())}
-                {{ asc: " \u2191", desc: " \u2193" }[header.column.getIsSorted() as string] ?? ""}
-              </TableHead>
-            ))}
-          </TableRow>
-        ))}
-      </TableHeader>
-      <TableBody>
-        {table.getRowModel().rows.map((row) => (
-          <AnchorRow
-            id={assertionAnchor("pa", row.original.officeId, row.original.dateStart)}
-            key={row.id}
-          >
-            {row.getVisibleCells().map((cell) => (
-              <TableCell key={cell.id}>
-                {flexRender(cell.column.columnDef.cell, cell.getContext())}
-              </TableCell>
-            ))}
-          </AnchorRow>
-        ))}
-      </TableBody>
-    </Table>
+    <div>
+      <Table>
+        <TableHeader>
+          {table.getHeaderGroups().map((headerGroup) => (
+            <TableRow key={headerGroup.id}>
+              {headerGroup.headers.map((header) => (
+                <TableHead
+                  key={header.id}
+                  className={header.column.getCanSort() ? "cursor-pointer select-none" : ""}
+                  onClick={header.column.getToggleSortingHandler()}
+                >
+                  {flexRender(header.column.columnDef.header, header.getContext())}
+                  {{ asc: " \u2191", desc: " \u2193" }[header.column.getIsSorted() as string] ?? ""}
+                </TableHead>
+              ))}
+            </TableRow>
+          ))}
+        </TableHeader>
+        <TableBody>
+          {visibleRows.map((row) => (
+            <AnchorRow
+              id={assertionAnchor("pa", row.original.officeId, row.original.dateStart)}
+              key={row.id}
+            >
+              {row.getVisibleCells().map((cell) => (
+                <TableCell key={cell.id}>
+                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                </TableCell>
+              ))}
+            </AnchorRow>
+          ))}
+        </TableBody>
+      </Table>
+      {canCollapse && (
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          className="mt-2 text-sm text-link hover:text-link-light underline decoration-link/30 hover:decoration-link"
+        >
+          {expanded ? "Show less" : `Show all ${allRows.length} offices`}
+        </button>
+      )}
+    </div>
   );
 }

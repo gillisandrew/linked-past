@@ -18,12 +18,21 @@ import {
   TableRow,
 } from "#/components/ui/table";
 
+function titleCase(s: string): string {
+  return s
+    .toLowerCase()
+    .replace(/\b\w/g, (c) => c.toUpperCase())
+    .replace(/ Of /g, " of ")
+    .replace(/ To /g, " to ")
+    .replace(/ From /g, " from ");
+}
+
 const columnHelper = createColumnHelper<Relationship>();
 
 const columns = [
   columnHelper.accessor("type", {
     header: "Type",
-    cell: (info) => <span className="text-xs uppercase text-ink-muted">{info.getValue()}</span>,
+    cell: (info) => <span className="text-xs text-ink-muted">{titleCase(info.getValue())}</span>,
   }),
   columnHelper.display({
     id: "person",

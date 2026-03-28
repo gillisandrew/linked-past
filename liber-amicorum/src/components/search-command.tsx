@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useMemo } from "react";
 import { useNavigate } from "@tanstack/react-router";
+import { Search } from "lucide-react";
 import { search, type SearchResult } from "#/lib/search";
 import { Input } from "#/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "#/components/ui/popover";
@@ -82,17 +83,20 @@ export function SearchCommand() {
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger
-        render={<Input />}
-        placeholder="Search persons, offices..."
-        value={query}
-        onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSearch(e.target.value)}
-        onKeyDown={handleKeyDown}
-        onFocus={() => {
-          if (results.length > 0 && query.length > 0) setOpen(true);
-        }}
-        className="w-64"
-      />
+      <div className="relative">
+        <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-muted" />
+        <PopoverTrigger
+          render={<Input />}
+          placeholder="Search persons, offices..."
+          value={query}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSearch(e.target.value)}
+          onKeyDown={handleKeyDown}
+          onFocus={() => {
+            if (results.length > 0 && query.length > 0) setOpen(true);
+          }}
+          className="w-64 bg-white/60 border border-ink/15 pl-9"
+        />
+      </div>
       <PopoverContent
         className="w-80 p-0"
         align="start"
