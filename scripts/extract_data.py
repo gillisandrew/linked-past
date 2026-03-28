@@ -28,6 +28,12 @@ OUTPUT_DIR = ROOT / "data" / "extracted"
 # ---------------------------------------------------------------------------
 
 
+def assertion_anchor(prefix: str, *parts: object) -> str:
+    """Build a stable, URL-friendly anchor ID matching the JS assertionAnchor()."""
+    raw = "-".join([prefix] + [str(p) for p in parts if p is not None])
+    return re.sub(r"-+", "-", re.sub(r"[^a-z0-9-]", "-", raw.lower()))
+
+
 def load_prefix_map() -> dict[str, str]:
     """Load the SPARQL prefix map from the YAML config."""
     prefixes_path = ROOT / "dprr_mcp" / "context" / "prefixes.yaml"
@@ -708,35 +714,38 @@ def build_source_citations(
         # Track which (sourceId, context) pairs we've already added for this person
         seen: set[tuple[str, str]] = set()
 
-        def _add(source_id: str, context: str) -> None:
+        def _add(source_id: str, context: str, anchor: str) -> None:
             key = (source_id, context)
             if key in seen:
                 return
             seen.add(key)
             if source_id in source_map:
                 source_map[source_id]["citations"].append(
-                    {"personId": pid, "personName": pname, "context": context}
+                    {"personId": pid, "personName": pname, "context": context, "anchor": anchor}
                 )
 
         # PostAssertions
         for pa in person.get("postAssertions", []):
             office = pa.get("office") or "office"
+            office_id = pa.get("officeId") or "office"
             date_start = pa.get("dateStart")
             if date_start is not None:
                 ctx = f"{office}, {abs(date_start)} BC" if date_start < 0 else f"{office}, {date_start} AD"
             else:
                 ctx = office
+            anchor = assertion_anchor("pa", office_id, date_start)
             for src in pa.get("sources", []):
-                _add(src["id"], ctx)
+                _add(src["id"], ctx, anchor)
             ds = pa.get("dateSource")
             if ds:
-                _add(ds["id"], ctx)
+                _add(ds["id"], ctx, anchor)
 
         # StatusAssertions
         for sa in person.get("statusAssertions", []):
             ctx = sa.get("status") or "status"
+            anchor = assertion_anchor("sa", sa.get("status"), sa.get("dateStart"))
             for src in sa.get("sources", []):
-                _add(src["id"], ctx)
+                _add(src["id"], ctx, anchor)
 
         # DateInformation
         for di in person.get("dateInformation", []):
@@ -746,17 +755,19 @@ def build_source_citations(
                 ctx = f"{dtype}, {abs(value)} BC" if value < 0 else f"{dtype}, {value} AD"
             else:
                 ctx = dtype
+            anchor = assertion_anchor("di", dtype, value)
             src = di.get("source")
             if src:
-                _add(src["id"], ctx)
+                _add(src["id"], ctx, anchor)
 
         # TribeAssertions
         for ta in person.get("tribeAssertions", []):
             tribe = ta.get("tribe") or "unknown"
             ctx = f"tribe: {tribe}"
+            anchor = assertion_anchor("ta", tribe)
             src = ta.get("source")
             if src:
-                _add(src["id"], ctx)
+                _add(src["id"], ctx, anchor)
 
     return sources
 

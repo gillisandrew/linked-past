@@ -8,7 +8,8 @@ import {
 } from "@tanstack/react-table";
 import { useState } from "react";
 import type { PostAssertion } from "#/lib/types";
-import { formatYearUncertain } from "#/lib/format";
+import { assertionAnchor, formatYearUncertain } from "#/lib/format";
+import { AnchorRow } from "#/components/anchor-row";
 import { OfficeLink } from "#/components/office-link";
 import { SourceBadge } from "#/components/source-badge";
 import { UncertaintyMarker } from "#/components/uncertainty-marker";
@@ -138,13 +139,16 @@ export function PostAssertionsTable({ data }: PostAssertionsTableProps) {
       </TableHeader>
       <TableBody>
         {table.getRowModel().rows.map((row) => (
-          <TableRow key={row.id}>
+          <AnchorRow
+            id={assertionAnchor("pa", row.original.officeId, row.original.dateStart)}
+            key={row.id}
+          >
             {row.getVisibleCells().map((cell) => (
               <TableCell key={cell.id}>
                 {flexRender(cell.column.columnDef.cell, cell.getContext())}
               </TableCell>
             ))}
-          </TableRow>
+          </AnchorRow>
         ))}
       </TableBody>
     </Table>

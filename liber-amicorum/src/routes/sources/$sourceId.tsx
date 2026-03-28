@@ -1,4 +1,4 @@
-import { createFileRoute, notFound } from "@tanstack/react-router";
+import { Link, createFileRoute, notFound } from "@tanstack/react-router";
 import {
   createColumnHelper,
   flexRender,
@@ -10,7 +10,6 @@ import {
 import { useState } from "react";
 import { getSourceById } from "#/lib/data";
 import type { SourceCitation } from "#/lib/types";
-import { PersonLink } from "#/components/person-link";
 import {
   Table,
   TableBody,
@@ -45,7 +44,19 @@ const columnHelper = createColumnHelper<SourceCitation>();
 const columns = [
   columnHelper.accessor("personName", {
     header: "Person",
-    cell: (info) => <PersonLink id={info.row.original.personId} name={info.getValue()} />,
+    cell: (info) => {
+      const row = info.row.original;
+      return (
+        <Link
+          to="/persons/$personId"
+          params={{ personId: row.personId }}
+          hash={row.anchor}
+          className="text-link hover:text-link-light underline decoration-link/30 hover:decoration-link"
+        >
+          {info.getValue()}
+        </Link>
+      );
+    },
   }),
   columnHelper.accessor("context", {
     header: "Context",

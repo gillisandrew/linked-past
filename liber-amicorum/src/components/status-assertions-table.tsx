@@ -8,7 +8,8 @@ import {
 } from "@tanstack/react-table";
 import { useState } from "react";
 import type { StatusAssertion } from "#/lib/types";
-import { formatYearUncertain } from "#/lib/format";
+import { assertionAnchor, formatYearUncertain } from "#/lib/format";
+import { AnchorRow } from "#/components/anchor-row";
 import { SourceBadge } from "#/components/source-badge";
 import { UncertaintyMarker } from "#/components/uncertainty-marker";
 import {
@@ -116,13 +117,16 @@ export function StatusAssertionsTable({ data }: StatusAssertionsTableProps) {
       </TableHeader>
       <TableBody>
         {table.getRowModel().rows.map((row) => (
-          <TableRow key={row.id}>
+          <AnchorRow
+            id={assertionAnchor("sa", row.original.status, row.original.dateStart)}
+            key={row.id}
+          >
             {row.getVisibleCells().map((cell) => (
               <TableCell key={cell.id}>
                 {flexRender(cell.column.columnDef.cell, cell.getContext())}
               </TableCell>
             ))}
-          </TableRow>
+          </AnchorRow>
         ))}
       </TableBody>
     </Table>

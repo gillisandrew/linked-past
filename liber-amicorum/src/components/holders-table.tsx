@@ -10,7 +10,8 @@ import {
 } from "@tanstack/react-table";
 import { useMemo, useState } from "react";
 import type { OfficeHolder, OfficeHolderWithOffice } from "#/lib/types";
-import { formatYearUncertain } from "#/lib/format";
+import { assertionAnchor, formatYearUncertain } from "#/lib/format";
+import { AnchorRow } from "#/components/anchor-row";
 import { PersonLink } from "#/components/person-link";
 import { OfficeLink } from "#/components/office-link";
 import { SourceBadge } from "#/components/source-badge";
@@ -201,13 +202,16 @@ export function HoldersTable({ data, subOffices }: HoldersTableProps) {
         </TableHeader>
         <TableBody>
           {table.getRowModel().rows.map((row) => (
-            <TableRow key={row.id}>
+            <AnchorRow
+              id={assertionAnchor("holder", row.original.personId, row.original.dateStart)}
+              key={row.id}
+            >
               {row.getVisibleCells().map((cell) => (
                 <TableCell key={cell.id}>
                   {flexRender(cell.column.columnDef.cell, cell.getContext())}
                 </TableCell>
               ))}
-            </TableRow>
+            </AnchorRow>
           ))}
         </TableBody>
       </Table>

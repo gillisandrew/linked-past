@@ -148,6 +148,7 @@ export interface SourceCitation {
   personId: string;
   personName: string;
   context: string;
+  anchor: string;
 }
 
 export interface SourceDetail {

@@ -28,3 +28,17 @@ export function formatYearUncertain(value: number | null, uncertain: boolean): s
   if (!formatted) return null;
   return uncertain ? `${formatted}?` : formatted;
 }
+
+/**
+ * Build a stable, URL-friendly anchor ID from a prefix and parts.
+ */
+export function assertionAnchor(
+  prefix: string,
+  ...parts: (string | number | null | undefined)[]
+): string {
+  return [prefix, ...parts.filter((p) => p != null).map((p) => String(p))]
+    .join("-")
+    .toLowerCase()
+    .replace(/[^a-z0-9-]/g, "-")
+    .replace(/-+/g, "-");
+}
