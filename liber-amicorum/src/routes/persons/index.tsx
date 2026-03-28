@@ -3,7 +3,18 @@ import { getAllPersons } from "#/lib/data";
 import { formatEra } from "#/lib/format";
 
 export const Route = createFileRoute("/persons/")({
-  loader: () => getAllPersons(),
+  loader: () =>
+    getAllPersons().sort((a, b) => (a.nomen ?? "").localeCompare(b.nomen ?? "")),
+  head: () => ({
+    meta: [
+      { title: "Persons — Liber Amicorum" },
+      {
+        name: "description",
+        content:
+          "Browse all individuals from the Digital Prosopography of the Roman Republic, alphabetical by family name.",
+      },
+    ],
+  }),
   component: PersonsIndex,
 });
 

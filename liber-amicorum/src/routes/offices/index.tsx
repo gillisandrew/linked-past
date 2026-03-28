@@ -3,6 +3,16 @@ import { getAllOffices } from "#/lib/data";
 
 export const Route = createFileRoute("/offices/")({
   loader: () => getAllOffices(),
+  head: () => ({
+    meta: [
+      { title: "Offices — Liber Amicorum" },
+      {
+        name: "description",
+        content:
+          "Browse political and religious offices of the Roman Republic, grouped by hierarchy.",
+      },
+    ],
+  }),
   component: OfficesIndex,
 });
 

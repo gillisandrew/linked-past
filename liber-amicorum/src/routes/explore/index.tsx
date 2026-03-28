@@ -4,6 +4,16 @@ import { ExploreTable } from "#/components/explore-table";
 
 export const Route = createFileRoute("/explore/")({
   loader: () => getAllPersons(),
+  head: () => ({
+    meta: [
+      { title: "Explore — Liber Amicorum" },
+      {
+        name: "description",
+        content:
+          "Search, sort, and filter the full DPRR dataset of Roman Republican individuals.",
+      },
+    ],
+  }),
   component: ExplorePage,
 });
 

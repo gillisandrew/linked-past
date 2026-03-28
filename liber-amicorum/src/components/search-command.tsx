@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useMemo } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { search, type SearchResult } from "#/lib/search";
 import { Input } from "#/components/ui/input";
@@ -54,89 +54,74 @@ export function SearchCommand() {
     [results, selectedIndex, navigateToResult],
   );
 
-  // Close on outside click
-  useEffect(() => {
-    if (!open) return;
-    const handler = () => setOpen(false);
-    document.addEventListener("click", handler);
-    return () => document.removeEventListener("click", handler);
-  }, [open]);
-
-  const persons = results.filter((r) => r.type === "person");
-  const offices = results.filter((r) => r.type === "office");
-  let flatIndex = 0;
+  // Pre-compute flat list with indices for concurrent-safe rendering
+  const flatResults = useMemo(() => {
+    const persons = results.filter((r) => r.type === "person");
+    const offices = results.filter((r) => r.type === "office");
+    const items: Array<{ result: SearchResult; index: number; isGroupStart: boolean; group: string }> = [];
+    let idx = 0;
+    for (const r of persons) {
+      items.push({ result: r, index: idx++, isGroupStart: items.length === 0, group: "Persons" });
+    }
+    const officeStart = items.length;
+    for (const r of offices) {
+      items.push({ result: r, index: idx++, isGroupStart: items.length === officeStart, group: "Offices" });
+    }
+    return items;
+  }, [results]);
 
   return (
-    <div className="relative" onClick={(e) => e.stopPropagation()}>
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <Input
-            placeholder="Search persons, offices..."
-            value={query}
-            onChange={(e) => handleSearch(e.target.value)}
-            onKeyDown={handleKeyDown}
-            onFocus={() => {
-              if (results.length > 0 && query.length > 0) setOpen(true);
-            }}
-            className="w-64"
-          />
-        </PopoverTrigger>
-        <PopoverContent
-          className="w-80 p-0"
-          align="start"
-          onOpenAutoFocus={(e) => e.preventDefault()}
-        >
-          <div className="max-h-80 overflow-y-auto">
-            {persons.length > 0 && (
-              <div>
-                <p className="px-3 py-1.5 text-xs font-medium text-ink-muted">Persons</p>
-                {persons.map((r) => {
-                  const idx = flatIndex++;
-                  return (
-                    <button
-                      key={r.id}
-                      className={`w-full px-3 py-2 text-left text-sm hover:bg-parchment-dark ${
-                        idx === selectedIndex ? "bg-parchment-dark" : ""
-                      }`}
-                      onClick={() => navigateToResult(r)}
-                    >
-                      <span className="font-medium">{r.name}</span>
-                      {r.era && <span className="ml-2 text-xs text-ink-muted">{r.era}</span>}
-                      {r.highestOffice && (
-                        <span className="ml-2 text-xs text-ink-muted">
-                          &mdash; {r.highestOffice}
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-            {offices.length > 0 && (
-              <div>
-                <p className="px-3 py-1.5 text-xs font-medium text-ink-muted">Offices</p>
-                {offices.map((r) => {
-                  const idx = flatIndex++;
-                  return (
-                    <button
-                      key={r.id}
-                      className={`w-full px-3 py-2 text-left text-sm hover:bg-parchment-dark ${
-                        idx === selectedIndex ? "bg-parchment-dark" : ""
-                      }`}
-                      onClick={() => navigateToResult(r)}
-                    >
-                      <span className="font-medium">{r.name}</span>
-                      {r.abbreviation && (
-                        <span className="ml-2 text-xs text-ink-muted">({r.abbreviation})</span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </PopoverContent>
-      </Popover>
-    </div>
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Input
+          placeholder="Search persons, offices..."
+          value={query}
+          onChange={(e) => handleSearch(e.target.value)}
+          onKeyDown={handleKeyDown}
+          onFocus={() => {
+            if (results.length > 0 && query.length > 0) setOpen(true);
+          }}
+          className="w-64"
+        />
+      </PopoverTrigger>
+      <PopoverContent
+        className="w-80 p-0"
+        align="start"
+        onOpenAutoFocus={(e) => e.preventDefault()}
+        onInteractOutside={() => setOpen(false)}
+      >
+        <div className="max-h-80 overflow-y-auto">
+          {flatResults.map((item) => (
+            <div key={`${item.group}-${item.result.id}`}>
+              {item.isGroupStart && (
+                <p className="px-3 py-1.5 text-xs font-medium text-ink-muted">{item.group}</p>
+              )}
+              <button
+                className={`w-full px-3 py-2 text-left text-sm hover:bg-parchment-dark ${
+                  item.index === selectedIndex ? "bg-parchment-dark" : ""
+                }`}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  navigateToResult(item.result);
+                }}
+              >
+                <span className="font-medium">{item.result.name}</span>
+                {item.result.type === "person" && item.result.era && (
+                  <span className="ml-2 text-xs text-ink-muted">{item.result.era}</span>
+                )}
+                {item.result.type === "person" && item.result.highestOffice && (
+                  <span className="ml-2 text-xs text-ink-muted">
+                    &mdash; {item.result.highestOffice}
+                  </span>
+                )}
+                {item.result.type === "office" && item.result.abbreviation && (
+                  <span className="ml-2 text-xs text-ink-muted">({item.result.abbreviation})</span>
+                )}
+              </button>
+            </div>
+          ))}
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }
