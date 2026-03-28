@@ -144,6 +144,27 @@ export interface OfficeTreeNode extends OfficeIndex {
   subOffices: OfficeTreeNode[];
 }
 
+export interface SourceCitation {
+  personId: string;
+  personName: string;
+  context: string;
+}
+
+export interface SourceDetail {
+  id: string;
+  abbreviation: string;
+  name: string | null;
+  biblio: string | null;
+  citations: SourceCitation[];
+}
+
+export interface SourceIndex {
+  id: string;
+  abbreviation: string;
+  name: string | null;
+  citationCount: number;
+}
+
 export interface SearchDoc {
   id: string;
   type: "person" | "office";

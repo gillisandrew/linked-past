@@ -570,6 +570,211 @@ ORDER BY ?officeName ?dateStart ?dprrId
 
 
 # ---------------------------------------------------------------------------
+# Extraction: Sources
+# ---------------------------------------------------------------------------
+
+
+def extract_sources(store: Store, prefix_map: dict[str, str]) -> list[dict]:
+    """Extract all secondary sources with metadata."""
+    pfx = sparql_prefixes(prefix_map)
+
+    source_rows = query_to_dicts(
+        store,
+        f"""{pfx}
+SELECT ?source ?label ?abbrev ?biblio ?name WHERE {{
+  ?source a vocab:SecondarySource .
+  OPTIONAL {{ ?source rdfs:label ?label }}
+  OPTIONAL {{ ?source vocab:hasAbbreviation ?abbrev }}
+  OPTIONAL {{ ?source vocab:hasBiblio ?biblio }}
+  OPTIONAL {{ ?source vocab:hasName ?name }}
+}}
+""",
+    )
+
+    sources: dict[str, dict] = {}
+    for row in source_rows:
+        abbrev = row.get("abbrev") or row.get("name") or strip_label_prefix(row.get("label"))
+        if not abbrev:
+            continue
+        sid = slugify(abbrev)
+        if sid in sources:
+            continue
+        sources[sid] = {
+            "id": sid,
+            "abbreviation": abbrev,
+            "name": row.get("name") or strip_label_prefix(row.get("label")),
+            "biblio": row.get("biblio"),
+            "citations": [],
+        }
+
+    return sorted(sources.values(), key=lambda s: s["id"])
+
+
+def build_source_normalization_map(
+    store: Store, prefix_map: dict[str, str]
+) -> dict[str, tuple[str, str]]:
+    """Build a map from any possible slugified source name to (canonical_id, display_name).
+
+    Sources in person/office data may use vocab:hasName (full title) or
+    rdfs:label (prefixed), so we map all variants to the canonical abbreviation-
+    based id.
+    """
+    pfx = sparql_prefixes(prefix_map)
+    rows = query_to_dicts(
+        store,
+        f"""{pfx}
+SELECT ?source ?label ?abbrev ?name WHERE {{
+  ?source a vocab:SecondarySource .
+  OPTIONAL {{ ?source rdfs:label ?label }}
+  OPTIONAL {{ ?source vocab:hasAbbreviation ?abbrev }}
+  OPTIONAL {{ ?source vocab:hasName ?name }}
+}}
+""",
+    )
+
+    norm: dict[str, tuple[str, str]] = {}
+    for row in rows:
+        abbrev = row.get("abbrev")
+        name = row.get("name")
+        label = strip_label_prefix(row.get("label"))
+
+        # Canonical display name: prefer abbreviation, then name from label
+        display = abbrev or name or label
+        if not display:
+            continue
+        canonical_id = slugify(display)
+
+        # Map all possible slugified variants to the canonical pair
+        for variant in (abbrev, name, label):
+            if variant:
+                norm[slugify(variant)] = (canonical_id, display)
+
+    return norm
+
+
+def normalize_source_refs(
+    data: list[dict],
+    norm_map: dict[str, tuple[str, str]],
+) -> None:
+    """Normalize all source {name, id} dicts in person/office data in-place."""
+
+    def _fix(src: dict) -> None:
+        old_id = src.get("id", "")
+        if old_id in norm_map:
+            canonical_id, display = norm_map[old_id]
+            src["id"] = canonical_id
+            src["name"] = display
+
+    for item in data:
+        # Person fields
+        for pa in item.get("postAssertions", []):
+            for s in pa.get("sources", []):
+                _fix(s)
+            ds = pa.get("dateSource")
+            if ds:
+                _fix(ds)
+        for sa in item.get("statusAssertions", []):
+            for s in sa.get("sources", []):
+                _fix(s)
+        for di in item.get("dateInformation", []):
+            src = di.get("source")
+            if src:
+                _fix(src)
+        for ta in item.get("tribeAssertions", []):
+            src = ta.get("source")
+            if src:
+                _fix(src)
+        # Office holders
+        for h in item.get("holders", []):
+            for s in h.get("sources", []):
+                _fix(s)
+
+
+def build_source_citations(
+    sources: list[dict], persons: list[dict]
+) -> list[dict]:
+    """Build reverse index: for each source, collect all person citations.
+
+    Mutates each source dict in-place by populating its ``citations`` list,
+    then returns the sources list.
+    """
+    # Build a lookup from source id to source dict
+    source_map: dict[str, dict] = {s["id"]: s for s in sources}
+
+    for person in persons:
+        pid = person["id"]
+        pname = person["name"]
+
+        # Track which (sourceId, context) pairs we've already added for this person
+        seen: set[tuple[str, str]] = set()
+
+        def _add(source_id: str, context: str) -> None:
+            key = (source_id, context)
+            if key in seen:
+                return
+            seen.add(key)
+            if source_id in source_map:
+                source_map[source_id]["citations"].append(
+                    {"personId": pid, "personName": pname, "context": context}
+                )
+
+        # PostAssertions
+        for pa in person.get("postAssertions", []):
+            office = pa.get("office") or "office"
+            date_start = pa.get("dateStart")
+            if date_start is not None:
+                ctx = f"{office}, {abs(date_start)} BC" if date_start < 0 else f"{office}, {date_start} AD"
+            else:
+                ctx = office
+            for src in pa.get("sources", []):
+                _add(src["id"], ctx)
+            ds = pa.get("dateSource")
+            if ds:
+                _add(ds["id"], ctx)
+
+        # StatusAssertions
+        for sa in person.get("statusAssertions", []):
+            ctx = sa.get("status") or "status"
+            for src in sa.get("sources", []):
+                _add(src["id"], ctx)
+
+        # DateInformation
+        for di in person.get("dateInformation", []):
+            dtype = di.get("type") or "date"
+            value = di.get("value")
+            if value is not None:
+                ctx = f"{dtype}, {abs(value)} BC" if value < 0 else f"{dtype}, {value} AD"
+            else:
+                ctx = dtype
+            src = di.get("source")
+            if src:
+                _add(src["id"], ctx)
+
+        # TribeAssertions
+        for ta in person.get("tribeAssertions", []):
+            tribe = ta.get("tribe") or "unknown"
+            ctx = f"tribe: {tribe}"
+            src = ta.get("source")
+            if src:
+                _add(src["id"], ctx)
+
+    return sources
+
+
+def build_sources_index(sources: list[dict]) -> list[dict]:
+    """Build a lightweight source index with only listing-level fields."""
+    return [
+        {
+            "id": s["id"],
+            "abbreviation": s["abbreviation"],
+            "name": s.get("name"),
+            "citationCount": len(s.get("citations", [])),
+        }
+        for s in sources
+    ]
+
+
+# ---------------------------------------------------------------------------
 # Search Index
 # ---------------------------------------------------------------------------
 
@@ -686,9 +891,24 @@ def main() -> None:
     offices = extract_offices(store, prefix_map)
     print(f"  {len(offices)} offices")
 
+    print("Extracting sources ...")
+    sources = extract_sources(store, prefix_map)
+    print(f"  {len(sources)} sources")
+
+    print("Normalizing source references ...")
+    norm_map = build_source_normalization_map(store, prefix_map)
+    normalize_source_refs(persons, norm_map)
+    normalize_source_refs(offices, norm_map)
+
+    print("Building source citations ...")
+    build_source_citations(sources, persons)
+    total_citations = sum(len(s["citations"]) for s in sources)
+    print(f"  {total_citations} citations across {len(sources)} sources")
+
     print("Building indexes ...")
     persons_index = build_persons_index(persons)
     offices_index = build_offices_index(offices)
+    sources_index = build_sources_index(sources)
     search_index = build_search_index(persons, offices)
     print(f"  {len(search_index)} search entries")
 
@@ -719,10 +939,20 @@ def main() -> None:
             json.dump(o, f, indent=2, ensure_ascii=False)
     print(f"Wrote {len(offices)} individual office files to {offices_dir}/")
 
+    # Write individual source files
+    sources_dir = OUTPUT_DIR / "sources"
+    sources_dir.mkdir(parents=True, exist_ok=True)
+    for s in sources:
+        out_path = sources_dir / f"{s['id']}.json"
+        with open(out_path, "w") as f:
+            json.dump(s, f, indent=2, ensure_ascii=False)
+    print(f"Wrote {len(sources)} individual source files to {sources_dir}/")
+
     # Write index files
     for name, data in [
         ("persons-index.json", persons_index),
         ("offices-index.json", offices_index),
+        ("sources-index.json", sources_index),
         ("search-index.json", search_index),
     ]:
         out_path = OUTPUT_DIR / name

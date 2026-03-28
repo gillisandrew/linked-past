@@ -92,7 +92,7 @@ const columns = [
     cell: (info) => (
       <div className="flex flex-wrap gap-1">
         {info.getValue().map((s) => (
-          <SourceBadge key={s.id} name={s.name} />
+          <SourceBadge key={s.id} name={s.name} id={s.id} />
         ))}
       </div>
     ),

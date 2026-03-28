@@ -33,9 +33,7 @@ const personCol = baseColumnHelper.accessor("personName", {
 
 const officeCol = baseColumnHelper.accessor("officeName", {
   header: "Office",
-  cell: (info) => (
-    <OfficeLink id={info.row.original.officeId} name={info.getValue()} />
-  ),
+  cell: (info) => <OfficeLink id={info.row.original.officeId} name={info.getValue()} />,
 });
 
 const dateStartCol = baseColumnHelper.accessor("dateStart", {
@@ -71,7 +69,7 @@ const sourcesCol = baseColumnHelper.accessor("sources", {
   cell: (info) => (
     <div className="flex flex-wrap gap-1">
       {info.getValue().map((s) => (
-        <SourceBadge key={s.id} name={s.name} />
+        <SourceBadge key={s.id} name={s.name} id={s.id} />
       ))}
     </div>
   ),
@@ -195,8 +193,7 @@ export function HoldersTable({ data, subOffices }: HoldersTableProps) {
                   onClick={header.column.getToggleSortingHandler()}
                 >
                   {flexRender(header.column.columnDef.header, header.getContext())}
-                  {{ asc: " \u2191", desc: " \u2193" }[header.column.getIsSorted() as string] ??
-                    ""}
+                  {{ asc: " \u2191", desc: " \u2193" }[header.column.getIsSorted() as string] ?? ""}
                 </TableHead>
               ))}
             </TableRow>

@@ -100,7 +100,7 @@ function PersonPage() {
                     ({di.interval === "B" ? "before" : "after"})
                   </span>
                 )}
-                {di.source && <SourceBadge name={di.source.name} />}
+                {di.source && <SourceBadge name={di.source.name} id={di.source.id} />}
               </div>
             ))}
           </div>
@@ -136,7 +136,7 @@ function PersonPage() {
             {person.tribeAssertions.map((ta, i) => (
               <div key={i} className="flex items-baseline gap-2 text-sm">
                 <UncertaintyMarker uncertain={ta.uncertain}>{ta.tribe}</UncertaintyMarker>
-                {ta.source && <SourceBadge name={ta.source.name} />}
+                {ta.source && <SourceBadge name={ta.source.name} id={ta.source.id} />}
               </div>
             ))}
           </div>

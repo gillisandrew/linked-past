@@ -13,8 +13,11 @@ from extract_data import (  # noqa: E402
     build_offices_index,
     build_persons_index,
     build_search_index,
+    build_source_citations,
+    build_sources_index,
     extract_offices,
     extract_persons,
+    extract_sources,
     slugify,
     strip_label_prefix,
     to_bool,
@@ -408,3 +411,81 @@ class TestBuildOfficesIndex:
         consul = next(e for e in index if e["id"] == "consul")
 
         assert "holders" not in consul
+
+
+class TestExtractSources:
+    def test_returns_sources(self):
+        store = _make_store()
+        sources = extract_sources(store, _prefix_map())
+        assert len(sources) >= 1
+
+    def test_source_fields(self):
+        store = _make_store()
+        sources = extract_sources(store, _prefix_map())
+        broughton = next(s for s in sources if s["id"] == "broughton-mrr-i")
+
+        assert broughton["abbreviation"] == "Broughton MRR I"
+        assert broughton["name"] == "Broughton MRR I"
+        assert broughton["citations"] == []  # not yet populated
+
+
+class TestBuildSourceCitations:
+    def test_populates_citations(self):
+        store = _make_store()
+        persons = extract_persons(store, _prefix_map())
+        sources = extract_sources(store, _prefix_map())
+        build_source_citations(sources, persons)
+
+        broughton = next(s for s in sources if s["id"] == "broughton-mrr-i")
+        assert len(broughton["citations"]) >= 1
+
+    def test_citation_fields(self):
+        store = _make_store()
+        persons = extract_persons(store, _prefix_map())
+        sources = extract_sources(store, _prefix_map())
+        build_source_citations(sources, persons)
+
+        broughton = next(s for s in sources if s["id"] == "broughton-mrr-i")
+        citation = broughton["citations"][0]
+        assert "personId" in citation
+        assert "personName" in citation
+        assert "context" in citation
+
+    def test_post_assertion_context_format(self):
+        store = _make_store()
+        persons = extract_persons(store, _prefix_map())
+        sources = extract_sources(store, _prefix_map())
+        build_source_citations(sources, persons)
+
+        broughton = next(s for s in sources if s["id"] == "broughton-mrr-i")
+        # The post assertion is for consul, 509 BC
+        contexts = [c["context"] for c in broughton["citations"]]
+        assert any("consul" in ctx for ctx in contexts)
+
+
+class TestBuildSourcesIndex:
+    def test_returns_correct_count(self):
+        store = _make_store()
+        sources = extract_sources(store, _prefix_map())
+        index = build_sources_index(sources)
+        assert len(index) == len(sources)
+
+    def test_entry_has_listing_fields(self):
+        store = _make_store()
+        persons = extract_persons(store, _prefix_map())
+        sources = extract_sources(store, _prefix_map())
+        build_source_citations(sources, persons)
+        index = build_sources_index(sources)
+        broughton = next(e for e in index if e["id"] == "broughton-mrr-i")
+
+        assert broughton["abbreviation"] == "Broughton MRR I"
+        assert "citationCount" in broughton
+        assert broughton["citationCount"] >= 1
+
+    def test_entry_omits_citations_array(self):
+        store = _make_store()
+        sources = extract_sources(store, _prefix_map())
+        index = build_sources_index(sources)
+        broughton = next(e for e in index if e["id"] == "broughton-mrr-i")
+
+        assert "citations" not in broughton

@@ -1,11 +1,22 @@
-import type { Person, Office, PersonIndex, OfficeIndex, SearchDoc, OfficeHolderWithOffice } from "./types";
+import type {
+  Person,
+  Office,
+  PersonIndex,
+  OfficeIndex,
+  SearchDoc,
+  OfficeHolderWithOffice,
+  SourceIndex,
+  SourceDetail,
+} from "./types";
 
 import personsIndex from "../../../data/extracted/persons-index.json";
 import officesIndex from "../../../data/extracted/offices-index.json";
+import sourcesIndex from "../../../data/extracted/sources-index.json";
 import searchData from "../../../data/extracted/search-index.json";
 
 const personsIdx = personsIndex as PersonIndex[];
 const officesIdx = officesIndex as OfficeIndex[];
+const sourcesIdx = sourcesIndex as SourceIndex[];
 const searchIdx = searchData as SearchDoc[];
 
 export function getPersonsIndex(): PersonIndex[] {
@@ -29,6 +40,19 @@ export async function getOfficeById(id: string): Promise<Office | undefined> {
   try {
     const mod = await import(`../../../data/extracted/offices/${id}.json`);
     return mod.default as Office;
+  } catch {
+    return undefined;
+  }
+}
+
+export function getSourcesIndex(): SourceIndex[] {
+  return sourcesIdx;
+}
+
+export async function getSourceById(id: string): Promise<SourceDetail | undefined> {
+  try {
+    const mod = await import(`../../../data/extracted/sources/${id}.json`);
+    return mod.default as SourceDetail;
   } catch {
     return undefined;
   }
