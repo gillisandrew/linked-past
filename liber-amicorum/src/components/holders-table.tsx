@@ -15,7 +15,7 @@ import { AnchorRow } from "#/components/anchor-row";
 import { PersonLink } from "#/components/person-link";
 import { OfficeLink } from "#/components/office-link";
 import { SourceBadge } from "#/components/source-badge";
-import { UncertaintyMarker } from "#/components/uncertainty-marker";
+import { LazyUncertaintyMarker } from "#/components/lazy-uncertainty-marker";
 import {
   Table,
   TableBody,
@@ -39,30 +39,54 @@ const officeCol = baseColumnHelper.accessor("officeName", {
 
 const dateStartCol = baseColumnHelper.accessor("dateStart", {
   header: "From",
-  cell: (info) => (
-    <UncertaintyMarker uncertain={info.row.original.dateStartUncertain}>
-      {formatYearUncertain(info.getValue(), false) ?? "\u2014"}
-    </UncertaintyMarker>
-  ),
+  cell: (info) => {
+    const row = info.row.original;
+    return (
+      <LazyUncertaintyMarker
+        uncertain={row.dateStartUncertain}
+        personId={row.personId}
+        officeId={row.officeId}
+        dateStart={row.dateStart}
+      >
+        {formatYearUncertain(info.getValue(), false) ?? "\u2014"}
+      </LazyUncertaintyMarker>
+    );
+  },
 });
 
 const dateEndCol = baseColumnHelper.accessor("dateEnd", {
   header: "To",
-  cell: (info) => (
-    <UncertaintyMarker uncertain={info.row.original.dateEndUncertain}>
-      {formatYearUncertain(info.getValue(), false) ?? "\u2014"}
-    </UncertaintyMarker>
-  ),
+  cell: (info) => {
+    const row = info.row.original;
+    return (
+      <LazyUncertaintyMarker
+        uncertain={row.dateEndUncertain}
+        personId={row.personId}
+        officeId={row.officeId}
+        dateStart={row.dateStart}
+      >
+        {formatYearUncertain(info.getValue(), false) ?? "\u2014"}
+      </LazyUncertaintyMarker>
+    );
+  },
 });
 
 const uncertainCol = baseColumnHelper.display({
   id: "assertion",
   header: "",
-  cell: (info) => (
-    <UncertaintyMarker uncertain={info.row.original.uncertain}>
-      {info.row.original.uncertain ? "uncertain" : ""}
-    </UncertaintyMarker>
-  ),
+  cell: (info) => {
+    const row = info.row.original;
+    return (
+      <LazyUncertaintyMarker
+        uncertain={row.uncertain}
+        personId={row.personId}
+        officeId={row.officeId}
+        dateStart={row.dateStart}
+      >
+        {row.uncertain ? "uncertain" : ""}
+      </LazyUncertaintyMarker>
+    );
+  },
 });
 
 const sourcesCol = baseColumnHelper.accessor("sources", {
