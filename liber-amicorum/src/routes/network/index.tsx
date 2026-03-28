@@ -16,15 +16,17 @@ export const Route = createFileRoute("/network/")({
 
 function NetworkPage() {
   return (
-    <div className="px-6 py-4">
-      <div className="mb-4">
+    <div className="flex h-full flex-col px-6 py-4">
+      <div className="mb-3 shrink-0">
         <h1 className="font-heading text-3xl font-bold">Relationship Network</h1>
         <p className="mt-1 text-ink-muted">
-          Interactive graph of family, marriage, and political relationships. Drag nodes to
-          rearrange. Click to view a person's page.
+          Interactive graph of family, marriage, and political relationships. Use the filters to
+          narrow down to an era or gens. Drag nodes to rearrange. Click to view a person's page.
         </p>
       </div>
-      <NetworkGraph />
+      <div className="min-h-0 flex-1">
+        <NetworkGraph />
+      </div>
     </div>
   );
 }

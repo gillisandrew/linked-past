@@ -1,8 +1,8 @@
 import * as d3 from "d3";
-import { useRef, useEffect, useState, useCallback } from "react";
+import { useRef, useEffect, useState, useMemo, useCallback } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { getNetworkData } from "#/lib/data";
-import type { NetworkData, NetworkNode } from "#/lib/types";
+import type { NetworkData, NetworkNode, NetworkEdge } from "#/lib/types";
 
 // ---------------------------------------------------------------------------
 // Types for D3 simulation (mutable positions added by d3-force)
@@ -56,7 +56,6 @@ function classifyRelationship(type: string): RelCategory {
 // Color scales
 // ---------------------------------------------------------------------------
 
-// Muted scholarly palette for nomen-based coloring
 const NOMEN_COLORS = [
   "#8b7355",
   "#6b7c6e",
@@ -94,65 +93,167 @@ export function NetworkGraph() {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
-  const [data, setData] = useState<NetworkData | null>(null);
+  const [allData, setAllData] = useState<NetworkData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
   const [dimensions, setDimensions] = useState({ width: 960, height: 600 });
   const navigate = useNavigate();
   const simulationRef = useRef<d3.Simulation<SimNode, SimEdge> | null>(null);
 
+  // Filter state
+  const [eraFrom, setEraFrom] = useState<number | null>(null);
+  const [eraTo, setEraTo] = useState<number | null>(null);
+  const [gensInput, setGensInput] = useState("");
+  const [showFamily, setShowFamily] = useState(true);
+  const [showMarriage, setShowMarriage] = useState(true);
+  const [showPolitical, setShowPolitical] = useState(true);
+
   // Load data
   useEffect(() => {
     getNetworkData().then((d) => {
-      setData(d);
+      setAllData(d);
       setLoading(false);
     });
   }, []);
 
-  // Measure container
+  // Measure container with ResizeObserver
   useEffect(() => {
-    function measure() {
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect();
-        setDimensions({ width: rect.width, height: rect.height });
+    const el = containerRef.current;
+    if (!el) return;
+
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect;
+        if (width > 0 && height > 0) {
+          setDimensions({ width, height });
+        }
       }
+    });
+    observer.observe(el);
+
+    // Initial measure
+    const rect = el.getBoundingClientRect();
+    if (rect.width > 0 && rect.height > 0) {
+      setDimensions({ width: rect.width, height: rect.height });
     }
-    measure();
-    window.addEventListener("resize", measure);
-    return () => window.removeEventListener("resize", measure);
+
+    return () => observer.disconnect();
   }, []);
+
+  // Parse gens filter
+  const gensFilter = useMemo(() => {
+    if (!gensInput.trim()) return [];
+    return gensInput
+      .split(",")
+      .map((g) => g.trim().toLowerCase())
+      .filter(Boolean);
+  }, [gensInput]);
+
+  // Filter data
+  const filteredData = useMemo(() => {
+    if (!allData) return { nodes: [] as NetworkNode[], edges: [] as NetworkEdge[] };
+
+    let nodes = allData.nodes;
+    let edges = allData.edges;
+
+    // 1. Filter by era range (values are negative for BC)
+    if (eraFrom != null) {
+      const fromVal = -Math.abs(eraFrom);
+      nodes = nodes.filter((n) => n.eraTo == null || n.eraTo >= fromVal);
+    }
+    if (eraTo != null) {
+      const toVal = -Math.abs(eraTo);
+      nodes = nodes.filter((n) => n.eraFrom == null || n.eraFrom <= toVal);
+    }
+
+    // 2. Filter by gens (with 1-degree neighbors)
+    if (gensFilter.length > 0) {
+      const nodeIds = new Set(nodes.map((n) => n.id));
+      const directMatches = new Set(
+        nodes.filter((n) => n.nomen && gensFilter.includes(n.nomen.toLowerCase())).map((n) => n.id),
+      );
+      const neighbors = new Set<string>();
+      for (const e of edges) {
+        if (nodeIds.has(e.source) && nodeIds.has(e.target)) {
+          if (directMatches.has(e.source)) neighbors.add(e.target);
+          if (directMatches.has(e.target)) neighbors.add(e.source);
+        }
+      }
+      const keepIds = new Set([...directMatches, ...neighbors]);
+      nodes = nodes.filter((n) => keepIds.has(n.id));
+    }
+
+    // 3. Filter edges to remaining nodes + relationship types
+    const nodeIds = new Set(nodes.map((n) => n.id));
+    edges = edges.filter((e) => {
+      if (!nodeIds.has(e.source) || !nodeIds.has(e.target)) return false;
+      const cat = classifyRelationship(e.type);
+      if (cat === "family" && !showFamily) return false;
+      if (cat === "marriage" && !showMarriage) return false;
+      if (cat === "political" && !showPolitical) return false;
+      return true;
+    });
+
+    // 4. Remove orphan nodes
+    const connectedIds = new Set<string>();
+    for (const e of edges) {
+      connectedIds.add(e.source);
+      connectedIds.add(e.target);
+    }
+    nodes = nodes.filter((n) => connectedIds.has(n.id));
+
+    return { nodes, edges };
+  }, [allData, eraFrom, eraTo, gensFilter, showFamily, showMarriage, showPolitical]);
 
   // Build the graph
   useEffect(() => {
-    if (!data || !svgRef.current) return;
+    if (!svgRef.current || filteredData.nodes.length === 0) {
+      // Clear if no data
+      if (svgRef.current) {
+        d3.select(svgRef.current).selectAll("*").remove();
+      }
+      if (simulationRef.current) {
+        simulationRef.current.stop();
+        simulationRef.current = null;
+      }
+      return;
+    }
 
     const { width, height } = dimensions;
     const svg = d3.select(svgRef.current);
 
+    // Stop old simulation
+    if (simulationRef.current) {
+      simulationRef.current.stop();
+      simulationRef.current = null;
+    }
+
     // Clear previous render
     svg.selectAll("*").remove();
 
-    // Count connections per node
+    // Count connections per node within filtered set
     const connectionCount = new Map<string, number>();
-    for (const e of data.edges) {
+    for (const e of filteredData.edges) {
       connectionCount.set(e.source, (connectionCount.get(e.source) ?? 0) + 1);
       connectionCount.set(e.target, (connectionCount.get(e.target) ?? 0) + 1);
     }
 
     // Build sim nodes/edges
-    const nodes: SimNode[] = data.nodes.map((n) => ({
+    const nodes: SimNode[] = filteredData.nodes.map((n) => ({
       ...n,
       connectionCount: connectionCount.get(n.id) ?? 0,
     }));
 
     const nodeMap = new Map(nodes.map((n) => [n.id, n]));
-    const edges: SimEdge[] = data.edges
+    const edges: SimEdge[] = filteredData.edges
       .filter((e) => nodeMap.has(e.source) && nodeMap.has(e.target))
       .map((e) => ({
         source: nodeMap.get(e.source)!,
         target: nodeMap.get(e.target)!,
         type: e.type,
       }));
+
+    const nodeCount = nodes.length;
+    const showLabels = nodeCount < 100;
 
     // Nomen color scale
     const nomina = [...new Set(nodes.map((n) => n.nomen).filter(Boolean))] as string[];
@@ -183,7 +284,8 @@ export function NetworkGraph() {
       .join("line")
       .attr("stroke", (d) => EDGE_STYLES[classifyRelationship(d.type)].color)
       .attr("stroke-dasharray", (d) => EDGE_STYLES[classifyRelationship(d.type)].dasharray)
-      .attr("stroke-width", 0.8);
+      .attr("stroke-width", 0.8)
+      .attr("stroke-opacity", 0.2);
 
     // Nodes
     const nodeSelection = g
@@ -198,13 +300,29 @@ export function NetworkGraph() {
       .attr("stroke-width", 0.5)
       .style("cursor", "pointer");
 
+    // Labels (only when few nodes)
+    let labelSelection: d3.Selection<SVGTextElement, SimNode, SVGGElement, unknown> | null = null;
+    if (showLabels) {
+      labelSelection = g
+        .append("g")
+        .attr("class", "labels")
+        .selectAll("text")
+        .data(nodes)
+        .join("text")
+        .text((d) => d.name || d.id)
+        .attr("font-size", 9)
+        .attr("dx", (d) => radiusScale(d.connectionCount) + 3)
+        .attr("dy", "0.35em")
+        .attr("fill", "rgba(37, 36, 54, 0.7)")
+        .style("pointer-events", "none");
+    }
+
     // Tooltip
     const tooltip = d3.select(tooltipRef.current);
 
     // Hover interaction
     nodeSelection
       .on("mouseenter", function (event, d) {
-        // Highlight connected edges
         const connectedNodeIds = new Set<string>();
         connectedNodeIds.add(d.id);
         edgeSelection
@@ -214,9 +332,9 @@ export function NetworkGraph() {
             if (srcId === d.id || tgtId === d.id) {
               connectedNodeIds.add(srcId);
               connectedNodeIds.add(tgtId);
-              return 1;
+              return 0.8;
             }
-            return 0.05;
+            return 0.03;
           })
           .attr("stroke-width", (e) => {
             const srcId = (e.source as SimNode).id;
@@ -225,13 +343,15 @@ export function NetworkGraph() {
           });
 
         nodeSelection.attr("opacity", (n) => (connectedNodeIds.has(n.id) ? 1 : 0.1));
+        if (labelSelection) {
+          labelSelection.attr("opacity", (n) => (connectedNodeIds.has(n.id) ? 1 : 0.1));
+        }
 
         d3.select(this).attr("stroke", "#333").attr("stroke-width", 2);
 
-        // Show tooltip
         const eraStr =
           d.eraFrom != null && d.eraTo != null
-            ? `${Math.abs(d.eraFrom)} - ${Math.abs(d.eraTo)} BC`
+            ? `${Math.abs(d.eraFrom)} \u2013 ${Math.abs(d.eraTo)} BC`
             : d.eraFrom != null
               ? `fl. ${Math.abs(d.eraFrom)} BC`
               : "";
@@ -251,8 +371,11 @@ export function NetworkGraph() {
         tooltip.style("left", `${event.pageX + 12}px`).style("top", `${event.pageY - 10}px`);
       })
       .on("mouseleave", function () {
-        edgeSelection.attr("stroke-opacity", 1).attr("stroke-width", 0.8);
+        edgeSelection.attr("stroke-opacity", 0.2).attr("stroke-width", 0.8);
         nodeSelection.attr("opacity", 1);
+        if (labelSelection) {
+          labelSelection.attr("opacity", 1);
+        }
         d3.select(this).attr("stroke", "rgba(37, 36, 54, 0.3)").attr("stroke-width", 0.5);
         tooltip.style("display", "none");
       });
@@ -263,6 +386,8 @@ export function NetworkGraph() {
     });
 
     // Drag behavior
+    const simulation = d3.forceSimulation<SimNode>(nodes);
+
     const drag = d3
       .drag<SVGCircleElement, SimNode>()
       .on("start", (event, d) => {
@@ -282,17 +407,30 @@ export function NetworkGraph() {
 
     nodeSelection.call(drag);
 
+    // Adaptive force parameters
+    let chargeStrength: number;
+    let linkDistance: number;
+    if (nodeCount < 100) {
+      chargeStrength = -300;
+      linkDistance = 100;
+    } else if (nodeCount <= 500) {
+      chargeStrength = -200;
+      linkDistance = 80;
+    } else {
+      chargeStrength = -100;
+      linkDistance = 50;
+    }
+
     // Force simulation
-    const simulation = d3
-      .forceSimulation<SimNode>(nodes)
+    simulation
       .force(
         "link",
         d3
           .forceLink<SimNode, SimEdge>(edges)
           .id((d) => d.id)
-          .distance(80),
+          .distance(linkDistance),
       )
-      .force("charge", d3.forceManyBody().strength(-120))
+      .force("charge", d3.forceManyBody().strength(chargeStrength))
       .force("center", d3.forceCenter(width / 2, height / 2))
       .force(
         "collision",
@@ -306,11 +444,14 @@ export function NetworkGraph() {
           .attr("y2", (d) => d.target.y!);
 
         nodeSelection.attr("cx", (d) => d.x!).attr("cy", (d) => d.y!);
+
+        if (labelSelection) {
+          labelSelection.attr("x", (d) => d.x!).attr("y", (d) => d.y!);
+        }
       });
 
     simulationRef.current = simulation;
 
-    // Stop after stabilization
     simulation.on("end", () => {
       simulation.stop();
     });
@@ -318,70 +459,20 @@ export function NetworkGraph() {
     return () => {
       simulation.stop();
     };
-  }, [data, dimensions, navigate]);
+  }, [filteredData, dimensions, navigate]);
 
-  // Search/filter highlight
-  const handleSearch = useCallback(
-    (term: string) => {
-      setSearch(term);
-      if (!svgRef.current || !data) return;
-
-      const svg = d3.select(svgRef.current);
-      const lower = term.toLowerCase().trim();
-
-      if (!lower) {
-        svg.selectAll("circle").attr("opacity", 1);
-        svg.selectAll("line").attr("stroke-opacity", 1);
-        return;
-      }
-
-      const matchIds = new Set(
-        data.nodes
-          .filter(
-            (n) =>
-              n.name.toLowerCase().includes(lower) ||
-              n.id.toLowerCase().includes(lower) ||
-              (n.nomen && n.nomen.toLowerCase().includes(lower)),
-          )
-          .map((n) => n.id),
-      );
-
-      svg
-        .selectAll<SVGCircleElement, SimNode>("circle")
-        .attr("opacity", (d) => (matchIds.has(d.id) ? 1 : 0.08));
-
-      svg.selectAll<SVGLineElement, SimEdge>("line").attr("stroke-opacity", (d) => {
-        const srcId = (d.source as SimNode).id;
-        const tgtId = (d.target as SimNode).id;
-        return matchIds.has(srcId) || matchIds.has(tgtId) ? 1 : 0.03;
-      });
-
-      // Zoom to first match
-      if (matchIds.size > 0 && matchIds.size <= 10) {
-        const simNodes = simulationRef.current?.nodes() ?? [];
-        const matchSimNodes = simNodes.filter((n) => matchIds.has(n.id));
-        if (matchSimNodes.length > 0) {
-          const xExtent = d3.extent(matchSimNodes, (n) => n.x) as [number, number];
-          const yExtent = d3.extent(matchSimNodes, (n) => n.y) as [number, number];
-          const cx = (xExtent[0] + xExtent[1]) / 2;
-          const cy = (yExtent[0] + yExtent[1]) / 2;
-          const dx = xExtent[1] - xExtent[0] || 200;
-          const dy = yExtent[1] - yExtent[0] || 200;
-          const scale = Math.min(dimensions.width / (dx + 100), dimensions.height / (dy + 100), 4);
-
-          const transform = d3.zoomIdentity
-            .translate(dimensions.width / 2, dimensions.height / 2)
-            .scale(scale)
-            .translate(-cx, -cy);
-
-          d3.select(svgRef.current)
-            .transition()
-            .duration(750)
-            .call(d3.zoom<SVGSVGElement, unknown>().transform as any, transform);
-        }
+  // Era input handler — parse BC year string to a number
+  const handleEraInput = useCallback(
+    (setter: (v: number | null) => void) => (e: React.ChangeEvent<HTMLInputElement>) => {
+      const raw = e.target.value.trim();
+      if (raw === "") {
+        setter(null);
+      } else {
+        const num = parseInt(raw, 10);
+        if (!isNaN(num)) setter(num);
       }
     },
-    [data, dimensions],
+    [],
   );
 
   if (loading) {
@@ -392,69 +483,127 @@ export function NetworkGraph() {
     );
   }
 
-  return (
-    <div className="space-y-3">
-      {/* Search */}
-      <div className="flex items-center gap-4">
-        <input
-          type="text"
-          placeholder="Filter by name, ID, or nomen..."
-          value={search}
-          onChange={(e) => handleSearch(e.target.value)}
-          className="w-full max-w-sm rounded border border-ink/20 bg-parchment px-3 py-1.5 text-sm text-ink placeholder:text-ink-muted/60 focus:border-ink/40 focus:outline-none"
-        />
-        {data && (
-          <span className="text-xs text-ink-muted">
-            {data.nodes.length} persons &middot; {data.edges.length} relationships
-          </span>
-        )}
-      </div>
+  const totalNodes = allData?.nodes.length ?? 0;
 
-      {/* Legend */}
-      <div className="flex flex-wrap items-center gap-4 text-xs text-ink-muted">
-        <span className="flex items-center gap-1.5">
-          <svg width="20" height="2">
-            <line x1="0" y1="1" x2="20" y2="1" stroke="rgba(37,36,54,0.25)" strokeWidth="1.5" />
-          </svg>
-          Family
-        </span>
-        <span className="flex items-center gap-1.5">
-          <svg width="20" height="2">
-            <line
-              x1="0"
-              y1="1"
-              x2="20"
-              y2="1"
-              stroke="rgba(159,90,90,0.6)"
-              strokeWidth="1.5"
-              strokeDasharray="4,3"
+  return (
+    <div className="flex h-full flex-col gap-3">
+      {/* Filter controls */}
+      <div className="space-y-2">
+        {/* Era range */}
+        <div className="flex flex-wrap items-center gap-3 text-sm">
+          <label className="font-heading font-semibold text-ink">Era</label>
+          <div className="flex items-center gap-1.5">
+            <input
+              type="text"
+              inputMode="numeric"
+              placeholder="e.g. 100"
+              value={eraFrom ?? ""}
+              onChange={handleEraInput(setEraFrom)}
+              className="w-20 rounded border border-ink/20 bg-parchment px-2 py-1 text-sm text-ink placeholder:text-ink-muted/50 focus:border-ink/40 focus:outline-none"
             />
-          </svg>
-          Marriage
-        </span>
-        <span className="flex items-center gap-1.5">
-          <svg width="20" height="2">
-            <line
-              x1="0"
-              y1="1"
-              x2="20"
-              y2="1"
-              stroke="rgba(80,130,130,0.5)"
-              strokeWidth="1.5"
-              strokeDasharray="2,3"
+            <span className="text-ink-muted">BC to</span>
+            <input
+              type="text"
+              inputMode="numeric"
+              placeholder="e.g. 50"
+              value={eraTo ?? ""}
+              onChange={handleEraInput(setEraTo)}
+              className="w-20 rounded border border-ink/20 bg-parchment px-2 py-1 text-sm text-ink placeholder:text-ink-muted/50 focus:border-ink/40 focus:outline-none"
             />
-          </svg>
-          Political
-        </span>
+            <span className="text-ink-muted">BC</span>
+          </div>
+        </div>
+
+        {/* Gens filter */}
+        <div className="flex flex-wrap items-center gap-3 text-sm">
+          <label className="font-heading font-semibold text-ink">Gens</label>
+          <input
+            type="text"
+            placeholder='e.g. "Cornelius" or "Cornelius, Caecilius"'
+            value={gensInput}
+            onChange={(e) => setGensInput(e.target.value)}
+            className="w-full max-w-sm rounded border border-ink/20 bg-parchment px-2 py-1 text-sm text-ink placeholder:text-ink-muted/50 focus:border-ink/40 focus:outline-none"
+          />
+        </div>
+
+        {/* Relationship toggles + count */}
+        <div className="flex flex-wrap items-center gap-4 text-sm">
+          <label className="flex cursor-pointer items-center gap-1.5">
+            <input
+              type="checkbox"
+              checked={showFamily}
+              onChange={(e) => setShowFamily(e.target.checked)}
+              className="accent-ink"
+            />
+            <svg width="20" height="2" className="inline">
+              <line x1="0" y1="1" x2="20" y2="1" stroke="rgba(37,36,54,0.25)" strokeWidth="1.5" />
+            </svg>
+            <span className="text-ink-muted">Family</span>
+          </label>
+          <label className="flex cursor-pointer items-center gap-1.5">
+            <input
+              type="checkbox"
+              checked={showMarriage}
+              onChange={(e) => setShowMarriage(e.target.checked)}
+              className="accent-ink"
+            />
+            <svg width="20" height="2" className="inline">
+              <line
+                x1="0"
+                y1="1"
+                x2="20"
+                y2="1"
+                stroke="rgba(159,90,90,0.6)"
+                strokeWidth="1.5"
+                strokeDasharray="4,3"
+              />
+            </svg>
+            <span className="text-ink-muted">Marriage</span>
+          </label>
+          <label className="flex cursor-pointer items-center gap-1.5">
+            <input
+              type="checkbox"
+              checked={showPolitical}
+              onChange={(e) => setShowPolitical(e.target.checked)}
+              className="accent-ink"
+            />
+            <svg width="20" height="2" className="inline">
+              <line
+                x1="0"
+                y1="1"
+                x2="20"
+                y2="1"
+                stroke="rgba(80,130,130,0.5)"
+                strokeWidth="1.5"
+                strokeDasharray="2,3"
+              />
+            </svg>
+            <span className="text-ink-muted">Political</span>
+          </label>
+
+          <span className="text-xs text-ink-muted">
+            Showing {filteredData.nodes.length} of {totalNodes} persons, {filteredData.edges.length}{" "}
+            edges
+          </span>
+        </div>
       </div>
 
       {/* Graph */}
       <div
         ref={containerRef}
-        className="relative overflow-hidden rounded-lg border border-ink/10 bg-parchment-dark"
-        style={{ height: "calc(100vh - 260px)" }}
+        className="relative min-h-0 flex-1 overflow-hidden rounded-lg border border-ink/10 bg-parchment-dark"
+        style={{ height: "calc(100vh - 280px)" }}
       >
-        <svg ref={svgRef} width={dimensions.width} height={dimensions.height} className="block" />
+        {filteredData.nodes.length === 0 ? (
+          <div className="flex h-full items-center justify-center">
+            <p className="text-ink-muted">
+              No persons match the current filters. Try widening the era range or clearing the gens
+              filter.
+            </p>
+          </div>
+        ) : (
+          <svg ref={svgRef} width={dimensions.width} height={dimensions.height} className="block" />
+        )}
         <div
           ref={tooltipRef}
           className="pointer-events-none fixed z-50 hidden rounded border border-ink/10 bg-parchment px-3 py-2 shadow-lg"
