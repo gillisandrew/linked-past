@@ -8,7 +8,7 @@ import { CareerTimeline } from "#/components/career-timeline";
 import { PostAssertionsTable } from "#/components/post-assertions-table";
 import { StatusAssertionsTable } from "#/components/status-assertions-table";
 import { RelationshipsTable } from "#/components/relationships-table";
-import { EgoGraph } from "#/components/ego-graph";
+import { FamilyTree } from "#/components/family-tree";
 import { Breadcrumbs } from "#/components/breadcrumbs";
 
 export const Route = createFileRoute("/persons/$personId")({
@@ -171,11 +171,7 @@ function PersonPage() {
       {person.relationships.length > 0 ? (
         <section className="space-y-3">
           <h2 className="font-heading text-xl font-semibold">Relationships</h2>
-          <EgoGraph
-            personId={person.id}
-            personName={person.name}
-            relationships={person.relationships}
-          />
+          <FamilyTree person={person} />
           <RelationshipsTable data={person.relationships} />
         </section>
       ) : (
