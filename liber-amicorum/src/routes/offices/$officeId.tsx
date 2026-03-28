@@ -1,6 +1,7 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { getOfficeWithDescendants } from "#/lib/data";
 import { OfficeLink } from "#/components/office-link";
+import { HolderHistogram } from "#/components/holder-histogram";
 import { HoldersTable } from "#/components/holders-table";
 
 export const Route = createFileRoute("/offices/$officeId")({
@@ -47,6 +48,9 @@ function OfficePage() {
           )}
         </div>
       </div>
+
+      {/* Holder Histogram */}
+      {office.allHolders.length > 0 && <HolderHistogram holders={office.allHolders} />}
 
       {/* Holders — merged from parent + all children */}
       {office.allHolders.length > 0 && (

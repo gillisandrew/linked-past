@@ -4,6 +4,7 @@ import { formatEra, formatYear } from "#/lib/format";
 import { Badge } from "#/components/ui/badge";
 import { UncertaintyMarker } from "#/components/uncertainty-marker";
 import { SourceBadge } from "#/components/source-badge";
+import { CareerTimeline } from "#/components/career-timeline";
 import { PostAssertionsTable } from "#/components/post-assertions-table";
 import { StatusAssertionsTable } from "#/components/status-assertions-table";
 import { RelationshipsTable } from "#/components/relationships-table";
@@ -110,6 +111,15 @@ function PersonPage() {
           </dl>
         </div>
       </div>
+
+      {/* Career Timeline */}
+      {person.postAssertions.length > 0 && (
+        <CareerTimeline
+          eraFrom={person.eraFrom}
+          eraTo={person.eraTo}
+          postAssertions={person.postAssertions}
+        />
+      )}
 
       {/* Post Assertions */}
       {person.postAssertions.length > 0 && (
