@@ -1,4 +1,4 @@
-import { createFileRoute, notFound, Link } from "@tanstack/react-router";
+import { createFileRoute, notFound } from "@tanstack/react-router";
 import { getOfficeWithDescendants } from "#/lib/data";
 import { OfficeLink } from "#/components/office-link";
 import { HoldersTable } from "#/components/holders-table";
@@ -47,25 +47,6 @@ function OfficePage() {
           )}
         </div>
       </div>
-
-      {/* Child offices */}
-      {office.children.length > 0 && (
-        <section className="space-y-3">
-          <h2 className="font-heading text-xl font-semibold">Sub-offices</h2>
-          <div className="flex flex-wrap gap-3">
-            {office.children.map((child) => (
-              <Link
-                key={child.id}
-                to="/offices/$officeId"
-                params={{ officeId: child.id }}
-                className="rounded-lg border border-parchment-dark px-4 py-2 text-sm text-link hover:bg-parchment-dark"
-              >
-                {child.name}
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
 
       {/* Holders — merged from parent + all children */}
       {office.allHolders.length > 0 && (

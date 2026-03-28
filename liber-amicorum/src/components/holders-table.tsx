@@ -9,6 +9,8 @@ import {
   type ColumnDef,
 } from "@tanstack/react-table";
 import { useMemo, useState } from "react";
+import { Link } from "@tanstack/react-router";
+import { ExternalLink } from "lucide-react";
 import type { OfficeHolder, OfficeHolderWithOffice } from "#/lib/types";
 import { assertionAnchor, formatYearUncertain } from "#/lib/format";
 import { AnchorRow } from "#/components/anchor-row";
@@ -186,19 +188,36 @@ export function HoldersTable({ data, subOffices }: HoldersTableProps) {
       {hasSubOffices && officeOptions.length > 1 && (
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-xs font-medium text-ink-muted">Filter by office:</span>
-          {officeOptions.map((opt) => (
-            <button
-              key={opt.id}
-              onClick={() => toggleOffice(opt.id)}
-              className={`rounded-full border px-3 py-1 text-xs transition-colors ${
-                selectedOffices.has(opt.id)
-                  ? "border-link bg-link/10 text-link"
-                  : "border-ink/15 text-ink-muted hover:border-ink/30"
-              }`}
-            >
-              {opt.name}
-            </button>
-          ))}
+          {officeOptions.map((opt) => {
+            const active = selectedOffices.has(opt.id);
+            return (
+              <span
+                key={opt.id}
+                className={`inline-flex items-stretch rounded-full border text-xs transition-colors ${
+                  active
+                    ? "border-link bg-link/10 text-link"
+                    : "border-ink/15 text-ink-muted hover:border-ink/30"
+                }`}
+              >
+                <button
+                  onClick={() => toggleOffice(opt.id)}
+                  className="px-3 py-1 hover:opacity-80"
+                >
+                  {opt.name}
+                </button>
+                <Link
+                  to="/offices/$officeId"
+                  params={{ officeId: opt.id }}
+                  className={`flex items-center border-l px-1.5 py-1 hover:opacity-80 ${
+                    active ? "border-link/30" : "border-ink/10"
+                  }`}
+                  title={`Go to ${opt.name}`}
+                >
+                  <ExternalLink className="h-3 w-3" />
+                </Link>
+              </span>
+            );
+          })}
         </div>
       )}
 
