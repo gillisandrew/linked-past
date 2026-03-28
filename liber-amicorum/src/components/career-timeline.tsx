@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { formatYear } from "#/lib/format";
 import type { PostAssertion } from "#/lib/types";
+import { Popover, PopoverTrigger, PopoverContent } from "#/components/ui/popover";
 
 const SEGMENT_COLORS = [
   "oklch(0.55 0.10 250)", // deep blue
@@ -42,28 +43,6 @@ function assignRows(
     }
     return { ...seg, row };
   });
-}
-
-function buildTooltip(pa: PostAssertion): string {
-  const parts: string[] = [pa.office];
-  const start = formatYear(pa.dateStart);
-  const end = formatYear(pa.dateEnd);
-  if (start || end) {
-    const startStr = start ?? "?";
-    const endStr = end ?? "?";
-    parts.push(`${startStr} \u2013 ${endStr}`);
-  }
-  if (pa.uncertain) parts.push("(uncertain assertion)");
-  if (pa.dateStartUncertain || pa.dateEndUncertain) {
-    const which = [pa.dateStartUncertain && "start", pa.dateEndUncertain && "end"]
-      .filter(Boolean)
-      .join(" & ");
-    parts.push(`(uncertain date ${which})`);
-  }
-  if (pa.sources.length > 0) {
-    parts.push(`Source: ${pa.sources.map((s) => s.name).join(", ")}`);
-  }
-  return parts.join("\n");
 }
 
 export function CareerTimeline({ eraFrom, eraTo, postAssertions }: CareerTimelineProps) {
@@ -132,54 +111,73 @@ export function CareerTimeline({ eraFrom, eraTo, postAssertions }: CareerTimelin
           const hasUncertainDates = pa.dateStartUncertain || pa.dateEndUncertain;
 
           return (
-            <Link
-              key={i}
-              to="/offices/$officeId"
-              params={{ officeId: pa.officeId }}
-              className="absolute block rounded-sm hover:brightness-110 transition-[filter]"
-              style={{
-                left: `${left}%`,
-                width: `${width}%`,
-                top,
-                height: ROW_HEIGHT,
-                minWidth: 4,
-              }}
-              title={buildTooltip(pa)}
-            >
-              {/* Base color */}
-              <div
-                className="absolute inset-0 rounded-sm"
+            <Popover key={i}>
+              <PopoverTrigger
+                openOnHover
+                delay={150}
+                closeDelay={200}
+                render={<Link to="/offices/$officeId" params={{ officeId: pa.officeId }} />}
+                className="absolute block rounded-sm hover:brightness-110 transition-[filter]"
                 style={{
-                  backgroundColor: color,
-                  opacity: isUncertainAssertion ? 0.5 : 1,
+                  left: `${left}%`,
+                  width: `${width}%`,
+                  top,
+                  height: ROW_HEIGHT,
+                  minWidth: 4,
                 }}
-              />
-              {/* Hatch overlay for uncertain dates or uncertain assertion */}
-              {(hasUncertainDates || isUncertainAssertion) && (
+              >
+                {/* Base color */}
                 <div
                   className="absolute inset-0 rounded-sm"
-                  style={{ background: HATCH_OVERLAY }}
-                />
-              )}
-              {/* Fuzzy gradient at uncertain start */}
-              {pa.dateStartUncertain && (
-                <div
-                  className="absolute top-0 bottom-0 left-0 w-2 rounded-l-sm"
                   style={{
-                    background: `linear-gradient(to right, transparent, ${color})`,
+                    backgroundColor: color,
+                    opacity: isUncertainAssertion ? 0.5 : 1,
                   }}
                 />
-              )}
-              {/* Fuzzy gradient at uncertain end */}
-              {pa.dateEndUncertain && (
-                <div
-                  className="absolute top-0 bottom-0 right-0 w-2 rounded-r-sm"
-                  style={{
-                    background: `linear-gradient(to left, transparent, ${color})`,
-                  }}
-                />
-              )}
-            </Link>
+                {/* Hatch overlay for uncertain dates or uncertain assertion */}
+                {(hasUncertainDates || isUncertainAssertion) && (
+                  <div
+                    className="absolute inset-0 rounded-sm"
+                    style={{ background: HATCH_OVERLAY }}
+                  />
+                )}
+                {/* Fuzzy gradient at uncertain start */}
+                {pa.dateStartUncertain && (
+                  <div
+                    className="absolute top-0 bottom-0 left-0 w-2 rounded-l-sm"
+                    style={{
+                      background: `linear-gradient(to right, transparent, ${color})`,
+                    }}
+                  />
+                )}
+                {/* Fuzzy gradient at uncertain end */}
+                {pa.dateEndUncertain && (
+                  <div
+                    className="absolute top-0 bottom-0 right-0 w-2 rounded-r-sm"
+                    style={{
+                      background: `linear-gradient(to left, transparent, ${color})`,
+                    }}
+                  />
+                )}
+              </PopoverTrigger>
+              <PopoverContent className="w-fit max-w-xs p-2" align="start" side="top">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium">{pa.office}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {formatYear(pa.dateStart)} – {formatYear(pa.dateEnd)}
+                  </p>
+                  {pa.uncertain && <p className="text-xs text-uncertain italic">Uncertain</p>}
+                  {pa.province && (
+                    <p className="text-xs text-muted-foreground">Province: {pa.province}</p>
+                  )}
+                  {pa.sources.length > 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      Sources: {pa.sources.map((s) => s.name).join(", ")}
+                    </p>
+                  )}
+                </div>
+              </PopoverContent>
+            </Popover>
           );
         })}
       </div>

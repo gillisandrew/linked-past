@@ -8,6 +8,7 @@ import { CareerTimeline } from "#/components/career-timeline";
 import { PostAssertionsTable } from "#/components/post-assertions-table";
 import { StatusAssertionsTable } from "#/components/status-assertions-table";
 import { RelationshipsTable } from "#/components/relationships-table";
+import { EgoGraph } from "#/components/ego-graph";
 
 export const Route = createFileRoute("/persons/$personId")({
   loader: async ({ params }) => {
@@ -164,6 +165,11 @@ function PersonPage() {
       {person.relationships.length > 0 && (
         <section className="space-y-3">
           <h2 className="font-heading text-xl font-semibold">Relationships</h2>
+          <EgoGraph
+            personId={person.id}
+            personName={person.name}
+            relationships={person.relationships}
+          />
           <RelationshipsTable data={person.relationships} />
         </section>
       )}
