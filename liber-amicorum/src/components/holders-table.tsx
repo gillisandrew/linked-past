@@ -193,23 +193,29 @@ export function HoldersTable({ data, subOffices }: HoldersTableProps) {
             return (
               <span
                 key={opt.id}
-                className={`inline-flex items-stretch rounded-full border text-xs transition-colors ${
+                className={`inline-flex items-stretch rounded-full text-xs transition-colors ${
                   active
-                    ? "border-link bg-link/10 text-link"
-                    : "border-ink/15 text-ink-muted hover:border-ink/30"
+                    ? "bg-link/10 text-link"
+                    : "bg-ink/5 text-ink-muted"
                 }`}
               >
                 <button
                   onClick={() => toggleOffice(opt.id)}
-                  className="px-3 py-1 hover:opacity-80"
+                  className={`rounded-l-full px-3 py-1 transition-colors ${
+                    active
+                      ? "hover:bg-link/20"
+                      : "hover:bg-ink/10 hover:text-ink"
+                  }`}
                 >
                   {opt.name}
                 </button>
                 <Link
                   to="/offices/$officeId"
                   params={{ officeId: opt.id }}
-                  className={`flex items-center border-l px-1.5 py-1 hover:opacity-80 ${
-                    active ? "border-link/30" : "border-ink/10"
+                  className={`flex items-center rounded-r-full px-1.5 py-1 transition-colors ${
+                    active
+                      ? "text-link/50 hover:text-link hover:bg-link/20"
+                      : "text-ink/30 hover:text-ink hover:bg-ink/10"
                   }`}
                   title={`Go to ${opt.name}`}
                 >
