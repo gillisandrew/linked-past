@@ -932,6 +932,8 @@ def build_search_index(persons: list[dict], offices: list[dict]) -> list[dict]:
                 "praenomen": p.get("praenomen"),
                 "highestOffice": p.get("highestOffice"),
                 "era": era,
+                "reNumber": p.get("reNumber"),
+                "dprrId": p["id"],
             }
         )
 

@@ -196,4 +196,6 @@ export interface SearchDoc {
   highestOffice?: string;
   era?: string;
   abbreviation?: string;
+  reNumber?: string;
+  dprrId?: string;
 }

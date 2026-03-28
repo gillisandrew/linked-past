@@ -8,8 +8,8 @@ export function getSearch(): MiniSearch<SearchDoc> {
   if (searchInstance) return searchInstance;
 
   searchInstance = new MiniSearch<SearchDoc>({
-    fields: ["name", "nomen", "cognomen", "praenomen", "abbreviation"],
-    storeFields: ["id", "type", "name", "nomen", "highestOffice", "era", "abbreviation"],
+    fields: ["name", "nomen", "cognomen", "praenomen", "abbreviation", "reNumber", "dprrId"],
+    storeFields: ["id", "type", "name", "nomen", "highestOffice", "era", "abbreviation", "reNumber"],
     searchOptions: {
       boost: { nomen: 2, cognomen: 2 },
       fuzzy: 0.2,
