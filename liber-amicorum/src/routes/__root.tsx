@@ -120,7 +120,26 @@ function RootLayout() {
                 DPRR Project
               </a>
             </p>
-            <p className="mt-1">Licensed under Creative Commons</p>
+            <p className="mt-1">
+              Data:{" "}
+              <a
+                href="https://creativecommons.org/licenses/by-nc/4.0/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-link hover:text-link-light underline decoration-link/30"
+              >
+                CC BY-NC 4.0
+              </a>
+              {" · Code: "}
+              <a
+                href="https://opensource.org/licenses/MIT"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-link hover:text-link-light underline decoration-link/30"
+              >
+                MIT
+              </a>
+            </p>
           </div>
         </div>
       </footer>
