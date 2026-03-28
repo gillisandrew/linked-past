@@ -580,6 +580,27 @@ ORDER BY ?officeName ?dateStart ?dprrId
 # ---------------------------------------------------------------------------
 
 
+# Manually curated methodological notes for key sources.
+# These provide scholarly context about how the source derives its data.
+SOURCE_NOTES: dict[str, list[str]] = {
+    "broughton-mrr-i": [
+        "Dates for junior magistracies (quaestor, aedile, tribunus plebis) are often "
+        "inferred retrospectively from the terminus ante quem implied by the lex Villia "
+        "annalis (180 BC), which set minimum age requirements for each office. These "
+        "inferred dates are typically flagged as uncertain in the dataset.",
+    ],
+    "broughton-mrr-ii": [
+        "As with MRR I, dates for junior magistracies may be inferred from the lex "
+        "Villia annalis minimum age requirements rather than direct attestation.",
+    ],
+    "brennan-2000": [
+        "Brennan's reconstruction of the praetorship frequently relies on prosopographical "
+        "inference and the cursus honorum sequence to assign dates, particularly for the "
+        "middle Republic where direct evidence is sparse.",
+    ],
+}
+
+
 def extract_sources(store: Store, prefix_map: dict[str, str]) -> list[dict]:
     """Extract all secondary sources with metadata."""
     pfx = sparql_prefixes(prefix_map)
@@ -610,6 +631,7 @@ SELECT ?source ?label ?abbrev ?biblio ?name WHERE {{
             "abbreviation": abbrev,
             "name": row.get("name") or strip_label_prefix(row.get("label")),
             "biblio": row.get("biblio"),
+            "notes": SOURCE_NOTES.get(sid, []),
             "citations": [],
         }
 

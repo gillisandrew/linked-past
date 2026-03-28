@@ -91,6 +91,16 @@ function SourcePage() {
         </div>
       </div>
 
+      {/* Methodological notes */}
+      {source.notes.length > 0 && (
+        <section className="rounded-lg border border-uncertain/30 bg-uncertain/5 p-4 space-y-2">
+          <h2 className="text-sm font-semibold text-ink">Methodological Notes</h2>
+          {source.notes.map((note, i) => (
+            <p key={i} className="text-sm leading-relaxed text-ink/80">{note}</p>
+          ))}
+        </section>
+      )}
+
       {/* Citations table */}
       {source.citations.length > 0 && (
         <section className="space-y-3">

@@ -156,6 +156,7 @@ export interface SourceDetail {
   abbreviation: string;
   name: string | null;
   biblio: string | null;
+  notes: string[];
   citations: SourceCitation[];
 }
 
