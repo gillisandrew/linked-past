@@ -3,10 +3,10 @@ import { getPersonById } from "#/lib/data";
 import { formatEra, formatYear } from "#/lib/format";
 import { Badge } from "#/components/ui/badge";
 import { UncertaintyMarker } from "#/components/uncertainty-marker";
-import { PersonLink } from "#/components/person-link";
 import { SourceBadge } from "#/components/source-badge";
 import { PostAssertionsTable } from "#/components/post-assertions-table";
 import { StatusAssertionsTable } from "#/components/status-assertions-table";
+import { RelationshipsTable } from "#/components/relationships-table";
 
 export const Route = createFileRoute("/persons/$personId")({
   loader: async ({ params }) => {
@@ -33,39 +33,81 @@ function PersonPage() {
 
   return (
     <div className="mx-auto px-6 py-10 space-y-8">
-      {/* Header */}
-      <div className="space-y-2">
-        <h1 className="font-heading text-3xl font-bold">
-          <UncertaintyMarker uncertain={person.praenomenUncertain}>
-            {person.praenomen}
-          </UncertaintyMarker>{" "}
-          <UncertaintyMarker uncertain={person.nomenUncertain}>{person.nomen}</UncertaintyMarker>{" "}
-          {person.filiation && (
-            <>
-              <UncertaintyMarker uncertain={person.filiationUncertain}>
-                <span className="text-2xl font-normal text-ink-muted">{person.filiation}</span>
-              </UncertaintyMarker>{" "}
-            </>
-          )}
-          <UncertaintyMarker uncertain={person.cognomenUncertain}>
-            {person.cognomen}
-          </UncertaintyMarker>
-        </h1>
-        <div className="flex flex-wrap items-center gap-2 text-sm text-ink-muted">
-          <span>{formatEra(person.eraFrom, person.eraTo)}</span>
-          {person.sex && <span>&middot; {person.sex}</span>}
-          {person.origin && <span>&middot; {person.origin}</span>}
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {person.patrician && (
-            <UncertaintyMarker uncertain={person.patricianUncertain}>
-              <Badge variant="outline">Patrician</Badge>
+      {/* Header: two-column layout with infobox */}
+      <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
+        {/* Left column: name, era, badges */}
+        <div className="space-y-2 flex-1 min-w-0">
+          <h1 className="font-heading text-3xl font-bold">
+            <UncertaintyMarker uncertain={person.praenomenUncertain}>
+              {person.praenomen}
+            </UncertaintyMarker>{" "}
+            <UncertaintyMarker uncertain={person.nomenUncertain}>{person.nomen}</UncertaintyMarker>{" "}
+            {person.filiation && (
+              <>
+                <UncertaintyMarker uncertain={person.filiationUncertain}>
+                  <span className="text-2xl font-normal text-ink-muted">{person.filiation}</span>
+                </UncertaintyMarker>{" "}
+              </>
+            )}
+            <UncertaintyMarker uncertain={person.cognomenUncertain}>
+              {person.cognomen}
             </UncertaintyMarker>
-          )}
-          {person.nobilis && <Badge variant="outline">Nobilis</Badge>}
-          {person.novus && <Badge variant="outline">Novus Homo</Badge>}
+          </h1>
+          <div className="flex flex-wrap items-center gap-2 text-sm text-ink-muted">
+            <span>{formatEra(person.eraFrom, person.eraTo)}</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {person.patrician && (
+              <UncertaintyMarker uncertain={person.patricianUncertain}>
+                <Badge variant="outline">Patrician</Badge>
+              </UncertaintyMarker>
+            )}
+            {person.nobilis && <Badge variant="outline">Nobilis</Badge>}
+            {person.novus && <Badge variant="outline">Novus Homo</Badge>}
+          </div>
         </div>
-        {person.reNumber && <p className="text-xs text-ink-muted">RE: {person.reNumber}</p>}
+
+        {/* Right column: infobox */}
+        <div className="border border-ink/10 rounded-lg p-4 bg-white/30 md:w-72 shrink-0">
+          <dl className="space-y-2 text-sm">
+            <div className="flex justify-between gap-2">
+              <dt className="text-ink-muted">DPRR ID</dt>
+              <dd className="font-medium text-right">{person.id}</dd>
+            </div>
+            {person.reNumber && (
+              <div className="flex justify-between gap-2">
+                <dt className="text-ink-muted">RE Number</dt>
+                <dd className="font-medium text-right">{person.reNumber}</dd>
+              </div>
+            )}
+            {person.sex && (
+              <div className="flex justify-between gap-2">
+                <dt className="text-ink-muted">Sex</dt>
+                <dd className="font-medium text-right">{person.sex}</dd>
+              </div>
+            )}
+            {person.origin && (
+              <div className="flex justify-between gap-2">
+                <dt className="text-ink-muted">Origin</dt>
+                <dd className="font-medium text-right">{person.origin}</dd>
+              </div>
+            )}
+            {(person.eraFrom != null || person.eraTo != null) && (
+              <div className="flex justify-between gap-2">
+                <dt className="text-ink-muted">Era</dt>
+                <dd className="font-medium text-right">
+                  {formatEra(person.eraFrom, person.eraTo)}
+                </dd>
+              </div>
+            )}
+            {person.highestOffice && (
+              <div className="flex justify-between gap-2">
+                <dt className="text-ink-muted">Highest Office</dt>
+                <dd className="font-medium text-right">{person.highestOffice}</dd>
+              </div>
+            )}
+          </dl>
+        </div>
       </div>
 
       {/* Post Assertions */}
@@ -111,20 +153,7 @@ function PersonPage() {
       {person.relationships.length > 0 && (
         <section className="space-y-3">
           <h2 className="font-heading text-xl font-semibold">Relationships</h2>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {person.relationships.map((rel, i) => (
-              <div key={i} className="rounded-lg border border-parchment-dark p-3">
-                <p className="text-xs uppercase text-ink-muted">{rel.type}</p>
-                {rel.relatedPersonId && rel.relatedPersonName ? (
-                  <PersonLink id={rel.relatedPersonId} name={rel.relatedPersonName} />
-                ) : (
-                  <span className="text-sm text-ink-muted">
-                    {rel.relatedPersonName ?? "Unknown"}
-                  </span>
-                )}
-              </div>
-            ))}
-          </div>
+          <RelationshipsTable data={person.relationships} />
         </section>
       )}
 

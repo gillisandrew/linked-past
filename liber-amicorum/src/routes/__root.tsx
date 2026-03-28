@@ -1,5 +1,6 @@
 import { HeadContent, Link, Outlet, Scripts, createRootRoute } from "@tanstack/react-router";
 import type { ReactNode } from "react";
+import { Agentation } from "agentation";
 import appCss from "#/app.css?url";
 import { SearchCommand } from "#/components/search-command";
 
@@ -39,6 +40,7 @@ function RootDocument({ children }: { children: ReactNode }) {
       </head>
       <body className="min-h-screen bg-parchment font-sans text-ink antialiased">
         {children}
+        {process.env.NODE_ENV === "development" && <Agentation endpoint="http://localhost:7373" />}
         <Scripts />
       </body>
     </html>
@@ -48,7 +50,7 @@ function RootDocument({ children }: { children: ReactNode }) {
 function RootLayout() {
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="border-b border-ink/10 bg-parchment/80 backdrop-blur-sm">
+      <header className="border-b-2 border-ink/10 bg-parchment/80 backdrop-blur-sm">
         <nav className="mx-auto flex items-center justify-between px-6 py-4">
           <Link to="/" className="font-serif text-xl font-bold text-ink">
             Liber Amicorum
@@ -56,27 +58,39 @@ function RootLayout() {
           <SearchCommand />
           <ul className="flex items-center gap-6 text-sm font-medium">
             <li>
-              <Link to="/" className="text-ink/70 transition-colors hover:text-ink">
+              <Link to="/" className="font-medium text-ink/70 transition-colors hover:text-ink">
                 Home
               </Link>
             </li>
             <li>
-              <Link to="/persons" className="text-ink/70 transition-colors hover:text-ink">
+              <Link
+                to="/persons"
+                className="font-medium text-ink/70 transition-colors hover:text-ink"
+              >
                 Persons
               </Link>
             </li>
             <li>
-              <Link to="/offices" className="text-ink/70 transition-colors hover:text-ink">
+              <Link
+                to="/offices"
+                className="font-medium text-ink/70 transition-colors hover:text-ink"
+              >
                 Offices
               </Link>
             </li>
             <li>
-              <Link to="/sources" className="text-ink/70 transition-colors hover:text-ink">
+              <Link
+                to="/sources"
+                className="font-medium text-ink/70 transition-colors hover:text-ink"
+              >
                 Sources
               </Link>
             </li>
             <li>
-              <Link to="/explore" className="text-ink/70 transition-colors hover:text-ink">
+              <Link
+                to="/explore"
+                className="font-medium text-ink/70 transition-colors hover:text-ink"
+              >
                 Explore
               </Link>
             </li>
@@ -88,8 +102,27 @@ function RootLayout() {
         <Outlet />
       </main>
 
-      <footer className="border-t border-ink/10 py-8 text-center text-sm text-ink/50">
-        <p>Liber Amicorum &mdash; A companion to the Digital Prosopography of the Roman Republic</p>
+      <footer className="border-t border-ink/10 py-8 text-sm text-ink/50">
+        <div className="mx-auto flex flex-col items-center gap-4 px-6 sm:flex-row sm:justify-between">
+          <div className="text-center sm:text-left">
+            <p className="font-medium text-ink/70">Liber Amicorum</p>
+            <p className="mt-1">A companion to the Digital Prosopography of the Roman Republic</p>
+          </div>
+          <div className="text-center sm:text-right">
+            <p>
+              Data from the{" "}
+              <a
+                href="https://romanrepublic.ac.uk/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-link hover:text-link-light underline decoration-link/30 hover:decoration-link"
+              >
+                DPRR Project
+              </a>
+            </p>
+            <p className="mt-1">Licensed under Creative Commons</p>
+          </div>
+        </div>
       </footer>
     </div>
   );

@@ -78,7 +78,12 @@ export function OfficesListingTable({ data }: OfficesListingTableProps) {
   });
 
   return (
-    <Table>
+    <Table className="table-fixed">
+      <colgroup>
+        <col className="w-[55%]" />
+        <col className="w-[25%]" />
+        <col className="w-[20%]" />
+      </colgroup>
       <TableHeader>
         {table.getHeaderGroups().map((headerGroup) => (
           <TableRow key={headerGroup.id}>

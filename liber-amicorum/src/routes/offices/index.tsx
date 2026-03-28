@@ -3,6 +3,15 @@ import { getOfficesIndex } from "#/lib/data";
 import type { OfficeTreeNode } from "#/lib/types";
 import { OfficesListingTable } from "#/components/offices-listing-table";
 
+function sumHolderCounts(node: OfficeTreeNode): number {
+  let total = node.holderCount;
+  for (const child of node.subOffices) {
+    total += sumHolderCounts(child);
+  }
+  node.holderCount = total;
+  return total;
+}
+
 export const Route = createFileRoute("/offices/")({
   loader: () => {
     const flat = getOfficesIndex();
@@ -16,6 +25,10 @@ export const Route = createFileRoute("/offices/")({
       } else {
         roots.push(node);
       }
+    }
+    // Recursively aggregate holder counts from children into parents
+    for (const root of roots) {
+      sumHolderCounts(root);
     }
     return { roots, totalCount: flat.length };
   },
