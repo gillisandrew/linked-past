@@ -591,7 +591,7 @@ export function NetworkGraph() {
       {/* Graph */}
       <div
         ref={containerRef}
-        className="relative min-h-0 flex-1 overflow-hidden rounded-lg border border-ink/10 bg-parchment-dark"
+        className="relative min-h-0 w-full flex-1 overflow-hidden rounded-lg border border-ink/10 bg-parchment-dark"
         style={{ height: "calc(100vh - 280px)" }}
       >
         {filteredData.nodes.length === 0 ? (
