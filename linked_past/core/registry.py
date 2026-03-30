@@ -18,6 +18,13 @@ logger = logging.getLogger(__name__)
 class DatasetRegistry:
     """Manages dataset plugins and their Oxigraph stores."""
 
+    _URI_NAMESPACES: dict[str, str] = {
+        "http://romanrepublic.ac.uk/rdf/": "dprr",
+        "https://pleiades.stoa.org/places/": "pleiades",
+        "http://n2t.net/ark:/99152/": "periodo",
+        "http://nomisma.org/id/": "nomisma",
+    }
+
     def __init__(self, data_dir: Path):
         self._data_dir = data_dir
         self._plugins: dict[str, DatasetPlugin] = {}
@@ -42,6 +49,13 @@ class DatasetRegistry:
 
     def get_metadata(self, name: str) -> dict:
         return self._metadata.get(name, {})
+
+    def dataset_for_uri(self, uri: str) -> str | None:
+        """Determine which dataset a URI belongs to based on namespace."""
+        for ns, name in self._URI_NAMESPACES.items():
+            if uri.startswith(ns) and name in self._plugins:
+                return name
+        return None
 
     def initialize_dataset(self, name: str) -> None:
         plugin = self.get_plugin(name)

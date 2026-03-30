@@ -9,10 +9,12 @@ import logging
 import os
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
+from pathlib import Path
 
 import toons
 from mcp.server.fastmcp import Context, FastMCP
 
+from linked_past.core.linkage import LinkageGraph
 from linked_past.core.registry import DatasetRegistry
 from linked_past.core.store import get_data_dir
 from linked_past.core.validate import parse_and_fix_prefixes, validate_and_execute
@@ -29,6 +31,7 @@ QUERY_TIMEOUT = int(os.environ.get("LINKED_PAST_QUERY_TIMEOUT", os.environ.get("
 @dataclass
 class AppContext:
     registry: DatasetRegistry
+    linkage: LinkageGraph | None = None
 
 
 def build_app_context() -> AppContext:
@@ -39,7 +42,16 @@ def build_app_context() -> AppContext:
     registry.register(PeriodOPlugin())
     registry.register(NomismaPlugin())
     registry.initialize_all()
-    return AppContext(registry=registry)
+
+    # Load linkage graph
+    linkage_store_path = data_dir / "_linkages" / "store"
+    linkage = LinkageGraph(linkage_store_path)
+    linkages_dir = Path(__file__).parent.parent / "linkages"
+    if linkages_dir.exists():
+        for yaml_file in sorted(linkages_dir.glob("*.yaml")):
+            linkage.load_yaml(yaml_file)
+
+    return AppContext(registry=registry, linkage=linkage)
 
 
 def create_mcp_server() -> FastMCP:
@@ -53,8 +65,11 @@ def create_mcp_server() -> FastMCP:
         "linked-past",
         instructions=(
             "Linked Past: multi-dataset prosopographical SPARQL tools. "
-            "Use discover_datasets to find available datasets, get_schema to learn their ontology, "
-            "validate_sparql to check queries, and query to execute them."
+            "Use discover_datasets to find datasets, get_schema to learn ontologies, "
+            "validate_sparql to check queries, query to execute them, "
+            "search_entities to find entities across datasets, "
+            "explore_entity to inspect an entity, find_links for cross-references, "
+            "get_provenance for scholarly citations, and update_dataset to check freshness."
         ),
         lifespan=lifespan,
     )
@@ -166,6 +181,285 @@ def create_mcp_server() -> FastMCP:
             f"Tool: linked-past, https://github.com/gillisandrew/dprr-tool"
         )
         return table + footer
+
+    @mcp.tool()
+    def search_entities(ctx: Context, query_text: str, dataset: str | None = None) -> str:
+        """Search entity labels across datasets. Returns matching entities with URIs, labels, types, and dataset provenance. Use for entity disambiguation."""
+        app: AppContext = ctx.request_context.lifespan_context
+        registry = app.registry
+
+        datasets_to_search = [dataset] if dataset else registry.list_datasets()
+        all_results = []
+
+        for ds_name in datasets_to_search:
+            try:
+                store = registry.get_store(ds_name)
+            except KeyError:
+                continue
+
+            plugin = registry.get_plugin(ds_name)
+            prefix_block = "\n".join(f"PREFIX {k}: <{v}>" for k, v in plugin.get_prefixes().items())
+
+            sparql = f"""
+            {prefix_block}
+            PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+            PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+            SELECT DISTINCT ?uri ?label ?type WHERE {{
+                {{ ?uri rdfs:label ?label }}
+                UNION {{ ?uri skos:prefLabel ?label }}
+                FILTER(CONTAINS(LCASE(STR(?label)), LCASE("{query_text}")))
+                OPTIONAL {{ ?uri a ?type }}
+            }}
+            LIMIT 20
+            """
+            try:
+                from linked_past.core.store import execute_query as eq
+
+                rows = eq(store, sparql)
+                for row in rows:
+                    all_results.append({
+                        "dataset": ds_name,
+                        "uri": row.get("uri", ""),
+                        "label": row.get("label", ""),
+                        "type": row.get("type", ""),
+                    })
+            except Exception as e:
+                logger.warning("Search failed for %s: %s", ds_name, e)
+
+        if not all_results:
+            return f"No entities found matching '{query_text}'."
+
+        by_dataset: dict[str, list] = {}
+        for r in all_results:
+            by_dataset.setdefault(r["dataset"], []).append(r)
+
+        lines = [f"# Search Results for '{query_text}'\n"]
+        for ds_name, results in by_dataset.items():
+            plugin = registry.get_plugin(ds_name)
+            lines.append(f"## {plugin.display_name}\n")
+            for r in results[:10]:
+                type_str = f" ({r['type'].rsplit('/', 1)[-1].rsplit('#', 1)[-1]})" if r["type"] else ""
+                lines.append(f"- **{r['label']}**{type_str}\n  `{r['uri']}`")
+            if len(results) > 10:
+                lines.append(f"  ... and {len(results) - 10} more")
+            lines.append("")
+
+        return "\n".join(lines)
+
+    @mcp.tool()
+    def explore_entity(ctx: Context, uri: str) -> str:
+        """Explore an entity across datasets. Returns properties from its home dataset, cross-links from the linkage graph, and suggested next steps."""
+        app: AppContext = ctx.request_context.lifespan_context
+        registry = app.registry
+
+        ds_name = registry.dataset_for_uri(uri)
+        lines = [f"# Entity: `{uri}`\n"]
+
+        if ds_name:
+            plugin = registry.get_plugin(ds_name)
+            lines.append(f"**Dataset:** {plugin.display_name}\n")
+
+            try:
+                store = registry.get_store(ds_name)
+                sparql = f"SELECT ?pred ?obj WHERE {{ <{uri}> ?pred ?obj . }} LIMIT 50"
+                from linked_past.core.store import execute_query as eq
+
+                rows = eq(store, sparql)
+                if rows:
+                    lines.append("## Properties\n")
+                    for row in rows:
+                        pred = row["pred"].rsplit("/", 1)[-1].rsplit("#", 1)[-1]
+                        obj = row["obj"] or ""
+                        if len(obj) > 100:
+                            obj = obj[:100] + "..."
+                        lines.append(f"- **{pred}:** {obj}")
+                    lines.append("")
+            except Exception as e:
+                lines.append(f"Error querying {ds_name}: {e}\n")
+        else:
+            lines.append("**Dataset:** Unknown (URI namespace not recognized)\n")
+
+        if app.linkage:
+            links = app.linkage.find_links(uri)
+            if links:
+                lines.append("## Cross-Dataset Links\n")
+                for link in links:
+                    lines.append(
+                        f"- **{link['relationship']}** → `{link['target']}`\n"
+                        f"  Confidence: {link['confidence']} | {link['basis']}"
+                    )
+                lines.append("")
+
+        lines.append("## Suggested Next Steps\n")
+        if ds_name == "dprr":
+            lines.append("- Query DPRR for office-holdings: `query(sparql, 'dprr')` with PostAssertion joins")
+            lines.append("- Check family relationships via RelationshipAssertion")
+        elif ds_name == "pleiades":
+            lines.append("- Get coordinates via `pleiades:hasLocation`")
+            lines.append("- Find ancient names via `pleiades:hasName`")
+        last_segment = uri.rsplit("/", 1)[-1]
+        lines.append(f"- Search for related entities: `search_entities('{last_segment}')`")
+        lines.append(f"- Find cross-dataset links: `find_links('{uri}')`")
+
+        return "\n".join(lines)
+
+    @mcp.tool()
+    def find_links(ctx: Context, uri: str) -> str:
+        """Find all cross-dataset links for an entity from the linkage graph. Each link includes target URI, relationship type, confidence level, and scholarly basis."""
+        app: AppContext = ctx.request_context.lifespan_context
+
+        if not app.linkage:
+            return "Linkage graph not initialized."
+
+        links = app.linkage.find_links(uri)
+        if not links:
+            ds_name = app.registry.dataset_for_uri(uri)
+            other_datasets = [n for n in app.registry.list_datasets() if n != ds_name]
+            return (
+                f"No confirmed links found for `{uri}`.\n\n"
+                f"Try searching other datasets: {', '.join(other_datasets)}\n"
+                f"Use `search_entities()` to find potential matches."
+            )
+
+        by_confidence: dict[str, list] = {}
+        for link in links:
+            by_confidence.setdefault(link["confidence"], []).append(link)
+
+        lines = [f"# Links for `{uri}`\n"]
+        for level in ["confirmed", "probable", "candidate"]:
+            group = by_confidence.get(level, [])
+            if group:
+                lines.append(f"## {level.title()} ({len(group)})\n")
+                for link in group:
+                    lines.append(
+                        f"- **{link['relationship']}** → `{link['target']}`\n"
+                        f"  Basis: {link['basis']}"
+                    )
+                lines.append("")
+
+        return "\n".join(lines)
+
+    @mcp.tool()
+    def get_provenance(ctx: Context, uri: str, predicate: str | None = None) -> str:
+        """Get full provenance for an entity or a specific claim. Returns source, factoid, dataset chain plus linkage basis for cross-references."""
+        app: AppContext = ctx.request_context.lifespan_context
+        registry = app.registry
+
+        ds_name = registry.dataset_for_uri(uri)
+        lines = [f"# Provenance for `{uri}`\n"]
+
+        if ds_name:
+            plugin = registry.get_plugin(ds_name)
+            meta = registry.get_metadata(ds_name)
+
+            lines.append(f"## Dataset: {plugin.display_name}\n")
+            lines.append(f"- **Version:** {meta.get('version', 'unknown')}")
+            lines.append(f"- **License:** {plugin.license}")
+            lines.append(f"- **Citation:** {plugin.citation}")
+            lines.append(f"- **URL:** {plugin.url}\n")
+
+            try:
+                store = registry.get_store(ds_name)
+                from linked_past.core.store import execute_query as eq
+
+                if predicate:
+                    sparql = f"SELECT ?obj WHERE {{ <{uri}> <{predicate}> ?obj . }}"
+                else:
+                    sparql = f"SELECT ?pred ?obj WHERE {{ <{uri}> ?pred ?obj . }} LIMIT 50"
+                rows = eq(store, sparql)
+                if rows:
+                    lines.append("## Assertions\n")
+                    for row in rows:
+                        if predicate:
+                            lines.append(f"- {row['obj']}")
+                        else:
+                            pred_short = row["pred"].rsplit("/", 1)[-1].rsplit("#", 1)[-1]
+                            lines.append(f"- **{pred_short}:** {row['obj'] or ''}")
+                    lines.append("")
+            except Exception as e:
+                lines.append(f"Error: {e}\n")
+
+            # DPRR-specific: secondary sources
+            if ds_name == "dprr":
+                try:
+                    store = registry.get_store(ds_name)
+                    source_sparql = f"""
+                    PREFIX vocab: <http://romanrepublic.ac.uk/rdf/ontology#>
+                    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+                    SELECT ?source ?sourceLabel WHERE {{
+                        ?assertion vocab:isAboutPerson <{uri}> ;
+                                   vocab:hasSecondarySource ?source .
+                        ?source rdfs:label ?sourceLabel .
+                    }}
+                    """
+                    rows = eq(store, source_sparql)
+                    if rows:
+                        lines.append("## Secondary Sources\n")
+                        seen: set[str] = set()
+                        for row in rows:
+                            label = row.get("sourceLabel", "")
+                            if label and label not in seen:
+                                lines.append(f"- {label}")
+                                seen.add(label)
+                        lines.append("")
+                except Exception:
+                    pass
+
+        if app.linkage:
+            links = app.linkage.find_links(uri)
+            if links:
+                lines.append("## Cross-Reference Provenance\n")
+                for link in links:
+                    prov = app.linkage.get_provenance(uri, link["target"])
+                    if prov:
+                        lines.append(
+                            f"- **{link['relationship']}** → `{link['target']}`\n"
+                            f"  Basis: {prov.get('basis', 'unknown')}\n"
+                            f"  Confidence: {prov.get('confidence', 'unknown')}\n"
+                            f"  Method: {prov.get('method', 'unknown')}\n"
+                            f"  Attributed to: {prov.get('author', 'unknown')}"
+                        )
+                lines.append("")
+
+        return "\n".join(lines)
+
+    @mcp.tool()
+    def update_dataset(ctx: Context, dataset: str | None = None) -> str:
+        """Check for available updates to dataset(s). Reports current version and whether newer data exists."""
+        app: AppContext = ctx.request_context.lifespan_context
+        registry = app.registry
+
+        datasets_to_check = [dataset] if dataset else registry.list_datasets()
+        lines = ["# Dataset Update Status\n"]
+
+        for ds_name in datasets_to_check:
+            try:
+                plugin = registry.get_plugin(ds_name)
+            except KeyError:
+                lines.append(f"## {ds_name}\n- **Error:** Unknown dataset\n")
+                continue
+
+            meta = registry.get_metadata(ds_name)
+            version = meta.get("version", "unknown")
+            triple_count = meta.get("triple_count", "unknown")
+
+            update_info = plugin.check_for_updates()
+
+            lines.append(f"## {plugin.display_name}\n")
+            lines.append(f"- **Current version:** {version}")
+            lines.append(f"- **Triples:** {triple_count}")
+            lines.append(f"- **OCI artifact:** {plugin.oci_dataset}:{plugin.oci_version}")
+
+            if update_info:
+                lines.append(f"- **Available:** {update_info.available}")
+                if update_info.changelog_url:
+                    lines.append(f"- **Changelog:** {update_info.changelog_url}")
+                lines.append("\nTo update, re-initialize with a fresh data directory.")
+            else:
+                lines.append("- **Status:** Up to date (or no update check available)")
+            lines.append("")
+
+        return "\n".join(lines)
 
     return mcp
 
