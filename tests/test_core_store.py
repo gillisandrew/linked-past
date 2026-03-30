@@ -1,5 +1,4 @@
 # tests/test_core_store.py
-import tempfile
 from pathlib import Path
 
 import pytest

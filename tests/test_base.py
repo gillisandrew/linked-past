@@ -1,6 +1,7 @@
 # tests/test_base.py
 import pytest
-from linked_past.datasets.base import DatasetPlugin, VersionInfo, ValidationResult
+
+from linked_past.datasets.base import DatasetPlugin, ValidationResult, VersionInfo
 
 
 def test_dataset_plugin_is_abstract():
