@@ -254,23 +254,107 @@ This is a manual step during authoring, not a runtime check.
 
 ---
 
-## Future Work
+## Enrichment Workflow
 
-### Wikidata Reconciliation Pipeline
+Growing the link set beyond the initial 10 is a conversational,
+human-in-the-loop process using the MCP tools directly — not a batch script.
 
-A `scripts/reconcile_wikidata.py` script that:
+### Why Conversational
 
-1. Extracts Wikidata QIDs from Nomisma persons (already in the data via
+The link set is small (estimated 50–100 total moneyer-to-authority matches
+across all of DPRR). Ambiguous cases — name collisions between Republican
+figures, uncertain Nomisma coverage of minor moneyers, date-range overlaps —
+benefit from discussion rather than heuristic thresholds. The Hispanic mint
+investigation that produced the initial 10 links demonstrated this: the AI
+assembled evidence, the human judged edge cases.
+
+### Workflow Steps
+
+**1. Candidate generation (AI-assisted)**
+
+Query DPRR for persons with "moneyer", "monetalis", or "curator denariorum
+flandorum" posts:
+
+```sparql
+SELECT ?person ?label ?office ?date ?source WHERE {
+  ?pa vocab:isAboutPerson ?person ;
+      vocab:hasOffice ?office .
+  ?office rdfs:label ?officeLabel .
+  FILTER(REGEX(?officeLabel, "moneyer|monetalis|curator denariorum", "i"))
+  ...
+}
+```
+
+For each, `search_entities(name, "nomisma")` to find candidate Nomisma
+matches. The AI proposes pairs based on name similarity, date overlap, and
+shared RRC references in the DPRR secondary source field.
+
+**2. Evidence assembly (AI-assisted)**
+
+For each candidate pair, the AI gathers:
+- DPRR post assertions with secondary sources (especially RRC citations)
+- Nomisma entity properties (definition, `skos:exactMatch` links)
+- CRRO coin types attributed to the same authority (via `WebFetch`)
+
+It writes a one-line justification and proposes a confidence level
+(`confirmed` or `probable`) based on:
+- `confirmed`: DPRR cites RRC for a moneyer post, and the Nomisma URI is
+  the RRC authority record for the same person.
+- `probable`: Name + date match but no direct RRC citation chain, or the
+  Nomisma URI is for a broader identity (e.g., `nomisma:pompey` covers
+  Pompey's full life, not just his moneyer role).
+
+**3. Human review (manual)**
+
+The AI presents a batch of candidates as a markdown table:
+
+```
+| DPRR | Nomisma | Confidence | Evidence |
+|------|---------|------------|----------|
+| Person/1740 (C. Annius) | c_annivs_rrc | confirmed | RRC 366; DPRR moneyer 82 BC |
+| Person/XXXX (Name) | nomisma_id | probable | Name match; dates overlap |
+```
+
+The human accepts, rejects, or adjusts confidence for each row. Rejected
+candidates are noted with a reason (wrong person, URI doesn't exist, etc.)
+so the same pair isn't proposed again.
+
+**4. YAML generation (AI-assisted)**
+
+Accepted links are written to the appropriate YAML file
+(`dprr_nomisma_confirmed.yaml` or `dprr_nomisma_probable.yaml`), each
+Nomisma target URI is verified via `explore_entity`, and the result is
+committed.
+
+### Repeating the Workflow
+
+This cycle can be repeated for different slices of DPRR:
+- All moneyers (the obvious starting point)
+- Persons with Hispanic provincial posts (the slice we explored)
+- Persons with posts in other coin-producing provinces (Syria, Asia, Africa)
+- Persons who appear in Nomisma as Roman Emperors (bridging into the
+  Imperial period, if OCRE data is loaded)
+
+Each cycle adds links to the YAML files, which the linkage graph picks up
+on next server restart. The "see also" feature immediately surfaces the new
+connections.
+
+### When to Switch to a Script
+
+If the link set grows past ~200 entries or multiple contributors are
+involved, a `scripts/reconcile_wikidata.py` batch script becomes worthwhile.
+This would:
+
+1. Extract Wikidata QIDs from Nomisma persons (already in the data via
    `skos:closeMatch`).
-2. For each DPRR person with a "moneyer" or "monetalis" post, queries the
-   Wikidata API for matching Roman Republican figures by name + date range.
-3. Joins on shared QIDs to generate candidate `skos:closeMatch` links.
-4. Outputs a candidate YAML file for human review before promotion to the
+2. For each DPRR person with a moneyer post, query the Wikidata API for
+   matching Roman Republican figures by name + date range.
+3. Join on shared QIDs to generate candidate links.
+4. Output a candidate YAML file for human review before promotion to the
    linkages directory.
 
-This is explicitly out of scope for the current design but is the natural
-next step once the manual links are validated and the "see also" UX is
-confirmed.
+This is out of scope for now but is the natural scaling step once the
+conversational workflow has established the patterns and confidence criteria.
 
 ### Per-Link Confidence in YAML
 
