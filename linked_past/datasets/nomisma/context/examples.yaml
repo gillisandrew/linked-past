@@ -1,0 +1,78 @@
+examples:
+  - question: "Find all Roman Emperors"
+    sparql: |
+      PREFIX nm: <http://nomisma.org/id/>
+      PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+      PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+      PREFIX org: <http://www.w3.org/ns/org#>
+      SELECT ?person ?label
+      WHERE {
+        ?person a foaf:Person ;
+                skos:prefLabel ?label ;
+                org:hasMembership ?m .
+        ?m org:role nm:roman_emperor .
+        FILTER(LANG(?label) = "en")
+      }
+      ORDER BY ?label
+      LIMIT 100
+
+  - question: "Find mints with Pleiades links"
+    sparql: |
+      PREFIX nmo: <http://nomisma.org/ontology#>
+      PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+      SELECT ?mint ?label ?pleiades
+      WHERE {
+        ?mint a nmo:Mint ;
+              skos:prefLabel ?label ;
+              skos:closeMatch ?pleiades .
+        FILTER(LANG(?label) = "en")
+        FILTER(STRSTARTS(STR(?pleiades), "https://pleiades.stoa.org/"))
+      }
+      ORDER BY ?label
+      LIMIT 100
+
+  - question: "Find mints with coordinates"
+    sparql: |
+      PREFIX nmo: <http://nomisma.org/ontology#>
+      PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+      PREFIX geo: <http://www.w3.org/2003/01/geo/wgs84_pos#>
+      SELECT ?mint ?label ?lat ?long
+      WHERE {
+        ?mint a nmo:Mint ;
+              skos:prefLabel ?label ;
+              geo:location ?loc .
+        ?loc geo:lat ?lat ;
+             geo:long ?long .
+        FILTER(LANG(?label) = "en")
+      }
+      ORDER BY ?label
+      LIMIT 100
+
+  - question: "Find persons with specific roles"
+    sparql: |
+      PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+      PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+      PREFIX org: <http://www.w3.org/ns/org#>
+      SELECT ?person ?label ?role
+      WHERE {
+        ?person a foaf:Person ;
+                skos:prefLabel ?label ;
+                org:hasMembership ?m .
+        ?m org:role ?role .
+        FILTER(LANG(?label) = "en")
+      }
+      ORDER BY ?label
+      LIMIT 100
+
+  - question: "List all denominations"
+    sparql: |
+      PREFIX nmo: <http://nomisma.org/ontology#>
+      PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+      SELECT ?denom ?label
+      WHERE {
+        ?denom a nmo:Denomination ;
+               skos:prefLabel ?label .
+        FILTER(LANG(?label) = "en")
+      }
+      ORDER BY ?label
+      LIMIT 100

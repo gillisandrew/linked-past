@@ -1,0 +1,69 @@
+classes:
+  Person:
+    label: "Person"
+    comment: "A historical person relevant to numismatics (rulers, magistrates, engravers)."
+    uri: "foaf:Person"
+    properties:
+      - pred: "skos:prefLabel"
+        range: "xsd:string"
+        comment: "Display name (language-tagged, typically @en)"
+      - pred: "skos:definition"
+        range: "xsd:string"
+        comment: "Biographical summary"
+      - pred: "org:hasMembership"
+        range: "org:Membership"
+        comment: "Role membership (links to role and organization)"
+      - pred: "skos:exactMatch"
+        range: "xsd:anyURI"
+        comment: "Linked authority URI (e.g. Wikidata, VIAF)"
+
+  Mint:
+    label: "Mint"
+    comment: "A place where coins were struck."
+    uri: "nmo:Mint"
+    properties:
+      - pred: "skos:prefLabel"
+        range: "xsd:string"
+        comment: "Mint name (language-tagged)"
+      - pred: "geo:location"
+        range: "geo:SpatialThing"
+        comment: "Blank node with geo:lat and geo:long"
+      - pred: "skos:closeMatch"
+        range: "xsd:anyURI"
+        comment: "Pleiades or GeoNames link"
+
+  Region:
+    label: "Region"
+    comment: "A geographic or political region relevant to coin production."
+    uri: "nmo:Region"
+    properties:
+      - pred: "skos:prefLabel"
+        range: "xsd:string"
+        comment: "Region name (language-tagged)"
+      - pred: "skos:definition"
+        range: "xsd:string"
+        comment: "Description of the region"
+
+  Denomination:
+    label: "Denomination"
+    comment: "A coin denomination (e.g. denarius, aureus)."
+    uri: "nmo:Denomination"
+    properties:
+      - pred: "skos:prefLabel"
+        range: "xsd:string"
+        comment: "Denomination name (language-tagged)"
+      - pred: "skos:definition"
+        range: "xsd:string"
+        comment: "Description of the denomination"
+
+  Material:
+    label: "Material"
+    comment: "A material used in coin production (e.g. gold, silver, bronze)."
+    uri: "nmo:Material"
+    properties:
+      - pred: "skos:prefLabel"
+        range: "xsd:string"
+        comment: "Material name (language-tagged)"
+      - pred: "skos:definition"
+        range: "xsd:string"
+        comment: "Description of the material"

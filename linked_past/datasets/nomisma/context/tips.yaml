@@ -1,0 +1,45 @@
+tips:
+  - id: language_tagged_labels
+    classes: []
+    title: "Labels are language-tagged — filter with LANG()"
+    body: >
+      Most skos:prefLabel values in Nomisma are language-tagged (e.g. "Rome"@en).
+      Always filter by language to avoid duplicate rows:
+      FILTER(LANG(?label) = "en"). Without this, you may get labels in multiple
+      languages for the same entity.
+
+  - id: person_role_pattern
+    classes: [Person]
+    title: "Person roles use org:hasMembership with org:role"
+    body: >
+      Roles (e.g. Roman Emperor) are encoded via the W3C Organization Ontology:
+      ?person org:hasMembership [ org:role nm:roman_emperor ; org:organization nm:roman_empire ].
+      The role and organization are Nomisma ID URIs. Use org:hasMembership to find
+      what roles a person held.
+
+  - id: deprecated_records
+    classes: []
+    title: "Some records are deprecated — check owl:deprecated"
+    body: >
+      Nomisma marks outdated or merged records with owl:deprecated "true"^^xsd:boolean.
+      To exclude deprecated entries, add:
+      FILTER NOT EXISTS { ?entity owl:deprecated "true"^^xsd:boolean }.
+
+  - id: concept_vocab_scope
+    classes: [Mint, Denomination, Material, Region]
+    title: "Nomisma entities are also SKOS concepts"
+    body: >
+      Most Nomisma entities (mints, denominations, materials, etc.) are typed
+      as both their domain class (e.g. nmo:Mint) and skos:Concept. The
+      skos:prefLabel, skos:definition, and skos:closeMatch properties come
+      from the SKOS typing. Use the domain class (nmo:Mint) for type filtering
+      and SKOS properties for labels and links.
+
+  - id: mint_coordinates_via_location
+    classes: [Mint]
+    title: "Mint coordinates are nested under geo:location"
+    body: >
+      Coordinates for mints are not directly on the mint entity. They are on a
+      blank node linked via geo:location:
+      ?mint geo:location [ geo:lat ?lat ; geo:long ?long ].
+      This is different from Pleiades which uses pleiades:hasLocation.
