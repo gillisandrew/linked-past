@@ -21,6 +21,7 @@ from linked_past.core.store import get_data_dir
 from linked_past.core.validate import parse_and_fix_prefixes, validate_and_execute
 from linked_past.datasets.crro.plugin import CRROPlugin
 from linked_past.datasets.dprr.plugin import DPRRPlugin
+from linked_past.datasets.edh.plugin import EDHPlugin
 from linked_past.datasets.nomisma.plugin import NomismaPlugin
 from linked_past.datasets.ocre.plugin import OCREPlugin
 from linked_past.datasets.periodo.plugin import PeriodOPlugin
@@ -79,6 +80,7 @@ def build_app_context(*, eager: bool = False) -> AppContext:
     registry.register(NomismaPlugin())
     registry.register(CRROPlugin())
     registry.register(OCREPlugin())
+    registry.register(EDHPlugin())
 
     if eager:
         registry.initialize_all()

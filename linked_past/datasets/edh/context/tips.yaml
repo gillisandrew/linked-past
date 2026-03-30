@@ -1,0 +1,20 @@
+tips:
+  - title: "inscription_text_variants"
+    body: "EDH provides two text fields: epi:editionText is the scholarly edition with expanded abbreviations; epi:diplomaticText is the text as carved on the stone. Use editionText for search, diplomaticText for epigraphic analysis."
+    classes: ["Inscription"]
+
+  - title: "date_as_string"
+    body: "nmo:hasStartDate and nmo:hasEndDate are string values like '0071', not xsd:integer. Use string comparison in FILTER clauses. Negative years (e.g., '-0044') represent BC dates."
+    classes: ["Inscription"]
+
+  - title: "findspot_via_lawd"
+    body: "lawd:foundAt links inscriptions to EDH geography place URIs (not directly to Pleiades). The geography places may in turn link to Pleiades or Geonames for coordinates."
+    classes: ["Inscription", "GeographyPlace"]
+
+  - title: "province_in_label"
+    body: "Province names appear in skos:prefLabel text (e.g., 'epitaph found at Roma (Latium)'). Use FILTER CONTAINS on the label to search by province or location name."
+    classes: ["Inscription"]
+
+  - title: "people_separate_file"
+    body: "Person data is in a separate graph (edh_people.ttl). To find people associated with an inscription, join via inscription reference predicates."
+    classes: ["Person", "Inscription"]

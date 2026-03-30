@@ -23,7 +23,7 @@ def test_build_app_context(tmp_path, monkeypatch):
         lambda self, data_dir: data_dir / "dprr.ttl",
     )
     # Create minimal TTL files and patch fetch for other plugins
-    for dataset in ("pleiades", "periodo", "nomisma", "crro", "ocre"):
+    for dataset in ("pleiades", "periodo", "nomisma", "crro", "ocre", "edh"):
         ds_dir = tmp_path / dataset
         ds_dir.mkdir()
         (ds_dir / f"{dataset}.ttl").write_text(
@@ -48,6 +48,10 @@ def test_build_app_context(tmp_path, monkeypatch):
     monkeypatch.setattr(
         "linked_past.datasets.ocre.plugin.OCREPlugin.fetch",
         lambda self, data_dir: data_dir / "ocre.ttl",
+    )
+    monkeypatch.setattr(
+        "linked_past.datasets.edh.plugin.EDHPlugin.fetch",
+        lambda self, data_dir: data_dir / "edh.ttl",
     )
     ctx = build_app_context(eager=True)
     assert "dprr" in ctx.registry.list_datasets()

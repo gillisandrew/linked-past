@@ -25,6 +25,7 @@ class DatasetRegistry:
         "http://nomisma.org/id/": "nomisma",
         "http://numismatics.org/crro/id/": "crro",
         "http://numismatics.org/ocre/id/": "ocre",
+        "http://edh-www.adw.uni-heidelberg.de/edh/": "edh",
     }
 
     def __init__(self, data_dir: Path):

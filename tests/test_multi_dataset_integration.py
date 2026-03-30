@@ -1,6 +1,7 @@
 from linked_past.core.server import create_mcp_server
 from linked_past.datasets.crro.plugin import CRROPlugin
 from linked_past.datasets.dprr.plugin import DPRRPlugin
+from linked_past.datasets.edh.plugin import EDHPlugin
 from linked_past.datasets.nomisma.plugin import NomismaPlugin
 from linked_past.datasets.ocre.plugin import OCREPlugin
 from linked_past.datasets.periodo.plugin import PeriodOPlugin
@@ -8,13 +9,13 @@ from linked_past.datasets.pleiades.plugin import PleiadesPlugin
 
 
 def test_all_plugins_instantiate():
-    plugins = [DPRRPlugin(), PleiadesPlugin(), PeriodOPlugin(), NomismaPlugin(), CRROPlugin(), OCREPlugin()]
+    plugins = [DPRRPlugin(), PleiadesPlugin(), PeriodOPlugin(), NomismaPlugin(), CRROPlugin(), OCREPlugin(), EDHPlugin()]
     names = {p.name for p in plugins}
-    assert names == {"dprr", "pleiades", "periodo", "nomisma", "crro", "ocre"}
+    assert names == {"dprr", "pleiades", "periodo", "nomisma", "crro", "ocre", "edh"}
 
 
 def test_all_plugins_have_schemas():
-    for Plugin in [DPRRPlugin, PleiadesPlugin, PeriodOPlugin, NomismaPlugin, CRROPlugin, OCREPlugin]:
+    for Plugin in [DPRRPlugin, PleiadesPlugin, PeriodOPlugin, NomismaPlugin, CRROPlugin, OCREPlugin, EDHPlugin]:
         plugin = Plugin()
         schema = plugin.get_schema()
         assert "## Prefixes" in schema
@@ -22,14 +23,14 @@ def test_all_plugins_have_schemas():
 
 
 def test_all_plugins_have_prefixes():
-    for Plugin in [DPRRPlugin, PleiadesPlugin, PeriodOPlugin, NomismaPlugin, CRROPlugin, OCREPlugin]:
+    for Plugin in [DPRRPlugin, PleiadesPlugin, PeriodOPlugin, NomismaPlugin, CRROPlugin, OCREPlugin, EDHPlugin]:
         plugin = Plugin()
         prefixes = plugin.get_prefixes()
         assert len(prefixes) > 0
 
 
 def test_all_plugins_validate():
-    for Plugin in [DPRRPlugin, PleiadesPlugin, PeriodOPlugin, NomismaPlugin, CRROPlugin, OCREPlugin]:
+    for Plugin in [DPRRPlugin, PleiadesPlugin, PeriodOPlugin, NomismaPlugin, CRROPlugin, OCREPlugin, EDHPlugin]:
         plugin = Plugin()
         result = plugin.validate("SELECT ?s WHERE { ?s ?p ?o } LIMIT 1")
         assert result.valid is True

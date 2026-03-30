@@ -1,0 +1,66 @@
+examples:
+  - question: "Find inscriptions from a Roman province (e.g., Latium)"
+    sparql: |
+      PREFIX epi: <http://edh-www.adw.uni-heidelberg.de/lod/ontology#>
+      PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+      SELECT ?insc ?label
+      WHERE {
+        ?insc a epi:Inscription ;
+              skos:prefLabel ?label .
+        FILTER(CONTAINS(LCASE(STR(?label)), "latium"))
+      }
+      LIMIT 100
+
+  - question: "Search inscription text for a name (e.g., 'Marcus')"
+    sparql: |
+      PREFIX epi: <http://edh-www.adw.uni-heidelberg.de/lod/ontology#>
+      PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+      SELECT ?insc ?label ?text
+      WHERE {
+        ?insc a epi:Inscription ;
+              skos:prefLabel ?label ;
+              epi:editionText ?text .
+        FILTER(CONTAINS(LCASE(STR(?text)), "marcus"))
+      }
+      LIMIT 100
+
+  - question: "Find all epitaphs"
+    sparql: |
+      PREFIX epi: <http://edh-www.adw.uni-heidelberg.de/lod/ontology#>
+      PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+      SELECT ?insc ?label
+      WHERE {
+        ?insc a epi:Inscription ;
+              skos:prefLabel ?label ;
+              epi:representsTypeOfInscription ?type .
+        FILTER(CONTAINS(LCASE(STR(?type)), "epitaph"))
+      }
+      LIMIT 100
+
+  - question: "Find inscriptions within a date range (e.g., 71-130 AD)"
+    sparql: |
+      PREFIX epi: <http://edh-www.adw.uni-heidelberg.de/lod/ontology#>
+      PREFIX nmo: <http://nomisma.org/ontology#>
+      PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+      SELECT ?insc ?label ?startDate ?endDate
+      WHERE {
+        ?insc a epi:Inscription ;
+              skos:prefLabel ?label ;
+              nmo:hasStartDate ?startDate ;
+              nmo:hasEndDate ?endDate .
+        FILTER(?startDate >= "0071" && ?endDate <= "0130")
+      }
+      LIMIT 100
+
+  - question: "Find inscriptions by findspot"
+    sparql: |
+      PREFIX epi: <http://edh-www.adw.uni-heidelberg.de/lod/ontology#>
+      PREFIX lawd: <http://lawd.info/ontology/1.0/>
+      PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+      SELECT ?insc ?label ?place
+      WHERE {
+        ?insc a epi:Inscription ;
+              skos:prefLabel ?label ;
+              lawd:foundAt ?place .
+      }
+      LIMIT 100
