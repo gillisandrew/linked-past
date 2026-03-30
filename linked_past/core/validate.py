@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
+from difflib import get_close_matches
 
 from pyparsing import ParseException
 from rdflib.plugins.sparql import prepareQuery
@@ -12,14 +13,10 @@ from rdflib.plugins.sparql.parser import parseQuery
 from rdflib.plugins.sparql.parserutils import CompValue
 from rdflib.term import URIRef, Variable
 
-from linked_past.core.store import execute_query
-
 RDF_TYPE = URIRef("http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
 
 
 def _suggest(name: str, valid_names: list[str]) -> str:
-    from difflib import get_close_matches
-
     matches = get_close_matches(name, valid_names, n=3, cutoff=0.6)
     return f" Did you mean: {', '.join(matches)}?" if matches else ""
 
@@ -242,6 +239,7 @@ def validate_and_execute(
         return QueryResult(success=False, sparql=fixed_sparql, errors=semantic_errors)
 
     try:
+        from linked_past.core.store import execute_query
         rows = execute_query(store, fixed_sparql)
     except Exception as e:
         return QueryResult(success=False, sparql=fixed_sparql, errors=[f"Query execution error: {e}"])

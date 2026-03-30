@@ -28,12 +28,12 @@ SAMPLE_EXAMPLES = [
     {
         "question": "List all widgets",
         "sparql": "SELECT ?w WHERE { ?w a ex:Widget }",
-        "classes": {"Widget"},
+        "classes": ["Widget"],
     },
     {
         "question": "Count things",
         "sparql": "SELECT (COUNT(*) AS ?c) WHERE { ?s ?p ?o }",
-        "classes": set(),
+        "classes": [],
     },
 ]
 
@@ -92,3 +92,35 @@ def test_get_relevant_examples():
     result = get_relevant_examples(SAMPLE_EXAMPLES, {"Widget"})
     assert len(result) == 1
     assert result[0]["question"] == "List all widgets"
+
+
+def test_load_prefixes(tmp_path):
+    data = {"prefixes": {"ex": "http://example.org/", "rdfs": "http://www.w3.org/2000/01/rdf-schema#"}}
+    (tmp_path / "prefixes.yaml").write_text(yaml.dump(data))
+    from linked_past.core.context import load_prefixes
+    result = load_prefixes(tmp_path)
+    assert result["ex"] == "http://example.org/"
+
+
+def test_load_schemas(tmp_path):
+    data = {"classes": {"Widget": {"label": "Widget", "uri": "ex:Widget", "properties": []}}}
+    (tmp_path / "schemas.yaml").write_text(yaml.dump(data))
+    from linked_past.core.context import load_schemas
+    result = load_schemas(tmp_path)
+    assert "Widget" in result
+
+
+def test_load_examples(tmp_path):
+    data = {"examples": [{"question": "Q1", "sparql": "SELECT ?x WHERE { ?x ?p ?o }"}]}
+    (tmp_path / "examples.yaml").write_text(yaml.dump(data))
+    from linked_past.core.context import load_examples
+    result = load_examples(tmp_path)
+    assert len(result) == 1
+
+
+def test_load_tips(tmp_path):
+    data = {"tips": [{"title": "Tip1", "body": "Do this", "classes": []}]}
+    (tmp_path / "tips.yaml").write_text(yaml.dump(data))
+    from linked_past.core.context import load_tips
+    result = load_tips(tmp_path)
+    assert len(result) == 1

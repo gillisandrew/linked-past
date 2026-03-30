@@ -1,10 +1,19 @@
 # tests/test_core_validate.py
+from linked_past.core.store import create_store, load_rdf
 from linked_past.core.validate import (
+    QueryResult,
     build_schema_dict,
     extract_query_classes,
     parse_and_fix_prefixes,
+    validate_and_execute,
     validate_semantics,
 )
+
+SAMPLE_TURTLE = """\
+@prefix ex: <http://example.org/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+ex:Thing1 a ex:Widget ; rdfs:label "One" .
+"""
 
 PREFIXES = {
     "ex": "http://example.org/",
@@ -85,3 +94,44 @@ def test_validate_semantics_unknown_predicate():
     sparql = "PREFIX ex: <http://example.org/>\nSELECT ?w WHERE { ?w a ex:Widget ; ex:hasFlavor ?f }"
     errors = validate_semantics(sparql, sd)
     assert any("Unknown predicate" in e for e in errors)
+
+
+def test_query_result_dataclass():
+    r = QueryResult(success=True, sparql="SELECT ?s WHERE { ?s ?p ?o }", rows=[{"s": "x"}])
+    assert r.success is True
+    assert len(r.rows) == 1
+
+
+def test_validate_and_execute_success(tmp_path):
+    store_path = tmp_path / "store"
+    store = create_store(store_path)
+    ttl = tmp_path / "data.ttl"
+    ttl.write_text(SAMPLE_TURTLE)
+    load_rdf(store, ttl)
+    sd = build_schema_dict(SCHEMAS, PREFIXES)
+    result = validate_and_execute(
+        "PREFIX ex: <http://example.org/>\nSELECT ?w WHERE { ?w a ex:Widget }",
+        store, sd, PREFIXES,
+    )
+    assert result.success is True
+    assert len(result.rows) == 1
+
+
+def test_validate_and_execute_parse_error(tmp_path):
+    store_path = tmp_path / "store"
+    store = create_store(store_path)
+    result = validate_and_execute("SELEC ?w WHERE { ?w ?p ?o }", store, {}, PREFIXES)
+    assert result.success is False
+    assert len(result.errors) > 0
+
+
+def test_validate_and_execute_semantic_error(tmp_path):
+    store_path = tmp_path / "store"
+    store = create_store(store_path)
+    sd = build_schema_dict(SCHEMAS, PREFIXES)
+    result = validate_and_execute(
+        "PREFIX ex: <http://example.org/>\nSELECT ?w WHERE { ?w a ex:Gadget }",
+        store, sd, PREFIXES,
+    )
+    assert result.success is False
+    assert any("Unknown class" in e for e in result.errors)
