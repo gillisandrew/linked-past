@@ -41,7 +41,7 @@ def test_build_app_context(tmp_path, monkeypatch):
         "linked_past.datasets.nomisma.plugin.NomismaPlugin.fetch",
         lambda self, data_dir: data_dir / "nomisma.ttl",
     )
-    ctx = build_app_context()
+    ctx = build_app_context(eager=True)
     assert "dprr" in ctx.registry.list_datasets()
     store = ctx.registry.get_store("dprr")
     assert store is not None

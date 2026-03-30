@@ -90,11 +90,23 @@ class DatasetRegistry:
         self._save_registry(name, plugin, dataset_dir, triple_count)
 
     def initialize_all(self) -> None:
+        """Initialize all registered datasets (may download data)."""
         for name in self._plugins:
             try:
                 self.initialize_dataset(name)
             except Exception as e:
                 logger.warning("Failed to initialize dataset %s: %s (skipping)", name, e)
+
+    def initialize_cached(self) -> None:
+        """Initialize only datasets that already have local stores (no downloads)."""
+        for name in self._plugins:
+            dataset_dir = self._data_dir / name
+            store_path = dataset_dir / "store"
+            if is_initialized(store_path):
+                try:
+                    self.initialize_dataset(name)
+                except Exception as e:
+                    logger.warning("Failed to open cached dataset %s: %s", name, e)
 
     def _save_registry(self, name: str, plugin: DatasetPlugin, dataset_dir: Path, triple_count: int) -> None:
         version_info = plugin.get_version_info(dataset_dir)

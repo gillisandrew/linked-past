@@ -89,11 +89,13 @@ def test_validate_semantics_unknown_class():
     assert any("Unknown class" in e for e in errors)
 
 
-def test_validate_semantics_unknown_predicate():
+def test_validate_semantics_unknown_predicate_is_warning_not_error():
+    """Unknown predicates are warnings (logged), not errors — multi-vocab datasets
+    commonly use predicates from shared ontologies not in the schema."""
     sd = build_schema_dict(SCHEMAS, PREFIXES)
     sparql = "PREFIX ex: <http://example.org/>\nSELECT ?w WHERE { ?w a ex:Widget ; ex:hasFlavor ?f }"
     errors = validate_semantics(sparql, sd)
-    assert any("Unknown predicate" in e for e in errors)
+    assert errors == []  # No errors — unknown predicates are only logged as info
 
 
 def test_query_result_dataclass():

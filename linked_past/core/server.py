@@ -36,35 +36,15 @@ class AppContext:
     embeddings: EmbeddingIndex | None = None
 
 
-def build_app_context() -> AppContext:
-    data_dir = get_data_dir()
-    registry = DatasetRegistry(data_dir=data_dir)
-    registry.register(DPRRPlugin())
-    registry.register(PleiadesPlugin())
-    registry.register(PeriodOPlugin())
-    registry.register(NomismaPlugin())
-    registry.initialize_all()
-
-    # Load linkage graph
-    linkage_store_path = data_dir / "_linkages" / "store"
-    linkage = LinkageGraph(linkage_store_path)
-    linkages_dir = Path(__file__).parent.parent / "linkages"
-    if linkages_dir.exists():
-        for yaml_file in sorted(linkages_dir.glob("*.yaml")):
-            linkage.load_yaml(yaml_file)
-
-    # Build embedding index (graceful — don't crash if fastembed fails)
-    embeddings = None
+def _build_embeddings(registry: DatasetRegistry, data_dir: Path) -> EmbeddingIndex | None:
+    """Build embedding index from all plugin context. Returns None on failure."""
     try:
         embeddings_path = data_dir / "embeddings.db"
         embeddings = EmbeddingIndex(embeddings_path)
 
-        # Index all plugin context
         for name in registry.list_datasets():
             plugin = registry.get_plugin(name)
-            # Dataset description
             embeddings.add(name, "dataset", f"{plugin.display_name}: {plugin.description}")
-            # Examples, tips, schemas from plugin internals
             if hasattr(plugin, "_examples"):
                 for ex in plugin._examples:
                     embeddings.add(name, "example", f"{ex['question']}\n{ex['sparql']}")
@@ -76,9 +56,40 @@ def build_app_context() -> AppContext:
                     embeddings.add(name, "schema", f"{cls_name}: {cls_data.get('comment', '')}")
 
         embeddings.build()
+        return embeddings
     except Exception as e:
         logger.warning("Failed to build embedding index: %s", e)
-        embeddings = None
+        return None
+
+
+def build_app_context(*, eager: bool = False) -> AppContext:
+    """Register plugins and return context.
+
+    Args:
+        eager: If True, initialize all datasets (may download). If False (default),
+               only open datasets already cached locally.
+    """
+    data_dir = get_data_dir()
+    registry = DatasetRegistry(data_dir=data_dir)
+    registry.register(DPRRPlugin())
+    registry.register(PleiadesPlugin())
+    registry.register(PeriodOPlugin())
+    registry.register(NomismaPlugin())
+
+    if eager:
+        registry.initialize_all()
+    else:
+        registry.initialize_cached()
+
+    # Load linkage graph (fast — tiny YAML files)
+    linkage_store_path = data_dir / "_linkages" / "store"
+    linkage = LinkageGraph(linkage_store_path)
+    linkages_dir = Path(__file__).parent.parent / "linkages"
+    if linkages_dir.exists():
+        for yaml_file in sorted(linkages_dir.glob("*.yaml")):
+            linkage.load_yaml(yaml_file)
+
+    embeddings = _build_embeddings(registry, data_dir)
 
     return AppContext(registry=registry, linkage=linkage, embeddings=embeddings)
 

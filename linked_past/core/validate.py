@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import logging
 import re
+
+logger = logging.getLogger(__name__)
 from dataclasses import dataclass, field
 from difflib import get_close_matches
 
@@ -149,8 +152,31 @@ def _collect_triples(sparql: str) -> list[tuple]:
 
 
 _UNIVERSAL_PREDS = {
-    "http://www.w3.org/2000/01/rdf-schema#label",
+    # RDF/RDFS
     "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+    "http://www.w3.org/2000/01/rdf-schema#label",
+    "http://www.w3.org/2000/01/rdf-schema#comment",
+    "http://www.w3.org/2000/01/rdf-schema#seeAlso",
+    # SKOS (commonly used across all datasets)
+    "http://www.w3.org/2004/02/skos/core#prefLabel",
+    "http://www.w3.org/2004/02/skos/core#altLabel",
+    "http://www.w3.org/2004/02/skos/core#broader",
+    "http://www.w3.org/2004/02/skos/core#narrower",
+    "http://www.w3.org/2004/02/skos/core#related",
+    "http://www.w3.org/2004/02/skos/core#exactMatch",
+    "http://www.w3.org/2004/02/skos/core#closeMatch",
+    "http://www.w3.org/2004/02/skos/core#inScheme",
+    "http://www.w3.org/2004/02/skos/core#definition",
+    "http://www.w3.org/2004/02/skos/core#note",
+    # Dublin Core (commonly used across all datasets)
+    "http://purl.org/dc/terms/title",
+    "http://purl.org/dc/terms/description",
+    "http://purl.org/dc/terms/source",
+    "http://purl.org/dc/terms/isPartOf",
+    "http://purl.org/dc/terms/isReplacedBy",
+    # OWL
+    "http://www.w3.org/2002/07/owl#sameAs",
+    "http://www.w3.org/2002/07/owl#deprecated",
 }
 
 
@@ -174,7 +200,14 @@ def extract_query_classes(sparql: str, schema_dict: dict) -> set[str]:
 
 
 def validate_semantics(sparql: str, schema_dict: dict) -> list[str]:
-    """Validate a SPARQL query against the schema dictionary."""
+    """Validate a SPARQL query against the schema dictionary.
+
+    Returns errors for unknown classes (likely typos).
+    Unknown predicates are only warnings (logged, not returned as errors)
+    because multi-vocabulary datasets commonly use predicates from
+    shared ontologies (SKOS, Dublin Core, ORG, etc.) that aren't
+    listed in the dataset-specific schema.
+    """
     errors = []
     try:
         triples = _collect_triples(sparql)
@@ -200,6 +233,9 @@ def validate_semantics(sparql: str, schema_dict: dict) -> list[str]:
                     var_types[var_name] = []
                 var_types[var_name].append(class_uri)
 
+    # Unknown predicates are warnings, not errors — multi-vocabulary
+    # datasets routinely use predicates from shared ontologies that
+    # aren't in the dataset-specific schema.
     for s, p, o in triples:
         if p == RDF_TYPE or not isinstance(p, URIRef) or not isinstance(s, Variable):
             continue
@@ -207,18 +243,18 @@ def validate_semantics(sparql: str, schema_dict: dict) -> list[str]:
         if var_name not in var_types:
             continue
         pred_uri = str(p)
+        if pred_uri in _UNIVERSAL_PREDS:
+            continue
         for class_uri in var_types[var_name]:
             if class_uri not in schema_dict:
                 continue
             valid_preds = schema_dict[class_uri]
             if pred_uri not in valid_preds:
                 pred_local = _local_name(pred_uri)
-                valid_local = sorted(_local_name(uri) for uri in valid_preds)
-                errors.append(
-                    f"Unknown predicate '{pred_local}' for class "
-                    f"'{_local_name(class_uri)}'. "
-                    f"Valid predicates: {', '.join(valid_local)}"
-                    + _suggest(pred_local, valid_local)
+                logger.info(
+                    "Predicate '%s' not in schema for class '%s' (may be from a shared vocabulary)",
+                    pred_local,
+                    _local_name(class_uri),
                 )
     return errors
 

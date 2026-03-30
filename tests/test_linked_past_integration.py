@@ -64,7 +64,7 @@ def integration_ctx(tmp_path, monkeypatch):
         "linked_past.datasets.nomisma.plugin.NomismaPlugin.fetch",
         lambda self, data_dir: data_dir / "nomisma.ttl",
     )
-    return build_app_context()
+    return build_app_context(eager=True)
 
 
 def test_discover_lists_dprr(integration_ctx):
