@@ -85,13 +85,21 @@ def build_app_context(*, eager: bool = False) -> AppContext:
     else:
         registry.initialize_cached()
 
-    # Load linkage graph (fast — tiny YAML files)
+    # Load linkage graph (YAML curated links + Turtle concordances)
     linkage_store_path = data_dir / "_linkages" / "store"
     linkage = LinkageGraph(linkage_store_path)
     linkages_dir = Path(__file__).parent.parent / "linkages"
     if linkages_dir.exists():
         for yaml_file in sorted(linkages_dir.glob("*.yaml")):
             linkage.load_yaml(yaml_file)
+        # Load Wikidata-derived Turtle concordances
+        wikidata_dir = linkages_dir / "wikidata"
+        if wikidata_dir.exists():
+            for ttl_file in sorted(wikidata_dir.glob("*.ttl")):
+                try:
+                    linkage.load_turtle(ttl_file)
+                except Exception as e:
+                    logger.warning("Failed to load concordance %s: %s", ttl_file.name, e)
 
     embeddings = _build_embeddings(registry, data_dir)
 

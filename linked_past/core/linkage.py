@@ -46,6 +46,16 @@ class LinkageGraph:
         """Load linkage data from an already-parsed dict (useful for testing)."""
         self._load_data(data)
 
+    def load_turtle(self, ttl_path: str | Path) -> int:
+        """Load Turtle concordance triples directly into the store. Returns triple count added."""
+        from pyoxigraph import RdfFormat
+
+        before = len(self._store)
+        path = Path(ttl_path)
+        self._store.bulk_load(path=str(path), format=RdfFormat.TURTLE)
+        added = len(self._store) - before
+        return added
+
     def _load_data(self, data: dict[str, Any]) -> None:
         metadata = data["metadata"]
         relationship_key = metadata["relationship"]
