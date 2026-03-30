@@ -1,6 +1,5 @@
 # tests/test_registry.py
 import json
-from pathlib import Path
 
 import pytest
 

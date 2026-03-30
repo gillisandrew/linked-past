@@ -1,6 +1,4 @@
 # tests/test_dprr_plugin.py
-from pathlib import Path
-
 from linked_past.datasets.dprr.plugin import DPRRPlugin
 
 
