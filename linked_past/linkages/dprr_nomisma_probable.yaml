@@ -16,3 +16,6 @@ links:
   - source: "http://romanrepublic.ac.uk/rdf/entity/Person/2254"
     target: "http://nomisma.org/id/sex_magnvs_rrc"
     note: "RRC 477-479; DPRR legatus Hispania Ulterior"
+  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3642"
+    target: "http://nomisma.org/id/t_vettivs_sabinvs_rrc"
+    note: "DPRR: P. Vettius Sabinus 99 BC; Nomisma: T. Vettius Sabinus 70 BC; praenomen + date discrepancy"
