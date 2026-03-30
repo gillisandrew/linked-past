@@ -1,0 +1,21 @@
+metadata:
+  source_dataset: dprr
+  target_dataset: nomisma
+  relationship: "skos:closeMatch"
+  confidence: confirmed
+  method: manual_alignment
+  basis: >-
+    DPRR v1.3.0 moneyer post assertions citing Crawford RRC,
+    cross-referenced with Nomisma person authorities and CRRO coin types.
+  author: linked-past project
+  date: "2026-03-30"
+links:
+  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/1976"
+    target: "http://nomisma.org/id/pompey"
+    note: "RRC moneyer 71, 49 BC; DPRR proconsul Hispania 77-49 BC"
+  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/1889"
+    target: "http://nomisma.org/id/q_c_m_p_i_rrc"
+    note: "RRC moneyer 81 BC; DPRR proconsul Hispania Ulterior 79-71 BC"
+  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/1957"
+    target: "http://nomisma.org/id/julius_caesar"
+    note: "RRC 468; DPRR moneyer 49-44 BC"
