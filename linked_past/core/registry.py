@@ -23,6 +23,8 @@ class DatasetRegistry:
         "https://pleiades.stoa.org/places/": "pleiades",
         "http://n2t.net/ark:/99152/": "periodo",
         "http://nomisma.org/id/": "nomisma",
+        "http://numismatics.org/crro/id/": "crro",
+        "http://numismatics.org/ocre/id/": "ocre",
     }
 
     def __init__(self, data_dir: Path):

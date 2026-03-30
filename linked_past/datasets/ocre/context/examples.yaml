@@ -1,0 +1,83 @@
+examples:
+  - question: "List all Augustan coin types with denominations"
+    sparql: |
+      PREFIX nmo: <http://nomisma.org/ontology#>
+      PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+      PREFIX dcterms: <http://purl.org/dc/terms/>
+      PREFIX nm: <http://nomisma.org/id/>
+      SELECT ?type ?label ?denomination ?denominationLabel
+      WHERE {
+        ?type a nmo:TypeSeriesItem ;
+              skos:prefLabel ?label ;
+              nmo:hasAuthority nm:augustus ;
+              dcterms:source nm:ric .
+        OPTIONAL { ?type nmo:hasDenomination ?denomination .
+                   ?denomination skos:prefLabel ?denominationLabel
+                   FILTER(LANG(?denominationLabel) = "en") }
+      }
+      ORDER BY ?label
+      LIMIT 100
+
+  - question: "Find all gold coin types (aurei)"
+    sparql: |
+      PREFIX nmo: <http://nomisma.org/ontology#>
+      PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+      PREFIX nm: <http://nomisma.org/id/>
+      SELECT ?type ?label ?authority ?authorityLabel ?startDate
+      WHERE {
+        ?type a nmo:TypeSeriesItem ;
+              skos:prefLabel ?label ;
+              nmo:hasMaterial nm:av .
+        OPTIONAL { ?type nmo:hasAuthority ?authority .
+                   ?authority skos:prefLabel ?authorityLabel
+                   FILTER(LANG(?authorityLabel) = "en") }
+        OPTIONAL { ?type nmo:hasStartDate ?startDate }
+      }
+      ORDER BY ?startDate
+
+  - question: "Count coin types by emperor"
+    sparql: |
+      PREFIX nmo: <http://nomisma.org/ontology#>
+      PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+      SELECT ?authority ?authorityLabel (COUNT(?type) AS ?count)
+      WHERE {
+        ?type a nmo:TypeSeriesItem ;
+              nmo:hasAuthority ?authority .
+        ?authority skos:prefLabel ?authorityLabel .
+        FILTER(LANG(?authorityLabel) = "en")
+      }
+      GROUP BY ?authority ?authorityLabel
+      ORDER BY DESC(?count)
+
+  - question: "Find coin types minted at Rome"
+    sparql: |
+      PREFIX nmo: <http://nomisma.org/ontology#>
+      PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+      PREFIX nm: <http://nomisma.org/id/>
+      SELECT ?type ?label ?authority ?authorityLabel ?startDate
+      WHERE {
+        ?type a nmo:TypeSeriesItem ;
+              skos:prefLabel ?label ;
+              nmo:hasMint nm:rome .
+        OPTIONAL { ?type nmo:hasAuthority ?authority .
+                   ?authority skos:prefLabel ?authorityLabel
+                   FILTER(LANG(?authorityLabel) = "en") }
+        OPTIONAL { ?type nmo:hasStartDate ?startDate }
+      }
+      ORDER BY ?startDate
+      LIMIT 100
+
+  - question: "Find coin types from a date range (e.g., 14-37 AD, Tiberius)"
+    sparql: |
+      PREFIX nmo: <http://nomisma.org/ontology#>
+      PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+      PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+      SELECT ?type ?label ?startDate ?endDate
+      WHERE {
+        ?type a nmo:TypeSeriesItem ;
+              skos:prefLabel ?label ;
+              nmo:hasStartDate ?startDate .
+        OPTIONAL { ?type nmo:hasEndDate ?endDate }
+        FILTER(?startDate >= "0014"^^xsd:gYear && ?startDate <= "0037"^^xsd:gYear)
+      }
+      ORDER BY ?startDate

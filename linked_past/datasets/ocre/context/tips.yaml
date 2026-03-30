@@ -1,0 +1,20 @@
+tips:
+  - title: "ric_source_filter"
+    body: "All OCRE types have dcterms:source nm:ric (Roman Imperial Coinage). Include this in queries to restrict to OCRE types vs other Nomisma data."
+    classes: ["CoinType"]
+
+  - title: "authority_is_emperor"
+    body: "nmo:hasAuthority links to Nomisma person URIs for emperors (e.g., nm:augustus, nm:tiberius, nm:nero). These are the same URIs used in the Nomisma concept vocabulary."
+    classes: ["CoinType"]
+
+  - title: "date_encoding"
+    body: "Dates use xsd:gYear. Imperial dates are positive: '14 AD' = '0014', '117 AD' = '0117'. Use FILTER with xsd:gYear cast for date ranges."
+    classes: ["CoinType"]
+
+  - title: "ric_volume_in_uri"
+    body: "The URI encodes the RIC volume: ric.1(2) = RIC I 2nd ed, ric.2 = RIC II, ric.7 = RIC VII. Use FILTER(CONTAINS(STR(?type), 'ric.7')) to restrict by volume."
+    classes: ["CoinType"]
+
+  - title: "shared_concepts_with_nomisma"
+    body: "Denominations (nm:denarius, nm:aureus), mints (nm:rome, nm:lugdunum), and materials (nm:ar, nm:av, nm:ae) are Nomisma concept URIs. Use the Nomisma dataset for their labels and definitions."
+    classes: ["CoinType"]

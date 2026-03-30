@@ -47,7 +47,7 @@ def integration_ctx(tmp_path, monkeypatch):
         lambda self, data_dir: data_dir / "dprr.ttl",
     )
     # Create minimal TTL files and patch fetch for other plugins
-    for dataset in ("pleiades", "periodo", "nomisma"):
+    for dataset in ("pleiades", "periodo", "nomisma", "crro", "ocre"):
         ds_dir = tmp_path / dataset
         ds_dir.mkdir()
         ttl_path = ds_dir / f"{dataset}.ttl"
@@ -63,6 +63,14 @@ def integration_ctx(tmp_path, monkeypatch):
     monkeypatch.setattr(
         "linked_past.datasets.nomisma.plugin.NomismaPlugin.fetch",
         lambda self, data_dir: data_dir / "nomisma.ttl",
+    )
+    monkeypatch.setattr(
+        "linked_past.datasets.crro.plugin.CRROPlugin.fetch",
+        lambda self, data_dir: data_dir / "crro.ttl",
+    )
+    monkeypatch.setattr(
+        "linked_past.datasets.ocre.plugin.OCREPlugin.fetch",
+        lambda self, data_dir: data_dir / "ocre.ttl",
     )
     return build_app_context(eager=True)
 
