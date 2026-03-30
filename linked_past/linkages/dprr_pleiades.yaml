@@ -1,0 +1,25 @@
+metadata:
+  source_dataset: dprr
+  target_dataset: pleiades
+  relationship: "owl:sameAs"
+  confidence: confirmed
+  method: manual_alignment
+  basis: "Barrington Atlas of the Greek and Roman World (Talbert 2000)"
+  author: linked-past project
+  date: "2026-03-30"
+links:
+  - source: "http://romanrepublic.ac.uk/rdf/entity/Province/Sicilia"
+    target: "https://pleiades.stoa.org/places/462492#this"
+    note: "Map 47"
+  - source: "http://romanrepublic.ac.uk/rdf/entity/Province/Africa"
+    target: "https://pleiades.stoa.org/places/775#this"
+    note: "Map 33"
+  - source: "http://romanrepublic.ac.uk/rdf/entity/Province/Hispania"
+    target: "https://pleiades.stoa.org/places/1027#this"
+    note: "Map 25-27"
+  - source: "http://romanrepublic.ac.uk/rdf/entity/Province/Asia"
+    target: "https://pleiades.stoa.org/places/837#this"
+    note: "Map 56-62"
+  - source: "http://romanrepublic.ac.uk/rdf/entity/Province/Gallia"
+    target: "https://pleiades.stoa.org/places/993#this"
+    note: "Map 14-17"

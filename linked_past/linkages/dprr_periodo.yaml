@@ -1,0 +1,16 @@
+metadata:
+  source_dataset: dprr
+  target_dataset: periodo
+  relationship: "dcterms:temporal"
+  confidence: confirmed
+  method: manual_alignment
+  basis: "Standard periodization of the Roman Republic"
+  author: linked-past project
+  date: "2026-03-30"
+links:
+  - source: "http://romanrepublic.ac.uk/rdf/entity/Era/Republic"
+    target: "http://n2t.net/ark:/99152/p05krdxmkzt"
+    note: "Roman Republic period (509-31 BC)"
+  - source: "http://romanrepublic.ac.uk/rdf/entity/Era/LateRepublic"
+    target: "http://n2t.net/ark:/99152/p05krdxmkzv"
+    note: "Late Roman Republic (133-31 BC)"
