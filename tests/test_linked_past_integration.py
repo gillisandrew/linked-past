@@ -2,7 +2,6 @@
 """End-to-end integration test for the linked-past server with DPRR plugin."""
 
 import json
-from pathlib import Path
 
 import pytest
 

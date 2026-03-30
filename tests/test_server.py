@@ -1,9 +1,4 @@
 # tests/test_server.py
-import json
-from pathlib import Path
-
-import pytest
-
 from linked_past.core.server import build_app_context, create_mcp_server
 
 SAMPLE_TURTLE = """\
