@@ -85,9 +85,8 @@ def build_app_context(*, eager: bool = False) -> AppContext:
     else:
         registry.initialize_cached()
 
-    # Load linkage graph (YAML curated links + Turtle concordances)
-    linkage_store_path = data_dir / "_linkages" / "store"
-    linkage = LinkageGraph(linkage_store_path)
+    # Load linkage graph in-memory (rebuilt from files on each startup — no disk lock)
+    linkage = LinkageGraph()
     linkages_dir = Path(__file__).parent.parent / "linkages"
     if linkages_dir.exists():
         for yaml_file in sorted(linkages_dir.glob("*.yaml")):
