@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-import zipfile
 from pathlib import Path
 
 from pyoxigraph import RdfFormat, Store
@@ -45,7 +44,7 @@ class EDHPlugin(DatasetPlugin):
     time_coverage = "Antiquity through Late Antiquity"
     spatial_coverage = "Roman Empire"
     oci_dataset = "edh"
-    oci_version = "2021-12-16"
+    oci_version = "latest"
 
     def __init__(self):
         self._prefixes = load_prefixes(_CONTEXT_DIR)
@@ -56,16 +55,7 @@ class EDHPlugin(DatasetPlugin):
         for ex in self._examples:
             ex["classes"] = extract_query_classes(ex["sparql"], self._schema_dict)
 
-    def fetch(self, data_dir: Path) -> Path:
-        """Extract EDH data from local zip, falling back to ORAS."""
-        local_zip = Path(__file__).parent.parent.parent.parent / "edh_linked_data.zip"
-        if local_zip.exists():
-            with zipfile.ZipFile(local_zip) as zf:
-                zf.extractall(data_dir)
-            return data_dir / "edh_inscriptions.ttl"
-        from linked_past.core.fetch import pull_artifact
-
-        return pull_artifact(self.oci_dataset, data_dir, self.oci_version)
+    # fetch() uses default ORAS implementation from base class
 
     def load(self, store: Store, rdf_path: Path) -> int:
         """Load all Turtle files from the data directory."""
