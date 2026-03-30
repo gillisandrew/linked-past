@@ -575,3 +575,13 @@ dependencies = [
 - **Domain-specific embedding model** — fine-tune on ancient world terminology for better retrieval
 - **Wikidata bridge** — many entities in these datasets have Wikidata QIDs; use as a linking hub
 - **Trismegistos integration** — TM Person IDs as a cross-reference hub for ancient persons
+
+### Pelagios Network Alignment
+
+This project aligns closely with the [Pelagios Network](https://pelagios.org/) — a global community for linking heritage data using LOD. Key integration points:
+
+- **Registry Working Group** — Pelagios catalogues LOD knowledge graphs and creates natural-language-question / SPARQL-query documentation pairs, which is exactly what our `examples.yaml` files provide. Contributing our question-SPARQL pairs to their registry would increase visibility and reuse.
+- **Linked Places Format (LPF)** — Adding an LPF export capability for place-related query results would make our data consumable by Peripleo Lite and the World Historical Gazetteer.
+- **PLATO ontology** (Place Attestation Ontology, Feb 2026) — A new Pelagios-developed ontology whose core unit is an attestation (a claim about a place from a source), conceptually identical to the factoid model. Aligning with PLATO would strengthen interoperability.
+- **CHAI Cookbook** — Pelagios is actively exploring LLM + LOD integration (`pelagios/llm-lod-enriching-heritage`). An MCP server providing structured SPARQL access to ancient world datasets is a natural complement.
+- **Membership** — Become a Pelagios Partner (officers@pelagios.org). Engage with the People Working Group (people@pelagios.org) and Registry Working Group (registry@pelagios.org). Present at Linked Pasts conference (December annually).

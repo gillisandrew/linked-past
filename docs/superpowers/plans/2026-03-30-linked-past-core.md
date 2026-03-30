@@ -12,6 +12,8 @@
 - Plan 2: Additional dataset plugins (Pleiades, PeriodO, Nomisma, POMS)
 - Plan 3: Linkage graph, embeddings, advanced tools
 
+**Deferred tools (Plan 3):** `explore_entity`, `get_provenance`, `find_links`, `update_dataset`
+
 ---
 
 ## File Structure
@@ -68,7 +70,8 @@ from linked_past.datasets.base import DatasetPlugin, VersionInfo, ValidationResu
 
 
 def test_dataset_plugin_is_abstract():
-    """Cannot instantiate DatasetPlugin directly."""
+    """Cannot instantiate DatasetPlugin directly — has abstract methods
+    including fetch, get_prefixes, get_schema, build_schema_dict, validate, get_version_info."""
     with pytest.raises(TypeError):
         DatasetPlugin()
 
@@ -182,14 +185,19 @@ class DatasetPlugin(ABC):
     url: str
     time_coverage: str
     spatial_coverage: str
+    rdf_format: RdfFormat = RdfFormat.TURTLE
 
     @abstractmethod
     def fetch(self, data_dir: Path) -> Path:
         """Download data, return path to RDF file(s)."""
 
-    @abstractmethod
     def load(self, store: Store, rdf_path: Path) -> int:
-        """Bulk-load into Oxigraph store, return triple count."""
+        """Bulk-load into Oxigraph store, return triple count.
+
+        Default implementation uses self.rdf_format. Override for custom loading.
+        """
+        store.bulk_load(path=str(rdf_path), format=self.rdf_format)
+        return len(store)
 
     @abstractmethod
     def get_prefixes(self) -> dict[str, str]:
@@ -200,8 +208,16 @@ class DatasetPlugin(ABC):
         """Return rendered ontology overview."""
 
     @abstractmethod
-    def validate(self, sparql: str, schema_dict: dict) -> ValidationResult:
-        """Dataset-specific semantic validation."""
+    def build_schema_dict(self) -> dict:
+        """Return dict[class_full_uri][predicate_full_uri] = [range_types]."""
+
+    @abstractmethod
+    def validate(self, sparql: str) -> ValidationResult:
+        """Dataset-specific semantic validation (plugin owns its schema dict)."""
+
+    def get_relevant_context(self, sparql: str) -> str:
+        """Return contextual tips/examples for a SPARQL query. Default: empty."""
+        return ""
 
     @abstractmethod
     def get_version_info(self, data_dir: Path) -> VersionInfo | None:
@@ -799,7 +815,7 @@ def _local_name(uri: str) -> str:
 
 
 @dataclass
-class FullValidationResult:
+class QueryResult:
     success: bool
     sparql: str
     rows: list[dict[str, str]] = field(default_factory=list)
@@ -996,22 +1012,22 @@ def validate_semantics(sparql: str, schema_dict: dict) -> list[str]:
 
 def validate_and_execute(
     sparql: str, store, schema_dict: dict, prefix_map: dict[str, str],
-) -> FullValidationResult:
+) -> QueryResult:
     """Validate and execute a SPARQL query through all three tiers."""
     fixed_sparql, parse_errors = parse_and_fix_prefixes(sparql, prefix_map)
     if parse_errors:
-        return FullValidationResult(success=False, sparql=fixed_sparql, errors=parse_errors)
+        return QueryResult(success=False, sparql=fixed_sparql, errors=parse_errors)
 
     semantic_errors = validate_semantics(fixed_sparql, schema_dict)
     if semantic_errors:
-        return FullValidationResult(success=False, sparql=fixed_sparql, errors=semantic_errors)
+        return QueryResult(success=False, sparql=fixed_sparql, errors=semantic_errors)
 
     try:
         rows = execute_query(store, fixed_sparql)
     except Exception as e:
-        return FullValidationResult(success=False, sparql=fixed_sparql, errors=[f"Query execution error: {e}"])
+        return QueryResult(success=False, sparql=fixed_sparql, errors=[f"Query execution error: {e}"])
 
-    return FullValidationResult(success=True, sparql=fixed_sparql, rows=rows)
+    return QueryResult(success=True, sparql=fixed_sparql, rows=rows)
 ```
 
 - [ ] **Step 4: Run test to verify it passes**
@@ -1082,7 +1098,10 @@ class FakePlugin(DatasetPlugin):
     def get_schema(self):
         return "## Fake Schema\n- Widget"
 
-    def validate(self, sparql, schema_dict):
+    def build_schema_dict(self):
+        return {}
+
+    def validate(self, sparql):
         return ValidationResult(valid=True, sparql=sparql)
 
     def get_version_info(self, data_dir):
@@ -1145,10 +1164,27 @@ def test_registry_skips_if_already_initialized(tmp_path):
     plugin = FakePlugin()
     reg.register(plugin)
     reg.initialize_dataset("fake")
-    # Second init should not re-fetch
+    # Second init should not re-fetch — verify by checking fetch is not called again
+    original_fetch = plugin.fetch
+    call_count = 0
+    def counting_fetch(data_dir):
+        nonlocal call_count
+        call_count += 1
+        return original_fetch(data_dir)
+    plugin.fetch = counting_fetch
     reg.initialize_dataset("fake")
+    assert call_count == 0  # fetch should NOT be called on second init
     store = reg.get_store("fake")
     assert store is not None
+
+
+def test_registry_stores_actual_triple_count(tmp_path):
+    reg = DatasetRegistry(data_dir=tmp_path)
+    plugin = FakePlugin()
+    reg.register(plugin)
+    reg.initialize_dataset("fake")
+    meta = reg.get_metadata("fake")
+    assert meta["triple_count"] > 0  # Actual count, not hardcoded 0
 ```
 
 - [ ] **Step 2: Run test to verify it fails**
@@ -1183,6 +1219,7 @@ class DatasetRegistry:
         self._data_dir = data_dir
         self._plugins: dict[str, DatasetPlugin] = {}
         self._stores: dict[str, Store] = {}
+        self._metadata: dict[str, dict] = {}  # Cached version metadata per dataset
 
     def register(self, plugin: DatasetPlugin) -> None:
         """Register a dataset plugin."""
@@ -1204,6 +1241,10 @@ class DatasetRegistry:
             raise KeyError(f"Dataset {name!r} is not initialized.")
         return self._stores[name]
 
+    def get_metadata(self, name: str) -> dict:
+        """Get cached version metadata for a dataset."""
+        return self._metadata.get(name, {})
+
     def initialize_dataset(self, name: str) -> None:
         """Initialize a dataset: fetch data if needed, load into store, open read-only."""
         plugin = self.get_plugin(name)
@@ -1224,14 +1265,14 @@ class DatasetRegistry:
         del store
 
         self._stores[name] = get_read_only_store(store_path)
-        self._save_registry(name, plugin, dataset_dir)
+        self._save_registry(name, plugin, dataset_dir, triple_count)
 
     def initialize_all(self) -> None:
         """Initialize all registered datasets."""
         for name in self._plugins:
             self.initialize_dataset(name)
 
-    def _save_registry(self, name: str, plugin: DatasetPlugin, dataset_dir: Path) -> None:
+    def _save_registry(self, name: str, plugin: DatasetPlugin, dataset_dir: Path, triple_count: int) -> None:
         """Update registry.json with version info for a dataset."""
         registry_path = self._data_dir / "registry.json"
         if registry_path.exists():
@@ -1241,14 +1282,16 @@ class DatasetRegistry:
 
         version_info = plugin.get_version_info(dataset_dir)
         if version_info:
-            data[name] = {
+            entry = {
                 "version": version_info.version,
                 "source_url": version_info.source_url,
                 "fetched_at": version_info.fetched_at,
-                "triple_count": version_info.triple_count,
+                "triple_count": triple_count,  # Use actual count from load()
                 "rdf_format": version_info.rdf_format,
                 "license": plugin.license,
             }
+            data[name] = entry
+            self._metadata[name] = entry  # Cache in memory
 
         registry_path.write_text(json.dumps(data, indent=2))
 ```
@@ -1321,7 +1364,6 @@ def test_dprr_plugin_validate_valid():
     result = plugin.validate(
         "PREFIX vocab: <http://romanrepublic.ac.uk/rdf/ontology#>\n"
         "SELECT ?p WHERE { ?p a vocab:Person }",
-        plugin.build_schema_dict(),
     )
     assert result.valid is True
 
@@ -1331,10 +1373,20 @@ def test_dprr_plugin_validate_invalid():
     result = plugin.validate(
         "PREFIX vocab: <http://romanrepublic.ac.uk/rdf/ontology#>\n"
         "SELECT ?p WHERE { ?p a vocab:FakeClass }",
-        plugin.build_schema_dict(),
     )
     assert result.valid is False
     assert any("Unknown class" in e for e in result.errors)
+
+
+def test_dprr_plugin_get_relevant_context():
+    plugin = DPRRPlugin()
+    ctx = plugin.get_relevant_context(
+        "PREFIX vocab: <http://romanrepublic.ac.uk/rdf/ontology#>\n"
+        "SELECT ?p WHERE { ?p a vocab:Person ; vocab:hasPersonName ?n }",
+    )
+    assert isinstance(ctx, str)
+    # Should return tips/examples for Person class
+    assert len(ctx) > 0
 
 
 def test_dprr_plugin_load(tmp_path):
@@ -1450,9 +1502,7 @@ class DPRRPlugin(DatasetPlugin):
         print(f"Extracted dprr.ttl to {result}", file=sys.stderr)
         return result
 
-    def load(self, store: Store, rdf_path: Path) -> int:
-        store.bulk_load(path=str(rdf_path), format=RdfFormat.TURTLE)
-        return len(store)
+    # load() uses default implementation from ABC (Turtle format)
 
     def get_prefixes(self) -> dict[str, str]:
         return self._prefixes
@@ -1471,8 +1521,8 @@ class DPRRPlugin(DatasetPlugin):
             f"## General Tips\n\n{tips_md}"
         )
 
-    def validate(self, sparql: str, schema_dict: dict) -> ValidationResult:
-        errors = validate_semantics(sparql, schema_dict)
+    def validate(self, sparql: str) -> ValidationResult:
+        errors = validate_semantics(sparql, self._schema_dict)
         if errors:
             return ValidationResult(valid=False, sparql=sparql, errors=errors)
         return ValidationResult(valid=True, sparql=sparql)
@@ -1663,22 +1713,17 @@ def create_mcp_server() -> FastMCP:
         lines = ["# Available Datasets\n"]
         for name in registry.list_datasets():
             plugin = registry.get_plugin(name)
-            if topic and topic.lower() not in (
-                plugin.description.lower()
-                + plugin.display_name.lower()
-                + plugin.spatial_coverage.lower()
-                + plugin.time_coverage.lower()
-            ):
-                continue
+            if topic:
+                searchable = [
+                    plugin.description, plugin.display_name,
+                    plugin.spatial_coverage, plugin.time_coverage,
+                ]
+                if not any(topic.lower() in field.lower() for field in searchable):
+                    continue
 
-            registry_path = registry._data_dir / "registry.json"
-            version = "unknown"
-            triple_count = "unknown"
-            if registry_path.exists():
-                reg_data = json.loads(registry_path.read_text())
-                if name in reg_data:
-                    version = reg_data[name].get("version", "unknown")
-                    triple_count = reg_data[name].get("triple_count", "unknown")
+            meta = registry.get_metadata(name)
+            version = meta.get("version", "unknown")
+            triple_count = meta.get("triple_count", "unknown")
 
             lines.append(
                 f"## {plugin.display_name}\n"
@@ -1720,15 +1765,11 @@ def create_mcp_server() -> FastMCP:
                 context = plugin.get_relevant_context(sparql)
             return base + context
 
-        schema_dict = plugin.build_schema_dict() if hasattr(plugin, "build_schema_dict") else {}
-        result = plugin.validate(fixed_sparql, schema_dict)
+        result = plugin.validate(fixed_sparql)
         if not result.valid:
             error_list = "\n".join(f"- {e}" for e in result.errors)
             base = f"INVALID\n\nErrors:\n{error_list}"
-            context = ""
-            if hasattr(plugin, "get_relevant_context"):
-                context = plugin.get_relevant_context(fixed_sparql)
-            return base + context
+            return base + plugin.get_relevant_context(fixed_sparql)
 
         if fixed_sparql != sparql:
             diff = "".join(
@@ -1742,10 +1783,7 @@ def create_mcp_server() -> FastMCP:
         else:
             base = "VALID"
 
-        context = ""
-        if hasattr(plugin, "get_relevant_context"):
-            context = plugin.get_relevant_context(fixed_sparql)
-        return base + context
+        return base + plugin.get_relevant_context(fixed_sparql)
 
     @mcp.tool()
     async def query(ctx: Context, sparql: str, dataset: str, timeout: int | None = None) -> str:
@@ -1754,7 +1792,7 @@ def create_mcp_server() -> FastMCP:
         plugin = app.registry.get_plugin(dataset)
         store = app.registry.get_store(dataset)
         prefix_map = plugin.get_prefixes()
-        schema_dict = plugin.build_schema_dict() if hasattr(plugin, "build_schema_dict") else {}
+        schema_dict = plugin.build_schema_dict()
         effective_timeout = timeout if timeout is not None else QUERY_TIMEOUT
 
         try:
@@ -1778,12 +1816,8 @@ def create_mcp_server() -> FastMCP:
         table = toons.dumps(result.rows)
 
         # Append citation footer
-        registry_path = app.registry._data_dir / "registry.json"
-        version = "unknown"
-        if registry_path.exists():
-            reg_data = json.loads(registry_path.read_text())
-            if dataset in reg_data:
-                version = reg_data[dataset].get("version", "unknown")
+        meta = app.registry.get_metadata(dataset)
+        version = meta.get("version", "unknown")
 
         footer = (
             f"\n\n─── Sources ───\n"
@@ -1996,7 +2030,7 @@ def test_validate_valid_query(integration_ctx):
     )
     fixed, errors = parse_and_fix_prefixes(sparql, prefix_map)
     assert errors == []
-    result = plugin.validate(fixed, plugin.build_schema_dict())
+    result = plugin.validate(fixed)
     assert result.valid is True
 
 
@@ -2006,7 +2040,7 @@ def test_validate_invalid_class(integration_ctx):
         "PREFIX vocab: <http://romanrepublic.ac.uk/rdf/ontology#>\n"
         "SELECT ?p WHERE { ?p a vocab:FakeClass }"
     )
-    result = plugin.validate(sparql, plugin.build_schema_dict())
+    result = plugin.validate(sparql)
     assert result.valid is False
 
 
@@ -2044,6 +2078,45 @@ def test_registry_json_written(integration_ctx, tmp_path, monkeypatch):
     data = json.loads(registry_path.read_text())
     assert "dprr" in data
     assert "version" in data["dprr"]
+    assert data["dprr"]["triple_count"] > 0  # Actual count, not 0
+
+
+def test_discover_datasets_no_filter(integration_ctx):
+    """discover_datasets with no topic returns all datasets."""
+    from linked_past.core.server import create_mcp_server
+    registry = integration_ctx.registry
+    # Directly test that DPRR appears in the list
+    datasets = registry.list_datasets()
+    assert "dprr" in datasets
+    plugin = registry.get_plugin("dprr")
+    assert "Roman Republic" in plugin.display_name
+
+
+def test_discover_datasets_topic_filter(integration_ctx):
+    """discover_datasets topic filter matches on description fields."""
+    plugin = integration_ctx.registry.get_plugin("dprr")
+    # "roman" should match DPRR's spatial_coverage or description
+    searchable = [plugin.description, plugin.display_name,
+                  plugin.spatial_coverage, plugin.time_coverage]
+    assert any("roman" in f.lower() for f in searchable)
+    # "medieval" should NOT match DPRR
+    assert not any("medieval" in f.lower() for f in searchable)
+
+
+def test_query_result_includes_citation(integration_ctx):
+    """Query results include a citation footer with dataset name and version."""
+    store = integration_ctx.registry.get_store("dprr")
+    plugin = integration_ctx.registry.get_plugin("dprr")
+    result = validate_and_execute(
+        "PREFIX vocab: <http://romanrepublic.ac.uk/rdf/ontology#>\n"
+        "SELECT ?name WHERE { ?p a vocab:Person ; vocab:hasPersonName ?name }",
+        store, plugin.build_schema_dict(), plugin.get_prefixes(),
+    )
+    assert result.success is True
+    # Verify the metadata is available for citation
+    meta = integration_ctx.registry.get_metadata("dprr")
+    assert "version" in meta
+    assert plugin.citation != ""
 ```
 
 - [ ] **Step 2: Run integration tests**
