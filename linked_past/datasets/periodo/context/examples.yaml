@@ -1,0 +1,69 @@
+examples:
+  - question: "Find all period definitions that mention 'Roman'"
+    sparql: |
+      PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+      SELECT ?period ?label
+      WHERE {
+        ?period a skos:Concept ;
+                skos:prefLabel ?label .
+        FILTER(CONTAINS(LCASE(?label), "roman"))
+      }
+      ORDER BY ?label
+      LIMIT 100
+
+  - question: "Find periods with their start and end years"
+    sparql: |
+      PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+      PREFIX time: <http://www.w3.org/2006/time#>
+      PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+      SELECT ?period ?label ?startYear ?endYear
+      WHERE {
+        ?period a skos:Concept ;
+                skos:prefLabel ?label ;
+                time:intervalStartedBy/time:hasDateTimeDescription/time:year ?startYear ;
+                time:intervalFinishedBy/time:hasDateTimeDescription/time:year ?endYear .
+      }
+      ORDER BY ?startYear
+      LIMIT 100
+
+  - question: "Find all authorities (source publications)"
+    sparql: |
+      PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+      PREFIX dcterms: <http://purl.org/dc/terms/>
+      SELECT ?authority ?title
+      WHERE {
+        ?authority a skos:ConceptScheme .
+        ?authority dcterms:source/dcterms:title ?title .
+      }
+      ORDER BY ?title
+      LIMIT 100
+
+  - question: "Find periods covering a specific spatial area"
+    sparql: |
+      PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+      PREFIX periodo: <http://n2t.net/ark:/99152/p0v#>
+      SELECT ?period ?label ?spatialDesc
+      WHERE {
+        ?period a skos:Concept ;
+                skos:prefLabel ?label ;
+                periodo:spatialCoverageDescription ?spatialDesc .
+        FILTER(CONTAINS(LCASE(?spatialDesc), "italy"))
+      }
+      ORDER BY ?label
+      LIMIT 100
+
+  - question: "Find periods active during a date range (500 BC to 100 BC)"
+    sparql: |
+      PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+      PREFIX time: <http://www.w3.org/2006/time#>
+      PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+      SELECT ?period ?label ?startYear ?endYear
+      WHERE {
+        ?period a skos:Concept ;
+                skos:prefLabel ?label ;
+                time:intervalStartedBy/time:hasDateTimeDescription/time:year ?startYear ;
+                time:intervalFinishedBy/time:hasDateTimeDescription/time:year ?endYear .
+        FILTER(?startYear >= "-0500"^^xsd:gYear && ?endYear <= "-0100"^^xsd:gYear)
+      }
+      ORDER BY ?startYear
+      LIMIT 100

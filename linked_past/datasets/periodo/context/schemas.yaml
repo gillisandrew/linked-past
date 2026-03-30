@@ -1,0 +1,36 @@
+classes:
+  Period:
+    label: "Period"
+    comment: "A named historical period defined by an authority, with temporal and spatial extent."
+    uri: "skos:Concept"
+    properties:
+      - pred: "skos:prefLabel"
+        range: "xsd:string"
+        comment: "Period name (e.g. 'Roman Republic')"
+      - pred: "skos:inScheme"
+        range: "skos:ConceptScheme"
+        comment: "The authority (source publication) that defines this period"
+      - pred: "time:intervalStartedBy"
+        range: "time:ProperInterval"
+        comment: "Start boundary as an OWL-Time interval with nested year"
+      - pred: "time:intervalFinishedBy"
+        range: "time:ProperInterval"
+        comment: "End boundary as an OWL-Time interval with nested year"
+      - pred: "periodo:spatialCoverageDescription"
+        range: "xsd:string"
+        comment: "Free-text spatial coverage description"
+      - pred: "periodo:spatialCoverage"
+        range: "xsd:anyURI"
+        comment: "URI of spatial coverage (e.g. GeoNames or DBpedia URI)"
+      - pred: "owl:sameAs"
+        range: "xsd:anyURI"
+        comment: "Link to equivalent period in another authority"
+
+  Authority:
+    label: "Authority"
+    comment: "A source publication or reference work that defines period terms."
+    uri: "skos:ConceptScheme"
+    properties:
+      - pred: "dcterms:source"
+        range: "rdfs:Resource"
+        comment: "Bibliographic source (blank node with dcterms:title, etc.)"

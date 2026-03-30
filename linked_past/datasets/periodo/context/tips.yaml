@@ -1,0 +1,43 @@
+tips:
+  - id: year_encoding
+    classes: []
+    title: "Years are encoded as xsd:gYear with zero-padded sign"
+    body: >
+      PeriodO encodes years as xsd:gYear values like "-0508"^^xsd:gYear for 509 BC
+      or "0014"^^xsd:gYear for 14 AD. The format is sign + 4 digits. When comparing
+      years, cast or use the same format.
+
+  - id: dual_temporal_encoding
+    classes: [Period]
+    title: "Temporal bounds use nested OWL-Time intervals"
+    body: >
+      Period start/end are encoded as nested blank nodes:
+      ?period time:intervalStartedBy [ time:hasDateTimeDescription [ time:year ?y ] ].
+      Use property paths for brevity:
+      ?period time:intervalStartedBy/time:hasDateTimeDescription/time:year ?startYear .
+
+  - id: multiple_definitions_by_design
+    classes: [Period, Authority]
+    title: "Multiple authorities may define the same period name differently"
+    body: >
+      PeriodO intentionally stores multiple definitions of the same period name
+      from different authorities. The same label (e.g. "Roman Republic") may appear
+      many times with different date ranges. Always consider which authority
+      (skos:inScheme) a definition comes from.
+
+  - id: gyear_comparison
+    classes: [Period]
+    title: "Use typed literals for xsd:gYear comparison"
+    body: >
+      When filtering by year, use typed literals for correct comparison:
+      FILTER(?startYear >= "-0500"^^xsd:gYear). String comparison on untyped
+      literals may give wrong results for negative (BC) years.
+
+  - id: temporal_chain
+    classes: [Period]
+    title: "Use property paths to traverse the temporal chain"
+    body: >
+      The temporal structure is deeply nested:
+      Period -> time:intervalStartedBy -> ProperInterval -> time:hasDateTimeDescription -> DateTimeDescription -> time:year -> gYear.
+      Use property paths (/) to keep queries concise rather than binding
+      every intermediate blank node.
