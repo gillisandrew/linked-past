@@ -77,7 +77,10 @@ class DatasetRegistry:
 
     def initialize_all(self) -> None:
         for name in self._plugins:
-            self.initialize_dataset(name)
+            try:
+                self.initialize_dataset(name)
+            except Exception as e:
+                logger.warning("Failed to initialize dataset %s: %s (skipping)", name, e)
 
     def _save_registry(self, name: str, plugin: DatasetPlugin, dataset_dir: Path, triple_count: int) -> None:
         version_info = plugin.get_version_info(dataset_dir)
