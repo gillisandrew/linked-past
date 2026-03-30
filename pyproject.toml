@@ -10,6 +10,7 @@ dependencies = [
     "rdflib",
     "pyyaml",
     "mcp",
+    "oras",
     "toons>=0.5.3",
 ]
 

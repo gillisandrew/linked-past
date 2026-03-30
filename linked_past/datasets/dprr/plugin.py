@@ -4,8 +4,6 @@ from __future__ import annotations
 
 import logging
 import os
-import tarfile
-import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -46,6 +44,8 @@ class DPRRPlugin(DatasetPlugin):
     url = "https://romanrepublic.ac.uk"
     time_coverage = "509-31 BC"
     spatial_coverage = "Roman Republic"
+    oci_dataset = "dprr"
+    oci_version = "1.3.0"
 
     def __init__(self):
         self._prefixes = load_prefixes(_CONTEXT_DIR)
@@ -56,29 +56,7 @@ class DPRRPlugin(DatasetPlugin):
         for ex in self._examples:
             ex["classes"] = extract_query_classes(ex["sparql"], self._schema_dict)
 
-    def fetch(self, data_dir: Path) -> Path:
-        url = os.environ.get("DPRR_DATA_URL", _DEFAULT_DATA_URL)
-        logger.info("Downloading DPRR data from %s", url)
-
-        try:
-            tmp_path, _ = urllib.request.urlretrieve(url)
-        except OSError as e:
-            raise RuntimeError(f"Failed to download data from {url}: {e}") from e
-
-        try:
-            with tarfile.open(tmp_path, "r:gz") as tar:
-                members = tar.getnames()
-                if "dprr.ttl" not in members:
-                    raise RuntimeError(f"Tarball does not contain dprr.ttl. Found: {members}")
-                tar.extract("dprr.ttl", path=str(data_dir), filter="data")
-        finally:
-            Path(tmp_path).unlink(missing_ok=True)
-
-        result = data_dir / "dprr.ttl"
-        logger.info("Extracted dprr.ttl to %s", result)
-        return result
-
-    # load() uses default implementation from ABC (Turtle format)
+    # fetch() and load() use default implementations from base class
 
     def get_prefixes(self) -> dict[str, str]:
         return self._prefixes

@@ -48,10 +48,16 @@ class DatasetPlugin(ABC):
     time_coverage: str
     spatial_coverage: str
     rdf_format: RdfFormat = RdfFormat.TURTLE
+    oci_dataset: str = ""
+    oci_version: str = "latest"
 
-    @abstractmethod
     def fetch(self, data_dir: Path) -> Path:
-        """Download data, return path to RDF file(s)."""
+        """Download data via ORAS from OCI registry. Override for custom fetch logic."""
+        from linked_past.core.fetch import pull_artifact
+
+        if not self.oci_dataset:
+            raise NotImplementedError(f"{self.__class__.__name__} must set oci_dataset or override fetch()")
+        return pull_artifact(self.oci_dataset, data_dir, self.oci_version)
 
     def load(self, store: Store, rdf_path: Path) -> int:
         """Bulk-load into Oxigraph store, return triple count.
