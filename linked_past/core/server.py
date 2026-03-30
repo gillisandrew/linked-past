@@ -19,8 +19,10 @@ from linked_past.core.linkage import LinkageGraph
 from linked_past.core.registry import DatasetRegistry
 from linked_past.core.store import get_data_dir
 from linked_past.core.validate import parse_and_fix_prefixes, validate_and_execute
+from linked_past.datasets.crro.plugin import CRROPlugin
 from linked_past.datasets.dprr.plugin import DPRRPlugin
 from linked_past.datasets.nomisma.plugin import NomismaPlugin
+from linked_past.datasets.ocre.plugin import OCREPlugin
 from linked_past.datasets.periodo.plugin import PeriodOPlugin
 from linked_past.datasets.pleiades.plugin import PleiadesPlugin
 
@@ -75,6 +77,8 @@ def build_app_context(*, eager: bool = False) -> AppContext:
     registry.register(PleiadesPlugin())
     registry.register(PeriodOPlugin())
     registry.register(NomismaPlugin())
+    registry.register(CRROPlugin())
+    registry.register(OCREPlugin())
 
     if eager:
         registry.initialize_all()
@@ -249,13 +253,26 @@ def create_mcp_server() -> FastMCP:
             plugin = registry.get_plugin(ds_name)
             prefix_block = "\n".join(f"PREFIX {k}: <{v}>" for k, v in plugin.get_prefixes().items())
 
+            # Build UNION branches for all label predicates (standard + dataset-specific)
+            label_preds = [
+                "rdfs:label",
+                "skos:prefLabel",
+            ]
+            # Add dataset-specific name predicates from the schema
+            for cls_data in (plugin._schemas.values() if hasattr(plugin, "_schemas") else []):
+                for prop in cls_data.get("properties", []):
+                    pred = prop["pred"]
+                    if any(kw in pred.lower() for kw in ("name", "label", "title")):
+                        if pred not in label_preds:
+                            label_preds.append(pred)
+
+            union_clauses = " UNION ".join(f"{{ ?uri {p} ?label }}" for p in label_preds)
             sparql = f"""
             {prefix_block}
             PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
             PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
             SELECT DISTINCT ?uri ?label ?type WHERE {{
-                {{ ?uri rdfs:label ?label }}
-                UNION {{ ?uri skos:prefLabel ?label }}
+                {union_clauses}
                 FILTER(CONTAINS(LCASE(STR(?label)), LCASE("{query_text}")))
                 OPTIONAL {{ ?uri a ?type }}
             }}
