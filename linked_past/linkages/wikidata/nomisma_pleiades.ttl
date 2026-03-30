@@ -1,0 +1,969 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rdf:RDF
+	xmlns:wdt="http://www.wikidata.org/prop/direct/"
+	xmlns:skos="http://www.w3.org/2004/02/skos/core#"
+	xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+	xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+	xmlns:sesame="http://www.openrdf.org/schema/sesame#"
+	xmlns:owl="http://www.w3.org/2002/07/owl#"
+	xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+	xmlns:fn="http://www.w3.org/2005/xpath-functions#"
+	xmlns:foaf="http://xmlns.com/foaf/0.1/"
+	xmlns:dc="http://purl.org/dc/elements/1.1/"
+	xmlns:hint="http://www.bigdata.com/queryHints#"
+	xmlns:bd="http://www.bigdata.com/rdf#"
+	xmlns:bds="http://www.bigdata.com/rdf/search#"
+	xmlns:psn="http://www.wikidata.org/prop/statement/value-normalized/"
+	xmlns:pqn="http://www.wikidata.org/prop/qualifier/value-normalized/"
+	xmlns:prn="http://www.wikidata.org/prop/reference/value-normalized/"
+	xmlns:mwapi="https://www.mediawiki.org/ontology#API/"
+	xmlns:gas="http://www.bigdata.com/rdf/gas#"
+	xmlns:wdsubgraph="https://query.wikidata.org/subgraph/"
+	xmlns:wdtn="http://www.wikidata.org/prop/direct-normalized/"
+	xmlns:psv="http://www.wikidata.org/prop/statement/value/"
+	xmlns:ps="http://www.wikidata.org/prop/statement/"
+	xmlns:pqv="http://www.wikidata.org/prop/qualifier/value/"
+	xmlns:pq="http://www.wikidata.org/prop/qualifier/"
+	xmlns:prv="http://www.wikidata.org/prop/reference/value/"
+	xmlns:pr="http://www.wikidata.org/prop/reference/"
+	xmlns:wdno="http://www.wikidata.org/prop/novalue/"
+	xmlns:p="http://www.wikidata.org/prop/"
+	xmlns:wikibase="http://wikiba.se/ontology#"
+	xmlns:wd="http://www.wikidata.org/entity/"
+	xmlns:wdata="http://www.wikidata.org/wiki/Special:EntityData/"
+	xmlns:wds="http://www.wikidata.org/entity/statement/"
+	xmlns:wdv="http://www.wikidata.org/value/"
+	xmlns:wdref="http://www.wikidata.org/reference/"
+	xmlns:schema="http://schema.org/"
+	xmlns:prov="http://www.w3.org/ns/prov#"
+	xmlns:geo="http://www.opengis.net/ont/geosparql#"
+	xmlns:geof="http://www.opengis.net/def/geosparql/function/"
+	xmlns:mediawiki="https://www.mediawiki.org/ontology#"
+	xmlns:ontolex="http://www.w3.org/ns/lemon/ontolex#"
+	xmlns:dct="http://purl.org/dc/terms/"
+	xmlns:wikibaseqs="http://wikiba.se/queryService#">
+
+<rdf:Description rdf:about="http://nomisma.org/id/teitiakos">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/252990"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/searo">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/256449"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/alexandreia_troas">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/550434"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/serres">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/501616"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/morini">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/109177"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/olkairun">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/252972"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/roturkon">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/252977"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/sekotias_iakas">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/246639"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/scylletium">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/452439"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/bora">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/265829"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/baris">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/638790"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/uarkas">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/246546"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/belikio">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/252939"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/aetolia">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/540591"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/belaiskom">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/252938"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/cormasa">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/638936"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/hecatompylos">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/942276"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/neapolis_macedon">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/501523"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/seleuceia_sidera">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/639098"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/las">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/570417"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/hyrium">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/442839"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/hypana-achaean_league">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/570301"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/al-quds">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/687928"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/otobesken">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/260616"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/kaisesa">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/252952"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/louitiskos">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/252963"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/tucca">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/305172"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/norba">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/422987"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/uarakos">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/252995"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/aspendus">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/638776"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/carbula">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/256056"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/iuliopolis">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/844935"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/athens">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/100638613"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/flaviopolis">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/658569"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/lakine">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/252961"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/borneskon">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/252942"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/okalakom">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/252971"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/titum">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/252993"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/arekorata">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/252930"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/zarai">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/334669"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/tamusiens">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/252989"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/lydia">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/550701"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/suessiones">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/109356"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/thessaly">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/1332"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/greek_egypt">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/981503"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/iliya">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/687928"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/attica">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/579888"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/moesia_inferior">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/216887"/>
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/981535"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/corieltavi">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/79402"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/messenia">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/570480"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/ionia">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/550597"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/tauric_chersonesus">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/226564"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/coriosolites">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/138310"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/megaris">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/570470"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/dalmatia">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/197240"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/termera_city">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/599965"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/gambrium_city">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/550542"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/moesia_superior">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/981536"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/epirus">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/530871"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/lacedaemon_city">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/570685"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/sicilia_roman_province">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/981549"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/makkah">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/29652"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/umm_al-qurrah">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/29652"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/bellovaci">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/108803"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/pamphylia">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/1001913"/>
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/639034"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/ephesus_city">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/599612"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/dobunni">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/79423"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/massylii">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/334588"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/sogdiana">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/60058"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/hyrcania_satrapy">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/942333"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/locri_ozolae">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/540919"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/greek_asia">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/915832"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/cilicia">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/658440"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/mysia">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/511328"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/greek_syria">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/1306"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/pannonia">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/1001905"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/cyclades">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/560353"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/dacian_kingdom">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/207065"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/citium_city">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/707534"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/soli_cyprus_city">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/707624"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/syracuse_city">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/462503"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/hierapolis_bambyce_city">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/658480"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/africa">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/981504"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/colchis">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/863770"/>
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/874432"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/magnesia_ad_maeandrum_city">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/599778"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/marium_city">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/707574"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/lycia">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/638965"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/lycian_league">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/68843864"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/upper_germany">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/981525"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/paeonia">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/491680"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/lower_germany">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/981524"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/lucani">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/452371"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/argolis">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/570104"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/upper_germany">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/1000"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/lesbos">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/550696"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/tylis_thrace_kingdom">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/217030"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/campania">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/432742"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/noricum">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/187490"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/bactria">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/971705"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/atrebates">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/79306"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/pherae_city">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/541044"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/idalium_city">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/707519"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/gallia">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/993"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/aleppo">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/658409"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/iltukoite">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/252949"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/terkakom">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/246689"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/titiakos">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/252992"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/sekisanos">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/252982"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/kueliokos">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/252958"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/clunia">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/252957"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/nertobis">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/252968"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/ontikes">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/252973"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/karalus">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/252954"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/alaun">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/252929"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/forum-iulii">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/157836"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/tabaniu">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/252987"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/basti">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/265823"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/metuainum">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/252966"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/heracleia_trachinia">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/541157"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/abariltur">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/252927"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/karaues">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/252955"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/cilbiani_inferiores">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/550641"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/seteisken">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/252985"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/diocaesareia_cilicia">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/648623"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/nacrasa">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/550767"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/kolounioku">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/252957"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/athenae_diades">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/540681"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/clypea">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/314892"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/gabala">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/668250"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/hyria_apulia">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/442616"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/trebenna">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/639151"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/carsioli">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/432760"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/pandosia_epirus">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/531039"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/sekobirikes">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/252983"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/posidium">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/668340"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/daldis">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/550508"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/mecca">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/29652"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/arsaos">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/252934"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/sasanian_empire">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/562111623"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/carnutes">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/108860"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/cantii">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/79374"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/lingones">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/177564"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/peloponnesus">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/570577"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/sabaean_kingdom">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/39417"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/trinovantes">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/79721"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/isle_of_wight">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/79731"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/philistia">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/660988416"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/brettii">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/452275"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/athamanes_tribe">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/540676"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/nervii">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/109199"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/sesars">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/252984"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/ledon">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/540908"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/amman">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/697728"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/acerrae">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/432621"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/thaliadae">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/570716"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/judaea">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/981527"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/byzacene">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/991345"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/arabia">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/29475"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/lucania">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/442639"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/latium">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/432900"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/olbia_city">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/226546"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/telmessus_city">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/639137"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/crete">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/589748"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/oskumken">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/252975"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/barskunes">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/252937"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/bentian">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/252940"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/ikesankom">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/246352"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/asia">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/981509"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/letaisama">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/252962"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/ekualakos">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/252944"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/orosi">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/252974"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/kaiskata">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/252953"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/arsakoson">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/252933"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/creteia">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/844991"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/tirsos">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/252991"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/amestratus">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/462093"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/arzarum">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/874373"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/iliya_palestine">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/687928"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/uirouias">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/252996"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/al-mukalla">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/39434"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/priapus">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/511375"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/trapezus">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/857359"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/mesopotamia">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/874602"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/Mesopotamia">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/874602"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/himyarite_kingdom">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/39350"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/ambiani">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/108740"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/ptolemaic_empire">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/463803480"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/lydia_satrapy">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/961678240"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/sardis_city">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/550867"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/vestini_tribe">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/413376"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/achaemenid_empire">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/753898782"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/amathus_city">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/707462"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/heracleia_pontica_city">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/844944"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/osroene_kingdom">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/658561"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/khaznat_halab">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/658409"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/madinat_halab">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/658409"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/acarnania">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/530767"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/cos_city">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/599581"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/thrace">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/501638"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/lusitania">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/981529"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/achaean_league">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/104777482"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/aetolian_league">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/104777481"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/pergamum_city">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/550812"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/getae">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/216817"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/aegina">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/579844"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/charybdis">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/462157"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/illyricum">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/481866"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/acarnanian_league">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/231467659"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/treviri">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/109390"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/paeonian_kingdom">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/491680"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/phrygia">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/907036116"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/thesprotians">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/531117"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/aeolis">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/550406"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/locri_opuntii">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/540918"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/belgae">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/79326"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/kushan_empire">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/59890"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/atropatene_kingdom">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/874597"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/mathura_city">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/59931"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/phocis">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/541048"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/epirote_league">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/721831063"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/etruria">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/413122"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/cherusci">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/98939"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/sapaean_thracian_kingdom">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/501601"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/macedonia_roman_province">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/981531"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/iceni">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/79523"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/parthian_empire">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/590282460"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/achaea">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/570028"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/bithynia">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/511189"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/cappadocia">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/628949"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://nomisma.org/id/elis_city">
+	<skos:exactMatch rdf:resource="https://pleiades.stoa.org/places/570220"/>
+</rdf:Description>
+
+</rdf:RDF>
