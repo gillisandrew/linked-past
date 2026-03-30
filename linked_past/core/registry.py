@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import shutil
 from pathlib import Path
 
 from pyoxigraph import Store
@@ -50,6 +51,12 @@ class DatasetRegistry:
         if is_initialized(store_path):
             logger.info("Dataset %s already initialized, opening read-only", name)
             self._stores[name] = get_read_only_store(store_path)
+            # Load cached metadata from registry.json
+            registry_path = self._data_dir / "registry.json"
+            if registry_path.exists():
+                data = json.loads(registry_path.read_text())
+                if name in data:
+                    self._metadata[name] = data[name]
             return
 
         dataset_dir.mkdir(parents=True, exist_ok=True)
@@ -60,7 +67,6 @@ class DatasetRegistry:
             triple_count = plugin.load(store, rdf_path)
         except Exception:
             del store
-            import shutil
             shutil.rmtree(store_path, ignore_errors=True)
             raise
         del store  # noqa: F821
