@@ -105,14 +105,15 @@ def test_validate_valid_query(integration_ctx):
     assert result.valid is True
 
 
-def test_validate_invalid_class(integration_ctx):
+def test_validate_unknown_class_is_warning(integration_ctx):
+    """Unknown classes are non-blocking warnings — query still validates."""
     plugin = integration_ctx.registry.get_plugin("dprr")
     sparql = (
         "PREFIX vocab: <http://romanrepublic.ac.uk/rdf/ontology#>\n"
         "SELECT ?p WHERE { ?p a vocab:FakeClass }"
     )
     result = plugin.validate(sparql)
-    assert result.valid is False
+    assert result.valid is True  # Warning only, not an error
 
 
 def test_execute_query_returns_results(integration_ctx):

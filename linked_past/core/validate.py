@@ -222,10 +222,11 @@ def validate_semantics(sparql: str, schema_dict: dict) -> list[str]:
             class_uri = str(o)
             if class_uri not in all_class_uris:
                 local_name = _local_name(class_uri)
-                valid_classes = sorted(_local_name(uri) for uri in all_class_uris)
-                errors.append(
-                    f"Unknown class '{local_name}'. Valid classes: {', '.join(valid_classes)}"
-                    + _suggest(local_name, valid_classes)
+                # Log as info, not error — datasets use many shared vocabularies
+                # (LAWD, FOAF, SKOS, etc.) whose classes aren't in the schema YAML
+                logger.info(
+                    "Class '%s' not in schema (may be from a shared vocabulary like LAWD, FOAF, SKOS)",
+                    local_name,
                 )
             if isinstance(s, Variable):
                 var_name = str(s)

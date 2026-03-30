@@ -52,7 +52,7 @@ def test_edh_plugin_validate_invalid():
         "PREFIX epi: <http://edh-www.adw.uni-heidelberg.de/lod/ontology#>\n"
         "SELECT ?i WHERE { ?i a epi:Tablet }",
     )
-    assert result.valid is False
+    assert result.valid is True  # Unknown classes are non-blocking warnings
 
 
 def test_edh_plugin_load(tmp_path):

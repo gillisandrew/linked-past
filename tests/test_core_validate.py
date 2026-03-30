@@ -82,11 +82,12 @@ def test_validate_semantics_valid():
     assert errors == []
 
 
-def test_validate_semantics_unknown_class():
+def test_validate_semantics_unknown_class_is_warning_not_error():
+    """Unknown classes are warnings (logged), not errors — datasets use shared vocabularies."""
     sd = build_schema_dict(SCHEMAS, PREFIXES)
     sparql = "PREFIX ex: <http://example.org/>\nSELECT ?w WHERE { ?w a ex:Gadget }"
     errors = validate_semantics(sparql, sd)
-    assert any("Unknown class" in e for e in errors)
+    assert errors == []  # No errors — unknown classes are only logged as info
 
 
 def test_validate_semantics_unknown_predicate_is_warning_not_error():
@@ -127,13 +128,17 @@ def test_validate_and_execute_parse_error(tmp_path):
     assert len(result.errors) > 0
 
 
-def test_validate_and_execute_semantic_error(tmp_path):
+def test_validate_and_execute_unknown_class_still_executes(tmp_path):
+    """Unknown classes are warnings — query still executes (returns empty results)."""
     store_path = tmp_path / "store"
     store = create_store(store_path)
+    ttl = tmp_path / "data.ttl"
+    ttl.write_text(SAMPLE_TURTLE)
+    load_rdf(store, ttl)
     sd = build_schema_dict(SCHEMAS, PREFIXES)
     result = validate_and_execute(
         "PREFIX ex: <http://example.org/>\nSELECT ?w WHERE { ?w a ex:Gadget }",
         store, sd, PREFIXES,
     )
-    assert result.success is False
-    assert any("Unknown class" in e for e in result.errors)
+    assert result.success is True
+    assert result.rows == []  # No Gadgets exist, but query ran
