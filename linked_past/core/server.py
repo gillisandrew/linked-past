@@ -98,6 +98,34 @@ def build_app_context(*, eager: bool = False) -> AppContext:
     return AppContext(registry=registry, linkage=linkage, embeddings=embeddings)
 
 
+def _collect_see_also(
+    rows: list[dict[str, str]],
+    linkage,
+    max_uris: int = 50,
+) -> str:
+    if not linkage:
+        return ""
+    uris: set[str] = set()
+    for row in rows:
+        for value in row.values():
+            if value and isinstance(value, str) and value.startswith("http"):
+                uris.add(value)
+            if len(uris) >= max_uris:
+                break
+    see_also_lines: list[str] = []
+    seen_targets: set[str] = set()
+    for uri in uris:
+        for link in linkage.find_links(uri):
+            target = link["target"]
+            if target not in seen_targets:
+                seen_targets.add(target)
+                confidence = link.get("confidence", "")
+                see_also_lines.append(f"  {uri} → {target} ({confidence})")
+    if not see_also_lines:
+        return ""
+    return "\n─── See also ───\n" + "\n".join(see_also_lines) + "\nUse `find_links(uri)` for full provenance.\n"
+
+
 def create_mcp_server() -> FastMCP:
 
     @asynccontextmanager
@@ -225,6 +253,7 @@ def create_mcp_server() -> FastMCP:
             return f"ERROR:\n{error_list}"
 
         table = toons.dumps(result.rows)
+        see_also = _collect_see_also(result.rows, app.linkage)
         meta = app.registry.get_metadata(dataset)
         version = meta.get("version", "unknown")
         footer = (
@@ -233,7 +262,7 @@ def create_mcp_server() -> FastMCP:
             f"      Cite as: {plugin.citation}\n"
             f"Tool: linked-past, https://github.com/gillisandrew/dprr-tool"
         )
-        return table + footer
+        return table + see_also + footer
 
     @mcp.tool()
     def search_entities(ctx: Context, query_text: str, dataset: str | None = None) -> str:
