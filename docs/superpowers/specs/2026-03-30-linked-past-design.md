@@ -17,7 +17,7 @@ Make linked ancient world datasets accessible to AI agents so scholars can give 
 - Five dataset plugins: DPRR, POMS, Pleiades, PeriodO, Nomisma
 - Linkage graph with provenance for cross-dataset references
 - Embedding-assisted retrieval for query routing and example selection
-- Eight discovery-oriented MCP tools
+- Nine discovery-oriented MCP tools
 - Pinned snapshots with manual update mechanism
 - Layered citation model (concise by default, full provenance on demand)
 
@@ -257,7 +257,20 @@ find_links(uri: str) → str
 - Groups by confidence: confirmed, probable, candidate
 - Also returns: "No confirmed links found. The following datasets may have relevant entities: ..." when the linkage graph has gaps
 
-### 8. `update_dataset`
+### 8. `search_entities`
+
+```
+search_entities(query: str, dataset?: str) → str
+```
+
+- Searches entity labels across all loaded datasets (or a specific one)
+- Uses `FILTER(CONTAINS(LCASE(?label), LCASE(?query)))` on `rdfs:label`, `skos:prefLabel`, and dataset-specific name predicates (e.g., `vocab:hasPersonName` for DPRR)
+- Returns candidate entities with: URI, label, dataset, entity type (class), and a snippet of key properties
+- Groups results by dataset
+- Designed for entity disambiguation: "Brutus" returns all matching persons across DPRR, Nomisma, etc. with enough context to distinguish them
+- The LLM calling this tool acts as the NER layer (extracting entity mentions from natural language); this tool handles resolution to specific URIs
+
+### 9. `update_dataset`
 
 ```
 update_dataset(dataset?: str) → str

@@ -12,7 +12,7 @@
 - Plan 2: Additional dataset plugins (Pleiades, PeriodO, Nomisma, POMS)
 - Plan 3: Linkage graph, embeddings, advanced tools
 
-**Deferred tools (Plan 3):** `explore_entity`, `get_provenance`, `find_links`, `update_dataset`
+**Deferred tools (Plan 3):** `explore_entity`, `get_provenance`, `find_links`, `search_entities`, `update_dataset`
 
 ---
 
