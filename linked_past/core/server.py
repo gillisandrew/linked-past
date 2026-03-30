@@ -529,18 +529,38 @@ def create_mcp_server() -> FastMCP:
 
     @mcp.tool()
     def update_dataset(ctx: Context, dataset: str | None = None) -> str:
-        """Check for available updates to dataset(s). Reports current version and whether newer data exists."""
+        """Check status, initialize unloaded datasets, or check for updates. If a dataset is registered but not yet initialized (no local data), this will download and load it."""
         app: AppContext = ctx.request_context.lifespan_context
         registry = app.registry
 
         datasets_to_check = [dataset] if dataset else registry.list_datasets()
-        lines = ["# Dataset Update Status\n"]
+        lines = ["# Dataset Status\n"]
 
         for ds_name in datasets_to_check:
             try:
                 plugin = registry.get_plugin(ds_name)
             except KeyError:
                 lines.append(f"## {ds_name}\n- **Error:** Unknown dataset\n")
+                continue
+
+            # Check if initialized
+            try:
+                registry.get_store(ds_name)
+                initialized = True
+            except KeyError:
+                initialized = False
+
+            if not initialized:
+                lines.append(f"## {plugin.display_name}\n")
+                lines.append(f"- **Status:** Not initialized — downloading from OCI...")
+                try:
+                    registry.initialize_dataset(ds_name)
+                    meta = registry.get_metadata(ds_name)
+                    lines.append(f"- **Initialized:** {meta.get('triple_count', '?')} triples loaded")
+                    lines.append(f"- **Version:** {meta.get('version', 'unknown')}")
+                except Exception as e:
+                    lines.append(f"- **Error:** {e}")
+                lines.append("")
                 continue
 
             meta = registry.get_metadata(ds_name)
