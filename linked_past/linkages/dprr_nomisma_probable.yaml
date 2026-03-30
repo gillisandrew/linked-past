@@ -19,3 +19,13 @@ links:
   - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3642"
     target: "http://nomisma.org/id/t_vettivs_sabinvs_rrc"
     note: "DPRR: P. Vettius Sabinus 99 BC; Nomisma: T. Vettius Sabinus 70 BC; praenomen + date discrepancy"
+  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/2543"
+    target: "http://nomisma.org/id/cn_piso_frvgi_rrc"
+    note: "DPRR: 49 BC; Nomisma: 43-31 BC; ~6yr date discrepancy"
+  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/2713"
+    target: "http://nomisma.org/id/c_norbanvs_rrc"
+    note: "DPRR: C. Norbanus Flaccus 43 BC; Nomisma covers 83+43 BC (may conflate father/son)"
+  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/2341"
+    target: "http://nomisma.org/id/m_lepidvs_rrc"
+    confidence: probable
+    note: "DPRR: M. Aemilius Lepidus 43 BC; Nomisma covers 61+42 BC (may conflate career phases)"
