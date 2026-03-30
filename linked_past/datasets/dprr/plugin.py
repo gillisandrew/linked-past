@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import logging
 import os
-import sys
 import tarfile
 import urllib.request
 from datetime import datetime, timezone
@@ -23,7 +22,7 @@ from linked_past.core.context import (
     render_tips,
 )
 from linked_past.core.validate import build_schema_dict, extract_query_classes, validate_semantics
-from linked_past.datasets.base import DatasetPlugin, ValidationResult, VersionInfo
+from linked_past.datasets.base import DatasetPlugin, UpdateInfo, ValidationResult, VersionInfo
 
 logger = logging.getLogger(__name__)
 
@@ -60,7 +59,6 @@ class DPRRPlugin(DatasetPlugin):
     def fetch(self, data_dir: Path) -> Path:
         url = os.environ.get("DPRR_DATA_URL", _DEFAULT_DATA_URL)
         logger.info("Downloading DPRR data from %s", url)
-        print(f"Downloading DPRR data from {url} ...", file=sys.stderr)
 
         try:
             tmp_path, _ = urllib.request.urlretrieve(url)
@@ -77,7 +75,7 @@ class DPRRPlugin(DatasetPlugin):
             Path(tmp_path).unlink(missing_ok=True)
 
         result = data_dir / "dprr.ttl"
-        print(f"Extracted dprr.ttl to {result}", file=sys.stderr)
+        logger.info("Extracted dprr.ttl to %s", result)
         return result
 
     # load() uses default implementation from ABC (Turtle format)
@@ -130,5 +128,5 @@ class DPRRPlugin(DatasetPlugin):
             rdf_format="turtle",
         )
 
-    def check_for_updates(self):
+    def check_for_updates(self) -> UpdateInfo | None:
         return None

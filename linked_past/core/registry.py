@@ -56,9 +56,15 @@ class DatasetRegistry:
         rdf_path = plugin.fetch(dataset_dir)
 
         store = create_store(store_path)
-        triple_count = plugin.load(store, rdf_path)
+        try:
+            triple_count = plugin.load(store, rdf_path)
+        except Exception:
+            del store
+            import shutil
+            shutil.rmtree(store_path, ignore_errors=True)
+            raise
+        del store  # noqa: F821
         logger.info("Loaded %d triples for dataset %s", triple_count, name)
-        del store
 
         self._stores[name] = get_read_only_store(store_path)
         self._save_registry(name, plugin, dataset_dir, triple_count)
@@ -68,23 +74,26 @@ class DatasetRegistry:
             self.initialize_dataset(name)
 
     def _save_registry(self, name: str, plugin: DatasetPlugin, dataset_dir: Path, triple_count: int) -> None:
+        version_info = plugin.get_version_info(dataset_dir)
+        if not version_info:
+            logger.warning("No version info for %s; registry not updated", name)
+            return
+
         registry_path = self._data_dir / "registry.json"
         if registry_path.exists():
             data = json.loads(registry_path.read_text())
         else:
             data = {}
 
-        version_info = plugin.get_version_info(dataset_dir)
-        if version_info:
-            entry = {
-                "version": version_info.version,
-                "source_url": version_info.source_url,
-                "fetched_at": version_info.fetched_at,
-                "triple_count": triple_count,
-                "rdf_format": version_info.rdf_format,
-                "license": plugin.license,
-            }
-            data[name] = entry
-            self._metadata[name] = entry
+        entry = {
+            "version": version_info.version,
+            "source_url": version_info.source_url,
+            "fetched_at": version_info.fetched_at,
+            "triple_count": triple_count,
+            "rdf_format": version_info.rdf_format,
+            "license": plugin.license,
+        }
+        data[name] = entry
+        self._metadata[name] = entry
 
         registry_path.write_text(json.dumps(data, indent=2))
