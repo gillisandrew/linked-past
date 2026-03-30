@@ -14,6 +14,7 @@ from pathlib import Path
 import toons
 from mcp.server.fastmcp import Context, FastMCP
 
+from linked_past.core.embeddings import EmbeddingIndex
 from linked_past.core.linkage import LinkageGraph
 from linked_past.core.registry import DatasetRegistry
 from linked_past.core.store import get_data_dir
@@ -32,6 +33,7 @@ QUERY_TIMEOUT = int(os.environ.get("LINKED_PAST_QUERY_TIMEOUT", os.environ.get("
 class AppContext:
     registry: DatasetRegistry
     linkage: LinkageGraph | None = None
+    embeddings: EmbeddingIndex | None = None
 
 
 def build_app_context() -> AppContext:
@@ -51,7 +53,34 @@ def build_app_context() -> AppContext:
         for yaml_file in sorted(linkages_dir.glob("*.yaml")):
             linkage.load_yaml(yaml_file)
 
-    return AppContext(registry=registry, linkage=linkage)
+    # Build embedding index (graceful — don't crash if fastembed fails)
+    embeddings = None
+    try:
+        embeddings_path = data_dir / "embeddings.db"
+        embeddings = EmbeddingIndex(embeddings_path)
+
+        # Index all plugin context
+        for name in registry.list_datasets():
+            plugin = registry.get_plugin(name)
+            # Dataset description
+            embeddings.add(name, "dataset", f"{plugin.display_name}: {plugin.description}")
+            # Examples, tips, schemas from plugin internals
+            if hasattr(plugin, "_examples"):
+                for ex in plugin._examples:
+                    embeddings.add(name, "example", f"{ex['question']}\n{ex['sparql']}")
+            if hasattr(plugin, "_tips"):
+                for tip in plugin._tips:
+                    embeddings.add(name, "tip", f"{tip['title']}: {tip['body']}")
+            if hasattr(plugin, "_schemas"):
+                for cls_name, cls_data in plugin._schemas.items():
+                    embeddings.add(name, "schema", f"{cls_name}: {cls_data.get('comment', '')}")
+
+        embeddings.build()
+    except Exception as e:
+        logger.warning("Failed to build embedding index: %s", e)
+        embeddings = None
+
+    return AppContext(registry=registry, linkage=linkage, embeddings=embeddings)
 
 
 def create_mcp_server() -> FastMCP:
@@ -76,13 +105,22 @@ def create_mcp_server() -> FastMCP:
 
     @mcp.tool()
     def discover_datasets(ctx: Context, topic: str | None = None) -> str:
-        """Discover available datasets. Without arguments, lists all loaded datasets with metadata. With a topic, filters by relevance."""
+        """Discover available datasets. Without arguments, lists all loaded datasets with metadata. With a topic, uses semantic search to find relevant datasets."""
         app: AppContext = ctx.request_context.lifespan_context
         registry = app.registry
+
+        if topic and app.embeddings:
+            results = app.embeddings.search(topic, k=10)
+            relevant_datasets = {r["dataset"] for r in results}
+        else:
+            relevant_datasets = None
+
         lines = ["# Available Datasets\n"]
         for name in registry.list_datasets():
+            if relevant_datasets is not None and name not in relevant_datasets:
+                continue
             plugin = registry.get_plugin(name)
-            if topic:
+            if topic and relevant_datasets is None:
                 searchable = [plugin.description, plugin.display_name,
                               plugin.spatial_coverage, plugin.time_coverage]
                 if not any(topic.lower() in field.lower() for field in searchable):
