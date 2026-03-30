@@ -1,7 +1,7 @@
 metadata:
   source_dataset: dprr
   target_dataset: pleiades
-  relationship: "owl:sameAs"
+  relationship: "skos:closeMatch"
   confidence: confirmed
   method: manual_alignment
   basis: "Barrington Atlas of the Greek and Roman World (Talbert 2000)"

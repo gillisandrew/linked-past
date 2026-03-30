@@ -107,6 +107,54 @@ def build_app_context(*, eager: bool = False) -> AppContext:
     return AppContext(registry=registry, linkage=linkage, embeddings=embeddings)
 
 
+# SKOS/OWL predicates that indicate cross-dataset references
+_XREF_PREDICATES = [
+    "http://www.w3.org/2004/02/skos/core#closeMatch",
+    "http://www.w3.org/2004/02/skos/core#exactMatch",
+    "http://www.w3.org/2004/02/skos/core#sameAs",
+    "http://www.w3.org/2002/07/owl#sameAs",
+]
+
+
+def _find_store_xrefs(uri: str, registry: DatasetRegistry) -> list[dict]:
+    """Find cross-references for a URI by querying dataset stores for SKOS/OWL link predicates."""
+    ds_name = registry.dataset_for_uri(uri)
+    if not ds_name:
+        return []
+    try:
+        store = registry.get_store(ds_name)
+    except KeyError:
+        return []
+
+    pred_values = " ".join(f"<{p}>" for p in _XREF_PREDICATES)
+    sparql = f"""
+    SELECT ?pred ?target WHERE {{
+        VALUES ?pred {{ {pred_values} }}
+        {{ <{uri}> ?pred ?target }} UNION {{ ?target ?pred <{uri}> }}
+    }}
+    """
+    results = []
+    try:
+        from linked_past.core.store import execute_query
+        rows = execute_query(store, sparql)
+        for row in rows:
+            target = row.get("target", "")
+            pred = row.get("pred", "")
+            if target and target != uri:
+                # Shorten the predicate
+                pred_short = pred.rsplit("/", 1)[-1].rsplit("#", 1)[-1]
+                results.append({
+                    "target": target,
+                    "relationship": pred_short,
+                    "confidence": "in-data",
+                    "basis": f"Declared in {ds_name} dataset",
+                    "source": ds_name,
+                })
+    except Exception as e:
+        logger.warning("Failed to query store xrefs for %s: %s", uri, e)
+    return results
+
+
 def _collect_see_also(
     rows: list[dict[str, str]],
     linkage,
@@ -383,16 +431,23 @@ def create_mcp_server() -> FastMCP:
         else:
             lines.append("**Dataset:** Unknown (URI namespace not recognized)\n")
 
-        if app.linkage:
-            links = app.linkage.find_links(uri)
-            if links:
-                lines.append("## Cross-Dataset Links\n")
-                for link in links:
-                    lines.append(
-                        f"- **{link['relationship']}** → `{link['target']}`\n"
-                        f"  Confidence: {link['confidence']} | {link['basis']}"
-                    )
-                lines.append("")
+        # Cross-dataset links: curated linkage graph + in-data SKOS/OWL xrefs
+        linkage_links = app.linkage.find_links(uri) if app.linkage else []
+        store_links = _find_store_xrefs(uri, app.registry)
+        seen = set()
+        xrefs = []
+        for link in linkage_links + store_links:
+            if link["target"] not in seen:
+                seen.add(link["target"])
+                xrefs.append(link)
+        if xrefs:
+            lines.append("## Cross-Dataset Links\n")
+            for link in xrefs:
+                lines.append(
+                    f"- **{link['relationship']}** → `{link['target']}`\n"
+                    f"  {link.get('confidence', '')} | {link['basis']}"
+                )
+            lines.append("")
 
         lines.append("## Suggested Next Steps\n")
         if ds_name == "dprr":
@@ -409,35 +464,47 @@ def create_mcp_server() -> FastMCP:
 
     @mcp.tool()
     def find_links(ctx: Context, uri: str) -> str:
-        """Find all cross-dataset links for an entity from the linkage graph. Each link includes target URI, relationship type, confidence level, and scholarly basis."""
+        """Find all cross-dataset links for an entity. Checks both the curated linkage graph AND the dataset stores for SKOS/OWL cross-reference predicates (closeMatch, exactMatch, sameAs)."""
         app: AppContext = ctx.request_context.lifespan_context
 
-        if not app.linkage:
-            return "Linkage graph not initialized."
+        # Collect from curated linkage graph
+        linkage_links = app.linkage.find_links(uri) if app.linkage else []
 
-        links = app.linkage.find_links(uri)
-        if not links:
+        # Collect from dataset stores (SKOS/OWL predicates already in the RDF)
+        store_links = _find_store_xrefs(uri, app.registry)
+
+        # Deduplicate by target URI
+        seen_targets = set()
+        all_links = []
+        for link in linkage_links + store_links:
+            if link["target"] not in seen_targets:
+                seen_targets.add(link["target"])
+                all_links.append(link)
+
+        if not all_links:
             ds_name = app.registry.dataset_for_uri(uri)
             other_datasets = [n for n in app.registry.list_datasets() if n != ds_name]
             return (
-                f"No confirmed links found for `{uri}`.\n\n"
+                f"No links found for `{uri}`.\n\n"
                 f"Try searching other datasets: {', '.join(other_datasets)}\n"
                 f"Use `search_entities()` to find potential matches."
             )
 
+        # Group by confidence/source
         by_confidence: dict[str, list] = {}
-        for link in links:
+        for link in all_links:
             by_confidence.setdefault(link["confidence"], []).append(link)
 
         lines = [f"# Links for `{uri}`\n"]
-        for level in ["confirmed", "probable", "candidate"]:
+        for level in ["confirmed", "probable", "in-data", "candidate"]:
             group = by_confidence.get(level, [])
             if group:
-                lines.append(f"## {level.title()} ({len(group)})\n")
+                label = "In Dataset" if level == "in-data" else level.title()
+                lines.append(f"## {label} ({len(group)})\n")
                 for link in group:
                     lines.append(
                         f"- **{link['relationship']}** → `{link['target']}`\n"
-                        f"  Basis: {link['basis']}"
+                        f"  {link['basis']}"
                     )
                 lines.append("")
 
