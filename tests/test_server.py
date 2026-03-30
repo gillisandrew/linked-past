@@ -23,6 +23,10 @@ def test_build_app_context(tmp_path, monkeypatch):
     dprr_dir = tmp_path / "dprr"
     dprr_dir.mkdir()
     (dprr_dir / "dprr.ttl").write_text(SAMPLE_TURTLE)
+    monkeypatch.setattr(
+        "linked_past.datasets.dprr.plugin.DPRRPlugin.fetch",
+        lambda self, data_dir: data_dir / "dprr.ttl",
+    )
     ctx = build_app_context()
     assert "dprr" in ctx.registry.list_datasets()
     store = ctx.registry.get_store("dprr")
