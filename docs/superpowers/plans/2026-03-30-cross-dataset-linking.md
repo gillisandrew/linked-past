@@ -21,17 +21,36 @@
 | `tests/test_see_also.py` | Create | Unit tests for `_collect_see_also` helper |
 | `tests/test_linked_past_integration.py` | Modify | Integration test: query response includes "See also" |
 
+## Deferred Links
+
+The spec identifies 10 candidate links. This plan includes the 3 whose
+Nomisma URIs were verified during investigation. The remaining 7 require
+URI verification via the enrichment workflow described in the spec and
+should be added in a follow-up session:
+
+**Confirmed (deferred — need URI verification):**
+- Person/1740 (C. Annius) → `nomisma:c_annivs_rrc`
+- Person/2082 (Cn. Lentulus Marcellinus) → `nomisma:cn_len_rrc`
+- Person/1957 (C. Iulius Caesar) → `nomisma:julius_caesar`
+
+**Probable (deferred — need URI verification):**
+- Person/2253 (Cn. Pompeius Jr.) → `nomisma:cn_magnvs_imp_rrc`
+- Person/2254 (Sex. Pompeius Pius) → `nomisma:sex_magnvs_rrc`
+- Person/2613 (M. Minatius Sabinus) → `nomisma:m_minat_sabin_rrc`
+- Person/2623 (M. Publicius) → `nomisma:m_poblici_rrc`
+
 ---
 
-### Task 1: Add Confirmed Person Links YAML
+### Task 1: Add YAML Link Files and Linkage Tests
 
 **Files:**
 - Create: `linked_past/linkages/dprr_nomisma_confirmed.yaml`
-- Test: `tests/test_linkage.py`
+- Create: `linked_past/linkages/dprr_nomisma_probable.yaml`
+- Modify: `tests/test_linkage.py`
 
-- [ ] **Step 1: Write the failing test**
+- [ ] **Step 1: Write the linkage tests**
 
-Add to `tests/test_linkage.py`:
+Add to `tests/test_linkage.py`, after the existing `SAMPLE_TEMPORAL` dict:
 
 ```python
 SAMPLE_PERSON_LINK = {
@@ -94,13 +113,15 @@ def test_person_link_provenance():
     assert prov["note"] == "RRC moneyer 71, 49 BC; DPRR proconsul Hispania 77-49 BC"
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [ ] **Step 2: Run new tests to confirm they pass**
+
+These use in-memory data, validating that `LinkageGraph` handles
+`skos:closeMatch`. It should work — `skos:closeMatch` is already in
+`_RELATIONSHIP_MAP` at `linked_past/core/linkage.py:19`.
 
 Run: `uv run pytest tests/test_linkage.py::test_load_person_links tests/test_linkage.py::test_person_link_reverse_lookup tests/test_linkage.py::test_person_link_provenance -v`
 
-Expected: PASS (these use in-memory data, no YAML file needed yet — they validate the linkage format works with `skos:closeMatch`).
-
-If they pass, the existing `LinkageGraph` already handles `skos:closeMatch` — proceed to step 3. If they fail, check that `skos:closeMatch` is in the `_RELATIONSHIP_MAP` in `linkage.py`.
+Expected: All 3 PASS.
 
 - [ ] **Step 3: Create the confirmed links YAML file**
 
@@ -131,53 +152,7 @@ links:
     note: "RRC 428; DPRR quaestor Hispania Ulterior 55-47 BC"
 ```
 
-**Note:** Only include links where both URIs are verified. The URIs above
-(`pompey`, `q_c_m_p_i_rrc`, `q_cassivs_rrc`) were confirmed to exist in the
-Nomisma store during the investigation. Additional confirmed links (C. Annius,
-Lentulus Marcellinus, Caesar) should be added after verifying their Nomisma
-URIs exist — run `search_entities(name, "nomisma")` for each candidate and
-add to this file only if the URI resolves.
-
-- [ ] **Step 4: Write a test that loads the YAML file from disk**
-
-Add to `tests/test_linkage.py`:
-
-```python
-from pathlib import Path
-
-def test_load_dprr_nomisma_yaml():
-    yaml_path = Path(__file__).parent.parent / "linked_past" / "linkages" / "dprr_nomisma_confirmed.yaml"
-    if not yaml_path.exists():
-        pytest.skip("YAML file not yet created")
-    g = LinkageGraph()
-    g.load_yaml(yaml_path)
-    results = g.find_links("http://romanrepublic.ac.uk/rdf/entity/Person/1976")
-    assert len(results) == 1
-    assert results[0]["target"] == "http://nomisma.org/id/pompey"
-```
-
-- [ ] **Step 5: Run all linkage tests**
-
-Run: `uv run pytest tests/test_linkage.py -v`
-
-Expected: All pass.
-
-- [ ] **Step 6: Commit**
-
-```bash
-git add linked_past/linkages/dprr_nomisma_confirmed.yaml tests/test_linkage.py
-git commit -m "feat: add confirmed DPRR-Nomisma person cross-links"
-```
-
----
-
-### Task 2: Add Probable Person Links YAML
-
-**Files:**
-- Create: `linked_past/linkages/dprr_nomisma_probable.yaml`
-- Test: `tests/test_linkage.py`
-
-- [ ] **Step 1: Create the probable links YAML file**
+- [ ] **Step 4: Create the probable links YAML file (empty, ready for enrichment)**
 
 Create `linked_past/linkages/dprr_nomisma_probable.yaml`:
 
@@ -197,16 +172,26 @@ metadata:
 links: []
 ```
 
-Start with an empty links list. Probable links require URI verification
-against the Nomisma store before adding. Candidates identified in the gap
-analysis (Cn. Pompeius Jr., Sex. Pompeius Pius, M. Minatius Sabinus,
-M. Publicius) should be verified in the enrichment workflow and added here.
+- [ ] **Step 5: Write tests that load the YAML files from disk**
 
-- [ ] **Step 2: Write a test that loads both YAML files together**
-
-Add to `tests/test_linkage.py`:
+Add to `tests/test_linkage.py` (add the `Path` import at the top of the file
+alongside the existing `pytest` import):
 
 ```python
+from pathlib import Path
+
+
+def test_load_dprr_nomisma_yaml():
+    yaml_path = Path(__file__).parent.parent / "linked_past" / "linkages" / "dprr_nomisma_confirmed.yaml"
+    if not yaml_path.exists():
+        pytest.skip("YAML file not yet created")
+    g = LinkageGraph()
+    g.load_yaml(yaml_path)
+    results = g.find_links("http://romanrepublic.ac.uk/rdf/entity/Person/1976")
+    assert len(results) == 1
+    assert results[0]["target"] == "http://nomisma.org/id/pompey"
+
+
 def test_load_both_nomisma_yamls():
     base = Path(__file__).parent.parent / "linked_past" / "linkages"
     confirmed = base / "dprr_nomisma_confirmed.yaml"
@@ -216,28 +201,28 @@ def test_load_both_nomisma_yamls():
     g = LinkageGraph()
     g.load_yaml(confirmed)
     g.load_yaml(probable)
-    # Confirmed links still work
+    # Confirmed links still work after loading empty probable file
     results = g.find_links("http://romanrepublic.ac.uk/rdf/entity/Person/1976")
     assert len(results) == 1
     assert results[0]["confidence"] == "confirmed"
 ```
 
-- [ ] **Step 3: Run all linkage tests**
+- [ ] **Step 6: Run all linkage tests and lint**
 
-Run: `uv run pytest tests/test_linkage.py -v`
+Run: `uv run pytest tests/test_linkage.py -v && uv run ruff check tests/test_linkage.py`
 
-Expected: All pass.
+Expected: All pass, no lint errors.
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 7: Commit**
 
 ```bash
-git add linked_past/linkages/dprr_nomisma_probable.yaml tests/test_linkage.py
-git commit -m "feat: add probable DPRR-Nomisma person links YAML (empty, ready for enrichment)"
+git add linked_past/linkages/dprr_nomisma_confirmed.yaml linked_past/linkages/dprr_nomisma_probable.yaml tests/test_linkage.py
+git commit -m "feat: add DPRR-Nomisma person cross-link YAML files with tests"
 ```
 
 ---
 
-### Task 3: Implement `_collect_see_also` Helper
+### Task 2: Implement `_collect_see_also` Helper
 
 **Files:**
 - Create: `tests/test_see_also.py`
@@ -357,14 +342,34 @@ def test_see_also_respects_max_uris():
     from linked_past.core.server import _collect_see_also
 
     linkage = _make_linkage()
-    # Generate rows with many distinct URIs
-    rows = [{"uri": f"http://example.com/{i}"} for i in range(200)]
-    # Add one that actually has a link
-    rows.append({"uri": "http://romanrepublic.ac.uk/rdf/entity/Person/1976"})
+    # Put the linked URI first, then pad with unlinked URIs
+    rows = [{"uri": "http://romanrepublic.ac.uk/rdf/entity/Person/1976"}]
+    rows.extend({"uri": f"http://example.com/{i}"} for i in range(200))
+    # With max_uris=50 the linked URI (row 0) is within range
     result = _collect_see_also(rows, linkage, max_uris=50)
-    # Should still work — either finds the link within 50 URIs or not,
-    # but should not error
-    assert isinstance(result, str)
+    assert "nomisma.org/id/pompey" in result
+
+    # Now put the linked URI beyond the cap
+    rows_late = [{"uri": f"http://example.com/{i}"} for i in range(200)]
+    rows_late.append({"uri": "http://romanrepublic.ac.uk/rdf/entity/Person/1976"})
+    result_late = _collect_see_also(rows_late, linkage, max_uris=50)
+    # Should NOT find the link — it's past the 50-URI cap
+    assert result_late == ""
+
+
+def test_see_also_skips_reverse_links():
+    """URIs that are link targets should not produce reverse 'see also' entries."""
+    from linked_past.core.server import _collect_see_also
+
+    linkage = _make_linkage()
+    # Query returns a Nomisma URI (which is a target in the linkage graph)
+    rows = [
+        {"authority": "http://nomisma.org/id/pompey", "label": "Pompey"},
+    ]
+    result = _collect_see_also(rows, linkage)
+    # Should not surface a reverse link back to the DPRR person —
+    # that would be confusing circular cross-referencing
+    assert result == ""
 ```
 
 - [ ] **Step 2: Run tests to verify they fail**
@@ -375,7 +380,8 @@ Expected: FAIL with `ImportError: cannot import name '_collect_see_also' from 'l
 
 - [ ] **Step 3: Implement `_collect_see_also`**
 
-Add to `linked_past/core/server.py`, before the `build_app` function (around line 30, after the imports):
+Add to `linked_past/core/server.py` at module level, after the `QUERY_TIMEOUT`
+line and before the `AppContext` dataclass (insert after line 31):
 
 ```python
 def _collect_see_also(
@@ -399,6 +405,10 @@ def _collect_see_also(
     seen_targets: set[str] = set()
     for uri in uris:
         for link in linkage.find_links(uri):
+            # Only surface forward links — reverse links (where our URI is the
+            # target) would create confusing circular cross-references.
+            if link.get("direction") != "forward":
+                continue
             target = link["target"]
             if target not in seen_targets:
                 seen_targets.add(target)
@@ -411,15 +421,21 @@ def _collect_see_also(
         return ""
 
     header = "\n\n\u2500\u2500\u2500 See also \u2500\u2500\u2500\n"
-    hint = "\nUse `find_links(uri)` for full provenance."
+    hint = "\nUse `find_links(uri)` for full provenance.\n"
     return header + "\n".join(see_also_lines) + hint
 ```
 
+Key differences from the spec version:
+- `isinstance(value, str)` guard to handle non-string result values.
+- `max_uris` break is at the outer loop level (spec had it in the inner loop).
+- Filters to `direction == "forward"` only, skipping reverse links.
+- Trailing `\n` on `hint` so there's a blank line before the Sources footer.
+
 - [ ] **Step 4: Run tests to verify they pass**
 
-Run: `uv run pytest tests/test_see_also.py -v`
+Run: `uv run pytest tests/test_see_also.py -v && uv run ruff check tests/test_see_also.py linked_past/core/server.py`
 
-Expected: All 7 tests PASS.
+Expected: All 9 tests PASS, no lint errors.
 
 - [ ] **Step 5: Commit**
 
@@ -430,13 +446,13 @@ git commit -m "feat: add _collect_see_also helper for cross-dataset hints"
 
 ---
 
-### Task 4: Wire `_collect_see_also` into the Query Tool
+### Task 3: Wire `_collect_see_also` into the Query Tool
 
 **Files:**
-- Modify: `linked_past/core/server.py:227-236`
+- Modify: `linked_past/core/server.py`
 - Modify: `tests/test_linked_past_integration.py`
 
-- [ ] **Step 1: Write the failing integration test**
+- [ ] **Step 1: Write the integration tests**
 
 Add to `tests/test_linked_past_integration.py`:
 
@@ -444,26 +460,25 @@ Add to `tests/test_linked_past_integration.py`:
 def test_query_response_includes_see_also(integration_ctx):
     """Query returning a person URI with a known cross-link includes See also."""
     # Load a person link into the linkage graph
-    if integration_ctx.linkage:
-        integration_ctx.linkage.load_data({
-            "metadata": {
-                "source_dataset": "dprr",
-                "target_dataset": "nomisma",
-                "relationship": "skos:closeMatch",
-                "confidence": "confirmed",
-                "method": "manual_alignment",
-                "basis": "Test",
-                "author": "test",
-                "date": "2026-03-30",
+    integration_ctx.linkage.load_data({
+        "metadata": {
+            "source_dataset": "dprr",
+            "target_dataset": "nomisma",
+            "relationship": "skos:closeMatch",
+            "confidence": "confirmed",
+            "method": "manual_alignment",
+            "basis": "Test",
+            "author": "test",
+            "date": "2026-03-30",
+        },
+        "links": [
+            {
+                "source": "http://romanrepublic.ac.uk/rdf/entity/Person/1",
+                "target": "http://nomisma.org/id/test_person",
+                "note": "Test link",
             },
-            "links": [
-                {
-                    "source": "http://romanrepublic.ac.uk/rdf/entity/Person/1",
-                    "target": "http://nomisma.org/id/test_person",
-                    "note": "Test link",
-                },
-            ],
-        })
+        ],
+    })
 
     store = integration_ctx.registry.get_store("dprr")
     plugin = integration_ctx.registry.get_plugin("dprr")
@@ -474,11 +489,8 @@ def test_query_response_includes_see_also(integration_ctx):
     )
     assert result.success is True
 
-    # Simulate what the query tool does
-    import toons
     from linked_past.core.server import _collect_see_also
 
-    table = toons.dumps(result.rows)
     see_also = _collect_see_also(result.rows, integration_ctx.linkage)
     assert "See also" in see_also
     assert "nomisma.org/id/test_person" in see_also
@@ -502,30 +514,17 @@ def test_query_response_no_see_also_when_no_links(integration_ctx):
     assert see_also == ""
 ```
 
-- [ ] **Step 2: Run the integration tests to verify the first one fails**
+- [ ] **Step 2: Wire `_collect_see_also` into the `query` tool**
 
-Run: `uv run pytest tests/test_linked_past_integration.py::test_query_response_includes_see_also tests/test_linked_past_integration.py::test_query_response_no_see_also_when_no_links -v`
-
-Expected: First test may pass already (since `_collect_see_also` exists from Task 3). If so, proceed — this test validates the integration, not the helper.
-
-- [ ] **Step 3: Wire `_collect_see_also` into the `query` tool**
-
-In `linked_past/core/server.py`, modify the `query` tool function. Replace lines 227-236:
+In `linked_past/core/server.py`, find the `query` tool's return block. Match
+this exact pattern (do NOT rely on line numbers — Task 2 shifted them):
 
 ```python
         table = toons.dumps(result.rows)
         meta = app.registry.get_metadata(dataset)
-        version = meta.get("version", "unknown")
-        footer = (
-            f"\n\n─── Sources ───\n"
-            f"Data: {plugin.display_name} v{version}. {plugin.license}.\n"
-            f"      Cite as: {plugin.citation}\n"
-            f"Tool: linked-past, https://github.com/gillisandrew/dprr-tool"
-        )
-        return table + footer
 ```
 
-With:
+Replace the block from `table = toons.dumps(...)` through `return table + footer` with:
 
 ```python
         table = toons.dumps(result.rows)
@@ -541,21 +540,18 @@ With:
         return table + see_also + footer
 ```
 
-The only change is adding the `see_also = ...` line and inserting `see_also +` in the return.
+The only changes are: adding the `see_also = ...` line and `see_also +` in
+the return statement.
 
-- [ ] **Step 4: Run all tests**
+- [ ] **Step 3: Run all tests and lint**
 
-Run: `uv run pytest tests/test_linked_past_integration.py tests/test_see_also.py tests/test_linkage.py -v`
+Run: `uv run pytest -v && uv run ruff check .`
 
-Expected: All pass.
+Expected: All tests pass, no lint errors. The existing
+`test_query_result_includes_citation` test should still pass because the
+Sources footer is unchanged.
 
-- [ ] **Step 5: Run the full test suite to check for regressions**
-
-Run: `uv run pytest -v`
-
-Expected: All pass. The existing `test_query_result_includes_citation` test should still pass because the Sources footer is unchanged.
-
-- [ ] **Step 6: Commit**
+- [ ] **Step 4: Commit**
 
 ```bash
 git add linked_past/core/server.py tests/test_linked_past_integration.py
@@ -564,33 +560,39 @@ git commit -m "feat: surface cross-dataset links as 'See also' in query response
 
 ---
 
-### Task 5: Lint and Final Verification
+### Task 4: Final Verification
 
 **Files:**
 - All modified files
 
-- [ ] **Step 1: Run linter**
+- [ ] **Step 1: Run full test suite with lint**
 
-Run: `uv run ruff check .`
+Run: `uv run ruff check . && uv run pytest -v`
 
-Expected: No errors. Fix any issues.
+Expected: No lint errors, all tests pass.
 
-- [ ] **Step 2: Run full test suite**
+- [ ] **Step 2: Verify output format visually**
 
-Run: `uv run pytest -v`
+Run a quick sanity check that the "See also" section renders between the
+table and the Sources footer with proper spacing. Create a temporary test
+script or inspect test output to confirm:
 
-Expected: All tests pass.
+```
+[results table]
 
-- [ ] **Step 3: Manually verify by inspecting output format**
+─── See also ───
+  http://romanrepublic.ac.uk/rdf/entity/Person/1976 → http://nomisma.org/id/pompey (confirmed)
+Use `find_links(uri)` for full provenance.
 
-Run a quick smoke test to confirm the "See also" section renders correctly
-when the server is running with the YAML files loaded. This can be done by
-starting the MCP server and issuing a query that returns a person URI with
-a known link (e.g., Person/1976 for Pompey).
+─── Sources ───
+Data: ...
+```
 
-- [ ] **Step 4: Commit any lint fixes**
+Confirm there are blank lines separating each section.
+
+- [ ] **Step 3: Commit any remaining fixes**
 
 ```bash
 git add -u
-git commit -m "fix: lint cleanup"
+git commit -m "fix: final cleanup"
 ```
