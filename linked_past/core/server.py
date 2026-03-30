@@ -17,6 +17,9 @@ from linked_past.core.registry import DatasetRegistry
 from linked_past.core.store import get_data_dir
 from linked_past.core.validate import parse_and_fix_prefixes, validate_and_execute
 from linked_past.datasets.dprr.plugin import DPRRPlugin
+from linked_past.datasets.pleiades.plugin import PleiadesPlugin
+from linked_past.datasets.periodo.plugin import PeriodOPlugin
+from linked_past.datasets.nomisma.plugin import NomismaPlugin
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +35,9 @@ def build_app_context() -> AppContext:
     data_dir = get_data_dir()
     registry = DatasetRegistry(data_dir=data_dir)
     registry.register(DPRRPlugin())
+    registry.register(PleiadesPlugin())
+    registry.register(PeriodOPlugin())
+    registry.register(NomismaPlugin())
     registry.initialize_all()
     return AppContext(registry=registry)
 
