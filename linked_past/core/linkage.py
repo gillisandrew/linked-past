@@ -46,15 +46,24 @@ class LinkageGraph:
         """Load linkage data from an already-parsed dict (useful for testing)."""
         self._load_data(data)
 
-    def load_turtle(self, ttl_path: str | Path) -> int:
-        """Load Turtle concordance triples directly into the store. Returns triple count added."""
+    def load_rdf_file(self, rdf_path: str | Path) -> int:
+        """Load RDF triples from a file (auto-detects Turtle vs RDF/XML). Returns triple count added."""
         from pyoxigraph import RdfFormat
 
         before = len(self._store)
-        path = Path(ttl_path)
-        self._store.bulk_load(path=str(path), format=RdfFormat.TURTLE)
+        path = Path(rdf_path)
+        # Auto-detect format from content
+        first_bytes = path.read_bytes()[:100]
+        if first_bytes.lstrip().startswith(b"<?xml") or first_bytes.lstrip().startswith(b"<rdf:"):
+            fmt = RdfFormat.RDF_XML
+        else:
+            fmt = RdfFormat.TURTLE
+        self._store.bulk_load(path=str(path), format=fmt)
         added = len(self._store) - before
         return added
+
+    # Keep old name as alias
+    load_turtle = load_rdf_file
 
     def _load_data(self, data: dict[str, Any]) -> None:
         metadata = data["metadata"]
