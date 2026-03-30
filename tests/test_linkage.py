@@ -120,3 +120,41 @@ def test_load_multiple_files():
 
 def graph_find_sicilia(g):
     return g.find_links("http://romanrepublic.ac.uk/rdf/entity/Province/Sicilia")
+
+
+SAMPLE_MIXED_CONFIDENCE = {
+    "metadata": {
+        "source_dataset": "dprr",
+        "target_dataset": "nomisma",
+        "relationship": "skos:closeMatch",
+        "confidence": "confirmed",
+        "method": "manual_alignment",
+        "basis": "RRC cross-referencing",
+        "author": "linked-past project",
+        "date": "2026-03-30",
+    },
+    "links": [
+        {
+            "source": "http://romanrepublic.ac.uk/rdf/entity/Person/1957",
+            "target": "http://nomisma.org/id/julius_caesar",
+            "note": "RRC 468; confirmed via MRR",
+        },
+        {
+            "source": "http://romanrepublic.ac.uk/rdf/entity/Person/2253",
+            "target": "http://nomisma.org/id/cn_magnvs_imp_rrc",
+            "confidence": "probable",
+            "note": "Name + date match only",
+        },
+    ],
+}
+
+
+def test_per_link_confidence(tmp_path):
+    graph = LinkageGraph(tmp_path / "store")
+    graph.load_data(SAMPLE_MIXED_CONFIDENCE)
+    links_caesar = graph.find_links("http://romanrepublic.ac.uk/rdf/entity/Person/1957")
+    assert len(links_caesar) == 1
+    assert links_caesar[0]["confidence"] == "confirmed"
+    links_pompey = graph.find_links("http://romanrepublic.ac.uk/rdf/entity/Person/2253")
+    assert len(links_pompey) == 1
+    assert links_pompey[0]["confidence"] == "probable"

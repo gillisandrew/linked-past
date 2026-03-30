@@ -76,10 +76,11 @@ class LinkageGraph:
                 Literal(metadata.get("basis", "")),
                 _PROV_GRAPH,
             ))
+            confidence = link.get("confidence", metadata.get("confidence", "candidate"))
             self._store.add(Quad(
                 graph_id,
                 NamedNode(f"{_LINKPAST}confidence"),
-                Literal(metadata.get("confidence", "")),
+                Literal(confidence),
                 _PROV_GRAPH,
             ))
             self._store.add(Quad(
