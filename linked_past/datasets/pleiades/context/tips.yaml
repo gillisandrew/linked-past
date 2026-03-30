@@ -1,0 +1,41 @@
+tips:
+  - id: coordinates_on_location
+    classes: [Place, Location]
+    title: "Coordinates are on Location, not Place"
+    body: >
+      geo:lat and geo:long are properties of pleiades:Location, not pleiades:Place.
+      Always join through pleiades:hasLocation to reach coordinates:
+      ?place pleiades:hasLocation ?loc . ?loc geo:lat ?lat ; geo:long ?long .
+
+  - id: time_periods_are_concepts
+    classes: [Location, Name]
+    title: "pleiades:during links to skos:Concept, not date literals"
+    body: >
+      The pleiades:during property links to a SKOS concept representing a time period,
+      not a date literal. To get the period label use:
+      ?loc pleiades:during ?period . ?period skos:prefLabel ?periodLabel .
+      Do not try to compare pleiades:during with date values directly.
+
+  - id: feature_types_need_vocab
+    classes: [Place]
+    title: "hasFeatureType links to URIs — get label via skos:prefLabel"
+    body: >
+      pleiades:hasFeatureType links to a SKOS concept URI, not a string literal.
+      To filter by feature type, join through skos:prefLabel:
+      ?place pleiades:hasFeatureType ?ft . ?ft skos:prefLabel ?ftLabel .
+      FILTER(CONTAINS(LCASE(?ftLabel), "settlement"))
+
+  - id: place_uris_use_https
+    classes: []
+    title: "Place URIs use HTTPS not HTTP"
+    body: >
+      Pleiades place URIs use https:// (e.g. https://pleiades.stoa.org/places/423025).
+      Using http:// will not match any data.
+
+  - id: multiple_locations_per_place
+    classes: [Place, Location]
+    title: "A Place may have multiple Locations"
+    body: >
+      A single Place can have multiple Location entities representing different
+      time periods or coordinate sources. Use DISTINCT or be aware that joins
+      through pleiades:hasLocation may produce multiple rows per place.

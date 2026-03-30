@@ -1,0 +1,83 @@
+examples:
+  - question: "Find all places with coordinates"
+    sparql: |
+      PREFIX pleiades: <https://pleiades.stoa.org/places/vocab#>
+      PREFIX dcterms: <http://purl.org/dc/terms/>
+      PREFIX geo: <http://www.w3.org/2003/01/geo/wgs84_pos#>
+      SELECT ?place ?title ?lat ?long
+      WHERE {
+        ?place a pleiades:Place ;
+               dcterms:title ?title ;
+               pleiades:hasLocation ?loc .
+        ?loc geo:lat ?lat ;
+             geo:long ?long .
+      }
+      ORDER BY ?title
+      LIMIT 100
+
+  - question: "Find places with ancient names and time periods"
+    sparql: |
+      PREFIX pleiades: <https://pleiades.stoa.org/places/vocab#>
+      PREFIX dcterms: <http://purl.org/dc/terms/>
+      PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+      SELECT ?place ?title ?attested ?periodLabel
+      WHERE {
+        ?place a pleiades:Place ;
+               dcterms:title ?title ;
+               pleiades:hasName ?name .
+        ?name pleiades:nameAttested ?attested .
+        OPTIONAL {
+          ?name pleiades:during ?period .
+          ?period skos:prefLabel ?periodLabel .
+        }
+      }
+      ORDER BY ?title
+      LIMIT 100
+
+  - question: "Find all settlements"
+    sparql: |
+      PREFIX pleiades: <https://pleiades.stoa.org/places/vocab#>
+      PREFIX dcterms: <http://purl.org/dc/terms/>
+      PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+      SELECT ?place ?title
+      WHERE {
+        ?place a pleiades:Place ;
+               dcterms:title ?title ;
+               pleiades:hasFeatureType ?ft .
+        ?ft skos:prefLabel ?ftLabel .
+        FILTER(CONTAINS(LCASE(?ftLabel), "settlement"))
+      }
+      ORDER BY ?title
+      LIMIT 100
+
+  - question: "Find places active during the Roman period"
+    sparql: |
+      PREFIX pleiades: <https://pleiades.stoa.org/places/vocab#>
+      PREFIX dcterms: <http://purl.org/dc/terms/>
+      PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+      SELECT ?place ?title ?periodLabel
+      WHERE {
+        ?place a pleiades:Place ;
+               dcterms:title ?title ;
+               pleiades:hasLocation ?loc .
+        ?loc pleiades:during ?period .
+        ?period skos:prefLabel ?periodLabel .
+        FILTER(CONTAINS(LCASE(?periodLabel), "roman"))
+      }
+      ORDER BY ?title
+      LIMIT 100
+
+  - question: "Find places with GeoJSON geometry"
+    sparql: |
+      PREFIX pleiades: <https://pleiades.stoa.org/places/vocab#>
+      PREFIX dcterms: <http://purl.org/dc/terms/>
+      PREFIX osgeo: <http://data.ordnancesurvey.co.uk/ontology/geometry/>
+      SELECT ?place ?title ?geojson
+      WHERE {
+        ?place a pleiades:Place ;
+               dcterms:title ?title ;
+               pleiades:hasLocation ?loc .
+        ?loc osgeo:asGeoJSON ?geojson .
+      }
+      ORDER BY ?title
+      LIMIT 100

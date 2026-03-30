@@ -1,0 +1,12 @@
+prefixes:
+  pleiades: "https://pleiades.stoa.org/places/vocab#"
+  geo: "http://www.w3.org/2003/01/geo/wgs84_pos#"
+  osgeo: "http://data.ordnancesurvey.co.uk/ontology/geometry/"
+  dcterms: "http://purl.org/dc/terms/"
+  skos: "http://www.w3.org/2004/02/skos/core#"
+  foaf: "http://xmlns.com/foaf/0.1/"
+  cito: "http://purl.org/spar/cito/"
+  prov: "http://www.w3.org/ns/prov#"
+  rdfs: "http://www.w3.org/2000/01/rdf-schema#"
+  rdf: "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+  xsd: "http://www.w3.org/2001/XMLSchema#"
