@@ -1,5 +1,8 @@
 """Download PeriodO JSON-LD, convert to Turtle, push to OCI registry."""
-import subprocess, sys, tempfile, urllib.request
+import subprocess
+import sys
+import tempfile
+import urllib.request
 from pathlib import Path
 
 SOURCE_URL = "http://n2t.net/ark:/99152/p0d.jsonld"

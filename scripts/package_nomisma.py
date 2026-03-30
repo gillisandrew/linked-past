@@ -1,5 +1,8 @@
 """Download Nomisma concept vocabulary and push to OCI registry."""
-import subprocess, sys, tempfile, urllib.request
+import subprocess
+import sys
+import tempfile
+import urllib.request
 from pathlib import Path
 
 SOURCE_URL = "http://nomisma.org/nomisma.org.ttl"

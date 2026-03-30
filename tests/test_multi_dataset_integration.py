@@ -1,8 +1,8 @@
-from linked_past.datasets.dprr.plugin import DPRRPlugin
-from linked_past.datasets.pleiades.plugin import PleiadesPlugin
-from linked_past.datasets.periodo.plugin import PeriodOPlugin
-from linked_past.datasets.nomisma.plugin import NomismaPlugin
 from linked_past.core.server import create_mcp_server
+from linked_past.datasets.dprr.plugin import DPRRPlugin
+from linked_past.datasets.nomisma.plugin import NomismaPlugin
+from linked_past.datasets.periodo.plugin import PeriodOPlugin
+from linked_past.datasets.pleiades.plugin import PleiadesPlugin
 
 
 def test_all_plugins_instantiate():

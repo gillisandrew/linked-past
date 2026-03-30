@@ -17,9 +17,9 @@ from linked_past.core.registry import DatasetRegistry
 from linked_past.core.store import get_data_dir
 from linked_past.core.validate import parse_and_fix_prefixes, validate_and_execute
 from linked_past.datasets.dprr.plugin import DPRRPlugin
-from linked_past.datasets.pleiades.plugin import PleiadesPlugin
-from linked_past.datasets.periodo.plugin import PeriodOPlugin
 from linked_past.datasets.nomisma.plugin import NomismaPlugin
+from linked_past.datasets.periodo.plugin import PeriodOPlugin
+from linked_past.datasets.pleiades.plugin import PleiadesPlugin
 
 logger = logging.getLogger(__name__)
 

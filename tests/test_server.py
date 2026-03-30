@@ -22,6 +22,25 @@ def test_build_app_context(tmp_path, monkeypatch):
         "linked_past.datasets.dprr.plugin.DPRRPlugin.fetch",
         lambda self, data_dir: data_dir / "dprr.ttl",
     )
+    # Create minimal TTL files and patch fetch for other plugins
+    for dataset in ("pleiades", "periodo", "nomisma"):
+        ds_dir = tmp_path / dataset
+        ds_dir.mkdir()
+        (ds_dir / f"{dataset}.ttl").write_text(
+            "@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n"
+        )
+    monkeypatch.setattr(
+        "linked_past.datasets.pleiades.plugin.PleiadesPlugin.fetch",
+        lambda self, data_dir: data_dir / "pleiades.ttl",
+    )
+    monkeypatch.setattr(
+        "linked_past.datasets.periodo.plugin.PeriodOPlugin.fetch",
+        lambda self, data_dir: data_dir / "periodo.ttl",
+    )
+    monkeypatch.setattr(
+        "linked_past.datasets.nomisma.plugin.NomismaPlugin.fetch",
+        lambda self, data_dir: data_dir / "nomisma.ttl",
+    )
     ctx = build_app_context()
     assert "dprr" in ctx.registry.list_datasets()
     store = ctx.registry.get_store("dprr")

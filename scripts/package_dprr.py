@@ -1,5 +1,9 @@
 """Download DPRR data and push to OCI registry."""
-import subprocess, sys, tarfile, tempfile, urllib.request
+import subprocess
+import sys
+import tarfile
+import tempfile
+import urllib.request
 from pathlib import Path
 
 SOURCE_URL = "https://github.com/gillisandrew/dprr-mcp/releases/latest/download/dprr-data.tar.gz"
