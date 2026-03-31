@@ -37,7 +37,7 @@ QUERY_TIMEOUT = int(os.environ.get("LINKED_PAST_QUERY_TIMEOUT", os.environ.get("
 class AppContext:
     registry: DatasetRegistry
     linkage: LinkageGraph | None = None
-    embeddings: SearchIndex | None = None
+    search: SearchIndex | None = None
     meta: object = None  # MetaEntityIndex
     session_log: list = None
 
@@ -46,88 +46,91 @@ class AppContext:
             self.session_log = []
 
 
+def _index_dataset(search: SearchIndex, name: str, plugin: object, store=None) -> None:
+    """Index a single dataset's context into the search index."""
+    search.add(name, "dataset", f"{plugin.display_name}: {plugin.description}")
+    if hasattr(plugin, "_examples"):
+        for ex in plugin._examples:
+            search.add(name, "example", f"{ex['question']}\n{ex['sparql']}")
+    if hasattr(plugin, "_tips"):
+        for tip in plugin._tips:
+            search.add(name, "tip", f"{tip['title']}: {tip['body']}")
+    if hasattr(plugin, "_schemas"):
+        for cls_name, cls_data in plugin._schemas.items():
+            label = cls_data.get("label", cls_name)
+            uri = cls_data.get("uri", "")
+            comment = cls_data.get("comment", "")
+            if uri:
+                search.add(name, "schema_label", f"{label} ({uri})")
+            else:
+                search.add(name, "schema_label", label)
+            if comment:
+                search.add(name, "schema_comment", f"{cls_name}: {comment}")
+
+    # Index SKOS vocabulary terms if store is available
+    if store is None:
+        return
+    schemes = list(store.query(
+        "PREFIX skos: <http://www.w3.org/2004/02/skos/core#> "
+        "SELECT ?scheme (SAMPLE(?sl) AS ?schemeLabel) (COUNT(?c) AS ?n) WHERE { "
+        "  ?c a skos:Concept ; skos:inScheme ?scheme . "
+        "  OPTIONAL { ?scheme skos:prefLabel ?sl } "
+        "} GROUP BY ?scheme HAVING (COUNT(?c) > 1) ORDER BY DESC(?n)"
+    ))
+    for row in schemes:
+        scheme_uri = str(row[0]).strip("<>")
+        scheme_label = row[1].value if row[1] else scheme_uri.rsplit("/", 1)[-1]
+        concept_count = int(row[2].value)
+        limit = "LIMIT 500" if concept_count > 1000 else ""
+        concepts = list(store.query(
+            "PREFIX skos: <http://www.w3.org/2004/02/skos/core#> "
+            f"SELECT ?label WHERE {{ "
+            f"  ?c a skos:Concept ; skos:inScheme <{scheme_uri}> ; skos:prefLabel ?label . "
+            f"  FILTER(lang(?label) = 'en' || lang(?label) = '') "
+            f"}} {limit}"
+        ))
+        if not concepts:
+            continue
+        labels = [r[0].value for r in concepts]
+        for i in range(0, len(labels), 50):
+            batch = labels[i:i + 50]
+            search.add(name, "skos_vocab",
+                       f"Vocabulary: {scheme_label} ({concept_count} terms). "
+                       f"Values: {', '.join(batch)}")
+        described = list(store.query(
+            "PREFIX skos: <http://www.w3.org/2004/02/skos/core#> "
+            f"SELECT ?label ?note WHERE {{ "
+            f"  ?c a skos:Concept ; skos:inScheme <{scheme_uri}> ; "
+            f"     skos:prefLabel ?label . "
+            f"  {{ ?c skos:scopeNote ?note }} UNION {{ ?c skos:definition ?note }} "
+            f"  FILTER(lang(?label) = 'en' || lang(?label) = '') "
+            f"  FILTER(lang(?note) = 'en' || lang(?note) = '') "
+            f"}}"
+        ))
+        for dr in described:
+            search.add(name, "skos_concept", f"{dr[0].value}: {dr[1].value}")
+
+
 def _build_search_index(registry: DatasetRegistry, data_dir: Path) -> SearchIndex | None:
-    """Build full-text search index from plugin context and SKOS vocabularies."""
+    """Build full-text search index from plugin context and SKOS vocabularies.
+
+    Always rebuilds fresh — FTS5 indexing is fast (no ML model) and avoids
+    stale cache issues when datasets are updated between restarts.
+    """
     try:
         search_path = data_dir / "search.db"
+        if search_path.exists():
+            search_path.unlink()
         search = SearchIndex(search_path)
-
-        # Check if already populated — skip rebuild
-        existing = search._conn.execute("SELECT COUNT(*) FROM documents").fetchone()[0]
-        if existing > 0:
-            logger.info("Search index loaded from cache (%d documents)", existing)
-            return search
 
         logger.info("Building search index...")
         for name in registry.list_datasets():
             plugin = registry.get_plugin(name)
-            search.add(name, "dataset", f"{plugin.display_name}: {plugin.description}")
-            if hasattr(plugin, "_examples"):
-                for ex in plugin._examples:
-                    search.add(name, "example", f"{ex['question']}\n{ex['sparql']}")
-            if hasattr(plugin, "_tips"):
-                for tip in plugin._tips:
-                    search.add(name, "tip", f"{tip['title']}: {tip['body']}")
-            if hasattr(plugin, "_schemas"):
-                for cls_name, cls_data in plugin._schemas.items():
-                    label = cls_data.get("label", cls_name)
-                    uri = cls_data.get("uri", "")
-                    comment = cls_data.get("comment", "")
-                    if uri:
-                        search.add(name, "schema_label", f"{label} ({uri})")
-                    else:
-                        search.add(name, "schema_label", label)
-                    if comment:
-                        search.add(name, "schema_comment", f"{cls_name}: {comment}")
-
-        # Index SKOS vocabulary terms from dataset stores
-        for name in registry.list_datasets():
             try:
                 store = registry.get_store(name)
             except KeyError:
-                continue
-            schemes = list(store.query(
-                "PREFIX skos: <http://www.w3.org/2004/02/skos/core#> "
-                "SELECT ?scheme (SAMPLE(?sl) AS ?schemeLabel) (COUNT(?c) AS ?n) WHERE { "
-                "  ?c a skos:Concept ; skos:inScheme ?scheme . "
-                "  OPTIONAL { ?scheme skos:prefLabel ?sl } "
-                "} GROUP BY ?scheme HAVING (COUNT(?c) > 1) ORDER BY DESC(?n)"
-            ))
-            for row in schemes:
-                scheme_uri = str(row[0]).strip("<>")
-                scheme_label = row[1].value if row[1] else scheme_uri.rsplit("/", 1)[-1]
-                concept_count = int(row[2].value)
-                # For small vocabularies (<1000), index all labels; for large ones, sample
-                limit = "LIMIT 500" if concept_count > 1000 else ""
-                concepts = list(store.query(
-                    "PREFIX skos: <http://www.w3.org/2004/02/skos/core#> "
-                    f"SELECT ?label WHERE {{ "
-                    f"  ?c a skos:Concept ; skos:inScheme <{scheme_uri}> ; skos:prefLabel ?label . "
-                    f"  FILTER(lang(?label) = 'en' || lang(?label) = '') "
-                    f"}} {limit}"
-                ))
-                if not concepts:
-                    continue
-                labels = [r[0].value for r in concepts]
-                # Batch labels into docs of ~50 each for better FTS matching
-                for i in range(0, len(labels), 50):
-                    batch = labels[i:i + 50]
-                    search.add(name, "skos_vocab",
-                               f"Vocabulary: {scheme_label} ({concept_count} terms). "
-                               f"Values: {', '.join(batch)}")
-                # Index concepts that have descriptions
-                described = list(store.query(
-                    "PREFIX skos: <http://www.w3.org/2004/02/skos/core#> "
-                    f"SELECT ?label ?note WHERE {{ "
-                    f"  ?c a skos:Concept ; skos:inScheme <{scheme_uri}> ; "
-                    f"     skos:prefLabel ?label . "
-                    f"  {{ ?c skos:scopeNote ?note }} UNION {{ ?c skos:definition ?note }} "
-                    f"  FILTER(lang(?label) = 'en' || lang(?label) = '') "
-                    f"  FILTER(lang(?note) = 'en' || lang(?note) = '') "
-                    f"}}"
-                ))
-                for dr in described:
-                    search.add(name, "skos_concept", f"{dr[0].value}: {dr[1].value}")
+                store = None
+            _index_dataset(search, name, plugin, store)
 
         logger.info("Search index built and cached")
         return search
@@ -136,14 +139,14 @@ def _build_search_index(registry: DatasetRegistry, data_dir: Path) -> SearchInde
         return None
 
 
-def build_app_context(*, eager: bool = False, skip_embeddings: bool = True) -> AppContext:
+def build_app_context(*, eager: bool = False, skip_search: bool = True) -> AppContext:
     """Register plugins and return context.
 
     Args:
         eager: If True, initialize all datasets (may download). If False (default),
                only open datasets already cached locally.
-        skip_embeddings: If True, skip embedding index and meta-entity index build.
-                         Useful for tests to avoid loading ML models.
+        skip_search: If True, skip search index and meta-entity index build.
+                     Useful for tests to avoid startup cost.
     """
     data_dir = get_data_dir()
     registry = DatasetRegistry(data_dir=data_dir)
@@ -175,11 +178,11 @@ def build_app_context(*, eager: bool = False, skip_embeddings: bool = True) -> A
                 except Exception as e:
                     logger.warning("Failed to load concordance %s: %s", ttl_file.name, e)
 
-    embeddings = None if skip_embeddings else _build_search_index(registry, data_dir)
+    search_index = None if skip_search else _build_search_index(registry, data_dir)
 
     # Build meta-entity index (skip if already cached)
     meta = None
-    if not skip_embeddings:
+    if not skip_search:
         try:
             from linked_past.core.meta_entities import MetaEntity, MetaEntityIndex
 
@@ -213,14 +216,14 @@ def build_app_context(*, eager: bool = False, skip_embeddings: bool = True) -> A
                 logger.info("Built %d meta-entities", count)
 
                 # Add meta-entity descriptions to embedding index
-                if embeddings and count > 0:
+                if search_index and count > 0:
                     for entity in meta.all_entities():
-                        embeddings.add("_meta", "meta_entity", entity.description)
-                    embeddings.build()
+                        search_index.add("_meta", "meta_entity", entity.description)
+                    search_index.build()
         except Exception as e:
             logger.warning("Failed to build meta-entities: %s", e)
 
-    return AppContext(registry=registry, linkage=linkage, embeddings=embeddings, meta=meta)
+    return AppContext(registry=registry, linkage=linkage, search=search_index, meta=meta)
 
 
 # SKOS/OWL predicates that indicate cross-dataset references
@@ -429,8 +432,10 @@ def _collect_see_also(
 
 def create_mcp_server() -> FastMCP:
 
-    # Build context once, shared across all sessions
-    _shared_ctx = build_app_context(skip_embeddings=False)
+    # Build context once, shared across all sessions.
+    # NOTE: not thread-safe — update_dataset mutates stores/search on the shared
+    # context. Fine for single-process MCP server; revisit if adding concurrency.
+    _shared_ctx = build_app_context(skip_search=False)
 
     @asynccontextmanager
     async def lifespan(server: FastMCP):
@@ -455,8 +460,8 @@ def create_mcp_server() -> FastMCP:
         app: AppContext = ctx.request_context.lifespan_context
         registry = app.registry
 
-        if topic and app.embeddings:
-            results = app.embeddings.search(topic, k=10)
+        if topic and app.search:
+            results = app.search.search(topic, k=10)
             relevant_datasets = {r["dataset"] for r in results}
         else:
             relevant_datasets = None
@@ -584,9 +589,9 @@ def create_mcp_server() -> FastMCP:
             # 1. Substring match on canonical name + description
             meta_matches = app.meta.search(query_text, k=5)
 
-            # 2. Semantic search via embeddings (catches "the Roman general" → Pompey)
-            if app.embeddings:
-                embed_hits = app.embeddings.search(query_text, k=10, dataset="_meta")
+            # 2. Full-text search (catches "the Roman general" → Pompey)
+            if app.search:
+                embed_hits = app.search.search(query_text, k=10, dataset="_meta")
                 seen_ids = {e.id for e in meta_matches}
                 for hit in embed_hits:
                     # Find the meta-entity whose description matches
@@ -977,36 +982,15 @@ def create_mcp_server() -> FastMCP:
                     lines.append(f"- **Initialized:** {meta.get('triple_count', '?')} triples loaded")
                     lines.append(f"- **Version:** {meta.get('version', 'unknown')}")
 
-                    # Hot-reload: rebuild embedding index for this dataset
-                    if app.embeddings:
-                        app.embeddings.clear_dataset(ds_name)
-                        app.embeddings.add(ds_name, "dataset", f"{plugin.display_name}: {plugin.description}")
-                        if hasattr(plugin, "_examples"):
-                            for ex in plugin._examples:
-                                app.embeddings.add(ds_name, "example", f"{ex['question']}\n{ex['sparql']}")
-                        if hasattr(plugin, "_tips"):
-                            for tip in plugin._tips:
-                                app.embeddings.add(ds_name, "tip", f"{tip['title']}: {tip['body']}")
-                        if hasattr(plugin, "_schemas"):
-                            for cls_name, cls_data in plugin._schemas.items():
-                                label = cls_data.get("label", cls_name)
-                                uri = cls_data.get("uri", "")
-                                comment = cls_data.get("comment", "")
-                                if uri:
-                                    app.embeddings.add(ds_name, "schema_label", f"{label} ({uri})")
-                                else:
-                                    app.embeddings.add(ds_name, "schema_label", label)
-                                if comment:
-                                    app.embeddings.add(ds_name, "schema_comment", f"{cls_name}: {comment}")
-                                if hasattr(plugin, "_examples"):
-                                    for ex in plugin._examples:
-                                        if cls_name.lower() in ex.get("sparql", "").lower():
-                                            app.embeddings.add(
-                                                ds_name, "schema_example",
-                                                f"{cls_name} — {ex['question']}\n{ex['sparql']}",
-                                            )
-                        app.embeddings.build()
-                        lines.append("- **Embeddings:** rebuilt")
+                    # Hot-reload: rebuild search index for this dataset
+                    if app.search:
+                        app.search.clear_dataset(ds_name)
+                        try:
+                            store = registry.get_store(ds_name)
+                        except KeyError:
+                            store = None
+                        _index_dataset(app.search, ds_name, plugin, store)
+                        lines.append("- **Search index:** rebuilt")
                 except Exception as e:
                     lines.append(f"- **Error:** {e}")
                 lines.append("")
@@ -1402,11 +1386,11 @@ def _cmd_rebuild(args):
             print(f"Cleared {db_name}")
 
     print("\nRebuilding...")
-    ctx = build_app_context(eager=False, skip_embeddings=False)
+    ctx = build_app_context(eager=False, skip_search=False)
     search_count = 0
     meta_count = 0
-    if ctx.embeddings:
-        search_count = ctx.embeddings._conn.execute("SELECT COUNT(*) FROM documents").fetchone()[0]
+    if ctx.search:
+        search_count = ctx.search._conn.execute("SELECT COUNT(*) FROM documents").fetchone()[0]
     if ctx.meta:
         meta_count = len(ctx.meta.all_entities())
     print(f"Done: {search_count} search documents, {meta_count} meta-entities")
@@ -1437,7 +1421,7 @@ def main():
     status = sub.add_parser("status", help="Show dataset installation status")
     status.set_defaults(func=_cmd_status)
 
-    # rebuild: clear caches and rebuild embeddings/meta-entities
+    # rebuild: clear caches and rebuild search index/meta-entities
     rebuild = sub.add_parser("rebuild", help="Clear and rebuild embedding + meta-entity caches")
     rebuild.set_defaults(func=_cmd_rebuild)
 

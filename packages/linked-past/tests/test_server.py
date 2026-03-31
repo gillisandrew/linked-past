@@ -53,7 +53,7 @@ def test_build_app_context(tmp_path, monkeypatch):
         "linked_past.datasets.edh.plugin.EDHPlugin.fetch",
         lambda self, data_dir: data_dir / "edh.ttl",
     )
-    ctx = build_app_context(eager=True, skip_embeddings=True)
+    ctx = build_app_context(eager=True, skip_search=True)
     assert "dprr" in ctx.registry.list_datasets()
     store = ctx.registry.get_store("dprr")
     assert store is not None

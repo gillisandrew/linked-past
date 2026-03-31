@@ -61,6 +61,9 @@ def push_dataset(
 def tag_artifact(ref: str, new_tag: str) -> None:
     """Add a tag to an existing OCI artifact.
 
+    Note: requires the ``oras`` CLI binary on PATH — the oras-py library
+    does not expose a tagging API.
+
     Args:
         ref: Existing OCI reference (e.g., "ghcr.io/myorg/dataset:v1.0")
         new_tag: New tag to add (e.g., "latest")

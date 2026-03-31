@@ -62,7 +62,10 @@ def _ref_to_path(ref: str) -> str:
 
 
 def _fetch_manifest_json(ref: str) -> str | None:
-    """Fetch raw manifest JSON from OCI registry."""
+    """Fetch raw manifest JSON from OCI registry.
+
+    Note: uses oras CLI — oras-py's get_manifest returns parsed dict, not raw JSON.
+    """
     try:
         result = subprocess.run(
             ["oras", "manifest", "fetch", ref],
