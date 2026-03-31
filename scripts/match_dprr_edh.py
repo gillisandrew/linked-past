@@ -11,167 +11,27 @@ Usage:
 from __future__ import annotations
 
 import re
-import unicodedata
 from collections import Counter
 from pathlib import Path
 
 import yaml
+from linked_past.core.onomastics import GREEK_PRAENOMINA, PRAENOMEN_MAP
+from linked_past.core.onomastics import normalize_edh_name as _normalize_edh_name
+from linked_past.core.onomastics import parse_roman_name as _parse_roman_name_base
+from linked_past.core.onomastics import strip_accents as _strip_accents
 from pyoxigraph import Store
 
 DATA_DIR = Path.home() / ".local" / "share" / "linked-past"
 LINKAGE_DIR = Path(__file__).resolve().parents[1] / "packages" / "linked-past" / "linked_past" / "linkages"
 
-_PRAENOMEN_MAP = {
-    "c.": "gaius", "c": "gaius",
-    "cn.": "gnaeus", "cn": "gnaeus",
-    "l.": "lucius", "l": "lucius",
-    "m.": "marcus", "m": "marcus",
-    "m'.": "manius", "mn.": "manius", "mn": "manius",
-    "p.": "publius", "p": "publius",
-    "q.": "quintus", "q": "quintus",
-    "sex.": "sextus", "sex": "sextus",
-    "ser.": "servius", "ser": "servius",
-    "sp.": "spurius", "sp": "spurius",
-    "t.": "titus", "t": "titus",
-    "ti.": "tiberius", "ti": "tiberius",
-    "a.": "aulus", "a": "aulus",
-    "d.": "decimus", "d": "decimus",
-    "n.": "numerius",
-    "ap.": "appius", "ap": "appius",
-    # Greek equivalents
-    "γ.": "gaius", "γάιος": "gaius", "γαίου": "gaius",
-    "γν.": "gnaeus", "γναῖος": "gnaeus",
-    "λ.": "lucius", "λεύκιος": "lucius", "λευκίου": "lucius",
-    "μ.": "marcus", "μάρκος": "marcus", "μάρκου": "marcus",
-    "μάνιος": "manius", "μανίου": "manius",
-    "π.": "publius", "πόπλιος": "publius",
-    "κ.": "quintus", "κόιντος": "quintus",
-    "τ.": "titus", "τίτος": "titus",
-    "σέξτος": "sextus",
-    "τιβέριος": "tiberius",
-}
+# Aliases for backwards compatibility within this script
+_PRAENOMEN_MAP = PRAENOMEN_MAP
+_GREEK_PRAENOMINA = GREEK_PRAENOMINA
 
 
-# ── Greek → Latin transliteration ──
-
-# Multi-character digraphs (order matters — check longer sequences first)
-_GREEK_DIGRAPHS = [
-    # Diphthongs and clusters
-    ("αι", "ae"), ("ει", "ei"), ("οι", "oe"), ("ου", "u"),
-    ("αυ", "au"), ("ευ", "eu"), ("ηυ", "eu"),
-    ("γγ", "ng"), ("γκ", "nc"), ("γξ", "nx"), ("γχ", "nch"),
-    ("μπ", "mp"), ("ντ", "nt"),
-    # Aspirates
-    ("θ", "th"), ("φ", "ph"), ("χ", "ch"), ("ψ", "ps"),
-    # Double letters
-    ("λλ", "ll"), ("σσ", "ss"), ("ρρ", "rrh"),
-]
-
-# Single character map (after digraphs are handled)
-_GREEK_SINGLE = {
-    "α": "a", "β": "b", "γ": "g", "δ": "d", "ε": "e",
-    "ζ": "z", "η": "e", "ι": "i", "κ": "c", "λ": "l",
-    "μ": "m", "ν": "n", "ξ": "x", "ο": "o", "π": "p",
-    "ρ": "r", "σ": "s", "ς": "s", "τ": "t", "υ": "y",
-    "ω": "o",
-    # Archaic/rare
-    "ϝ": "v", "ϛ": "st", "ϙ": "q",
-}
-
-# Common Greek→Latin name endings
-_GREEK_ENDINGS = [
-    (r"ios$", "ius"),      # Ἀκύλλιος → Aquillius
-    (r"ion$", "ium"),      # Βρεντέσιον → Brundisium
-    (r"os$", "us"),        # Μάρκος → Marcus
-    (r"on$", "um"),        # (neuter)
-    (r"e$", "a"),          # (first decl. Greek → Latin)
-    (r"ou$", "i"),         # genitive: Μανίου → Manii
-    (r"oi$", "i"),         # nominative plural
-]
-
-# Greek praenomen → Latin praenomen (full forms)
-_GREEK_PRAENOMINA = {
-    "γαιος": "gaius", "γάιος": "gaius", "γαίου": "gaius",
-    "γναιος": "gnaeus", "γναῖος": "gnaeus",
-    "λευκιος": "lucius", "λεύκιος": "lucius", "λευκίου": "lucius",
-    "μαρκος": "marcus", "μάρκος": "marcus", "μάρκου": "marcus",
-    "μανιος": "manius", "μάνιος": "manius", "μανίου": "manius",
-    "ποπλιος": "publius", "πόπλιος": "publius",
-    "κοιντος": "quintus", "κόιντος": "quintus",
-    "τιτος": "titus", "τίτος": "titus",
-    "σεξτος": "sextus", "σέξτος": "sextus",
-    "τιβεριος": "tiberius", "τιβέριος": "tiberius",
-    "αυλος": "aulus", "αὖλος": "aulus",
-    "δεκιμος": "decimus", "δέκιμος": "decimus",
-    "αππιος": "appius", "ἄππιος": "appius",
-    "σερουιος": "servius", "σερούιος": "servius",
-    "σπουριος": "spurius", "σπούριος": "spurius",
-}
-
-
-def _strip_accents(s: str) -> str:
-    """Remove combining diacritical marks (accents, breathing) from Greek text."""
-    nfkd = unicodedata.normalize("NFKD", s)
-    return "".join(c for c in nfkd if unicodedata.category(c) != "Mn")
-
-
-def _is_greek(text: str) -> bool:
-    """Check if text contains Greek characters."""
-    return any("\u0370" <= c <= "\u03FF" or "\u1F00" <= c <= "\u1FFF" for c in text)
-
-
-def transliterate_greek(text: str) -> str:
-    """Transliterate Greek text to Latin equivalent for Roman name matching.
-
-    Handles: diphthongs, aspirates, standard letter mappings, and
-    common Greek→Latin name ending conversions (-ιος→-ius, -ος→-us).
-    """
-    if not _is_greek(text):
-        return text
-
-    # Normalize and strip accents/breathing marks
-    result = _strip_accents(text.lower())
-
-    # Apply digraph replacements (longest first)
-    for greek, latin in _GREEK_DIGRAPHS:
-        result = result.replace(greek, latin)
-
-    # Apply single character replacements
-    chars = []
-    for c in result:
-        chars.append(_GREEK_SINGLE.get(c, c))
-    result = "".join(chars)
-
-    # Apply Latin name ending corrections
-    words = result.split()
-    for i, word in enumerate(words):
-        for pattern, replacement in _GREEK_ENDINGS:
-            new_word = re.sub(pattern, replacement, word)
-            if new_word != word:
-                words[i] = new_word
-                break
-    result = " ".join(words)
-
-    return result
-
-
-def _normalize_edh_name(name: str) -> tuple[str, bool]:
-    """Normalize an EDH person name. Returns (normalized_name, was_greek).
-
-    If the name is Greek, transliterates to Latin form first.
-    Also handles EDH conventions like "(= Plautius)" annotations.
-    """
-    was_greek = _is_greek(name)
-
-    if was_greek:
-        name = transliterate_greek(name)
-
-    # Remove EDH annotations like "(= Plautius)"
-    name = re.sub(r"\(=\s*\w+\)", "", name)
-    # Remove question marks but keep brackets info
-    name = re.sub(r"\?", "", name)
-
-    return name.strip(), was_greek
+def _parse_roman_name(name: str) -> dict:
+    """Wrapper around onomastics.parse_roman_name for script use."""
+    return _parse_roman_name_base(name)
 
 
 def _open_store(dataset: str) -> Store:
