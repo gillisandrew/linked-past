@@ -60,11 +60,16 @@ class DatasetPlugin(ABC):
         return pull_artifact(self.oci_dataset, data_dir, self.oci_version)
 
     def load(self, store: Store, rdf_path: Path) -> int:
-        """Bulk-load into Oxigraph store, return triple count.
+        """Bulk-load all data files into Oxigraph store, return triple count.
 
-        Default implementation uses self.rdf_format. Override for custom loading.
+        Loads all .ttl files in rdf_path's directory, skipping _* sidecars
+        (e.g. _void.ttl, _schema.yaml). Single-file datasets load just the
+        one file; multi-file datasets (like EDH) load all of them.
         """
-        store.bulk_load(path=str(rdf_path), format=self.rdf_format)
+        data_dir = rdf_path.parent
+        ttl_files = [f for f in sorted(data_dir.glob("*.ttl")) if not f.name.startswith("_")]
+        for ttl in ttl_files:
+            store.bulk_load(path=str(ttl), format=self.rdf_format)
         return len(store)
 
     @abstractmethod

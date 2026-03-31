@@ -5,8 +5,6 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
-from pyoxigraph import RdfFormat, Store
-
 from linked_past.core.context import (
     get_cross_cutting_tips,
     get_relevant_examples,
@@ -56,16 +54,7 @@ class EDHPlugin(DatasetPlugin):
         for ex in self._examples:
             ex["classes"] = extract_query_classes(ex["sparql"], self._schema_dict)
 
-    # fetch() uses default ORAS implementation from base class
-
-    def load(self, store: Store, rdf_path: Path) -> int:
-        """Load all Turtle files from the data directory (skipping _* metadata sidecars)."""
-        data_dir = rdf_path.parent
-        for ttl in sorted(data_dir.glob("*.ttl")):
-            if ttl.name.startswith("_"):
-                continue
-            store.bulk_load(path=str(ttl), format=RdfFormat.TURTLE)
-        return len(store)
+    # fetch() and load() use default implementations from base class
 
     def get_prefixes(self) -> dict[str, str]:
         return self._prefixes
