@@ -54,8 +54,12 @@ def pull_dataset(
     if not ttl_files:
         raise RuntimeError(f"No .ttl file found in artifact {ref}")
 
+    # Return the primary data file, not a _* sidecar (void, schema, ontology)
+    data_files = [f for f in ttl_files if not f.name.startswith("_")]
+    primary = data_files[0] if data_files else ttl_files[0]
+
     logger.info("Pulled %s → %s (%d files)", ref, output_dir, len(all_files))
-    return ttl_files[0]
+    return primary
 
 
 def _classify_changes(
