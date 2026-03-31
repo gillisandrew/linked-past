@@ -84,3 +84,55 @@ links:
   target: https://edh-www.adw.uni-heidelberg.de/edh/person/HD004613/1
   note: 'DPRR: L. Suetius (eques Romanus); EDH: L. Suetius? Mar[---]; semantic embedding
     match (unique nomen, name matching missed due to uncertain EDH reading)'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/748
+  target: https://edh-www.adw.uni-heidelberg.de/edh/person/HD059260/1
+  note: 'DPRR: AURE0748 P. Aurelius (187) Pecuniola; EDH: Π. Αὐρήλιος Διόσκορος; Greek
+    transliteration → p. aurelius dioscorus'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1380
+  target: https://edh-www.adw.uni-heidelberg.de/edh/person/HD065102/1
+  note: 'DPRR: MINU1380 T. Minucius (58) Rufus; EDH: Τ. Μινούκιος Καπίτων; Greek transliteration
+    → t. minucius capitum'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/5379
+  target: https://edh-www.adw.uni-heidelberg.de/edh/person/HD044436/28
+  note: 'DPRR: AELI5379 M. Aelius (8); EDH: M. Αἴλιος Οὐαλεριανός; Greek transliteration
+    → m. aelius ualerianus'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/947
+  target: https://edh-www.adw.uni-heidelberg.de/edh/person/HD056983/9
+  note: 'DPRR: POPI0947 T. Popillius (13); EDH: Τ. Ποπίλλιος -; Greek transliteration
+    → t. popillius -'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/5254
+  target: https://edh-www.adw.uni-heidelberg.de/edh/person/HD019175/5
+  note: 'DPRR: GRAN5254 P. Granius (6) Fal.; EDH: Π. Γράνιος -; Greek transliteration
+    → p. granius -'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2095
+  target: https://edh-www.adw.uni-heidelberg.de/edh/person/HD068211/4
+  note: 'DPRR: MARC2095 L. Marcilius (1) Tro.; EDH: Λ. Μαρκίλιος; Greek transliteration
+    → l. marcilius'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/4410
+  target: https://edh-www.adw.uni-heidelberg.de/edh/person/HD029499/4
+  note: 'DPRR: COTT4410 M. Cottius (not in RE); EDH: Μ. Κόττιος; Greek transliteration
+    → m. cottius'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/5187
+  target: https://edh-www.adw.uni-heidelberg.de/edh/person/HD068211/9
+  note: 'DPRR: ANCH5187 C. Ancharius (6) Rufus; EDH: Κ. Ἀνχάριος; Greek transliteration
+    → c. ancharius'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2771
+  target: https://edh-www.adw.uni-heidelberg.de/edh/person/HD053782/1
+  note: 'DPRR: INST2771 M. Insteius (3); EDH: Μ. Ἰνστήϊος; Greek transliteration →
+    m. insteius'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/5089
+  target: https://edh-www.adw.uni-heidelberg.de/edh/person/HD065054/1
+  note: 'DPRR: POMP5089 C. Pompeius (not in RE) C. f. Sab.; EDH: Κ. Πομπήιος; Greek
+    transliteration → c. pompeius'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/4498
+  target: https://edh-www.adw.uni-heidelberg.de/edh/person/HD064213/1
+  note: 'DPRR: MAGI4498 L. Magius (6); EDH: Λ. Μάγιος Ἔρως; Greek transliteration
+    → l. magius erus'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/864
+  target: https://edh-www.adw.uni-heidelberg.de/edh/person/HD053812/2
+  note: 'DPRR: PUPI0864 C. Pupius (3); EDH: Κ. Πούπιος Κάστωρ; Greek transliteration
+    → c. pupius castor'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2070
+  target: https://edh-www.adw.uni-heidelberg.de/edh/person/HD068211/6
+  note: 'DPRR: AUTR2070 P. Autronius (7) L. f. Paetus; EDH: Π. Αὐτρώνιος; Greek transliteration
+    → p. autronius'
