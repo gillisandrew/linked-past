@@ -217,19 +217,19 @@ git commit -m "feat: generate_shex_shapes produces ShEx-like shapes with inline 
 **Files:**
 - Modify: `packages/linked-past/linked_past/core/server.py`
 
-- [ ] **Step 1: Add shape generation to `_build_search_index`**
+- [ ] **Step 1: Add shape generation to `_index_dataset` helper**
 
-In `packages/linked-past/linked_past/core/server.py`, after the schema label/comment indexing block (after line 81), add:
+In `packages/linked-past/linked_past/core/server.py`, at the end of the `_index_dataset` function (before the SKOS section), add:
 
 ```python
-            # Generate and index ShEx-like shapes
-            if hasattr(plugin, "_schemas") and hasattr(plugin, "_prefixes"):
-                from linked_past_store.ontology import generate_shex_shapes
+    # Generate and index ShEx-like shapes
+    if hasattr(plugin, "_schemas") and hasattr(plugin, "_prefixes"):
+        from linked_past_store.ontology import generate_shex_shapes
 
-                plugin_tips = plugin._tips if hasattr(plugin, "_tips") else []
-                shapes = generate_shex_shapes(plugin._schemas, plugin_tips, plugin._prefixes)
-                for cls_name, shape_text in shapes.items():
-                    search.add(name, "shex_shape", shape_text)
+        plugin_tips = plugin._tips if hasattr(plugin, "_tips") else []
+        shapes = generate_shex_shapes(plugin._schemas, plugin_tips, plugin._prefixes)
+        for cls_name, shape_text in shapes.items():
+            search.add(name, "shex_shape", shape_text)
 ```
 
 - [ ] **Step 2: Lint**
@@ -242,8 +242,8 @@ Run: `uv run ruff check packages/linked-past/linked_past/core/server.py`
 rm -f ~/.local/share/linked-past/search.db
 uv run python -c "
 from linked_past.core.server import build_app_context
-ctx = build_app_context(skip_embeddings=False)
-search = ctx.embeddings
+ctx = build_app_context(skip_search=False)
+search = ctx.search
 
 # Check shapes are indexed
 shape_count = search._conn.execute(\"SELECT COUNT(*) FROM documents WHERE doc_type = 'shex_shape'\").fetchone()[0]
