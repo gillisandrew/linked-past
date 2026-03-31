@@ -6,7 +6,7 @@ import logging
 import os
 from pathlib import Path
 
-from linked_past_store.pull import pull_with_legacy_fallback
+from linked_past_store.pull import pull_for_dataset
 
 logger = logging.getLogger(__name__)
 
@@ -22,5 +22,5 @@ def artifact_ref(dataset: str, version: str = "latest") -> str:
     return f"{registry}/{dataset}:{version}"
 
 
-def pull_artifact(dataset: str, data_dir: Path, version: str = "latest") -> Path:
-    return pull_with_legacy_fallback(dataset, data_dir, version, default_registry())
+def pull_artifact(dataset: str, data_dir: Path, version: str = "latest", force: bool = False) -> Path:
+    return pull_for_dataset(dataset, data_dir, version, default_registry(), force=force)

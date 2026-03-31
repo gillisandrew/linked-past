@@ -28,7 +28,7 @@ def cmd_push(args):
 def cmd_pull(args):
     from linked_past_store.pull import pull_dataset
 
-    path = pull_dataset(args.ref, args.output)
+    path = pull_dataset(args.ref, args.output, force=args.force)
     print(f"Pulled to {path}")
 
 
@@ -70,6 +70,115 @@ def cmd_inspect(args):
         print(f"No annotations found for {args.ref}")
 
 
+def cmd_cache_list(args):
+    from linked_past_store.cache import ArtifactCache
+
+    cache = ArtifactCache()
+    entries = cache.list_cached()
+    if not entries:
+        print("Cache is empty.")
+        return
+    print(f"{'Digest':24s} {'Files':>5s} {'Size':>10s}  Last Accessed")
+    print("-" * 65)
+    for e in entries:
+        digest = e["digest"][:24]
+        size = f"{e['size_bytes'] / 1024 / 1024:.1f} MB"
+        print(f"{digest} {e['files']:5d} {size:>10s}  {e['last_accessed']}")
+
+
+def cmd_cache_gc(args):
+    from linked_past_store.cache import ArtifactCache
+
+    cache = ArtifactCache()
+    removed = cache.gc(max_age_days=args.max_age)
+    print(f"Removed {removed} cached artifacts older than {args.max_age} days")
+
+
+def cmd_cache_clear(args):
+    import shutil
+
+    from linked_past_store.cache import ArtifactCache
+
+    cache = ArtifactCache()
+    if cache._blobs_dir.exists():
+        shutil.rmtree(cache._blobs_dir)
+    if cache._manifests_dir.exists():
+        shutil.rmtree(cache._manifests_dir)
+    if cache._gc_path.exists():
+        cache._gc_path.unlink()
+    print("Cache cleared.")
+
+
+def cmd_bom(args):
+    """Generate a Bill of Materials for all cached/used datasets."""
+    from linked_past_store.cache import ArtifactCache
+
+    cache = ArtifactCache()
+
+    # Collect BOM entries from manifest tag files
+    bom = []
+    if cache._manifests_dir.exists():
+        for tag_file in sorted(cache._manifests_dir.rglob("*")):
+            if not tag_file.is_file():
+                continue
+            digest = tag_file.read_text().strip()
+            # Reconstruct ref from path
+            rel = tag_file.relative_to(cache._manifests_dir)
+            parts = list(rel.parts)
+            tag = parts[-1]
+            repo = "/".join(parts[:-1])
+            ref = f"{repo}:{tag}"
+
+            # Try to get annotations
+            annotations = {}
+            try:
+                result = subprocess.run(
+                    ["oras", "manifest", "fetch", ref],
+                    capture_output=True,
+                    text=True,
+                    timeout=10,
+                )
+                if result.returncode == 0:
+                    manifest = json.loads(result.stdout)
+                    annotations = manifest.get("annotations", {})
+            except Exception:
+                pass
+
+            bom.append({
+                "ref": ref,
+                "digest": digest,
+                "license": annotations.get("org.opencontainers.image.licenses", "unknown"),
+                "description": annotations.get("org.opencontainers.image.description", ""),
+                "version": annotations.get("org.opencontainers.image.version", tag),
+                "source": annotations.get("org.opencontainers.image.source", ""),
+                "citation": annotations.get("dev.linked-past.citation", ""),
+            })
+
+    if not bom:
+        print("No datasets in cache. Pull some first with `linked-past-store pull`.")
+        return
+
+    if args.format == "json":
+        print(json.dumps(bom, indent=2))
+    else:
+        # Markdown table
+        print("# Data Bill of Materials\n")
+        print(f"**Generated:** {__import__('datetime').datetime.now().isoformat()}\n")
+        print("| Dataset | Version | Digest | License | Citation |")
+        print("|---------|---------|--------|---------|----------|")
+        for entry in bom:
+            ref = entry["ref"].rsplit("/", 1)[-1].split(":")[0] if "/" in entry["ref"] else entry["ref"]
+            digest = entry["digest"][:20] + "..."
+            print(f"| {ref} | {entry['version']} | `{digest}` | {entry['license']} | {entry['citation'][:40]} |")
+        print("\nAll artifacts stored at content-addressable digests.")
+        print("To reproduce, pull each artifact by digest:")
+        print("```")
+        for entry in bom:
+            repo = entry["ref"].rsplit(":", 1)[0]
+            print(f"linked-past-store pull {repo}@{entry['digest']}")
+        print("```")
+
+
 def main():
     parser = argparse.ArgumentParser(
         prog="linked-past-store",
@@ -90,6 +199,7 @@ def main():
     p = sub.add_parser("pull", help="Pull an RDF dataset from an OCI registry")
     p.add_argument("ref", help="OCI reference")
     p.add_argument("--output", "-o", default=".", help="Output directory")
+    p.add_argument("--force", "-f", action="store_true", help="Bypass cache, re-download from registry")
     p.set_defaults(func=cmd_pull)
 
     # sanitize
@@ -107,6 +217,23 @@ def main():
     p = sub.add_parser("inspect", help="Show OCI manifest annotations")
     p.add_argument("ref", help="OCI reference")
     p.set_defaults(func=cmd_inspect)
+
+    # cache
+    cache_parser = sub.add_parser("cache", help="Manage the local artifact cache")
+    cache_sub = cache_parser.add_subparsers(dest="cache_command", required=True)
+
+    cache_sub.add_parser("list", help="List cached artifacts").set_defaults(func=cmd_cache_list)
+
+    p = cache_sub.add_parser("gc", help="Remove old cached artifacts")
+    p.add_argument("--max-age", type=int, default=30, help="Max age in days (default: 30)")
+    p.set_defaults(func=cmd_cache_gc)
+
+    cache_sub.add_parser("clear", help="Clear entire cache").set_defaults(func=cmd_cache_clear)
+
+    # bom
+    p = sub.add_parser("bom", help="Generate a Bill of Materials for datasets used")
+    p.add_argument("--format", "-f", choices=["markdown", "json"], default="markdown", help="Output format")
+    p.set_defaults(func=cmd_bom)
 
     args = parser.parse_args()
     args.func(args)

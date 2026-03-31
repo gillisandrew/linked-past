@@ -1,3 +1,4 @@
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 from linked_past.core.fetch import artifact_ref, default_registry, pull_artifact
@@ -19,23 +20,26 @@ def test_default_registry():
     assert "ghcr.io" in reg
 
 
-def test_pull_artifact_calls_oras(tmp_path):
-    with patch("linked_past_store.pull.oras.client.OrasClient") as MockClient:
-        mock_instance = MagicMock()
-        MockClient.return_value = mock_instance
-        mock_instance.pull.return_value = [str(tmp_path / "data.ttl")]
+def test_pull_artifact_downloads(tmp_path):
+    cache_dir = tmp_path / "cache"
 
-        pull_artifact("dprr", tmp_path, version="1.0.0")
-        mock_instance.pull.assert_called_once()
+    def fake_pull(target, outdir):
+        outdir = Path(outdir)
+        outdir.mkdir(parents=True, exist_ok=True)
+        ttl = outdir / "dprr.ttl"
+        ttl.write_text("@prefix ex: <http://example.org/> .\n")
+        return [str(ttl)]
 
+    with (
+        patch("linked_past_store.cache.oras.client.OrasClient") as MockClient,
+        patch("linked_past_store.cache._default_cache_dir", return_value=cache_dir),
+        patch("linked_past_store.cache._resolve_digest", return_value="sha256:test123"),
+    ):
+        mock = MagicMock()
+        MockClient.return_value = mock
+        mock.pull.side_effect = fake_pull
 
-def test_pull_artifact_returns_path(tmp_path):
-    with patch("linked_past_store.pull.oras.client.OrasClient") as MockClient:
-        mock_instance = MagicMock()
-        MockClient.return_value = mock_instance
-        ttl_file = tmp_path / "data.ttl"
-        ttl_file.write_text("# empty turtle")
-        mock_instance.pull.return_value = [str(ttl_file)]
+        result = pull_artifact("dprr", tmp_path / "output", version="1.0.0", force=True)
 
-        result = pull_artifact("dprr", tmp_path, version="1.0.0")
-        assert result == ttl_file
+    assert result.suffix == ".ttl"
+    assert result.exists()
