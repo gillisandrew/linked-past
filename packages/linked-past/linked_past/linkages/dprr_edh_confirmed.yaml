@@ -80,3 +80,7 @@ links:
   target: https://edh-www.adw.uni-heidelberg.de/edh/person/HD030823/3
   note: 'DPRR: VOCO1398 Q. Voconius (4) Hor. Saxa; EDH: Q. Voconius Saxa Fidus; tr.
     pl. 169'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/4460
+  target: https://edh-www.adw.uni-heidelberg.de/edh/person/HD004613/1
+  note: 'DPRR: L. Suetius (eques Romanus); EDH: L. Suetius? Mar[---]; semantic embedding
+    match (unique nomen, name matching missed due to uncertain EDH reading)'
