@@ -294,6 +294,7 @@ class ArtifactCache:
         layer_dir = self._layers_dir / digest.replace("sha256:", "")
         layer_dir.mkdir(parents=True, exist_ok=True)
         shutil.copy2(src_path, layer_dir / filename)
+        self._touch_layer(digest)
 
     def get_layer_path(self, digest: str, filename: str) -> Path | None:
         """Get the path to a cached layer file, or None."""
@@ -323,6 +324,13 @@ class ArtifactCache:
             except OSError:
                 # Symlinks not supported (some Windows configs) — fall back to copy
                 shutil.copy2(src, dst)
+
+        # Record layer references for GC
+        gc_data = self._load_gc()
+        gc_data.setdefault("manifest_layers", {})[manifest_digest] = [
+            layer.digest for layer in layers
+        ]
+        self._save_gc(gc_data)
 
         return blob_dir
 
@@ -374,11 +382,18 @@ class ArtifactCache:
         return entries
 
     def gc(self, max_age_days: int = 30) -> int:
-        """Remove cached blobs not accessed in max_age_days. Returns count removed."""
+        """Remove cached blobs and orphaned layers not accessed in max_age_days.
+
+        Returns count of items removed (blobs + layers combined).
+        """
+        import shutil
+
         gc_data = self._load_gc()
         now = datetime.now(timezone.utc)
         removed = 0
 
+        # Phase 1: GC manifest blobs (existing behavior), track surviving manifests
+        surviving_manifests: set[str] = set()
         for digest_dir in list(self._blobs_dir.iterdir()) if self._blobs_dir.exists() else []:
             digest = f"sha256:{digest_dir.name}"
             last_access = gc_data.get(digest)
@@ -386,16 +401,42 @@ class ArtifactCache:
                 try:
                     last_dt = datetime.fromisoformat(last_access)
                     if (now - last_dt).days <= max_age_days:
+                        surviving_manifests.add(digest)
                         continue
                 except ValueError:
                     pass
 
-            import shutil
-
             shutil.rmtree(digest_dir, ignore_errors=True)
             gc_data.pop(digest, None)
+            gc_data.get("manifest_layers", {}).pop(digest, None)
             removed += 1
-            logger.info("GC: removed %s", digest[:20])
+            logger.info("GC: removed manifest blob %s", digest[:20])
+
+        # Phase 2: Collect layer digests referenced by surviving manifests
+        referenced_layers: set[str] = set()
+        for manifest_digest in surviving_manifests:
+            layer_digests = gc_data.get("manifest_layers", {}).get(manifest_digest, [])
+            referenced_layers.update(layer_digests)
+
+        # Remove orphaned layers not referenced AND not recently accessed
+        layer_access = gc_data.get("layers", {})
+        for layer_dir in list(self._layers_dir.iterdir()) if self._layers_dir.exists() else []:
+            layer_digest = f"sha256:{layer_dir.name}"
+            if layer_digest in referenced_layers:
+                continue  # Referenced by a surviving manifest — keep
+            last_access = layer_access.get(layer_digest)
+            if last_access:
+                try:
+                    last_dt = datetime.fromisoformat(last_access)
+                    if (now - last_dt).days <= max_age_days:
+                        continue  # Recently accessed — keep
+                except ValueError:
+                    pass
+
+            shutil.rmtree(layer_dir, ignore_errors=True)
+            layer_access.pop(layer_digest, None)
+            removed += 1
+            logger.info("GC: removed orphaned layer %s", layer_digest[:20])
 
         self._save_gc(gc_data)
         return removed
@@ -403,6 +444,11 @@ class ArtifactCache:
     def _touch(self, digest: str) -> None:
         gc = self._load_gc()
         gc[digest] = datetime.now(timezone.utc).isoformat()
+        self._save_gc(gc)
+
+    def _touch_layer(self, digest: str) -> None:
+        gc = self._load_gc()
+        gc.setdefault("layers", {})[digest] = datetime.now(timezone.utc).isoformat()
         self._save_gc(gc)
 
     def _load_gc(self) -> dict:

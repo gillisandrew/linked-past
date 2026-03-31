@@ -102,6 +102,8 @@ def cmd_cache_clear(args):
     cache = ArtifactCache()
     if cache._blobs_dir.exists():
         shutil.rmtree(cache._blobs_dir)
+    if cache._layers_dir.exists():
+        shutil.rmtree(cache._layers_dir)
     if cache._manifests_dir.exists():
         shutil.rmtree(cache._manifests_dir)
     if cache._gc_path.exists():

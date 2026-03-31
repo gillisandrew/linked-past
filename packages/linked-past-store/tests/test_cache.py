@@ -1,6 +1,7 @@
 """Tests for ArtifactCache layer-level caching."""
 
 import json
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest.mock import patch
 
@@ -227,6 +228,45 @@ class TestAssembleBlobDirSymlinkFallback:
         assert (blob_dir / "data.ttl").exists()
         assert (blob_dir / "data.ttl").read_text() == "content"
         assert not (blob_dir / "data.ttl").is_symlink()  # copy, not symlink
+
+
+class TestLayerGC:
+    def test_gc_removes_orphaned_layers(self, tmp_path):
+        cache = ArtifactCache(tmp_path / "cache")
+
+        # Create two layers
+        cache.put_layer("sha256:used", "data.ttl", _write_tmp(tmp_path, "data.ttl", "used"))
+        cache.put_layer("sha256:orphan", "old.ttl", _write_tmp(tmp_path, "old.ttl", "orphan"))
+
+        # Assemble a blob dir referencing only the first layer
+        layers = [LayerInfo("sha256:used", "data.ttl", 100, False)]
+        cache.assemble_blob_dir("sha256:manifest1", layers)
+
+        # Touch the manifest blob so it survives GC
+        cache._touch("sha256:manifest1")
+
+        # Backdate the orphan layer's access time so it's old enough to be evicted
+        gc_data = cache._load_gc()
+        old_time = (datetime.now(timezone.utc) - timedelta(days=60)).isoformat()
+        gc_data.setdefault("layers", {})["sha256:orphan"] = old_time
+        cache._save_gc(gc_data)
+
+        # GC with max_age=30: orphan is 60 days old → removed; used is referenced → kept
+        removed = cache.gc(max_age_days=30)
+
+        assert cache.has_layer("sha256:used")        # referenced → kept
+        assert not cache.has_layer("sha256:orphan")  # orphaned and old → removed
+        assert removed >= 1
+
+    def test_gc_preserves_recently_accessed_layers(self, tmp_path):
+        cache = ArtifactCache(tmp_path / "cache")
+        cache.put_layer("sha256:recent", "data.ttl", _write_tmp(tmp_path, "data.ttl", "content"))
+
+        # put_layer calls _touch_layer, so access time is just now
+        # GC with max_age=30 should keep it
+        removed = cache.gc(max_age_days=30)
+        assert cache.has_layer("sha256:recent")
+        assert removed == 0
 
 
 class TestLayerAwarePull:
