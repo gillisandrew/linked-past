@@ -11,32 +11,53 @@ logger = logging.getLogger(__name__)
 
 def push_dataset(
     ref: str,
-    path: str | Path,
+    path: str | Path | list[str | Path],
     annotations: dict[str, str] | None = None,
     media_type: str = "application/x-turtle",
+    void_path: str | Path | None = None,
 ) -> str:
-    """Push an RDF file to an OCI registry as an artifact.
+    """Push RDF file(s) to an OCI registry as an artifact.
 
     Args:
         ref: OCI reference (e.g., "ghcr.io/myorg/dataset:v1.0")
-        path: Path to the RDF file to push
+        path: Path(s) to RDF file(s) to push. Single path or list of paths.
         annotations: OCI manifest annotations (license, citation, etc.)
-        media_type: MIME type for the artifact layer
+        media_type: MIME type for the artifact layers
+        void_path: Optional path to VoID description file (pushed as additional layer)
 
     Returns:
         The digest of the pushed artifact (sha256:...)
     """
-    path = Path(path)
-    if not path.exists():
-        raise FileNotFoundError(f"File not found: {path}")
+    # Normalize to list
+    if isinstance(path, (str, Path)):
+        paths = [Path(path)]
+    else:
+        paths = [Path(p) for p in path]
 
-    cmd = ["oras", "push", ref, f"{path.name}:{media_type}"]
+    for p in paths:
+        if not p.exists():
+            raise FileNotFoundError(f"File not found: {p}")
+
+    if void_path:
+        void_path = Path(void_path)
+        if not void_path.exists():
+            raise FileNotFoundError(f"VoID file not found: {void_path}")
+
+    # All files must be in same directory for oras push
+    cwd = paths[0].parent
+
+    cmd = ["oras", "push", ref]
+    for p in paths:
+        cmd.append(f"{p.name}:{media_type}")
+    if void_path:
+        cmd.append(f"{void_path.name}:{media_type}")
+
     if annotations:
         for key, val in annotations.items():
             cmd.extend(["--annotation", f"{key}={val}"])
 
-    logger.info("Pushing %s to %s", path.name, ref)
-    result = subprocess.run(cmd, cwd=str(path.parent), capture_output=True, text=True, check=True)
+    logger.info("Pushing %d file(s) to %s", len(paths), ref)
+    result = subprocess.run(cmd, cwd=str(cwd), capture_output=True, text=True, check=True)
 
     # Extract digest from output
     for line in result.stdout.splitlines():

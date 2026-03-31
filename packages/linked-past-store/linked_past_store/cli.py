@@ -109,6 +109,54 @@ def cmd_cache_clear(args):
     print("Cache cleared.")
 
 
+def cmd_ontology_extract(args):
+    from pathlib import Path
+
+    from linked_past_store.ontology import extract_schema, generate_schemas_yaml
+
+    ontology_path = Path(args.ontology) if args.ontology else None
+    data_path = Path(args.from_data) if args.from_data else None
+    output = Path(args.output)
+
+    prefix_map = {}
+    if args.prefix:
+        for p in args.prefix:
+            ns, short = p.split("=", 1)
+            prefix_map[ns] = short
+
+    schema = extract_schema(ontology_path=ontology_path, data_path=data_path)
+    generate_schemas_yaml(schema, output, prefix_map=prefix_map or None)
+    print(f"Wrote {len(schema.classes)} classes to {output}")
+
+
+def cmd_void_generate(args):
+    from pathlib import Path
+
+    from linked_past_store.void import generate_void
+
+    void = generate_void(
+        data_path=args.data,
+        dataset_id=args.dataset_id,
+        title=args.title,
+        license_uri=args.license or "",
+        source_uri=args.source or "",
+        citation=args.citation or "",
+        publisher=args.publisher or "",
+        output_path=Path(args.output) if args.output else None,
+    )
+
+    print(f"Dataset: {void.title}")
+    print(f"  Triples:    {void.triples:,}")
+    print(f"  Entities:   {void.entities:,}")
+    print(f"  Classes:    {void.classes}")
+    print(f"  Properties: {void.properties}")
+    print(f"  URI space:  {void.uri_space}")
+    if args.output:
+        print(f"  Written to: {args.output}")
+    else:
+        print(void.to_turtle())
+
+
 def cmd_bom(args):
     """Generate a Bill of Materials for all cached/used datasets."""
     from linked_past_store.cache import ArtifactCache
@@ -234,6 +282,32 @@ def main():
     p = sub.add_parser("bom", help="Generate a Bill of Materials for datasets used")
     p.add_argument("--format", "-f", choices=["markdown", "json"], default="markdown", help="Output format")
     p.set_defaults(func=cmd_bom)
+
+    # ontology
+    onto_parser = sub.add_parser("ontology", help="Extract schema from ontology or data")
+    onto_sub = onto_parser.add_subparsers(dest="ontology_command", required=True)
+
+    p = onto_sub.add_parser("extract", help="Extract schema to YAML")
+    p.add_argument("ontology", nargs="?", help="OWL/RDFS ontology file")
+    p.add_argument("--from-data", help="RDF data file for empirical extraction")
+    p.add_argument("--output", "-o", default="schemas.yaml", help="Output YAML file")
+    p.add_argument("--prefix", action="append", help="Prefix mapping: namespace=short")
+    p.set_defaults(func=cmd_ontology_extract)
+
+    # void
+    void_parser = sub.add_parser("void", help="Generate VoID dataset descriptions")
+    void_sub = void_parser.add_subparsers(dest="void_command", required=True)
+
+    p = void_sub.add_parser("generate", help="Generate VoID from data")
+    p.add_argument("data", help="RDF data file")
+    p.add_argument("--dataset-id", required=True, help="Short dataset identifier")
+    p.add_argument("--title", required=True, help="Human-readable dataset title")
+    p.add_argument("--license", help="License URI")
+    p.add_argument("--source", help="Upstream source URL")
+    p.add_argument("--citation", help="Bibliographic citation")
+    p.add_argument("--publisher", help="Publisher name")
+    p.add_argument("--output", "-o", help="Output file (prints to stdout if omitted)")
+    p.set_defaults(func=cmd_void_generate)
 
     args = parser.parse_args()
     args.func(args)

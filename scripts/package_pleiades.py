@@ -1,18 +1,14 @@
-"""Download Pleiades RDF dump, sanitize for Oxigraph, and push to OCI registry.
-
-The upstream Pleiades Turtle has language tags that violate BCP 47
-(subtags longer than 8 characters, e.g., @etruscan-in-latin-characters).
-We fix these by truncating/replacing invalid language tags, then verify
-with pyoxigraph.
-"""
+"""Download Pleiades RDF dump, sanitize for Oxigraph, generate VoID, and push to OCI registry."""
 
 import re
-import subprocess
 import sys
 import tarfile
 import tempfile
 import urllib.request
 from pathlib import Path
+
+from linked_past_store import push_dataset, verify_turtle
+from linked_past_store.void import generate_void
 
 SOURCE_URL = "https://atlantides.org/downloads/pleiades/rdf/pleiades-latest.tar.gz"
 ARTIFACT_REF = "ghcr.io/gillisandrew/linked-past/pleiades"
@@ -35,34 +31,21 @@ ANNOTATIONS = {
 
 # BCP 47: subtags must be max 8 characters
 _LANG_TAG = re.compile(r'"([^"]*)"@([a-zA-Z][a-zA-Z0-9-]*)')
-
-
-def _fix_lang_tag(match: re.Match) -> str:
-    """Fix language tags with subtags exceeding 8 characters."""
-    text = match.group(1)
-    tag = match.group(2)
-    # Check each subtag
-    parts = tag.split("-")
-    fixed_parts = []
-    for part in parts:
-        if len(part) > 8:
-            # Truncate to 8 chars (BCP 47 max subtag length)
-            fixed_parts.append(part[:8])
-        else:
-            fixed_parts.append(part)
-    fixed_tag = "-".join(fixed_parts)
-    return f'"{text}"@{fixed_tag}'
-
-
 _BARE_DOI = re.compile(r'<(doi\.org/)')
 
 
-def _sanitize_turtle(text: str) -> tuple[str, int]:
-    """Fix known issues in Pleiades Turtle."""
+def _fix_lang_tag(match: re.Match) -> str:
+    text = match.group(1)
+    tag = match.group(2)
+    parts = tag.split("-")
+    fixed_parts = [part[:8] if len(part) > 8 else part for part in parts]
+    return f'"{text}"@{"-".join(fixed_parts)}'
+
+
+def _sanitize_pleiades(text: str) -> tuple[str, int]:
     fixes = 0
     text, n = _LANG_TAG.subn(_fix_lang_tag, text)
     fixes += n
-    # Fix bare DOIs missing scheme: <doi.org/...> → <https://doi.org/...>
     text, n = _BARE_DOI.subn(r'<https://\1', text)
     fixes += n
     return text, fixes
@@ -74,7 +57,6 @@ def main(version="latest"):
         print(f"Downloading {SOURCE_URL}...")
         tmp_path, _ = urllib.request.urlretrieve(SOURCE_URL)
 
-        # Concatenate all .ttl files
         print("Extracting and concatenating Turtle files...")
         raw = tmpdir / "pleiades_raw.ttl"
         with tarfile.open(tmp_path, "r:gz") as tar, open(raw, "w") as out:
@@ -88,31 +70,51 @@ def main(version="latest"):
         Path(tmp_path).unlink()
         print(f"Raw: {raw.stat().st_size:,} bytes")
 
-        # Fix language tags
+        # Fix Pleiades-specific issues
         print("Sanitizing (fixing BCP 47 language tags)...")
         text = raw.read_text()
-        fixed_text, fix_count = _sanitize_turtle(text)
-        print(f"Applied fixes to {fix_count} language-tagged literals")
+        fixed_text, fix_count = _sanitize_pleiades(text)
+        print(f"Applied fixes to {fix_count} literals")
 
         output = tmpdir / "pleiades.ttl"
         output.write_text(fixed_text)
 
-        # Verify with pyoxigraph
-        print("Verifying with pyoxigraph...")
-        from pyoxigraph import RdfFormat, Store
-        store = Store()
-        store.bulk_load(path=str(output), format=RdfFormat.TURTLE)
-        print(f"Verified: {len(store):,} triples")
-        del store
+        # Verify
+        result = verify_turtle(output)
+        if not result.ok:
+            print(f"Verification failed: {result.errors[0]}")
+            sys.exit(1)
+        print(f"Verified: {result.triple_count:,} triples")
 
+        # Generate VoID
+        void = generate_void(
+            data_path=output,
+            dataset_id="pleiades",
+            title="Pleiades: A Gazetteer of Past Places",
+            license_uri="https://creativecommons.org/licenses/by/3.0/",
+            source_uri="https://pleiades.stoa.org/",
+            citation="Bagnall, R. et al. (eds.), Pleiades. DOI: 10.5281/zenodo.1193921",
+            publisher="Institute for the Study of the Ancient World (NYU)",
+            output_path=tmpdir / "void.ttl",
+        )
+        print(f"Generated VoID: {void.triples:,} triples, {void.classes} classes")
+
+        # Push
+        annotations = {
+            **ANNOTATIONS,
+            "org.opencontainers.image.version": version,
+            "dev.linked-past.triples": str(result.triple_count),
+        }
         ref = f"{ARTIFACT_REF}:{version}"
-        print(f"Pushing to {ref}...")
-        cmd = ["oras", "push", ref, "pleiades.ttl:application/x-turtle"]
-        for key, val in ANNOTATIONS.items():
-            cmd.extend(["--annotation", f"{key}={val}"])
-        cmd.extend(["--annotation", f"org.opencontainers.image.version={version}"])
-        subprocess.run(cmd, cwd=str(tmpdir), check=True)
+        digest = push_dataset(
+            ref,
+            output,
+            annotations=annotations,
+            void_path=tmpdir / "void.ttl",
+        )
         print(f"Done: {ref}")
+        if digest:
+            print(f"Digest: {digest}")
 
 
 if __name__ == "__main__":
