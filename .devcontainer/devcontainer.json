@@ -2,16 +2,19 @@
   "name": "linked-past",
   "image": "mcr.microsoft.com/devcontainers/python:3.13",
   "features": {
-    "ghcr.io/devcontainers/features/node:1": {},
     "ghcr.io/devcontainers/features/github-cli:1": {}
   },
-  "postCreateCommand": "pip install uv && uv sync && npm install -g @anthropic-ai/claude-code",
+  "postCreateCommand": "pip install uv && uv sync",
+  "postStartCommand": "cat .devcontainer/WELCOME.md",
   "customizations": {
     "vscode": {
       "extensions": [
         "ms-python.python",
         "charliermarsh.ruff"
-      ]
+      ],
+      "settings": {
+        "workbench.startupEditor": "readme"
+      }
     }
   },
   "forwardPorts": [8000],
