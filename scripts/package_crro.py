@@ -64,8 +64,11 @@ def main(version="latest"):
         )
         print(f"Generated VoID: {void.triples:,} triples, {void.classes} classes")
 
-        # Extract schema
-        schema = extract_schema(data_path=ttl_path)
+        # Fetch Nomisma ontology (CRRO uses the NMO vocabulary)
+        ontology_path = tmpdir / "_ontology.ttl"
+        print("Downloading Nomisma ontology from https://nomisma.org/ontology.ttl...")
+        urllib.request.urlretrieve("https://nomisma.org/ontology.ttl", str(ontology_path))
+        schema = extract_schema(ontology_path=ontology_path, data_path=ttl_path)
         generate_schemas_yaml(schema, tmpdir / "_schema.yaml")
         print(f"Extracted schema: {len(schema.classes)} classes")
 
@@ -78,7 +81,7 @@ def main(version="latest"):
         ref = f"{ARTIFACT_REF}:{version}"
         digest = push_dataset(
             ref,
-            [ttl_path, tmpdir / "_void.ttl", tmpdir / "_schema.yaml"],
+            [ttl_path, tmpdir / "_void.ttl", tmpdir / "_schema.yaml", ontology_path],
             annotations=annotations,
         )
         print(f"Done: {ref}")
