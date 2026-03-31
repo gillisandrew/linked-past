@@ -317,14 +317,40 @@ def extract_schema(
     data_path: Path | str | None = None,
     ontology_path: Path | str | None = None,
 ) -> Schema:
-    """Extract schema, preferring ontology when available, falling back to data."""
+    """Extract schema from ontology and/or data.
+
+    When both are provided, merges them: ontology classes win where names
+    overlap (they have richer comments/hierarchy), empirical classes fill
+    gaps (they have actual property usage from the data).
+    """
+    ont_schema = None
+    emp_schema = None
+
     if ontology_path is not None:
-        logger.info("Using ontology extraction from %s", ontology_path)
-        return extract_from_ontology(Path(ontology_path))
+        logger.info("Extracting from ontology: %s", ontology_path)
+        ont_schema = extract_from_ontology(Path(ontology_path))
+
     if data_path is not None:
-        logger.info("Falling back to empirical extraction from %s", data_path)
+        logger.info("Extracting empirically from data: %s", data_path)
         store = _load_store(Path(data_path))
-        return extract_from_data(store, filter_meta=True)
+        emp_schema = extract_from_data(store, filter_meta=True)
+
+    if ont_schema and emp_schema:
+        # Merge: ontology wins on overlap, empirical fills gaps
+        for name, cls in emp_schema.classes.items():
+            if name not in ont_schema.classes:
+                ont_schema.classes[name] = cls
+            elif not ont_schema.classes[name].properties and cls.properties:
+                # Ontology has the class but no properties — enrich from data
+                ont_schema.classes[name].properties = cls.properties
+        logger.info("Merged: %d classes (ontology + empirical)", len(ont_schema.classes))
+        return ont_schema
+
+    if ont_schema:
+        return ont_schema
+    if emp_schema:
+        return emp_schema
+
     raise ValueError("At least one of data_path or ontology_path must be provided")
 
 
