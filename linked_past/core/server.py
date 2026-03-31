@@ -619,7 +619,7 @@ def create_mcp_server() -> FastMCP:
 
             if not initialized:
                 lines.append(f"## {plugin.display_name}\n")
-                lines.append(f"- **Status:** Not initialized — downloading from OCI...")
+                lines.append("- **Status:** Not initialized — downloading from OCI...")
                 try:
                     registry.initialize_dataset(ds_name)
                     meta = registry.get_metadata(ds_name)

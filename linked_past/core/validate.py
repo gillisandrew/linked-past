@@ -4,8 +4,6 @@ from __future__ import annotations
 
 import logging
 import re
-
-logger = logging.getLogger(__name__)
 from dataclasses import dataclass, field
 from difflib import get_close_matches
 
@@ -15,6 +13,8 @@ from rdflib.plugins.sparql.algebra import translateQuery, traverse
 from rdflib.plugins.sparql.parser import parseQuery
 from rdflib.plugins.sparql.parserutils import CompValue
 from rdflib.term import URIRef, Variable
+
+logger = logging.getLogger(__name__)
 
 RDF_TYPE = URIRef("http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
 
