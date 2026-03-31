@@ -82,10 +82,8 @@ class EDHPlugin(DatasetPlugin):
         )
 
     def validate(self, sparql: str) -> ValidationResult:
-        errors = validate_semantics(sparql, self._schema_dict)
-        if errors:
-            return ValidationResult(valid=False, sparql=sparql, errors=errors)
-        return ValidationResult(valid=True, sparql=sparql)
+        hints = validate_semantics(sparql, self._schema_dict)
+        return ValidationResult(valid=True, sparql=sparql, suggestions=hints)
 
     def get_relevant_context(self, sparql: str) -> str:
         classes = extract_query_classes(sparql, self._schema_dict)

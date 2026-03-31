@@ -451,10 +451,6 @@ def create_mcp_server() -> FastMCP:
             return base + plugin.get_relevant_context(sparql)
 
         result = plugin.validate(fixed_sparql)
-        if not result.valid:
-            error_list = "\n".join(f"- {e}" for e in result.errors)
-            base = f"INVALID\n\nErrors:\n{error_list}"
-            return base + plugin.get_relevant_context(fixed_sparql)
 
         if fixed_sparql != sparql:
             diff = "".join(
@@ -467,6 +463,12 @@ def create_mcp_server() -> FastMCP:
             base = f"VALID (prefixes auto-repaired)\n\n```diff\n{diff}```"
         else:
             base = "VALID"
+
+        # Append constructive hints (non-blocking) if the validator found issues
+        if result.suggestions:
+            hint_list = "\n".join(f"- {h}" for h in result.suggestions)
+            base += f"\n\n⚠️ Schema hints (query will still execute):\n{hint_list}"
+
         return base + plugin.get_relevant_context(fixed_sparql)
 
     @mcp.tool()

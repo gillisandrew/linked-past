@@ -202,17 +202,17 @@ def extract_query_classes(sparql: str, schema_dict: dict) -> set[str]:
 def validate_semantics(sparql: str, schema_dict: dict) -> list[str]:
     """Validate a SPARQL query against the schema dictionary.
 
-    Returns errors for unknown classes (likely typos).
-    Unknown predicates are only warnings (logged, not returned as errors)
-    because multi-vocabulary datasets commonly use predicates from
-    shared ontologies (SKOS, Dublin Core, ORG, etc.) that aren't
-    listed in the dataset-specific schema.
+    Returns a list of strings. No blocking errors — all issues are
+    constructive hints that help the LLM self-correct.
+
+    Hints include available alternatives so the LLM knows what vocabulary
+    to use (e.g., "Class 'City' not in schema. Available: Place, Location, Name").
     """
-    errors = []
+    hints = []
     try:
         triples = _collect_triples(sparql)
     except Exception:
-        return errors
+        return hints
 
     var_types: dict[str, list[str]] = {}
     all_class_uris = set(schema_dict.keys())
@@ -222,11 +222,11 @@ def validate_semantics(sparql: str, schema_dict: dict) -> list[str]:
             class_uri = str(o)
             if class_uri not in all_class_uris:
                 local_name = _local_name(class_uri)
-                # Log as info, not error — datasets use many shared vocabularies
-                # (LAWD, FOAF, SKOS, etc.) whose classes aren't in the schema YAML
-                logger.info(
-                    "Class '%s' not in schema (may be from a shared vocabulary like LAWD, FOAF, SKOS)",
-                    local_name,
+                valid_classes = sorted(_local_name(uri) for uri in all_class_uris)
+                suggestion = _suggest(local_name, valid_classes)
+                hints.append(
+                    f"Hint: Class '{local_name}' not in this dataset's schema. "
+                    f"Available classes: {', '.join(valid_classes[:15])}.{suggestion}"
                 )
             if isinstance(s, Variable):
                 var_name = str(s)
@@ -234,9 +234,6 @@ def validate_semantics(sparql: str, schema_dict: dict) -> list[str]:
                     var_types[var_name] = []
                 var_types[var_name].append(class_uri)
 
-    # Unknown predicates are warnings, not errors — multi-vocabulary
-    # datasets routinely use predicates from shared ontologies that
-    # aren't in the dataset-specific schema.
     for s, p, o in triples:
         if p == RDF_TYPE or not isinstance(p, URIRef) or not isinstance(s, Variable):
             continue
@@ -252,12 +249,14 @@ def validate_semantics(sparql: str, schema_dict: dict) -> list[str]:
             valid_preds = schema_dict[class_uri]
             if pred_uri not in valid_preds:
                 pred_local = _local_name(pred_uri)
-                logger.info(
-                    "Predicate '%s' not in schema for class '%s' (may be from a shared vocabulary)",
-                    pred_local,
-                    _local_name(class_uri),
+                class_local = _local_name(class_uri)
+                valid_local = sorted(_local_name(uri) for uri in valid_preds)
+                suggestion = _suggest(pred_local, valid_local)
+                hints.append(
+                    f"Hint: '{pred_local}' not a known predicate for {class_local}. "
+                    f"Available: {', '.join(valid_local[:15])}.{suggestion}"
                 )
-    return errors
+    return hints
 
 
 def validate_and_execute(
