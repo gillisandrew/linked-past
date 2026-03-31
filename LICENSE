@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) 2025 Andrew Gillis
+Copyright (c) 2025-2026 Andrew Gillis
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,6 +22,21 @@ SOFTWARE.
 
 ---
 
-Note: The DPRR dataset (data/dprr.ttl) is separately licensed under
-CC BY-NC 4.0 by John Bradley, King's College London.
-https://creativecommons.org/licenses/by-nc/4.0/
+## Dataset Licenses
+
+This software does not bundle dataset data. Datasets are distributed as
+separate OCI artifacts at ghcr.io/gillisandrew/linked-past/ and are pulled
+at runtime. Each dataset has its own license:
+
+| Dataset | License | SPDX |
+|---------|---------|------|
+| DPRR | CC BY-NC 4.0 | CC-BY-NC-4.0 |
+| Pleiades | CC BY 3.0 | CC-BY-3.0 |
+| PeriodO | CC0 1.0 | CC0-1.0 |
+| Nomisma | CC BY 4.0 | CC-BY-4.0 |
+| CRRO | ODbL 1.0 | ODbL-1.0 |
+| EDH | CC BY-SA 4.0 | CC-BY-SA-4.0 |
+
+License identifiers are declared in each OCI artifact's manifest annotations
+(`org.opencontainers.image.licenses`). Consult the individual dataset's terms
+before redistributing derived works.
