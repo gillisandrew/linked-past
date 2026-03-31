@@ -8,6 +8,7 @@ requires-python = ">=3.13"
 dependencies = [
     "oras",
     "pyoxigraph",
+    "pyyaml",
 ]
 
 [project.scripts]
