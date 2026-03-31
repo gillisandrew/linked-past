@@ -1,12 +1,8 @@
 {
   "mcpServers": {
     "linked-past": {
-      "type": "url",
+      "type": "http",
       "url": "http://127.0.0.1:8000/mcp"
-    },
-    "agentation": {
-      "command": "pnpm",
-      "args": ["dlx", "agentation-mcp", "server", "--port", "7373"]
     }
   }
 }

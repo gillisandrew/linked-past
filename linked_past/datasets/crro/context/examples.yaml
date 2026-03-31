@@ -1,0 +1,88 @@
+examples:
+  - question: "List all Roman Republican coin types with their authorities and denominations"
+    sparql: |
+      PREFIX nmo: <http://nomisma.org/ontology#>
+      PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+      PREFIX dcterms: <http://purl.org/dc/terms/>
+      PREFIX nm: <http://nomisma.org/id/>
+      SELECT ?type ?label ?authority ?authorityLabel ?denomination ?denominationLabel
+      WHERE {
+        ?type a nmo:TypeSeriesItem ;
+              skos:prefLabel ?label ;
+              dcterms:source nm:rrc .
+        OPTIONAL { ?type nmo:hasAuthority ?authority .
+                   ?authority skos:prefLabel ?authorityLabel
+                   FILTER(LANG(?authorityLabel) = "en") }
+        OPTIONAL { ?type nmo:hasDenomination ?denomination .
+                   ?denomination skos:prefLabel ?denominationLabel
+                   FILTER(LANG(?denominationLabel) = "en") }
+      }
+      ORDER BY ?label
+      LIMIT 100
+
+  - question: "Find all denarii with their mints and date ranges"
+    sparql: |
+      PREFIX nmo: <http://nomisma.org/ontology#>
+      PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+      PREFIX nm: <http://nomisma.org/id/>
+      SELECT ?type ?label ?mint ?mintLabel ?startDate ?endDate
+      WHERE {
+        ?type a nmo:TypeSeriesItem ;
+              skos:prefLabel ?label ;
+              nmo:hasDenomination nm:denarius .
+        OPTIONAL { ?type nmo:hasMint ?mint .
+                   ?mint skos:prefLabel ?mintLabel
+                   FILTER(LANG(?mintLabel) = "en") }
+        OPTIONAL { ?type nmo:hasStartDate ?startDate }
+        OPTIONAL { ?type nmo:hasEndDate ?endDate }
+      }
+      ORDER BY ?startDate
+
+  - question: "Find coin types issued by a specific authority (e.g., Julius Caesar)"
+    sparql: |
+      PREFIX nmo: <http://nomisma.org/ontology#>
+      PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+      PREFIX nm: <http://nomisma.org/id/>
+      SELECT ?type ?label ?denomination ?denominationLabel ?startDate ?endDate
+      WHERE {
+        ?type a nmo:TypeSeriesItem ;
+              skos:prefLabel ?label ;
+              nmo:hasAuthority nm:julius_caesar .
+        OPTIONAL { ?type nmo:hasDenomination ?denomination .
+                   ?denomination skos:prefLabel ?denominationLabel
+                   FILTER(LANG(?denominationLabel) = "en") }
+        OPTIONAL { ?type nmo:hasStartDate ?startDate }
+        OPTIONAL { ?type nmo:hasEndDate ?endDate }
+      }
+      ORDER BY ?startDate
+
+  - question: "Count coin types by denomination"
+    sparql: |
+      PREFIX nmo: <http://nomisma.org/ontology#>
+      PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+      SELECT ?denomination ?denominationLabel (COUNT(?type) AS ?count)
+      WHERE {
+        ?type a nmo:TypeSeriesItem ;
+              nmo:hasDenomination ?denomination .
+        ?denomination skos:prefLabel ?denominationLabel .
+        FILTER(LANG(?denominationLabel) = "en")
+      }
+      GROUP BY ?denomination ?denominationLabel
+      ORDER BY DESC(?count)
+
+  - question: "Find gold coin types (aurei)"
+    sparql: |
+      PREFIX nmo: <http://nomisma.org/ontology#>
+      PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+      PREFIX nm: <http://nomisma.org/id/>
+      SELECT ?type ?label ?authority ?authorityLabel ?startDate
+      WHERE {
+        ?type a nmo:TypeSeriesItem ;
+              skos:prefLabel ?label ;
+              nmo:hasMaterial nm:av .
+        OPTIONAL { ?type nmo:hasAuthority ?authority .
+                   ?authority skos:prefLabel ?authorityLabel
+                   FILTER(LANG(?authorityLabel) = "en") }
+        OPTIONAL { ?type nmo:hasStartDate ?startDate }
+      }
+      ORDER BY ?startDate

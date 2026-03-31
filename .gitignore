@@ -19,3 +19,10 @@ wheels/
 
 # Git worktrees
 .worktrees/
+
+# Data files (distributed via OCI, not committed)
+*.zip
+data/extracted/
+
+# Superpowers cache
+.superpowers/

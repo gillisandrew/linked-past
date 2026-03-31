@@ -1,0 +1,20 @@
+tips:
+  - title: "rrc_source_filter"
+    body: "All CRRO types have dcterms:source nm:rrc (Crawford's Roman Republican Coinage). Include this in queries to restrict to CRRO types vs other Nomisma data."
+    classes: ["CoinType"]
+
+  - title: "authority_links_to_nomisma_persons"
+    body: "nmo:hasAuthority links to Nomisma person URIs (e.g., nm:julius_caesar). These are the same URIs in the Nomisma concept vocabulary — use them to cross-reference with DPRR persons."
+    classes: ["CoinType"]
+
+  - title: "date_encoding"
+    body: "Dates use xsd:gYear. Republican dates are negative: '100 BC' = '-0099'. Use FILTER with xsd:gYear cast for date ranges."
+    classes: ["CoinType"]
+
+  - title: "obverse_reverse_fragments"
+    body: "nmo:hasObverse and nmo:hasReverse link to fragment URIs (e.g., crro:rrc-44.5#obverse). These contain iconographic descriptions and legends accessible via nmo:hasPortrait, nmo:hasLegend."
+    classes: ["CoinType"]
+
+  - title: "denomination_mint_material_are_nomisma_concepts"
+    body: "Denominations (nm:denarius), mints (nm:rome), and materials (nm:ar, nm:av, nm:ae) are Nomisma concept URIs. Use the Nomisma dataset for their labels and definitions."
+    classes: ["CoinType"]
