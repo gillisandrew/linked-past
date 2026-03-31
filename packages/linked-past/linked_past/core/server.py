@@ -15,9 +15,9 @@ from pathlib import Path
 import toons
 from mcp.server.fastmcp import Context, FastMCP
 
-from linked_past.core.embeddings import EmbeddingIndex
 from linked_past.core.linkage import LinkageGraph
 from linked_past.core.registry import DatasetRegistry
+from linked_past.core.search import SearchIndex
 from linked_past.core.store import get_data_dir
 from linked_past.core.validate import parse_and_fix_prefixes, validate_and_execute
 from linked_past.datasets.crro.plugin import CRROPlugin
@@ -37,7 +37,7 @@ QUERY_TIMEOUT = int(os.environ.get("LINKED_PAST_QUERY_TIMEOUT", os.environ.get("
 class AppContext:
     registry: DatasetRegistry
     linkage: LinkageGraph | None = None
-    embeddings: EmbeddingIndex | None = None
+    embeddings: SearchIndex | None = None
     meta: object = None  # MetaEntityIndex
     session_log: list = None
 
@@ -46,63 +46,46 @@ class AppContext:
             self.session_log = []
 
 
-def _build_embeddings(registry: DatasetRegistry, data_dir: Path) -> EmbeddingIndex | None:
-    """Load or build embedding index from plugin context. Skips rebuild if DB is populated."""
+def _build_search_index(registry: DatasetRegistry, data_dir: Path) -> SearchIndex | None:
+    """Build full-text search index from plugin context and SKOS vocabularies."""
     try:
-        embeddings_path = data_dir / "embeddings.db"
-        embeddings = EmbeddingIndex(embeddings_path)
+        search_path = data_dir / "search.db"
+        search = SearchIndex(search_path)
 
-        # Check if already populated — skip expensive rebuild
-        existing = embeddings._conn.execute("SELECT COUNT(*) FROM documents WHERE embedding IS NOT NULL").fetchone()[0]
+        # Check if already populated — skip rebuild
+        existing = search._conn.execute("SELECT COUNT(*) FROM documents").fetchone()[0]
         if existing > 0:
-            logger.info("Embedding index loaded from cache (%d documents)", existing)
-            return embeddings
+            logger.info("Search index loaded from cache (%d documents)", existing)
+            return search
 
-        # First time — build from scratch
-        logger.info("Building embedding index (first time)...")
+        logger.info("Building search index...")
         for name in registry.list_datasets():
             plugin = registry.get_plugin(name)
-            embeddings.add(name, "dataset", f"{plugin.display_name}: {plugin.description}")
+            search.add(name, "dataset", f"{plugin.display_name}: {plugin.description}")
             if hasattr(plugin, "_examples"):
                 for ex in plugin._examples:
-                    embeddings.add(name, "example", f"{ex['question']}\n{ex['sparql']}")
+                    search.add(name, "example", f"{ex['question']}\n{ex['sparql']}")
             if hasattr(plugin, "_tips"):
                 for tip in plugin._tips:
-                    embeddings.add(name, "tip", f"{tip['title']}: {tip['body']}")
+                    search.add(name, "tip", f"{tip['title']}: {tip['body']}")
             if hasattr(plugin, "_schemas"):
                 for cls_name, cls_data in plugin._schemas.items():
-                    # Multi-document: separate embeddings for label+URI vs comment
                     label = cls_data.get("label", cls_name)
                     uri = cls_data.get("uri", "")
                     comment = cls_data.get("comment", "")
-
-                    # Document 1: class label + URI (matches "what class is X?")
                     if uri:
-                        embeddings.add(name, "schema_label", f"{label} ({uri})")
+                        search.add(name, "schema_label", f"{label} ({uri})")
                     else:
-                        embeddings.add(name, "schema_label", label)
-
-                    # Document 2: class description (matches semantic questions)
+                        search.add(name, "schema_label", label)
                     if comment:
-                        embeddings.add(name, "schema_comment", f"{cls_name}: {comment}")
+                        search.add(name, "schema_comment", f"{cls_name}: {comment}")
 
-                    # Document 3+: example queries that reference this class
-                    if hasattr(plugin, "_examples"):
-                        for ex in plugin._examples:
-                            if cls_name.lower() in ex.get("sparql", "").lower():
-                                embeddings.add(
-                                    name,
-                                    "schema_example",
-                                    f"{cls_name} — {ex['question']}\n{ex['sparql']}",
-                                )
-
-        # Embed SKOS vocabulary terms from dataset stores
+        # Index SKOS vocabulary terms from dataset stores
         for name in registry.list_datasets():
             try:
                 store = registry.get_store(name)
             except KeyError:
                 continue
-            # Find SKOS concept schemes with their concepts
             schemes = list(store.query(
                 "PREFIX skos: <http://www.w3.org/2004/02/skos/core#> "
                 "SELECT ?scheme (SAMPLE(?sl) AS ?schemeLabel) (COUNT(?c) AS ?n) WHERE { "
@@ -114,8 +97,6 @@ def _build_embeddings(registry: DatasetRegistry, data_dir: Path) -> EmbeddingInd
                 scheme_uri = str(row[0]).strip("<>")
                 scheme_label = row[1].value if row[1] else scheme_uri.rsplit("/", 1)[-1]
                 concept_count = int(row[2].value)
-
-                # Get concept labels (limit to avoid huge docs)
                 concepts = list(store.query(
                     "PREFIX skos: <http://www.w3.org/2004/02/skos/core#> "
                     f"SELECT ?label WHERE {{ "
@@ -126,10 +107,8 @@ def _build_embeddings(registry: DatasetRegistry, data_dir: Path) -> EmbeddingInd
                 if not concepts:
                     continue
                 labels = [r[0].value for r in concepts]
-                doc = f"Vocabulary: {scheme_label} ({concept_count} terms). Values: {', '.join(labels)}"
-                embeddings.add(name, "skos_vocab", doc)
-
-                # Also embed individual concepts that have descriptions
+                search.add(name, "skos_vocab",
+                           f"Vocabulary: {scheme_label} ({concept_count} terms). Values: {', '.join(labels)}")
                 described = list(store.query(
                     "PREFIX skos: <http://www.w3.org/2004/02/skos/core#> "
                     f"SELECT ?label ?note WHERE {{ "
@@ -141,13 +120,12 @@ def _build_embeddings(registry: DatasetRegistry, data_dir: Path) -> EmbeddingInd
                     f"}} LIMIT 50"
                 ))
                 for dr in described:
-                    embeddings.add(name, "skos_concept", f"{dr[0].value}: {dr[1].value}")
+                    search.add(name, "skos_concept", f"{dr[0].value}: {dr[1].value}")
 
-        embeddings.build()
-        logger.info("Embedding index built and cached")
-        return embeddings
+        logger.info("Search index built and cached")
+        return search
     except Exception as e:
-        logger.warning("Failed to build embedding index: %s", e)
+        logger.warning("Failed to build search index: %s", e)
         return None
 
 
@@ -190,7 +168,7 @@ def build_app_context(*, eager: bool = False, skip_embeddings: bool = True) -> A
                 except Exception as e:
                     logger.warning("Failed to load concordance %s: %s", ttl_file.name, e)
 
-    embeddings = None if skip_embeddings else _build_embeddings(registry, data_dir)
+    embeddings = None if skip_embeddings else _build_search_index(registry, data_dir)
 
     # Build meta-entity index (skip if already cached)
     meta = None
@@ -1405,26 +1383,24 @@ def _cmd_status(args):
 
 
 def _cmd_rebuild(args):
-    """Clear and rebuild embedding + meta-entity caches."""
+    """Clear and rebuild search index + meta-entity caches."""
     data_dir = get_data_dir()
 
-    for db_name in ["embeddings.db", "meta_entities.db"]:
+    for db_name in ["search.db", "embeddings.db", "meta_entities.db"]:
         db_path = data_dir / db_name
         if db_path.exists():
             db_path.unlink()
             print(f"Cleared {db_name}")
-        else:
-            print(f"{db_name} not found (nothing to clear)")
 
-    print("\nRebuilding (this may take 30-60s for embeddings)...")
+    print("\nRebuilding...")
     ctx = build_app_context(eager=False, skip_embeddings=False)
-    embed_count = 0
+    search_count = 0
     meta_count = 0
     if ctx.embeddings:
-        embed_count = ctx.embeddings._conn.execute("SELECT COUNT(*) FROM documents").fetchone()[0]
+        search_count = ctx.embeddings._conn.execute("SELECT COUNT(*) FROM documents").fetchone()[0]
     if ctx.meta:
         meta_count = len(ctx.meta.all_entities())
-    print(f"Done: {embed_count} embeddings, {meta_count} meta-entities")
+    print(f"Done: {search_count} search documents, {meta_count} meta-entities")
 
 
 def main():
