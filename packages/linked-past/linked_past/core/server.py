@@ -104,12 +104,14 @@ def _build_embeddings(registry: DatasetRegistry, data_dir: Path) -> EmbeddingInd
         return None
 
 
-def build_app_context(*, eager: bool = False) -> AppContext:
+def build_app_context(*, eager: bool = False, skip_embeddings: bool = True) -> AppContext:
     """Register plugins and return context.
 
     Args:
         eager: If True, initialize all datasets (may download). If False (default),
                only open datasets already cached locally.
+        skip_embeddings: If True, skip embedding index and meta-entity index build.
+                         Useful for tests to avoid loading ML models.
     """
     data_dir = get_data_dir()
     registry = DatasetRegistry(data_dir=data_dir)
@@ -141,49 +143,50 @@ def build_app_context(*, eager: bool = False) -> AppContext:
                 except Exception as e:
                     logger.warning("Failed to load concordance %s: %s", ttl_file.name, e)
 
-    embeddings = _build_embeddings(registry, data_dir)
+    embeddings = None if skip_embeddings else _build_embeddings(registry, data_dir)
 
     # Build meta-entity index (skip if already cached)
     meta = None
-    try:
-        from linked_past.core.meta_entities import MetaEntity, MetaEntityIndex
+    if not skip_embeddings:
+        try:
+            from linked_past.core.meta_entities import MetaEntity, MetaEntityIndex
 
-        meta_db = data_dir / "meta_entities.db"
-        meta = MetaEntityIndex(meta_db)
+            meta_db = data_dir / "meta_entities.db"
+            meta = MetaEntityIndex(meta_db)
 
-        # Check if already populated
-        if meta._conn:
-            existing = meta._conn.execute("SELECT COUNT(*) FROM meta_entities").fetchone()[0]
-        else:
-            existing = 0
+            # Check if already populated
+            if meta._conn:
+                existing = meta._conn.execute("SELECT COUNT(*) FROM meta_entities").fetchone()[0]
+            else:
+                existing = 0
 
-        if existing > 0:
-            # Load from cache
-            for row in meta._conn.execute("SELECT * FROM meta_entities"):
-                import json as json_mod
+            if existing > 0:
+                # Load from cache
+                for row in meta._conn.execute("SELECT * FROM meta_entities"):
+                    import json as json_mod
 
-                entity = MetaEntity(
-                    id=row[0], canonical_name=row[1], entity_type=row[2],
-                    description=row[3], date_range=row[4],
-                    uris=json_mod.loads(row[5]) if row[5] else {},
-                    wikidata_qid=row[6],
-                )
-                meta._entities[entity.id] = entity
-                for uris in entity.uris.values():
-                    for uri in uris:
-                        meta._uri_to_id[uri] = entity.id
-            logger.info("Meta-entity index loaded from cache (%d entities)", existing)
-        else:
-            count = meta.build_from_linkage(linkage, registry)
-            logger.info("Built %d meta-entities", count)
+                    entity = MetaEntity(
+                        id=row[0], canonical_name=row[1], entity_type=row[2],
+                        description=row[3], date_range=row[4],
+                        uris=json_mod.loads(row[5]) if row[5] else {},
+                        wikidata_qid=row[6],
+                    )
+                    meta._entities[entity.id] = entity
+                    for uris in entity.uris.values():
+                        for uri in uris:
+                            meta._uri_to_id[uri] = entity.id
+                logger.info("Meta-entity index loaded from cache (%d entities)", existing)
+            else:
+                count = meta.build_from_linkage(linkage, registry)
+                logger.info("Built %d meta-entities", count)
 
-            # Add meta-entity descriptions to embedding index
-            if embeddings and count > 0:
-                for entity in meta.all_entities():
-                    embeddings.add("_meta", "meta_entity", entity.description)
-                embeddings.build()
-    except Exception as e:
-        logger.warning("Failed to build meta-entities: %s", e)
+                # Add meta-entity descriptions to embedding index
+                if embeddings and count > 0:
+                    for entity in meta.all_entities():
+                        embeddings.add("_meta", "meta_entity", entity.description)
+                    embeddings.build()
+        except Exception as e:
+            logger.warning("Failed to build meta-entities: %s", e)
 
     return AppContext(registry=registry, linkage=linkage, embeddings=embeddings, meta=meta)
 
@@ -396,7 +399,7 @@ def create_mcp_server() -> FastMCP:
 
     @asynccontextmanager
     async def lifespan(server: FastMCP):
-        ctx = build_app_context()
+        ctx = build_app_context(skip_embeddings=False)
         yield ctx
 
     mcp = FastMCP(
@@ -1336,7 +1339,7 @@ def _cmd_rebuild(args):
             print(f"{db_name} not found (nothing to clear)")
 
     print("\nRebuilding (this may take 30-60s for embeddings)...")
-    ctx = build_app_context(eager=False)
+    ctx = build_app_context(eager=False, skip_embeddings=False)
     embed_count = 0
     meta_count = 0
     if ctx.embeddings:

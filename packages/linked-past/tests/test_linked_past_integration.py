@@ -75,7 +75,7 @@ def integration_ctx(tmp_path, monkeypatch):
         "linked_past.datasets.edh.plugin.EDHPlugin.fetch",
         lambda self, data_dir: data_dir / "edh.ttl",
     )
-    return build_app_context(eager=True)
+    return build_app_context(eager=True, skip_embeddings=True)
 
 
 def test_discover_lists_dprr(integration_ctx):
