@@ -51,7 +51,7 @@ def main(version="latest"):
             source_uri="https://romanrepublic.ac.uk/",
             citation="Mouritsen et al., DPRR, King's Digital Lab, 2017. https://romanrepublic.ac.uk/",
             publisher="King's College London",
-            output_path=tmpdir / "void.ttl",
+            output_path=tmpdir / "_void.ttl",
         )
         print(f"Generated VoID: {void.triples:,} triples, {void.classes} classes")
 
@@ -66,7 +66,7 @@ def main(version="latest"):
             ref,
             data_file,
             annotations=annotations,
-            void_path=tmpdir / "void.ttl",
+            void_path=tmpdir / "_void.ttl",
         )
         print(f"Done: {ref}")
         if digest:

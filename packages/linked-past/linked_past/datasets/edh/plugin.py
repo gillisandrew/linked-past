@@ -58,9 +58,11 @@ class EDHPlugin(DatasetPlugin):
     # fetch() uses default ORAS implementation from base class
 
     def load(self, store: Store, rdf_path: Path) -> int:
-        """Load all Turtle files from the data directory."""
+        """Load all Turtle files from the data directory (skipping _* metadata sidecars)."""
         data_dir = rdf_path.parent
         for ttl in sorted(data_dir.glob("*.ttl")):
+            if ttl.name.startswith("_"):
+                continue
             store.bulk_load(path=str(ttl), format=RdfFormat.TURTLE)
         return len(store)
 

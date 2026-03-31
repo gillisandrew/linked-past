@@ -810,7 +810,23 @@ def create_mcp_server() -> FastMCP:
             lines.append(f"- **Version:** {meta.get('version', 'unknown')}")
             lines.append(f"- **License:** {plugin.license}")
             lines.append(f"- **Citation:** {plugin.citation}")
-            lines.append(f"- **URL:** {plugin.url}\n")
+            lines.append(f"- **URL:** {plugin.url}")
+
+            # Include VoID stats if available
+            void_meta = meta.get("void", {})
+            if void_meta:
+                lines.append(f"- **Triples:** {int(void_meta['triples']):,}" if "triples" in void_meta else "")
+                lines.append(f"- **Entities:** {int(void_meta['entities']):,}" if "entities" in void_meta else "")
+                lines.append(f"- **Classes:** {void_meta['classes']}" if "classes" in void_meta else "")
+                lines.append(f"- **Properties:** {void_meta['properties']}" if "properties" in void_meta else "")
+                lines = [line for line in lines if line]  # remove empty strings
+                if "classPartitions" in void_meta:
+                    lines.append("\n### Class Partitions\n")
+                    for cp in void_meta["classPartitions"]:
+                        cls_name = cp["class"].rsplit("#", 1)[-1].rsplit("/", 1)[-1]
+                        lines.append(f"- **{cls_name}:** {int(cp['entities']):,} instances")
+
+            lines.append("")
 
             try:
                 store = registry.get_store(ds_name)

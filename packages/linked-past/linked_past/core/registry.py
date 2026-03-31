@@ -75,6 +75,7 @@ class DatasetRegistry:
                 data = json.loads(registry_path.read_text())
                 if name in data:
                     self._metadata[name] = data[name]
+            self._load_void(name, dataset_dir)
             return
 
         dataset_dir.mkdir(parents=True, exist_ok=True)
@@ -92,6 +93,7 @@ class DatasetRegistry:
 
         self._stores[name] = get_read_only_store(store_path)
         self._save_registry(name, plugin, dataset_dir, triple_count)
+        self._load_void(name, dataset_dir)
 
     def initialize_all(self) -> None:
         """Initialize all registered datasets (may download data)."""
@@ -111,6 +113,54 @@ class DatasetRegistry:
                     self.initialize_dataset(name)
                 except Exception as e:
                     logger.warning("Failed to open cached dataset %s: %s", name, e)
+
+    def _load_void(self, name: str, dataset_dir: Path) -> None:
+        """Load VoID description from dataset directory if present."""
+        void_path = dataset_dir / "_void.ttl"
+        if not void_path.exists():
+            return
+        try:
+            from pyoxigraph import RdfFormat
+            from pyoxigraph import Store as VoidStore
+
+            vs = VoidStore()
+            vs.bulk_load(path=str(void_path), format=RdfFormat.TURTLE)
+            void_meta: dict = {}
+            # Extract key VoID stats via SPARQL
+            for row in vs.query(
+                "PREFIX void: <http://rdfs.org/ns/void#> "
+                "SELECT ?p ?o WHERE { ?s a void:Dataset ; ?p ?o }"
+            ):
+                pred = str(row[0]).strip("<>").rsplit("#", 1)[-1].rsplit("/", 1)[-1]
+                obj = row[1]
+                try:
+                    void_meta[pred] = obj.value
+                except AttributeError:
+                    void_meta[pred] = str(obj).strip("<>")
+
+            # Extract class partitions
+            partitions = []
+            for row in vs.query(
+                "PREFIX void: <http://rdfs.org/ns/void#> "
+                "SELECT ?class ?entities WHERE { "
+                "  ?s void:classPartition [ void:class ?class ; void:entities ?entities ] "
+                "}"
+            ):
+                partitions.append({
+                    "class": str(row[0]).strip("<>"),
+                    "entities": row[1].value,
+                })
+            if partitions:
+                void_meta["classPartitions"] = partitions
+
+            if void_meta:
+                meta = self._metadata.setdefault(name, {})
+                meta["void"] = void_meta
+                logger.info("Loaded VoID for %s: %s triples, %s classes",
+                            name, void_meta.get("triples", "?"), void_meta.get("classes", "?"))
+            del vs
+        except Exception as e:
+            logger.debug("Could not load VoID for %s: %s", name, e)
 
     def _save_registry(self, name: str, plugin: DatasetPlugin, dataset_dir: Path, triple_count: int) -> None:
         version_info = plugin.get_version_info(dataset_dir)

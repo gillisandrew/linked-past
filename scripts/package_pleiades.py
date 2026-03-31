@@ -95,7 +95,7 @@ def main(version="latest"):
             source_uri="https://pleiades.stoa.org/",
             citation="Bagnall, R. et al. (eds.), Pleiades. DOI: 10.5281/zenodo.1193921",
             publisher="Institute for the Study of the Ancient World (NYU)",
-            output_path=tmpdir / "void.ttl",
+            output_path=tmpdir / "_void.ttl",
         )
         print(f"Generated VoID: {void.triples:,} triples, {void.classes} classes")
 
@@ -110,7 +110,7 @@ def main(version="latest"):
             ref,
             output,
             annotations=annotations,
-            void_path=tmpdir / "void.ttl",
+            void_path=tmpdir / "_void.ttl",
         )
         print(f"Done: {ref}")
         if digest:

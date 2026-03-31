@@ -67,7 +67,7 @@ def main(version="2021-12-16"):
             source_uri="https://edh.ub.uni-heidelberg.de/",
             citation="Epigraphic Database Heidelberg, CC BY-SA 4.0",
             publisher="Heidelberg Academy of Sciences",
-            output_path=tmpdir / "void.ttl",
+            output_path=tmpdir / "_void.ttl",
         )
         print(f"Generated VoID: {void.triples:,} triples, {void.classes} classes")
 
@@ -82,7 +82,7 @@ def main(version="2021-12-16"):
             ref,
             out_path,
             annotations=annotations,
-            void_path=tmpdir / "void.ttl",
+            void_path=tmpdir / "_void.ttl",
         )
         print(f"Done: {ref}")
         if digest:

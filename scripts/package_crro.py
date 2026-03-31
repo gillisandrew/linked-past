@@ -57,7 +57,7 @@ def main(version="latest"):
             source_uri="https://numismatics.org/crro",
             citation="ANS, CRRO. Based on Crawford (1974) Roman Republican Coinage",
             publisher="American Numismatic Society",
-            output_path=tmpdir / "void.ttl",
+            output_path=tmpdir / "_void.ttl",
         )
         print(f"Generated VoID: {void.triples:,} triples, {void.classes} classes")
 
@@ -72,7 +72,7 @@ def main(version="latest"):
             ref,
             ttl_path,
             annotations=annotations,
-            void_path=tmpdir / "void.ttl",
+            void_path=tmpdir / "_void.ttl",
         )
         print(f"Done: {ref}")
         if digest:

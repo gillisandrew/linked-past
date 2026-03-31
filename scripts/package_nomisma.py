@@ -127,7 +127,7 @@ def main(version="latest"):
             source_uri="https://nomisma.org/",
             citation="Gruber, E. & Meadows, A. (2021). ISAW Papers 20.6",
             publisher="Nomisma.org / American Numismatic Society",
-            output_path=tmpdir / "void.ttl",
+            output_path=tmpdir / "_void.ttl",
         )
         print(f"Generated VoID: {void.triples:,} triples, {void.classes} classes")
 
@@ -142,7 +142,7 @@ def main(version="latest"):
             ref,
             clean_path,
             annotations=annotations,
-            void_path=tmpdir / "void.ttl",
+            void_path=tmpdir / "_void.ttl",
         )
         print(f"Done: {ref}")
         if digest:
