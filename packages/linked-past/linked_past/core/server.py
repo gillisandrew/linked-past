@@ -67,6 +67,15 @@ def _index_dataset(search: SearchIndex, name: str, plugin: object, store=None) -
             if comment:
                 search.add(name, "schema_comment", f"{cls_name}: {comment}")
 
+    # Generate and index ShEx-like shapes
+    if hasattr(plugin, "_schemas") and hasattr(plugin, "_prefixes"):
+        from linked_past_store.ontology import generate_shex_shapes
+
+        plugin_tips = plugin._tips if hasattr(plugin, "_tips") else []
+        shapes = generate_shex_shapes(plugin._schemas, plugin_tips, plugin._prefixes)
+        for cls_name, shape_text in shapes.items():
+            search.add(name, "shex_shape", shape_text)
+
     # Index SKOS vocabulary terms if store is available
     if store is None:
         return

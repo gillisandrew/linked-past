@@ -11,6 +11,7 @@ from linked_past_store.ontology import (
     extract_from_ontology,
     extract_schema,
     generate_schemas_yaml,
+    generate_shex_shapes,
 )
 from pyoxigraph import RdfFormat, Store
 
@@ -247,3 +248,90 @@ def test_empirical_extraction_filters_metaclasses():
     assert "Class" not in schema.classes
     for name, cls in schema.classes.items():
         assert not cls.uri.startswith("http://www.w3.org/"), f"Meta class {name} should be filtered"
+
+
+# --- ShEx shape generation tests ---
+
+
+def test_generate_shex_shapes_basic():
+    schemas = {
+        "Person": {
+            "label": "Person",
+            "comment": "A historical person.",
+            "uri": "vocab:Person",
+            "properties": [
+                {"pred": "vocab:hasName", "range": "xsd:string", "comment": "Full name."},
+                {"pred": "vocab:hasOffice", "range": "vocab:Office", "comment": "Office held."},
+            ],
+        },
+        "Office": {
+            "label": "Office",
+            "comment": "A political office.",
+            "uri": "vocab:Office",
+            "properties": [
+                {"pred": "rdfs:label", "range": "xsd:string", "comment": "Office label."},
+            ],
+        },
+    }
+    tips = [
+        {"title": "Use COUNT(DISTINCT)", "body": "Always count distinct persons.", "classes": ["Person"]},
+    ]
+    prefix_map = {"vocab": "http://example.org/"}
+
+    shapes = generate_shex_shapes(schemas, tips, prefix_map)
+
+    assert "Person" in shapes
+    assert "Office" in shapes
+
+    person_shape = shapes["Person"]
+    assert "vocab:Person {" in person_shape
+    assert "vocab:hasName xsd:string" in person_shape
+    assert "vocab:hasOffice [ vocab:Office ]" in person_shape
+    assert "Full name." in person_shape
+    assert "# TIP:" in person_shape
+    assert "COUNT(DISTINCT)" in person_shape
+
+    office_shape = shapes["Office"]
+    assert "vocab:Office {" in office_shape
+    assert "# TIP:" not in office_shape
+
+
+def test_generate_shex_shapes_no_tips():
+    schemas = {
+        "Thing": {
+            "label": "Thing",
+            "uri": "ex:Thing",
+            "properties": [
+                {"pred": "ex:name", "range": "xsd:string"},
+            ],
+        },
+    }
+
+    shapes = generate_shex_shapes(schemas, [], {})
+
+    assert "Thing" in shapes
+    assert "ex:Thing {" in shapes["Thing"]
+    assert "ex:name xsd:string" in shapes["Thing"]
+
+
+def test_generate_shex_shapes_range_types():
+    schemas = {
+        "Item": {
+            "label": "Item",
+            "uri": "ex:Item",
+            "properties": [
+                {"pred": "ex:label", "range": "xsd:string"},
+                {"pred": "ex:related", "range": "ex:Other"},
+                {"pred": "ex:count", "range": "xsd:integer"},
+                {"pred": "ex:noRange"},
+            ],
+        },
+    }
+
+    shapes = generate_shex_shapes(schemas, [], {})
+    shape = shapes["Item"]
+
+    assert "ex:label xsd:string" in shape
+    assert "ex:related [ ex:Other ]" in shape
+    assert "ex:count xsd:integer" in shape
+    assert "ex:noRange IRI" in shape

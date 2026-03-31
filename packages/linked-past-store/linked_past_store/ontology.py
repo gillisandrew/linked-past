@@ -364,3 +364,71 @@ def generate_schemas_yaml(
     content = schema.to_schemas_yaml(prefix_map)
     output_path.write_text(content)
     logger.info("Wrote schemas.yaml to %s", output_path)
+
+
+def generate_shex_shapes(
+    schemas: dict,
+    tips: list[dict],
+    prefix_map: dict[str, str],
+) -> dict[str, str]:
+    """Generate ShEx-like shape strings from schema classes with inline comments and tips.
+
+    Args:
+        schemas: Merged schema dict (class_name -> class_data with properties).
+        tips: List of tip dicts with 'title', 'body', 'classes' keys.
+        prefix_map: Namespace prefix map (unused for URI shortening here —
+                     schemas already use prefixed URIs).
+
+    Returns:
+        Dict of class_name -> ShEx-like shape string.
+    """
+    # Build tip lookup: class_name -> list of tip strings
+    tips_by_class: dict[str, list[str]] = {}
+    for tip in tips:
+        for cls_name in tip.get("classes", []):
+            tips_by_class.setdefault(cls_name, []).append(tip["title"])
+
+    shapes: dict[str, str] = {}
+    for cls_name, cls_data in schemas.items():
+        uri = cls_data.get("uri", cls_name)
+        comment = cls_data.get("comment", "")
+        properties = cls_data.get("properties", [])
+
+        lines: list[str] = []
+
+        # Class comment
+        if comment:
+            lines.append(f"# {cls_name}: {comment}")
+
+        # Tips referencing this class
+        for tip_title in tips_by_class.get(cls_name, []):
+            lines.append(f"# TIP: {tip_title}")
+
+        # Shape header
+        lines.append(f"{uri} {{")
+        lines.append(f"  a [ {uri} ] ;")
+
+        # Properties
+        for prop in properties:
+            pred = prop.get("pred", "")
+            range_val = prop.get("range", "")
+            prop_comment = prop.get("comment", "")
+
+            # Format range: xsd:* types are bare, class references are wrapped in [ ]
+            if not range_val:
+                range_str = "IRI"
+            elif range_val.startswith("xsd:"):
+                range_str = range_val
+            else:
+                range_str = f"[ {range_val} ]"
+
+            line = f"  {pred} {range_str} ;"
+            if prop_comment:
+                line += f"  # {prop_comment}"
+            lines.append(line)
+
+        lines.append("}")
+
+        shapes[cls_name] = "\n".join(lines)
+
+    return shapes
