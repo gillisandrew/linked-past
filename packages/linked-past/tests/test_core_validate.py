@@ -82,21 +82,25 @@ def test_validate_semantics_valid():
     assert errors == []
 
 
-def test_validate_semantics_unknown_class_is_warning_not_error():
-    """Unknown classes are warnings (logged), not errors — datasets use shared vocabularies."""
+def test_validate_semantics_unknown_class_is_hint_not_error():
+    """Unknown classes produce constructive hints, not blocking errors."""
     sd = build_schema_dict(SCHEMAS, PREFIXES)
     sparql = "PREFIX ex: <http://example.org/>\nSELECT ?w WHERE { ?w a ex:Gadget }"
-    errors = validate_semantics(sparql, sd)
-    assert errors == []  # No errors — unknown classes are only logged as info
+    hints = validate_semantics(sparql, sd)
+    assert len(hints) == 1
+    assert "Hint:" in hints[0]
+    assert "Gadget" in hints[0]
+    assert "Widget" in hints[0]  # suggests the correct class
 
 
-def test_validate_semantics_unknown_predicate_is_warning_not_error():
-    """Unknown predicates are warnings (logged), not errors — multi-vocab datasets
-    commonly use predicates from shared ontologies not in the schema."""
+def test_validate_semantics_unknown_predicate_is_hint_not_error():
+    """Unknown predicates produce constructive hints, not blocking errors."""
     sd = build_schema_dict(SCHEMAS, PREFIXES)
     sparql = "PREFIX ex: <http://example.org/>\nSELECT ?w WHERE { ?w a ex:Widget ; ex:hasFlavor ?f }"
-    errors = validate_semantics(sparql, sd)
-    assert errors == []  # No errors — unknown predicates are only logged as info
+    hints = validate_semantics(sparql, sd)
+    assert len(hints) == 1
+    assert "Hint:" in hints[0]
+    assert "hasFlavor" in hints[0]
 
 
 def test_query_result_dataclass():
@@ -129,7 +133,7 @@ def test_validate_and_execute_parse_error(tmp_path):
 
 
 def test_validate_and_execute_unknown_class_still_executes(tmp_path):
-    """Unknown classes are warnings — query still executes (returns empty results)."""
+    """Unknown classes produce hints but query still executes (returns empty results)."""
     store_path = tmp_path / "store"
     store = create_store(store_path)
     ttl = tmp_path / "data.ttl"
@@ -140,5 +144,7 @@ def test_validate_and_execute_unknown_class_still_executes(tmp_path):
         "PREFIX ex: <http://example.org/>\nSELECT ?w WHERE { ?w a ex:Gadget }",
         store, sd, PREFIXES,
     )
-    assert result.success is True
+    assert result.success is True  # Hints are non-blocking
     assert result.rows == []  # No Gadgets exist, but query ran
+    assert len(result.errors) == 1  # Contains a hint about unknown class
+    assert "Hint:" in result.errors[0]

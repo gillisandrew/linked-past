@@ -1,0 +1,2750 @@
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix dprr: <http://romanrepublic.ac.uk/rdf/entity/Person/> .
+@prefix crro: <https://numismatics.org/crro/id/rrc-> .
+@prefix nomisma: <http://nomisma.org/id/> .
+@prefix nmo: <http://nomisma.org/ontology#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+
+# CRRO coin types ↔ DPRR issuers concordance
+# Derived from Wikidata: CRRO (P4455) + issuer (P562) + DPRR (P6863)
+# Generated: 2026-03-31
+# Total issuers: 360
+# Total coin type links: 2047
+
+# Nomisma: m_valerivs_laevinvs_rrc
+crro:101.1 nmo:hasAuthority dprr:807 .
+crro:101.2 nmo:hasAuthority dprr:807 .
+
+# Nomisma: m_sila_rrc
+crro:285.1 nmo:hasAuthority dprr:885 .
+crro:285.2 nmo:hasAuthority dprr:885 .
+crro:285.3 nmo:hasAuthority dprr:885 .
+crro:285.4 nmo:hasAuthority dprr:885 .
+crro:285.5 nmo:hasAuthority dprr:885 .
+crro:285.5a nmo:hasAuthority dprr:885 .
+crro:285.5b nmo:hasAuthority dprr:885 .
+crro:285.5c nmo:hasAuthority dprr:885 .
+crro:285.6 nmo:hasAuthority dprr:885 .
+crro:285.7 nmo:hasAuthority dprr:885 .
+crro:285.7a nmo:hasAuthority dprr:885 .
+crro:285.7b nmo:hasAuthority dprr:885 .
+
+# Nomisma: c_rrc
+crro:63.1 nmo:hasAuthority dprr:938 .
+crro:63.2 nmo:hasAuthority dprr:938 .
+crro:63.3 nmo:hasAuthority dprr:938 .
+crro:63.4 nmo:hasAuthority dprr:938 .
+crro:63.5 nmo:hasAuthority dprr:938 .
+crro:63.6 nmo:hasAuthority dprr:938 .
+
+# Nomisma: ma_rrc
+crro:64.1 nmo:hasAuthority dprr:959 .
+crro:64.2 nmo:hasAuthority dprr:959 .
+crro:64.3 nmo:hasAuthority dprr:959 .
+crro:64.4 nmo:hasAuthority dprr:959 .
+crro:64.5 nmo:hasAuthority dprr:959 .
+crro:64.6 nmo:hasAuthority dprr:959 .
+crro:64.6a nmo:hasAuthority dprr:959 .
+crro:64.6b nmo:hasAuthority dprr:959 .
+crro:64.6c nmo:hasAuthority dprr:959 .
+
+# Nomisma: cn_co_rrc
+crro:81.1 nmo:hasAuthority dprr:980 .
+
+# Nomisma: avr_rrc
+crro:65.1 nmo:hasAuthority dprr:983 .
+crro:65.2 nmo:hasAuthority dprr:983 .
+crro:65.3 nmo:hasAuthority dprr:983 .
+crro:65.4 nmo:hasAuthority dprr:983 .
+crro:65.5 nmo:hasAuthority dprr:983 .
+crro:65.6 nmo:hasAuthority dprr:983 .
+
+# Nomisma: flamininus
+crro:548.1 nmo:hasAuthority dprr:999 .
+crro:548.1a nmo:hasAuthority dprr:999 .
+crro:548.1b nmo:hasAuthority dprr:999 .
+
+# Nomisma: a_cae_rrc
+crro:174.1 nmo:hasAuthority dprr:1193 .
+crro:174.2 nmo:hasAuthority dprr:1193 .
+crro:174.3 nmo:hasAuthority dprr:1193 .
+crro:174.4 nmo:hasAuthority dprr:1193 .
+crro:174.5 nmo:hasAuthority dprr:1193 .
+
+# Nomisma: c_scr_rrc
+crro:201.1 nmo:hasAuthority dprr:1269 .
+crro:201.2 nmo:hasAuthority dprr:1269 .
+crro:201.3 nmo:hasAuthority dprr:1269 .
+crro:201.4 nmo:hasAuthority dprr:1269 .
+crro:201.5 nmo:hasAuthority dprr:1269 .
+crro:201.6 nmo:hasAuthority dprr:1269 .
+crro:201.7 nmo:hasAuthority dprr:1269 .
+
+# Nomisma: lfp_rrc
+crro:144.1 nmo:hasAuthority dprr:1323 .
+crro:144.2 nmo:hasAuthority dprr:1323 .
+crro:144.3 nmo:hasAuthority dprr:1323 .
+crro:144.4 nmo:hasAuthority dprr:1323 .
+crro:144.5 nmo:hasAuthority dprr:1323 .
+crro:144.6 nmo:hasAuthority dprr:1323 .
+
+# Nomisma: cn_dom_1_rrc
+crro:147.1 nmo:hasAuthority dprr:1366 .
+crro:147.2 nmo:hasAuthority dprr:1366 .
+crro:147.3 nmo:hasAuthority dprr:1366 .
+crro:147.4 nmo:hasAuthority dprr:1366 .
+
+# Nomisma: mae_rrc
+crro:143.1 nmo:hasAuthority dprr:1383 .
+crro:143.2 nmo:hasAuthority dprr:1383 .
+crro:143.2a nmo:hasAuthority dprr:1383 .
+crro:143.2b nmo:hasAuthority dprr:1383 .
+crro:143.3 nmo:hasAuthority dprr:1383 .
+crro:143.4 nmo:hasAuthority dprr:1383 .
+crro:143.5 nmo:hasAuthority dprr:1383 .
+
+# Nomisma: p_blas_rrc
+crro:189.1 nmo:hasAuthority dprr:1390 .
+crro:189.2 nmo:hasAuthority dprr:1390 .
+crro:189.3 nmo:hasAuthority dprr:1390 .
+crro:189.4 nmo:hasAuthority dprr:1390 .
+crro:189.5 nmo:hasAuthority dprr:1390 .
+
+# Nomisma: l_coil_rrc
+crro:154.1 nmo:hasAuthority dprr:1393 .
+
+# Nomisma: q_me_rrc
+crro:211.1 nmo:hasAuthority dprr:1424 .
+
+# Nomisma: mvrena_rrc
+crro:186.1 nmo:hasAuthority dprr:1520 .
+crro:186.2 nmo:hasAuthority dprr:1520 .
+crro:186.3 nmo:hasAuthority dprr:1520 .
+crro:186.4 nmo:hasAuthority dprr:1520 .
+crro:186.5 nmo:hasAuthority dprr:1520 .
+
+# Nomisma: l_ivli_i_rrc
+crro:224.1 nmo:hasAuthority dprr:1532 .
+
+# Nomisma: m_ivni_rrc
+crro:220.1 nmo:hasAuthority dprr:1534 .
+
+# Nomisma: varo_rrc
+crro:185.1 nmo:hasAuthority dprr:1537 .
+crro:185.2 nmo:hasAuthority dprr:1537 .
+crro:185.3 nmo:hasAuthority dprr:1537 .
+crro:185.4 nmo:hasAuthority dprr:1537 .
+crro:185.5 nmo:hasAuthority dprr:1537 .
+crro:185.6 nmo:hasAuthority dprr:1537 .
+
+# Nomisma: q_max_rrc
+crro:265.1 nmo:hasAuthority dprr:1615 .
+crro:265.2 nmo:hasAuthority dprr:1615 .
+crro:265.3 nmo:hasAuthority dprr:1615 .
+crro:371.1 nmo:hasAuthority dprr:1615 .
+
+# Nomisma: an_rvf_rrc
+crro:221.1 nmo:hasAuthority dprr:1616 .
+
+# Nomisma: l_opeimi_rrc
+crro:253.1 nmo:hasAuthority dprr:1639 .
+crro:253.2 nmo:hasAuthority dprr:1639 .
+crro:253.3 nmo:hasAuthority dprr:1639 .
+
+# Nomisma: sex_ivli_caisar_rrc
+crro:258.1 nmo:hasAuthority dprr:1642 .
+
+# Nomisma: l_atili_nom_rrc
+crro:225.1 nmo:hasAuthority dprr:1669 .
+
+# Nomisma: sex_pom_rrc
+crro:235.1 nmo:hasAuthority dprr:1675 .
+crro:235.1a nmo:hasAuthority dprr:1675 .
+crro:235.1b nmo:hasAuthority dprr:1675 .
+crro:235.1c nmo:hasAuthority dprr:1675 .
+crro:235.2 nmo:hasAuthority dprr:1675 .
+crro:235.3 nmo:hasAuthority dprr:1675 .
+
+# Nomisma: m_metellvs_q_f_rrc
+crro:263.1 nmo:hasAuthority dprr:1677 .
+crro:263.1a nmo:hasAuthority dprr:1677 .
+crro:263.1b nmo:hasAuthority dprr:1677 .
+crro:263.2 nmo:hasAuthority dprr:1677 .
+crro:263.3 nmo:hasAuthority dprr:1677 .
+crro:263.3a nmo:hasAuthority dprr:1677 .
+crro:263.3b nmo:hasAuthority dprr:1677 .
+crro:263.4 nmo:hasAuthority dprr:1677 .
+crro:263.5 nmo:hasAuthority dprr:1677 .
+crro:263.5a nmo:hasAuthority dprr:1677 .
+crro:263.5b nmo:hasAuthority dprr:1677 .
+crro:369.1 nmo:hasAuthority dprr:1677 .
+
+# Nomisma: l_lic_rrc
+crro:282.1 nmo:hasAuthority dprr:1679 .
+crro:282.2 nmo:hasAuthority dprr:1679 .
+crro:282.3 nmo:hasAuthority dprr:1679 .
+crro:282.4 nmo:hasAuthority dprr:1679 .
+crro:282.5 nmo:hasAuthority dprr:1679 .
+
+# Nomisma: mn_acili_balbvs_rrc
+crro:271.1 nmo:hasAuthority dprr:1680 .
+crro:271.2 nmo:hasAuthority dprr:1680 .
+crro:271.3 nmo:hasAuthority dprr:1680 .
+
+# Nomisma: c_cato_rrc
+crro:274.1 nmo:hasAuthority dprr:1682 .
+crro:274.2 nmo:hasAuthority dprr:1682 .
+crro:274.3 nmo:hasAuthority dprr:1682 .
+
+# Nomisma: m_avreli_scavri_rrc
+crro:282.1 nmo:hasAuthority dprr:1683 .
+
+# Nomisma: q_minv_rvf_rrc
+crro:277.1 nmo:hasAuthority dprr:1687 .
+crro:277.2 nmo:hasAuthority dprr:1687 .
+
+# Nomisma: carbo_rrc
+crro:279.1 nmo:hasAuthority dprr:1689 .
+crro:279.2 nmo:hasAuthority dprr:1689 .
+
+# Nomisma: m_carbo_rrc
+crro:276.1 nmo:hasAuthority dprr:1696 .
+
+# Nomisma: c_metellvs_rrc
+crro:269.1 nmo:hasAuthority dprr:1701 .
+crro:269.2 nmo:hasAuthority dprr:1701 .
+crro:269.3 nmo:hasAuthority dprr:1701 .
+crro:269.4 nmo:hasAuthority dprr:1701 .
+
+# Nomisma: l_memmi_gal_rrc
+crro:304.1 nmo:hasAuthority dprr:1714 .
+crro:313.1 nmo:hasAuthority dprr:1714 .
+crro:313.1a nmo:hasAuthority dprr:1714 .
+crro:313.1b nmo:hasAuthority dprr:1714 .
+crro:313.1c nmo:hasAuthority dprr:1714 .
+crro:313.2 nmo:hasAuthority dprr:1714 .
+crro:313.3 nmo:hasAuthority dprr:1714 .
+crro:313.4 nmo:hasAuthority dprr:1714 .
+crro:349.1 nmo:hasAuthority dprr:1714 .
+
+# Nomisma: c_anni_t_f_t_n_pro_cos_rrc
+crro:366.1 nmo:hasAuthority dprr:1740 .
+crro:366.1a nmo:hasAuthority dprr:1740 .
+crro:366.1b nmo:hasAuthority dprr:1740 .
+crro:366.1c nmo:hasAuthority dprr:1740 .
+crro:366.2 nmo:hasAuthority dprr:1740 .
+crro:366.2a nmo:hasAuthority dprr:1740 .
+crro:366.2b nmo:hasAuthority dprr:1740 .
+crro:366.3 nmo:hasAuthority dprr:1740 .
+crro:366.3a nmo:hasAuthority dprr:1740 .
+crro:366.3c nmo:hasAuthority dprr:1740 .
+crro:366.4 nmo:hasAuthority dprr:1740 .
+
+# Nomisma: c_coil_cald_rrc
+crro:318.1 nmo:hasAuthority dprr:1744 .
+crro:318.1a nmo:hasAuthority dprr:1744 .
+crro:318.1b nmo:hasAuthority dprr:1744 .
+
+# Nomisma: t_manl_rrc
+crro:299.1 nmo:hasAuthority dprr:1745 .
+crro:299.1a nmo:hasAuthority dprr:1745 .
+crro:299.1b nmo:hasAuthority dprr:1745 .
+
+# Nomisma: sulla
+crro:359.1 nmo:hasAuthority dprr:1746 .
+crro:359.2 nmo:hasAuthority dprr:1746 .
+crro:367.1 nmo:hasAuthority dprr:1746 .
+crro:367.2 nmo:hasAuthority dprr:1746 .
+crro:367.4 nmo:hasAuthority dprr:1746 .
+crro:367.5 nmo:hasAuthority dprr:1746 .
+crro:368.1 nmo:hasAuthority dprr:1746 .
+crro:369.1 nmo:hasAuthority dprr:1746 .
+crro:370.1 nmo:hasAuthority dprr:1746 .
+crro:370.1a nmo:hasAuthority dprr:1746 .
+crro:370.1b nmo:hasAuthority dprr:1746 .
+crro:371.1 nmo:hasAuthority dprr:1746 .
+
+# Nomisma: c_pvlcher_rrc
+crro:300.1 nmo:hasAuthority dprr:1753 .
+
+# Nomisma: mn_aqvil_rrc
+crro:303.1 nmo:hasAuthority dprr:1757 .
+
+# Nomisma: p_nerva_rrc
+crro:292.1 nmo:hasAuthority dprr:1760 .
+crro:292.2 nmo:hasAuthority dprr:1760 .
+crro:292.3 nmo:hasAuthority dprr:1760 .
+crro:292.4 nmo:hasAuthority dprr:1760 .
+crro:292.4a nmo:hasAuthority dprr:1760 .
+crro:292.4b nmo:hasAuthority dprr:1760 .
+
+# Nomisma: cn_dom_2_rrc
+crro:282.1 nmo:hasAuthority dprr:1763 .
+crro:282.2 nmo:hasAuthority dprr:1763 .
+crro:282.3 nmo:hasAuthority dprr:1763 .
+crro:282.4 nmo:hasAuthority dprr:1763 .
+crro:282.5 nmo:hasAuthority dprr:1763 .
+crro:285.1 nmo:hasAuthority dprr:1763 .
+crro:285.2 nmo:hasAuthority dprr:1763 .
+crro:285.3 nmo:hasAuthority dprr:1763 .
+crro:285.4 nmo:hasAuthority dprr:1763 .
+crro:285.5 nmo:hasAuthority dprr:1763 .
+crro:285.5a nmo:hasAuthority dprr:1763 .
+crro:285.5b nmo:hasAuthority dprr:1763 .
+crro:285.5c nmo:hasAuthority dprr:1763 .
+crro:285.6 nmo:hasAuthority dprr:1763 .
+crro:285.7 nmo:hasAuthority dprr:1763 .
+crro:285.7a nmo:hasAuthority dprr:1763 .
+crro:285.7b nmo:hasAuthority dprr:1763 .
+
+# Nomisma: l_satvrn_rrc
+crro:317.1 nmo:hasAuthority dprr:1766 .
+crro:317.2 nmo:hasAuthority dprr:1766 .
+crro:317.3 nmo:hasAuthority dprr:1766 .
+crro:317.3a nmo:hasAuthority dprr:1766 .
+crro:317.3b nmo:hasAuthority dprr:1766 .
+
+# Nomisma: l_cot_rrc
+crro:314.1 nmo:hasAuthority dprr:1774 .
+crro:314.1a nmo:hasAuthority dprr:1774 .
+crro:314.1b nmo:hasAuthority dprr:1774 .
+crro:314.1c nmo:hasAuthority dprr:1774 .
+crro:314.1d nmo:hasAuthority dprr:1774 .
+
+# Nomisma: t_deidi_rrc
+crro:294.1 nmo:hasAuthority dprr:1776 .
+
+# Nomisma: q_met_rrc
+crro:284.1 nmo:hasAuthority dprr:1787 .
+crro:284.1a nmo:hasAuthority dprr:1787 .
+crro:284.1b nmo:hasAuthority dprr:1787 .
+
+# Nomisma: piso_q_rrc
+crro:330.1 nmo:hasAuthority dprr:1795 .
+crro:330.1a nmo:hasAuthority dprr:1795 .
+crro:330.1b nmo:hasAuthority dprr:1795 .
+
+# Nomisma: caepio_q_rrc
+crro:330.1 nmo:hasAuthority dprr:1796 .
+crro:330.1a nmo:hasAuthority dprr:1796 .
+crro:330.1b nmo:hasAuthority dprr:1796 .
+
+# Nomisma: l_post_alb_rrc
+crro:252.1 nmo:hasAuthority dprr:1800 .
+
+# Nomisma: ap_cl_rrc
+crro:299.1 nmo:hasAuthority dprr:1807 .
+crro:299.1a nmo:hasAuthority dprr:1807 .
+crro:299.1b nmo:hasAuthority dprr:1807 .
+
+# Nomisma: l_valeri_flacci_rrc
+crro:306.1 nmo:hasAuthority dprr:1815 .
+
+# Nomisma: m_herenni_rrc
+crro:308.1 nmo:hasAuthority dprr:1819 .
+crro:308.1a nmo:hasAuthority dprr:1819 .
+crro:308.1b nmo:hasAuthority dprr:1819 .
+crro:308.2 nmo:hasAuthority dprr:1819 .
+crro:308.3 nmo:hasAuthority dprr:1819 .
+crro:308.4 nmo:hasAuthority dprr:1819 .
+crro:308.4a nmo:hasAuthority dprr:1819 .
+crro:308.4b nmo:hasAuthority dprr:1819 .
+crro:308.5 nmo:hasAuthority dprr:1819 .
+
+# Nomisma: c_val_fla_imperat_rrc
+crro:365.1 nmo:hasAuthority dprr:1821 .
+crro:365.1a nmo:hasAuthority dprr:1821 .
+crro:365.1b nmo:hasAuthority dprr:1821 .
+crro:365.1c nmo:hasAuthority dprr:1821 .
+
+# Nomisma: l_ivli_l_f_caesar_rrc
+crro:320.1 nmo:hasAuthority dprr:1825 .
+
+# Nomisma: l_torqva_q_rrc
+crro:295.1 nmo:hasAuthority dprr:1833 .
+
+# Nomisma: m_sergi_silvs_q_rrc
+crro:286.1 nmo:hasAuthority dprr:1834 .
+
+# Nomisma: q_lvtati_cerco_q_rrc
+crro:305.1 nmo:hasAuthority dprr:1878 .
+crro:305.2 nmo:hasAuthority dprr:1878 .
+
+# Nomisma: l_scip_asiag_rrc
+crro:311.1 nmo:hasAuthority dprr:1882 .
+crro:311.1a nmo:hasAuthority dprr:1882 .
+crro:311.1b nmo:hasAuthority dprr:1882 .
+crro:311.1c nmo:hasAuthority dprr:1882 .
+crro:311.1d nmo:hasAuthority dprr:1882 .
+crro:311.1e nmo:hasAuthority dprr:1882 .
+
+# Nomisma: q_c_m_p_i_rrc
+crro:374.1 nmo:hasAuthority dprr:1889 .
+crro:374.2 nmo:hasAuthority dprr:1889 .
+
+# Nomisma: q_oppivs_pr_rrc
+crro:550.1 nmo:hasAuthority dprr:1892 .
+crro:550.2 nmo:hasAuthority dprr:1892 .
+crro:550.2a nmo:hasAuthority dprr:1892 .
+crro:550.2b nmo:hasAuthority dprr:1892 .
+crro:550.2c nmo:hasAuthority dprr:1892 .
+crro:550.2d nmo:hasAuthority dprr:1892 .
+crro:550.2e nmo:hasAuthority dprr:1892 .
+crro:550.2f nmo:hasAuthority dprr:1892 .
+crro:550.3 nmo:hasAuthority dprr:1892 .
+crro:550.3a nmo:hasAuthority dprr:1892 .
+crro:550.3b nmo:hasAuthority dprr:1892 .
+crro:550.3c nmo:hasAuthority dprr:1892 .
+
+# Nomisma: l_piso_frvgi_rrc
+crro:340.1 nmo:hasAuthority dprr:1896 .
+crro:340.2 nmo:hasAuthority dprr:1896 .
+crro:340.2a nmo:hasAuthority dprr:1896 .
+crro:340.2b nmo:hasAuthority dprr:1896 .
+crro:340.2c nmo:hasAuthority dprr:1896 .
+crro:340.2d nmo:hasAuthority dprr:1896 .
+crro:340.2e nmo:hasAuthority dprr:1896 .
+crro:340.2f nmo:hasAuthority dprr:1896 .
+crro:340.2g nmo:hasAuthority dprr:1896 .
+crro:340.3 nmo:hasAuthority dprr:1896 .
+crro:340.3a nmo:hasAuthority dprr:1896 .
+crro:340.3b nmo:hasAuthority dprr:1896 .
+crro:340.4 nmo:hasAuthority dprr:1896 .
+crro:340.5 nmo:hasAuthority dprr:1896 .
+crro:340.5a nmo:hasAuthority dprr:1896 .
+crro:340.5b nmo:hasAuthority dprr:1896 .
+crro:340.6 nmo:hasAuthority dprr:1896 .
+crro:340.6a nmo:hasAuthority dprr:1896 .
+crro:340.6b nmo:hasAuthority dprr:1896 .
+crro:340.6c nmo:hasAuthority dprr:1896 .
+
+# Nomisma: q_therm_mf_rrc
+crro:319.1 nmo:hasAuthority dprr:1901 .
+
+# Nomisma: ver_rrc
+crro:350A.1 nmo:hasAuthority dprr:1942 .
+crro:350A.1a nmo:hasAuthority dprr:1942 .
+crro:350A.1b nmo:hasAuthority dprr:1942 .
+crro:350A.1c nmo:hasAuthority dprr:1942 .
+crro:350A.1d nmo:hasAuthority dprr:1942 .
+crro:350A.1e nmo:hasAuthority dprr:1942 .
+crro:350A.2 nmo:hasAuthority dprr:1942 .
+crro:350A.3 nmo:hasAuthority dprr:1942 .
+crro:350A.3a nmo:hasAuthority dprr:1942 .
+crro:350A.3b nmo:hasAuthority dprr:1942 .
+crro:350A.3c nmo:hasAuthority dprr:1942 .
+crro:350A.3d nmo:hasAuthority dprr:1942 .
+crro:350A.3e nmo:hasAuthority dprr:1942 .
+crro:350A.3f nmo:hasAuthority dprr:1942 .
+
+# Nomisma: c_censorin_rrc
+crro:346.1 nmo:hasAuthority dprr:1947 .
+crro:346.1a nmo:hasAuthority dprr:1947 .
+crro:346.1b nmo:hasAuthority dprr:1947 .
+crro:346.1c nmo:hasAuthority dprr:1947 .
+crro:346.1d nmo:hasAuthority dprr:1947 .
+crro:346.1e nmo:hasAuthority dprr:1947 .
+crro:346.1f nmo:hasAuthority dprr:1947 .
+crro:346.1g nmo:hasAuthority dprr:1947 .
+crro:346.1h nmo:hasAuthority dprr:1947 .
+crro:346.1i nmo:hasAuthority dprr:1947 .
+crro:346.2 nmo:hasAuthority dprr:1947 .
+crro:346.2a nmo:hasAuthority dprr:1947 .
+crro:346.2b nmo:hasAuthority dprr:1947 .
+crro:346.2c nmo:hasAuthority dprr:1947 .
+crro:346.3 nmo:hasAuthority dprr:1947 .
+crro:346.4 nmo:hasAuthority dprr:1947 .
+crro:346.4a nmo:hasAuthority dprr:1947 .
+crro:346.4b nmo:hasAuthority dprr:1947 .
+crro:346.5 nmo:hasAuthority dprr:1947 .
+
+# Nomisma: julius_caesar
+crro:443.1 nmo:hasAuthority dprr:1957 .
+crro:452.1 nmo:hasAuthority dprr:1957 .
+crro:452.2 nmo:hasAuthority dprr:1957 .
+crro:452.3 nmo:hasAuthority dprr:1957 .
+crro:452.4 nmo:hasAuthority dprr:1957 .
+crro:452.5 nmo:hasAuthority dprr:1957 .
+crro:456.1 nmo:hasAuthority dprr:1957 .
+crro:456.1a nmo:hasAuthority dprr:1957 .
+crro:456.1b nmo:hasAuthority dprr:1957 .
+crro:458.1 nmo:hasAuthority dprr:1957 .
+crro:466.1 nmo:hasAuthority dprr:1957 .
+crro:467.1 nmo:hasAuthority dprr:1957 .
+crro:467.1a nmo:hasAuthority dprr:1957 .
+crro:467.1b nmo:hasAuthority dprr:1957 .
+crro:468.1 nmo:hasAuthority dprr:1957 .
+crro:468.2 nmo:hasAuthority dprr:1957 .
+crro:475.1 nmo:hasAuthority dprr:1957 .
+crro:475.1a nmo:hasAuthority dprr:1957 .
+crro:475.1b nmo:hasAuthority dprr:1957 .
+crro:475.2 nmo:hasAuthority dprr:1957 .
+crro:476.1 nmo:hasAuthority dprr:1957 .
+crro:476.1a nmo:hasAuthority dprr:1957 .
+crro:476.1b nmo:hasAuthority dprr:1957 .
+crro:481.1 nmo:hasAuthority dprr:1957 .
+crro:482.1 nmo:hasAuthority dprr:1957 .
+
+# Nomisma: l_crit_aed_pl_rrc
+crro:351.1 nmo:hasAuthority dprr:1971 .
+
+# Nomisma: m_fan_aed_pl_rrc
+crro:275.1 nmo:hasAuthority dprr:1972 .
+crro:275.2 nmo:hasAuthority dprr:1972 .
+crro:275.3 nmo:hasAuthority dprr:1972 .
+crro:351.1 nmo:hasAuthority dprr:1972 .
+
+# Nomisma: pompey
+crro:402.1 nmo:hasAuthority dprr:1976 .
+crro:402.1a nmo:hasAuthority dprr:1976 .
+crro:402.1b nmo:hasAuthority dprr:1976 .
+crro:446.1 nmo:hasAuthority dprr:1976 .
+crro:447.1 nmo:hasAuthority dprr:1976 .
+crro:447.1a nmo:hasAuthority dprr:1976 .
+crro:447.1b nmo:hasAuthority dprr:1976 .
+
+# Nomisma: q_anto_balb_pr_rrc
+crro:364.1 nmo:hasAuthority dprr:1984 .
+crro:364.1a nmo:hasAuthority dprr:1984 .
+crro:364.1b nmo:hasAuthority dprr:1984 .
+crro:364.1c nmo:hasAuthority dprr:1984 .
+crro:364.1d nmo:hasAuthority dprr:1984 .
+crro:364.1e nmo:hasAuthority dprr:1984 .
+
+# Nomisma: p_fovrivs_crassipes_rrc
+crro:356.1 nmo:hasAuthority dprr:1987 .
+crro:356.1a nmo:hasAuthority dprr:1987 .
+crro:356.1b nmo:hasAuthority dprr:1987 .
+crro:356.1c nmo:hasAuthority dprr:1987 .
+crro:356.1d nmo:hasAuthority dprr:1987 .
+
+# Nomisma: l_fabi_l_f_hisp_rrc
+crro:366.1 nmo:hasAuthority dprr:2013 .
+crro:366.1a nmo:hasAuthority dprr:2013 .
+crro:366.1b nmo:hasAuthority dprr:2013 .
+crro:366.1c nmo:hasAuthority dprr:2013 .
+crro:366.2 nmo:hasAuthority dprr:2013 .
+crro:366.2a nmo:hasAuthority dprr:2013 .
+crro:366.2b nmo:hasAuthority dprr:2013 .
+crro:366.3 nmo:hasAuthority dprr:2013 .
+crro:366.3a nmo:hasAuthority dprr:2013 .
+crro:366.3b nmo:hasAuthority dprr:2013 .
+crro:366.3c nmo:hasAuthority dprr:2013 .
+
+# Nomisma: a_manli_a_f_q_rrc
+crro:381.1 nmo:hasAuthority dprr:2014 .
+crro:381.1a nmo:hasAuthority dprr:2014 .
+crro:381.1b nmo:hasAuthority dprr:2014 .
+
+# Nomisma: l_salinat_rrc
+crro:355.1 nmo:hasAuthority dprr:2018 .
+crro:355.1a nmo:hasAuthority dprr:2018 .
+crro:355.1b nmo:hasAuthority dprr:2018 .
+crro:355.1c nmo:hasAuthority dprr:2018 .
+crro:355.1d nmo:hasAuthority dprr:2018 .
+crro:355.1e nmo:hasAuthority dprr:2018 .
+crro:355.1f nmo:hasAuthority dprr:2018 .
+crro:355.1g nmo:hasAuthority dprr:2018 .
+crro:355.1h nmo:hasAuthority dprr:2018 .
+
+# Nomisma: c_memies_l_f_gal_rrc
+crro:349.1 nmo:hasAuthority dprr:2020 .
+
+# Nomisma: c_poblici_q_f_rrc
+crro:380.1 nmo:hasAuthority dprr:2025 .
+
+# Nomisma: l_thorivs_balbvs_rrc
+crro:316.1 nmo:hasAuthority dprr:2034 .
+crro:316.2 nmo:hasAuthority dprr:2034 .
+
+# Nomisma: cn_lentvl_rrc
+crro:345.1 nmo:hasAuthority dprr:2064 .
+crro:345.2 nmo:hasAuthority dprr:2064 .
+crro:345.3 nmo:hasAuthority dprr:2064 .
+crro:345.4 nmo:hasAuthority dprr:2064 .
+crro:345.4a nmo:hasAuthority dprr:2064 .
+crro:345.4b nmo:hasAuthority dprr:2064 .
+
+# Nomisma: l_titvri_l_f_sabinvs_rrc
+crro:344.1 nmo:hasAuthority dprr:2076 .
+crro:344.1a nmo:hasAuthority dprr:2076 .
+crro:344.1b nmo:hasAuthority dprr:2076 .
+crro:344.1c nmo:hasAuthority dprr:2076 .
+crro:344.2 nmo:hasAuthority dprr:2076 .
+crro:344.2a nmo:hasAuthority dprr:2076 .
+crro:344.2b nmo:hasAuthority dprr:2076 .
+crro:344.2c nmo:hasAuthority dprr:2076 .
+crro:344.3 nmo:hasAuthority dprr:2076 .
+crro:344.4 nmo:hasAuthority dprr:2076 .
+crro:344.4a nmo:hasAuthority dprr:2076 .
+crro:344.4b nmo:hasAuthority dprr:2076 .
+crro:344.4c nmo:hasAuthority dprr:2076 .
+crro:344.4d nmo:hasAuthority dprr:2076 .
+crro:344.5 nmo:hasAuthority dprr:2076 .
+crro:344.5a nmo:hasAuthority dprr:2076 .
+crro:344.5b nmo:hasAuthority dprr:2076 .
+crro:344.5c nmo:hasAuthority dprr:2076 .
+crro:344.6 nmo:hasAuthority dprr:2076 .
+crro:344.7 nmo:hasAuthority dprr:2076 .
+
+# Nomisma: cn_len_q_rrc
+crro:329.1b nmo:hasAuthority dprr:2082 .
+crro:393.1 nmo:hasAuthority dprr:2082 .
+crro:393.1a nmo:hasAuthority dprr:2082 .
+crro:393.1b nmo:hasAuthority dprr:2082 .
+crro:549.1 nmo:hasAuthority dprr:2082 .
+
+# Nomisma: l_plaetori_l_f_q_rrc
+crro:396.1 nmo:hasAuthority dprr:2087 .
+crro:396.1a nmo:hasAuthority dprr:2087 .
+crro:396.1b nmo:hasAuthority dprr:2087 .
+
+# Nomisma: c_licinivs_l_f_macer_rrc
+crro:354.1 nmo:hasAuthority dprr:2103 .
+crro:354.2 nmo:hasAuthority dprr:2103 .
+crro:354.3 nmo:hasAuthority dprr:2103 .
+crro:354.3a nmo:hasAuthority dprr:2103 .
+crro:354.3b nmo:hasAuthority dprr:2103 .
+
+# Nomisma: l_metel_rrc
+crro:262.1 nmo:hasAuthority dprr:2150 .
+crro:262.2 nmo:hasAuthority dprr:2150 .
+crro:262.3 nmo:hasAuthority dprr:2150 .
+crro:262.4 nmo:hasAuthority dprr:2150 .
+crro:262.5 nmo:hasAuthority dprr:2150 .
+crro:335.1 nmo:hasAuthority dprr:2150 .
+crro:335.10 nmo:hasAuthority dprr:2150 .
+crro:335.10a nmo:hasAuthority dprr:2150 .
+crro:335.10b nmo:hasAuthority dprr:2150 .
+crro:335.1a nmo:hasAuthority dprr:2150 .
+crro:335.1b nmo:hasAuthority dprr:2150 .
+crro:335.1c nmo:hasAuthority dprr:2150 .
+crro:335.2 nmo:hasAuthority dprr:2150 .
+crro:335.3 nmo:hasAuthority dprr:2150 .
+crro:335.3a nmo:hasAuthority dprr:2150 .
+crro:335.3b nmo:hasAuthority dprr:2150 .
+crro:335.3c nmo:hasAuthority dprr:2150 .
+crro:335.3d nmo:hasAuthority dprr:2150 .
+crro:335.3e nmo:hasAuthority dprr:2150 .
+crro:335.3f nmo:hasAuthority dprr:2150 .
+crro:335.3g nmo:hasAuthority dprr:2150 .
+crro:335.4 nmo:hasAuthority dprr:2150 .
+crro:335.5 nmo:hasAuthority dprr:2150 .
+crro:335.5a nmo:hasAuthority dprr:2150 .
+crro:335.5b nmo:hasAuthority dprr:2150 .
+crro:335.6 nmo:hasAuthority dprr:2150 .
+crro:335.7 nmo:hasAuthority dprr:2150 .
+crro:335.7a nmo:hasAuthority dprr:2150 .
+crro:335.7b nmo:hasAuthority dprr:2150 .
+crro:335.8 nmo:hasAuthority dprr:2150 .
+crro:335.8a nmo:hasAuthority dprr:2150 .
+crro:335.8b nmo:hasAuthority dprr:2150 .
+crro:335.9 nmo:hasAuthority dprr:2150 .
+
+# Nomisma: m_plaetorivs_cest_rrc
+crro:405.1 nmo:hasAuthority dprr:2169 .
+crro:405.1a nmo:hasAuthority dprr:2169 .
+crro:405.1b nmo:hasAuthority dprr:2169 .
+crro:405.2 nmo:hasAuthority dprr:2169 .
+crro:405.3 nmo:hasAuthority dprr:2169 .
+crro:405.3a nmo:hasAuthority dprr:2169 .
+crro:405.3b nmo:hasAuthority dprr:2169 .
+crro:405.4 nmo:hasAuthority dprr:2169 .
+crro:405.4a nmo:hasAuthority dprr:2169 .
+crro:405.4b nmo:hasAuthority dprr:2169 .
+crro:405.4c nmo:hasAuthority dprr:2169 .
+crro:405.5 nmo:hasAuthority dprr:2169 .
+crro:409.1 nmo:hasAuthority dprr:2169 .
+crro:409.2 nmo:hasAuthority dprr:2169 .
+
+# Nomisma: p_galb_aed_cvr_rrc
+crro:406.1 nmo:hasAuthority dprr:2179 .
+
+# Nomisma: cordi_rrc
+crro:403.1 nmo:hasAuthority dprr:2191 .
+
+# Nomisma: l_torqvat_rrc
+crro:411.1 nmo:hasAuthority dprr:2198 .
+crro:411.1a nmo:hasAuthority dprr:2198 .
+crro:411.1b nmo:hasAuthority dprr:2198 .
+
+# Nomisma: l_manli_t_proq_rrc
+crro:367.1 nmo:hasAuthority dprr:2205 .
+crro:367.2 nmo:hasAuthority dprr:2205 .
+crro:367.3 nmo:hasAuthority dprr:2205 .
+crro:367.4 nmo:hasAuthority dprr:2205 .
+crro:367.5 nmo:hasAuthority dprr:2205 .
+
+# Nomisma: m_cato_pro_pr_rrc
+crro:462.1 nmo:hasAuthority dprr:2241 .
+crro:462.1a nmo:hasAuthority dprr:2241 .
+crro:462.1c nmo:hasAuthority dprr:2241 .
+crro:462.2 nmo:hasAuthority dprr:2241 .
+
+# Nomisma: ti_clavd_ti_f_ap_n_rrc
+crro:383.1 nmo:hasAuthority dprr:2248 .
+
+# Nomisma: gnaeus_pompeius
+crro:469.1 nmo:hasAuthority dprr:2253 .
+crro:469.1a nmo:hasAuthority dprr:2253 .
+crro:469.1b nmo:hasAuthority dprr:2253 .
+crro:469.1c nmo:hasAuthority dprr:2253 .
+crro:469.1d nmo:hasAuthority dprr:2253 .
+crro:469.1e nmo:hasAuthority dprr:2253 .
+crro:470.1 nmo:hasAuthority dprr:2253 .
+crro:470.1a nmo:hasAuthority dprr:2253 .
+crro:470.1b nmo:hasAuthority dprr:2253 .
+crro:470.1c nmo:hasAuthority dprr:2253 .
+crro:470.1d nmo:hasAuthority dprr:2253 .
+crro:471.1 nmo:hasAuthority dprr:2253 .
+
+# Nomisma: sextus_pompey
+crro:477.1 nmo:hasAuthority dprr:2254 .
+crro:477.1a nmo:hasAuthority dprr:2254 .
+crro:477.1b nmo:hasAuthority dprr:2254 .
+crro:477.2 nmo:hasAuthority dprr:2254 .
+crro:477.3 nmo:hasAuthority dprr:2254 .
+crro:477.3a nmo:hasAuthority dprr:2254 .
+crro:477.3b nmo:hasAuthority dprr:2254 .
+crro:478.1 nmo:hasAuthority dprr:2254 .
+crro:478.1a nmo:hasAuthority dprr:2254 .
+crro:478.1b nmo:hasAuthority dprr:2254 .
+crro:479.1 nmo:hasAuthority dprr:2254 .
+crro:483.1 nmo:hasAuthority dprr:2254 .
+crro:483.2 nmo:hasAuthority dprr:2254 .
+crro:511.1 nmo:hasAuthority dprr:2254 .
+crro:511.2 nmo:hasAuthority dprr:2254 .
+crro:511.2a nmo:hasAuthority dprr:2254 .
+crro:511.2b nmo:hasAuthority dprr:2254 .
+crro:511.2c nmo:hasAuthority dprr:2254 .
+crro:511.3 nmo:hasAuthority dprr:2254 .
+crro:511.3a nmo:hasAuthority dprr:2254 .
+crro:511.3b nmo:hasAuthority dprr:2254 .
+crro:511.3c nmo:hasAuthority dprr:2254 .
+crro:511.4 nmo:hasAuthority dprr:2254 .
+crro:511.4a nmo:hasAuthority dprr:2254 .
+crro:511.4b nmo:hasAuthority dprr:2254 .
+crro:511.4c nmo:hasAuthority dprr:2254 .
+crro:511.4d nmo:hasAuthority dprr:2254 .
+
+# Nomisma: l_cassi_q_f_rrc
+crro:386.1 nmo:hasAuthority dprr:2257 .
+
+# Nomisma: m_scavr_rrc
+crro:422.1 nmo:hasAuthority dprr:2262 .
+crro:422.1a nmo:hasAuthority dprr:2262 .
+crro:422.1b nmo:hasAuthority dprr:2262 .
+
+# Nomisma: p_ypsae_rrc
+crro:420.1 nmo:hasAuthority dprr:2265 .
+crro:420.1a nmo:hasAuthority dprr:2265 .
+crro:420.1b nmo:hasAuthority dprr:2265 .
+crro:420.2 nmo:hasAuthority dprr:2265 .
+crro:420.2a nmo:hasAuthority dprr:2265 .
+crro:420.2b nmo:hasAuthority dprr:2265 .
+crro:420.2c nmo:hasAuthority dprr:2265 .
+crro:420.2d nmo:hasAuthority dprr:2265 .
+
+# Nomisma: a_plavtivs_aed_cvr_rrc
+crro:431.1 nmo:hasAuthority dprr:2276 .
+
+# Nomisma: p_lent_p_f_l_n_q_rrc
+crro:397.1 nmo:hasAuthority dprr:2290 .
+
+# Nomisma: favstvs_rrc
+crro:426.1 nmo:hasAuthority dprr:2300 .
+crro:426.2 nmo:hasAuthority dprr:2300 .
+crro:426.3 nmo:hasAuthority dprr:2300 .
+crro:426.4 nmo:hasAuthority dprr:2300 .
+crro:426.4a nmo:hasAuthority dprr:2300 .
+crro:426.4b nmo:hasAuthority dprr:2300 .
+
+# Nomisma: cn_plancivs_aed_cvr_rrc
+crro:432.1 nmo:hasAuthority dprr:2312 .
+
+# Nomisma: dom_cos_iter_imp_rrc
+crro:532.1 nmo:hasAuthority dprr:2313 .
+
+# Nomisma: kaleni_rrc
+crro:403.1 nmo:hasAuthority dprr:2321 .
+
+# Nomisma: a_allienvs_pro_cos_rrc
+crro:457.1 nmo:hasAuthority dprr:2324 .
+
+# Nomisma: m_lepidvs_rrc
+crro:419.1 nmo:hasAuthority dprr:2341 .
+crro:419.1a nmo:hasAuthority dprr:2341 .
+crro:419.1b nmo:hasAuthority dprr:2341 .
+crro:419.1c nmo:hasAuthority dprr:2341 .
+crro:419.1d nmo:hasAuthority dprr:2341 .
+crro:419.1e nmo:hasAuthority dprr:2341 .
+crro:419.2 nmo:hasAuthority dprr:2341 .
+crro:419.3 nmo:hasAuthority dprr:2341 .
+crro:419.3a nmo:hasAuthority dprr:2341 .
+crro:419.3b nmo:hasAuthority dprr:2341 .
+crro:489.1 nmo:hasAuthority dprr:2341 .
+crro:489.2 nmo:hasAuthority dprr:2341 .
+crro:489.3 nmo:hasAuthority dprr:2341 .
+crro:495.1 nmo:hasAuthority dprr:2341 .
+crro:495.2 nmo:hasAuthority dprr:2341 .
+crro:495.2a nmo:hasAuthority dprr:2341 .
+crro:495.2b nmo:hasAuthority dprr:2341 .
+crro:495.2c nmo:hasAuthority dprr:2341 .
+crro:495.2d nmo:hasAuthority dprr:2341 .
+
+# Nomisma: t_vettivs_sabinvs_rrc
+crro:404.1 nmo:hasAuthority dprr:2344 .
+
+# Nomisma: q_metel_pivs_scipio_imp_rrc
+crro:459.1 nmo:hasAuthority dprr:2347 .
+crro:460.1 nmo:hasAuthority dprr:2347 .
+crro:460.2 nmo:hasAuthority dprr:2347 .
+crro:460.3 nmo:hasAuthority dprr:2347 .
+crro:460.4 nmo:hasAuthority dprr:2347 .
+crro:461.1 nmo:hasAuthority dprr:2347 .
+
+# Nomisma: pavllvs_lepidvs_rrc
+crro:415.1 nmo:hasAuthority dprr:2350 .
+crro:417.1 nmo:hasAuthority dprr:2350 .
+crro:417.1a nmo:hasAuthority dprr:2350 .
+crro:417.1b nmo:hasAuthority dprr:2350 .
+
+# Nomisma: l_lentvlvs_rrc
+crro:445.1 nmo:hasAuthority dprr:2356 .
+crro:445.1a nmo:hasAuthority dprr:2356 .
+crro:445.1b nmo:hasAuthority dprr:2356 .
+crro:445.2 nmo:hasAuthority dprr:2356 .
+crro:445.3 nmo:hasAuthority dprr:2356 .
+crro:445.3a nmo:hasAuthority dprr:2356 .
+crro:445.3b nmo:hasAuthority dprr:2356 .
+
+# Nomisma: c_piso_l_f_frvgi_rrc
+crro:408.1 nmo:hasAuthority dprr:2366 .
+crro:408.1a nmo:hasAuthority dprr:2366 .
+crro:408.1b nmo:hasAuthority dprr:2366 .
+
+# Nomisma: m_mettivs_rrc
+crro:480.17 nmo:hasAuthority dprr:2367 .
+crro:480.2 nmo:hasAuthority dprr:2367 .
+crro:480.23 nmo:hasAuthority dprr:2367 .
+crro:480.28 nmo:hasAuthority dprr:2367 .
+crro:480.2a nmo:hasAuthority dprr:2367 .
+crro:480.2b nmo:hasAuthority dprr:2367 .
+crro:480.2c nmo:hasAuthority dprr:2367 .
+crro:480.3 nmo:hasAuthority dprr:2367 .
+
+# Nomisma: p_crassvs_m_f_rrc
+crro:430.1 nmo:hasAuthority dprr:2372 .
+
+# Nomisma: mark_antony
+crro:488.1 nmo:hasAuthority dprr:2392 .
+crro:488.2 nmo:hasAuthority dprr:2392 .
+crro:489.1 nmo:hasAuthority dprr:2392 .
+crro:489.2 nmo:hasAuthority dprr:2392 .
+crro:489.3 nmo:hasAuthority dprr:2392 .
+crro:489.4 nmo:hasAuthority dprr:2392 .
+crro:489.5 nmo:hasAuthority dprr:2392 .
+crro:489.6 nmo:hasAuthority dprr:2392 .
+crro:492.1 nmo:hasAuthority dprr:2392 .
+crro:492.2 nmo:hasAuthority dprr:2392 .
+crro:496.1 nmo:hasAuthority dprr:2392 .
+crro:496.2 nmo:hasAuthority dprr:2392 .
+crro:496.3 nmo:hasAuthority dprr:2392 .
+crro:516.1 nmo:hasAuthority dprr:2392 .
+crro:516.2 nmo:hasAuthority dprr:2392 .
+crro:516.3 nmo:hasAuthority dprr:2392 .
+crro:516.4 nmo:hasAuthority dprr:2392 .
+crro:516.5 nmo:hasAuthority dprr:2392 .
+crro:517.1 nmo:hasAuthority dprr:2392 .
+crro:517.1a nmo:hasAuthority dprr:2392 .
+crro:517.1b nmo:hasAuthority dprr:2392 .
+crro:517.2 nmo:hasAuthority dprr:2392 .
+crro:517.3 nmo:hasAuthority dprr:2392 .
+crro:517.4 nmo:hasAuthority dprr:2392 .
+crro:517.4a nmo:hasAuthority dprr:2392 .
+crro:517.4b nmo:hasAuthority dprr:2392 .
+crro:517.5 nmo:hasAuthority dprr:2392 .
+crro:517.5a nmo:hasAuthority dprr:2392 .
+crro:517.5b nmo:hasAuthority dprr:2392 .
+crro:517.5c nmo:hasAuthority dprr:2392 .
+crro:517.6 nmo:hasAuthority dprr:2392 .
+crro:517.7 nmo:hasAuthority dprr:2392 .
+crro:517.8 nmo:hasAuthority dprr:2392 .
+crro:520.1 nmo:hasAuthority dprr:2392 .
+crro:521.1 nmo:hasAuthority dprr:2392 .
+crro:521.2 nmo:hasAuthority dprr:2392 .
+crro:522.1 nmo:hasAuthority dprr:2392 .
+crro:522.2 nmo:hasAuthority dprr:2392 .
+crro:522.3 nmo:hasAuthority dprr:2392 .
+crro:527.1 nmo:hasAuthority dprr:2392 .
+crro:528.1 nmo:hasAuthority dprr:2392 .
+crro:528.1a nmo:hasAuthority dprr:2392 .
+crro:528.1b nmo:hasAuthority dprr:2392 .
+crro:528.2 nmo:hasAuthority dprr:2392 .
+crro:528.2a nmo:hasAuthority dprr:2392 .
+crro:528.2b nmo:hasAuthority dprr:2392 .
+crro:528.3 nmo:hasAuthority dprr:2392 .
+crro:529.1 nmo:hasAuthority dprr:2392 .
+crro:529.2 nmo:hasAuthority dprr:2392 .
+crro:529.2a nmo:hasAuthority dprr:2392 .
+crro:529.2b nmo:hasAuthority dprr:2392 .
+crro:529.2c nmo:hasAuthority dprr:2392 .
+crro:529.3 nmo:hasAuthority dprr:2392 .
+crro:529.4 nmo:hasAuthority dprr:2392 .
+crro:529.4a nmo:hasAuthority dprr:2392 .
+crro:529.4b nmo:hasAuthority dprr:2392 .
+crro:530.1 nmo:hasAuthority dprr:2392 .
+crro:531.1 nmo:hasAuthority dprr:2392 .
+crro:531.1a nmo:hasAuthority dprr:2392 .
+crro:531.1b nmo:hasAuthority dprr:2392 .
+crro:533.1 nmo:hasAuthority dprr:2392 .
+crro:533.2 nmo:hasAuthority dprr:2392 .
+crro:533.3 nmo:hasAuthority dprr:2392 .
+crro:533.3a nmo:hasAuthority dprr:2392 .
+crro:533.3b nmo:hasAuthority dprr:2392 .
+crro:536.1 nmo:hasAuthority dprr:2392 .
+crro:536.2 nmo:hasAuthority dprr:2392 .
+crro:536.3 nmo:hasAuthority dprr:2392 .
+crro:536.4 nmo:hasAuthority dprr:2392 .
+crro:539.1 nmo:hasAuthority dprr:2392 .
+crro:541.1 nmo:hasAuthority dprr:2392 .
+crro:541.2 nmo:hasAuthority dprr:2392 .
+crro:542.1 nmo:hasAuthority dprr:2392 .
+crro:542.2 nmo:hasAuthority dprr:2392 .
+crro:543.1 nmo:hasAuthority dprr:2392 .
+crro:544.1 nmo:hasAuthority dprr:2392 .
+crro:544.10 nmo:hasAuthority dprr:2392 .
+crro:544.11 nmo:hasAuthority dprr:2392 .
+crro:544.12 nmo:hasAuthority dprr:2392 .
+crro:544.13 nmo:hasAuthority dprr:2392 .
+crro:544.14 nmo:hasAuthority dprr:2392 .
+crro:544.15 nmo:hasAuthority dprr:2392 .
+crro:544.16 nmo:hasAuthority dprr:2392 .
+crro:544.17 nmo:hasAuthority dprr:2392 .
+crro:544.18 nmo:hasAuthority dprr:2392 .
+crro:544.19 nmo:hasAuthority dprr:2392 .
+crro:544.2 nmo:hasAuthority dprr:2392 .
+crro:544.20 nmo:hasAuthority dprr:2392 .
+crro:544.21 nmo:hasAuthority dprr:2392 .
+crro:544.22 nmo:hasAuthority dprr:2392 .
+crro:544.23 nmo:hasAuthority dprr:2392 .
+crro:544.24 nmo:hasAuthority dprr:2392 .
+crro:544.25 nmo:hasAuthority dprr:2392 .
+crro:544.26 nmo:hasAuthority dprr:2392 .
+crro:544.27 nmo:hasAuthority dprr:2392 .
+crro:544.28 nmo:hasAuthority dprr:2392 .
+crro:544.29 nmo:hasAuthority dprr:2392 .
+crro:544.3 nmo:hasAuthority dprr:2392 .
+crro:544.30 nmo:hasAuthority dprr:2392 .
+crro:544.31 nmo:hasAuthority dprr:2392 .
+crro:544.32 nmo:hasAuthority dprr:2392 .
+crro:544.33 nmo:hasAuthority dprr:2392 .
+crro:544.34 nmo:hasAuthority dprr:2392 .
+crro:544.35 nmo:hasAuthority dprr:2392 .
+crro:544.36 nmo:hasAuthority dprr:2392 .
+crro:544.37 nmo:hasAuthority dprr:2392 .
+crro:544.38 nmo:hasAuthority dprr:2392 .
+crro:544.39 nmo:hasAuthority dprr:2392 .
+crro:544.4 nmo:hasAuthority dprr:2392 .
+crro:544.5 nmo:hasAuthority dprr:2392 .
+crro:544.6 nmo:hasAuthority dprr:2392 .
+crro:544.7 nmo:hasAuthority dprr:2392 .
+crro:544.8 nmo:hasAuthority dprr:2392 .
+crro:544.9 nmo:hasAuthority dprr:2392 .
+crro:545.1 nmo:hasAuthority dprr:2392 .
+crro:545.2 nmo:hasAuthority dprr:2392 .
+crro:546.1 nmo:hasAuthority dprr:2392 .
+crro:546.2 nmo:hasAuthority dprr:2392 .
+crro:546.2a nmo:hasAuthority dprr:2392 .
+crro:546.2b nmo:hasAuthority dprr:2392 .
+crro:546.2c nmo:hasAuthority dprr:2392 .
+crro:546.2d nmo:hasAuthority dprr:2392 .
+crro:546.3 nmo:hasAuthority dprr:2392 .
+crro:546.3a nmo:hasAuthority dprr:2392 .
+crro:546.3b nmo:hasAuthority dprr:2392 .
+crro:546.3c nmo:hasAuthority dprr:2392 .
+
+# Nomisma: lentvlvs_spint_rrc
+crro:500.1 nmo:hasAuthority dprr:2394 .
+crro:500.2 nmo:hasAuthority dprr:2394 .
+crro:500.3 nmo:hasAuthority dprr:2394 .
+crro:500.4 nmo:hasAuthority dprr:2394 .
+crro:500.5 nmo:hasAuthority dprr:2394 .
+crro:500.6 nmo:hasAuthority dprr:2394 .
+crro:500.7 nmo:hasAuthority dprr:2394 .
+
+# Nomisma: c_marc_cos_rrc
+crro:445.1 nmo:hasAuthority dprr:2397 .
+crro:445.1a nmo:hasAuthority dprr:2397 .
+crro:445.1b nmo:hasAuthority dprr:2397 .
+crro:445.2 nmo:hasAuthority dprr:2397 .
+crro:445.3 nmo:hasAuthority dprr:2397 .
+crro:445.3a nmo:hasAuthority dprr:2397 .
+crro:445.3b nmo:hasAuthority dprr:2397 .
+
+# Nomisma: svfenas_rrc
+crro:421.1 nmo:hasAuthority dprr:2403 .
+
+# Nomisma: l_procili_f_rrc
+crro:379.1 nmo:hasAuthority dprr:2405 .
+crro:379.2 nmo:hasAuthority dprr:2405 .
+
+# Nomisma: l_rosci_fabati_rrc
+crro:412.1 nmo:hasAuthority dprr:2424 .
+
+# Nomisma: c_memmi_c_f_rrc
+crro:427.1 nmo:hasAuthority dprr:2439 .
+crro:427.2 nmo:hasAuthority dprr:2439 .
+
+# Nomisma: a_hirtivs_pr_rrc
+crro:466.1 nmo:hasAuthority dprr:2449 .
+
+# Nomisma: l_planc_praef_vrb_rrc
+crro:475.1a nmo:hasAuthority dprr:2450 .
+crro:475.1b nmo:hasAuthority dprr:2450 .
+crro:522.1 nmo:hasAuthority dprr:2450 .
+crro:522.2 nmo:hasAuthority dprr:2450 .
+crro:522.3 nmo:hasAuthority dprr:2450 .
+crro:522.4 nmo:hasAuthority dprr:2450 .
+
+# Nomisma: p_crassvs_ivn_leg_pro_pr_rrc
+crro:460.1 nmo:hasAuthority dprr:2456 .
+crro:460.2 nmo:hasAuthority dprr:2456 .
+crro:460.3 nmo:hasAuthority dprr:2456 .
+crro:460.4 nmo:hasAuthority dprr:2456 .
+
+# Nomisma: cassius
+crro:355.1 nmo:hasAuthority dprr:2458 .
+crro:355.1a nmo:hasAuthority dprr:2458 .
+crro:355.1b nmo:hasAuthority dprr:2458 .
+crro:355.1c nmo:hasAuthority dprr:2458 .
+crro:355.1d nmo:hasAuthority dprr:2458 .
+crro:355.1e nmo:hasAuthority dprr:2458 .
+crro:355.1f nmo:hasAuthority dprr:2458 .
+crro:355.1h nmo:hasAuthority dprr:2458 .
+crro:498.1 nmo:hasAuthority dprr:2458 .
+crro:499.1 nmo:hasAuthority dprr:2458 .
+crro:500.1 nmo:hasAuthority dprr:2458 .
+crro:500.2 nmo:hasAuthority dprr:2458 .
+crro:500.3 nmo:hasAuthority dprr:2458 .
+crro:500.4 nmo:hasAuthority dprr:2458 .
+crro:500.5 nmo:hasAuthority dprr:2458 .
+crro:500.6 nmo:hasAuthority dprr:2458 .
+crro:500.7 nmo:hasAuthority dprr:2458 .
+crro:505.1 nmo:hasAuthority dprr:2458 .
+crro:505.2 nmo:hasAuthority dprr:2458 .
+crro:505.3 nmo:hasAuthority dprr:2458 .
+crro:505.4 nmo:hasAuthority dprr:2458 .
+crro:505.5 nmo:hasAuthority dprr:2458 .
+
+# Nomisma: brvtvs_rrc
+crro:433.1 nmo:hasAuthority dprr:2459 .
+crro:433.2 nmo:hasAuthority dprr:2459 .
+crro:500.1 nmo:hasAuthority dprr:2459 .
+crro:500.2 nmo:hasAuthority dprr:2459 .
+crro:500.3 nmo:hasAuthority dprr:2459 .
+crro:500.4 nmo:hasAuthority dprr:2459 .
+crro:500.5 nmo:hasAuthority dprr:2459 .
+crro:500.6 nmo:hasAuthority dprr:2459 .
+crro:500.7 nmo:hasAuthority dprr:2459 .
+crro:501.1 nmo:hasAuthority dprr:2459 .
+crro:502.1 nmo:hasAuthority dprr:2459 .
+crro:502.2 nmo:hasAuthority dprr:2459 .
+crro:502.4 nmo:hasAuthority dprr:2459 .
+crro:503.1 nmo:hasAuthority dprr:2459 .
+crro:504.1 nmo:hasAuthority dprr:2459 .
+crro:505.1 nmo:hasAuthority dprr:2459 .
+crro:505.2 nmo:hasAuthority dprr:2459 .
+crro:505.3 nmo:hasAuthority dprr:2459 .
+crro:505.4 nmo:hasAuthority dprr:2459 .
+crro:505.5 nmo:hasAuthority dprr:2459 .
+crro:506.1 nmo:hasAuthority dprr:2459 .
+crro:506.2 nmo:hasAuthority dprr:2459 .
+crro:506.3 nmo:hasAuthority dprr:2459 .
+crro:507.1 nmo:hasAuthority dprr:2459 .
+crro:507.1a nmo:hasAuthority dprr:2459 .
+crro:507.1b nmo:hasAuthority dprr:2459 .
+crro:507.2 nmo:hasAuthority dprr:2459 .
+crro:508.1 nmo:hasAuthority dprr:2459 .
+crro:508.2 nmo:hasAuthority dprr:2459 .
+crro:508.3 nmo:hasAuthority dprr:2459 .
+
+# Nomisma: q_pompei_rvfi_rrc
+crro:434.1 nmo:hasAuthority dprr:2478 .
+crro:434.2 nmo:hasAuthority dprr:2478 .
+
+# Nomisma: q_cassivs_rrc
+crro:428.1 nmo:hasAuthority dprr:2481 .
+crro:428.2 nmo:hasAuthority dprr:2481 .
+crro:428.3 nmo:hasAuthority dprr:2481 .
+
+# Nomisma: eppivs_leg_f_c_rrc
+crro:461.1 nmo:hasAuthority dprr:2482 .
+crro:478.1 nmo:hasAuthority dprr:2482 .
+crro:478.1a nmo:hasAuthority dprr:2482 .
+crro:478.1b nmo:hasAuthority dprr:2482 .
+
+# Nomisma: albinvs_brvti_f_rrc
+crro:450.1 nmo:hasAuthority dprr:2489 .
+crro:450.1a nmo:hasAuthority dprr:2489 .
+crro:450.1b nmo:hasAuthority dprr:2489 .
+crro:450.2 nmo:hasAuthority dprr:2489 .
+crro:450.3 nmo:hasAuthority dprr:2489 .
+crro:450.3a nmo:hasAuthority dprr:2489 .
+crro:450.3b nmo:hasAuthority dprr:2489 .
+crro:450.3c nmo:hasAuthority dprr:2489 .
+crro:451.1 nmo:hasAuthority dprr:2489 .
+
+# Nomisma: c_vibivs_c_f_c_n_pansa_rrc
+crro:449.1 nmo:hasAuthority dprr:2495 .
+crro:449.1a nmo:hasAuthority dprr:2495 .
+crro:449.1b nmo:hasAuthority dprr:2495 .
+crro:449.1c nmo:hasAuthority dprr:2495 .
+crro:449.2 nmo:hasAuthority dprr:2495 .
+crro:449.3 nmo:hasAuthority dprr:2495 .
+crro:449.3a nmo:hasAuthority dprr:2495 .
+crro:449.3b nmo:hasAuthority dprr:2495 .
+crro:449.4 nmo:hasAuthority dprr:2495 .
+crro:449.5 nmo:hasAuthority dprr:2495 .
+crro:451.1 nmo:hasAuthority dprr:2495 .
+
+# Nomisma: l_vinci_rrc
+crro:436.1 nmo:hasAuthority dprr:2496 .
+
+# Nomisma: c_antonivs_m_f_pro_cos_rrc
+crro:484.1 nmo:hasAuthority dprr:2497 .
+
+# Nomisma: caldvs_iiivir_rrc
+crro:437.1 nmo:hasAuthority dprr:2524 .
+crro:437.1a nmo:hasAuthority dprr:2524 .
+crro:437.1b nmo:hasAuthority dprr:2524 .
+crro:437.2 nmo:hasAuthority dprr:2524 .
+crro:437.2a nmo:hasAuthority dprr:2524 .
+crro:437.2b nmo:hasAuthority dprr:2524 .
+crro:437.3 nmo:hasAuthority dprr:2524 .
+crro:437.3a nmo:hasAuthority dprr:2524 .
+crro:437.3b nmo:hasAuthority dprr:2524 .
+crro:437.4 nmo:hasAuthority dprr:2524 .
+crro:437.4a nmo:hasAuthority dprr:2524 .
+crro:437.4b nmo:hasAuthority dprr:2524 .
+
+# Nomisma: philippvs_rrc
+crro:425.1 nmo:hasAuthority dprr:2534 .
+
+# Nomisma: c_coponivs_pr_rrc
+crro:444.1 nmo:hasAuthority dprr:2537 .
+crro:444.1a nmo:hasAuthority dprr:2537 .
+crro:444.1b nmo:hasAuthority dprr:2537 .
+crro:444.1c nmo:hasAuthority dprr:2537 .
+
+# Nomisma: neri_q_vrb_rrc
+crro:441.1 nmo:hasAuthority dprr:2541 .
+
+# Nomisma: varro_pro_q_rrc
+crro:447.1 nmo:hasAuthority dprr:2544 .
+crro:447.1a nmo:hasAuthority dprr:2544 .
+crro:447.1b nmo:hasAuthority dprr:2544 .
+
+# Nomisma: marcellinvs_rrc
+crro:439.1 nmo:hasAuthority dprr:2572 .
+
+# Nomisma: q_cornvfici_avgvr_imp_rrc
+crro:509.1 nmo:hasAuthority dprr:2573 .
+crro:509.2 nmo:hasAuthority dprr:2573 .
+crro:509.3 nmo:hasAuthority dprr:2573 .
+crro:509.4 nmo:hasAuthority dprr:2573 .
+crro:509.5 nmo:hasAuthority dprr:2573 .
+
+# Nomisma: longin_iii_v_rrc
+crro:413.1 nmo:hasAuthority dprr:2575 .
+
+# Nomisma: mvrcvs_imp_rrc
+crro:510.1 nmo:hasAuthority dprr:2588 .
+
+# Nomisma: m_minat_sabin_pr_q_rrc
+crro:470.1 nmo:hasAuthority dprr:2613 .
+crro:470.1a nmo:hasAuthority dprr:2613 .
+crro:470.1b nmo:hasAuthority dprr:2613 .
+crro:470.1c nmo:hasAuthority dprr:2613 .
+crro:470.1d nmo:hasAuthority dprr:2613 .
+
+# Nomisma: m_aqvinivs_leg_rrc
+crro:498.1 nmo:hasAuthority dprr:2618 .
+
+# Nomisma: m_poblici_leg_pro_pr_rrc
+crro:469.1 nmo:hasAuthority dprr:2623 .
+crro:469.1a nmo:hasAuthority dprr:2623 .
+crro:469.1b nmo:hasAuthority dprr:2623 .
+crro:469.1c nmo:hasAuthority dprr:2623 .
+crro:469.1d nmo:hasAuthority dprr:2623 .
+crro:469.1e nmo:hasAuthority dprr:2623 .
+
+# Nomisma: l_livineivs_regvlvs_iiii_vir_a_p_f_rrc
+crro:494.1 nmo:hasAuthority dprr:2629 .
+crro:494.2 nmo:hasAuthority dprr:2629 .
+crro:494.24 nmo:hasAuthority dprr:2629 .
+crro:494.25 nmo:hasAuthority dprr:2629 .
+crro:494.26 nmo:hasAuthority dprr:2629 .
+crro:494.26a nmo:hasAuthority dprr:2629 .
+crro:494.26b nmo:hasAuthority dprr:2629 .
+crro:494.27 nmo:hasAuthority dprr:2629 .
+crro:494.28 nmo:hasAuthority dprr:2629 .
+crro:494.29 nmo:hasAuthority dprr:2629 .
+crro:494.2a nmo:hasAuthority dprr:2629 .
+crro:494.2b nmo:hasAuthority dprr:2629 .
+crro:494.3 nmo:hasAuthority dprr:2629 .
+crro:494.30 nmo:hasAuthority dprr:2629 .
+crro:494.31 nmo:hasAuthority dprr:2629 .
+crro:494.3a nmo:hasAuthority dprr:2629 .
+crro:494.3b nmo:hasAuthority dprr:2629 .
+
+# Nomisma: p_ventidi_pont_imp_rrc
+crro:531.1 nmo:hasAuthority dprr:2638 .
+crro:531.1a nmo:hasAuthority dprr:2638 .
+crro:531.1b nmo:hasAuthority dprr:2638 .
+
+# Nomisma: c_clovi_praef_rrc
+crro:476.1 nmo:hasAuthority dprr:2655 .
+crro:476.1a nmo:hasAuthority dprr:2655 .
+crro:476.1b nmo:hasAuthority dprr:2655 .
+
+# Nomisma: m_piso_m_f_frvgi_rrc
+crro:418.1 nmo:hasAuthority dprr:2661 .
+crro:418.2 nmo:hasAuthority dprr:2661 .
+crro:418.2a nmo:hasAuthority dprr:2661 .
+crro:418.2b nmo:hasAuthority dprr:2661 .
+
+# Nomisma: l_hostilivs_saserna_rrc
+crro:448.1 nmo:hasAuthority dprr:2684 .
+crro:448.1a nmo:hasAuthority dprr:2684 .
+crro:448.1b nmo:hasAuthority dprr:2684 .
+crro:448.2 nmo:hasAuthority dprr:2684 .
+crro:448.2a nmo:hasAuthority dprr:2684 .
+crro:448.2b nmo:hasAuthority dprr:2684 .
+crro:448.3 nmo:hasAuthority dprr:2684 .
+
+# Nomisma: l_flaminivs_chilo_iiii_vir_rrc
+crro:485.1 nmo:hasAuthority dprr:2687 .
+crro:485.2 nmo:hasAuthority dprr:2687 .
+
+# Nomisma: d_tvr_rrc
+crro:545.1 nmo:hasAuthority dprr:2692 .
+
+# Nomisma: cn_domitivs_l_f_imp_rrc
+crro:519.1 nmo:hasAuthority dprr:2699 .
+crro:519.2 nmo:hasAuthority dprr:2699 .
+
+# Nomisma: l_cestivs_rrc
+crro:491.1 nmo:hasAuthority dprr:2710 .
+crro:491.1a nmo:hasAuthority dprr:2710 .
+crro:491.1b nmo:hasAuthority dprr:2710 .
+crro:491.2 nmo:hasAuthority dprr:2710 .
+
+# Nomisma: m_servilivs_leg_rrc
+crro:505.1 nmo:hasAuthority dprr:2719 .
+crro:505.2 nmo:hasAuthority dprr:2719 .
+crro:505.3 nmo:hasAuthority dprr:2719 .
+crro:505.4 nmo:hasAuthority dprr:2719 .
+crro:505.5 nmo:hasAuthority dprr:2719 .
+
+# Nomisma: casca_longvs_rrc
+crro:507.1 nmo:hasAuthority dprr:2720 .
+crro:507.1a nmo:hasAuthority dprr:2720 .
+crro:507.1b nmo:hasAuthority dprr:2720 .
+crro:507.2 nmo:hasAuthority dprr:2720 .
+
+# Nomisma: l_sesti_pro_q_rrc
+crro:502.1 nmo:hasAuthority dprr:2729 .
+crro:502.2 nmo:hasAuthority dprr:2729 .
+crro:502.3 nmo:hasAuthority dprr:2729 .
+crro:502.4 nmo:hasAuthority dprr:2729 .
+
+# Nomisma: c_flav_hemic_leg_pro_pr_rrc
+crro:504.1 nmo:hasAuthority dprr:2744 .
+
+# Nomisma: m_silanvs_avg_q_pro_cos_rrc
+crro:542.1 nmo:hasAuthority dprr:2747 .
+
+# Nomisma: costa_leg_rrc
+crro:506.1 nmo:hasAuthority dprr:2751 .
+crro:506.2 nmo:hasAuthority dprr:2751 .
+
+# Nomisma: l_plaet_cest_rrc
+crro:508.1 nmo:hasAuthority dprr:2773 .
+crro:508.2 nmo:hasAuthority dprr:2773 .
+crro:508.3 nmo:hasAuthority dprr:2773 .
+
+# Nomisma: q_labienvs_parthicvs_imp_rrc
+crro:524.1 nmo:hasAuthority dprr:2777 .
+crro:524.2 nmo:hasAuthority dprr:2777 .
+
+# Nomisma: q_salvivs_imp_cos_desig_rrc
+crro:523.1 nmo:hasAuthority dprr:2788 .
+crro:523.1a nmo:hasAuthority dprr:2788 .
+crro:523.1b nmo:hasAuthority dprr:2788 .
+
+# Nomisma: scarpvs_imp_rrc
+crro:546.1 nmo:hasAuthority dprr:2795 .
+crro:546.2 nmo:hasAuthority dprr:2795 .
+crro:546.2a nmo:hasAuthority dprr:2795 .
+crro:546.2b nmo:hasAuthority dprr:2795 .
+crro:546.2c nmo:hasAuthority dprr:2795 .
+crro:546.2d nmo:hasAuthority dprr:2795 .
+crro:546.3 nmo:hasAuthority dprr:2795 .
+crro:546.3a nmo:hasAuthority dprr:2795 .
+crro:546.3b nmo:hasAuthority dprr:2795 .
+crro:546.3c nmo:hasAuthority dprr:2795 .
+crro:546.4 nmo:hasAuthority dprr:2795 .
+crro:546.5 nmo:hasAuthority dprr:2795 .
+crro:546.6 nmo:hasAuthority dprr:2795 .
+crro:546.7 nmo:hasAuthority dprr:2795 .
+crro:546.8 nmo:hasAuthority dprr:2795 .
+
+# Nomisma: m_barbat_q_p_rrc
+crro:517.1 nmo:hasAuthority dprr:2800 .
+crro:517.1a nmo:hasAuthority dprr:2800 .
+crro:517.1b nmo:hasAuthority dprr:2800 .
+crro:517.2 nmo:hasAuthority dprr:2800 .
+
+# Nomisma: l_gell_q_p_rrc
+crro:517.7 nmo:hasAuthority dprr:2802 .
+crro:517.8 nmo:hasAuthority dprr:2802 .
+
+# Nomisma: m_nerva_proq_p_rrc
+crro:517.3 nmo:hasAuthority dprr:2806 .
+crro:517.4 nmo:hasAuthority dprr:2806 .
+crro:517.4a nmo:hasAuthority dprr:2806 .
+crro:517.4b nmo:hasAuthority dprr:2806 .
+crro:517.5 nmo:hasAuthority dprr:2806 .
+crro:517.5a nmo:hasAuthority dprr:2806 .
+crro:517.5b nmo:hasAuthority dprr:2806 .
+crro:517.5c nmo:hasAuthority dprr:2806 .
+crro:517.6 nmo:hasAuthority dprr:2806 .
+
+# Nomisma: agrippa
+crro:534.1 nmo:hasAuthority dprr:2808 .
+crro:534.2 nmo:hasAuthority dprr:2808 .
+crro:534.3 nmo:hasAuthority dprr:2808 .
+
+# Nomisma: balbvs_pro_pr_rrc
+crro:518.1 nmo:hasAuthority dprr:2819 .
+
+# Nomisma: l_atratinvs_avgvr_rrc
+crro:530.1 nmo:hasAuthority dprr:2823 .
+
+# Nomisma: q_nasidivs_rrc
+crro:483.1 nmo:hasAuthority dprr:2852 .
+crro:483.2 nmo:hasAuthority dprr:2852 .
+
+# Nomisma: palikanvs_rrc
+crro:473.1 nmo:hasAuthority dprr:2890 .
+crro:473.2 nmo:hasAuthority dprr:2890 .
+crro:473.2a nmo:hasAuthority dprr:2890 .
+crro:473.2b nmo:hasAuthority dprr:2890 .
+crro:473.2c nmo:hasAuthority dprr:2890 .
+crro:473.2d nmo:hasAuthority dprr:2890 .
+crro:473.3 nmo:hasAuthority dprr:2890 .
+crro:473.4 nmo:hasAuthority dprr:2890 .
+
+# Nomisma: mn_cordivs_rvfvs_iiivir_rrc
+crro:462.1b nmo:hasAuthority dprr:2946 .
+crro:463.1 nmo:hasAuthority dprr:2946 .
+crro:463.1a nmo:hasAuthority dprr:2946 .
+crro:463.1b nmo:hasAuthority dprr:2946 .
+crro:463.2 nmo:hasAuthority dprr:2946 .
+crro:463.3 nmo:hasAuthority dprr:2946 .
+crro:463.4 nmo:hasAuthority dprr:2946 .
+crro:463.4a nmo:hasAuthority dprr:2946 .
+crro:463.4b nmo:hasAuthority dprr:2946 .
+crro:463.4c nmo:hasAuthority dprr:2946 .
+crro:463.4d nmo:hasAuthority dprr:2946 .
+crro:463.5 nmo:hasAuthority dprr:2946 .
+crro:463.5a nmo:hasAuthority dprr:2946 .
+crro:463.5b nmo:hasAuthority dprr:2946 .
+crro:463.6 nmo:hasAuthority dprr:2946 .
+crro:463.6a nmo:hasAuthority dprr:2946 .
+crro:463.6b nmo:hasAuthority dprr:2946 .
+
+# Nomisma: q_fabi_labeo_rrc
+crro:273.1 nmo:hasAuthority dprr:2959 .
+crro:273.2 nmo:hasAuthority dprr:2959 .
+
+# Nomisma: ti_sempronivs_graccvs_rrc
+crro:525.1 nmo:hasAuthority dprr:3052 .
+crro:525.2 nmo:hasAuthority dprr:3052 .
+crro:525.3 nmo:hasAuthority dprr:3052 .
+crro:525.4 nmo:hasAuthority dprr:3052 .
+crro:525.4a nmo:hasAuthority dprr:3052 .
+crro:525.4b nmo:hasAuthority dprr:3052 .
+crro:525.4c nmo:hasAuthority dprr:3052 .
+
+# Nomisma: q_voconivs_vitvlvs_q_design_rrc
+crro:526.1 nmo:hasAuthority dprr:3061 .
+crro:526.2 nmo:hasAuthority dprr:3061 .
+crro:526.3 nmo:hasAuthority dprr:3061 .
+crro:526.4 nmo:hasAuthority dprr:3061 .
+
+# Nomisma: c_clodivs_c_f_vestalis_rrc
+crro:512.1 nmo:hasAuthority dprr:3097 .
+crro:512.2 nmo:hasAuthority dprr:3097 .
+
+# Nomisma: m_opeimi_rrc
+crro:254.1 nmo:hasAuthority dprr:3126 .
+
+# Nomisma: c_egnativs_cn_f_cn_n_maxsvmvs_rrc
+crro:391.1 nmo:hasAuthority dprr:3176 .
+crro:391.1a nmo:hasAuthority dprr:3176 .
+crro:391.1b nmo:hasAuthority dprr:3176 .
+crro:391.2 nmo:hasAuthority dprr:3176 .
+crro:391.3 nmo:hasAuthority dprr:3176 .
+
+# Nomisma: l_rvtili_flac_rrc
+crro:387.1 nmo:hasAuthority dprr:3256 .
+
+# Nomisma: l_senti_c_f_rrc
+crro:325.1 nmo:hasAuthority dprr:3384 .
+crro:325.1a nmo:hasAuthority dprr:3384 .
+crro:325.1b nmo:hasAuthority dprr:3384 .
+
+# Nomisma: a_albinvs_s_f_rrc
+crro:335.1 nmo:hasAuthority dprr:3391 .
+crro:335.10 nmo:hasAuthority dprr:3391 .
+crro:335.10a nmo:hasAuthority dprr:3391 .
+crro:335.10b nmo:hasAuthority dprr:3391 .
+crro:335.1a nmo:hasAuthority dprr:3391 .
+crro:335.1b nmo:hasAuthority dprr:3391 .
+crro:335.1c nmo:hasAuthority dprr:3391 .
+crro:335.2 nmo:hasAuthority dprr:3391 .
+crro:335.3 nmo:hasAuthority dprr:3391 .
+crro:335.3a nmo:hasAuthority dprr:3391 .
+crro:335.3b nmo:hasAuthority dprr:3391 .
+crro:335.3d nmo:hasAuthority dprr:3391 .
+crro:335.3e nmo:hasAuthority dprr:3391 .
+crro:335.3f nmo:hasAuthority dprr:3391 .
+crro:335.3g nmo:hasAuthority dprr:3391 .
+crro:335.4 nmo:hasAuthority dprr:3391 .
+crro:335.5 nmo:hasAuthority dprr:3391 .
+crro:335.5a nmo:hasAuthority dprr:3391 .
+crro:335.5b nmo:hasAuthority dprr:3391 .
+crro:335.6 nmo:hasAuthority dprr:3391 .
+crro:335.7 nmo:hasAuthority dprr:3391 .
+crro:335.7a nmo:hasAuthority dprr:3391 .
+crro:335.7b nmo:hasAuthority dprr:3391 .
+crro:335.8 nmo:hasAuthority dprr:3391 .
+crro:335.8a nmo:hasAuthority dprr:3391 .
+crro:335.8b nmo:hasAuthority dprr:3391 .
+crro:335.9 nmo:hasAuthority dprr:3391 .
+
+# Nomisma: c_egnatvlei_c_f_q_rrc
+crro:333.1 nmo:hasAuthority dprr:3449 .
+
+# Nomisma: a_licinivs_nerva_iii_vir_rrc
+crro:454.1 nmo:hasAuthority dprr:3474 .
+crro:454.2 nmo:hasAuthority dprr:3474 .
+crro:454.3 nmo:hasAuthority dprr:3474 .
+crro:454.4 nmo:hasAuthority dprr:3474 .
+crro:454.5 nmo:hasAuthority dprr:3474 .
+
+# Nomisma: a_manli_q_f_ser_rrc
+crro:309.1 nmo:hasAuthority dprr:3476 .
+
+# Nomisma: a_post_a_f_s_n_albin_rrc
+crro:372.1 nmo:hasAuthority dprr:3478 .
+crro:372.2 nmo:hasAuthority dprr:3478 .
+
+# Nomisma: a_spvri_rrc
+crro:230.1 nmo:hasAuthority dprr:3479 .
+
+# Nomisma: al_rrc
+crro:111.1 nmo:hasAuthority dprr:3480 .
+
+# Nomisma: avtr_rrc
+crro:146.1 nmo:hasAuthority dprr:3482 .
+
+# Nomisma: bal_rrc
+crro:179.1 nmo:hasAuthority dprr:3483 .
+crro:179.2 nmo:hasAuthority dprr:3483 .
+crro:179.3 nmo:hasAuthority dprr:3483 .
+crro:179.4 nmo:hasAuthority dprr:3483 .
+crro:179.5 nmo:hasAuthority dprr:3483 .
+
+# Nomisma: c_cossvtivs_maridianvs_rrc
+crro:480.15 nmo:hasAuthority dprr:3484 .
+crro:480.16 nmo:hasAuthority dprr:3484 .
+crro:480.19 nmo:hasAuthority dprr:3484 .
+crro:480.20 nmo:hasAuthority dprr:3484 .
+
+# Nomisma: c_var_rrc
+crro:74.1 nmo:hasAuthority dprr:3485 .
+crro:74.2 nmo:hasAuthority dprr:3485 .
+
+# Nomisma: c_abvri_gem_rrc
+crro:244.1 nmo:hasAuthority dprr:3486 .
+crro:244.2 nmo:hasAuthority dprr:3486 .
+crro:244.3 nmo:hasAuthority dprr:3486 .
+crro:244.4 nmo:hasAuthority dprr:3486 .
+crro:244.5 nmo:hasAuthority dprr:3486 .
+
+# Nomisma: c_al_rrc
+crro:75.1 nmo:hasAuthority dprr:3487 .
+crro:75.1a nmo:hasAuthority dprr:3487 .
+crro:75.1b nmo:hasAuthority dprr:3487 .
+crro:75.1c nmo:hasAuthority dprr:3487 .
+
+# Nomisma: c_alli_bala_rrc
+crro:336.1 nmo:hasAuthority dprr:3488 .
+crro:336.1a nmo:hasAuthority dprr:3488 .
+crro:336.1b nmo:hasAuthority dprr:3488 .
+crro:336.1c nmo:hasAuthority dprr:3488 .
+
+# Nomisma: c_antesti_rrc
+crro:219.1 nmo:hasAuthority dprr:3489 .
+crro:219.1a nmo:hasAuthority dprr:3489 .
+crro:219.1b nmo:hasAuthority dprr:3489 .
+crro:219.1c nmo:hasAuthority dprr:3489 .
+crro:219.1d nmo:hasAuthority dprr:3489 .
+crro:219.1e nmo:hasAuthority dprr:3489 .
+crro:219.2 nmo:hasAuthority dprr:3489 .
+crro:219.3 nmo:hasAuthority dprr:3489 .
+crro:219.4 nmo:hasAuthority dprr:3489 .
+crro:219.5 nmo:hasAuthority dprr:3489 .
+crro:219.6 nmo:hasAuthority dprr:3489 .
+
+# Nomisma: c_antivs_c_f_restio_rrc
+crro:455.1 nmo:hasAuthority dprr:3490 .
+crro:455.1a nmo:hasAuthority dprr:3490 .
+crro:455.1b nmo:hasAuthority dprr:3490 .
+crro:455.2 nmo:hasAuthority dprr:3490 .
+crro:455.2a nmo:hasAuthority dprr:3490 .
+crro:455.2b nmo:hasAuthority dprr:3490 .
+crro:455.3 nmo:hasAuthority dprr:3490 .
+crro:455.4 nmo:hasAuthority dprr:3490 .
+crro:455.5 nmo:hasAuthority dprr:3490 .
+crro:455.6 nmo:hasAuthority dprr:3490 .
+
+# Nomisma: c_avg_rrc
+crro:242.1 nmo:hasAuthority dprr:3491 .
+crro:242.2 nmo:hasAuthority dprr:3491 .
+crro:242.3 nmo:hasAuthority dprr:3491 .
+crro:242.4 nmo:hasAuthority dprr:3491 .
+crro:242.5 nmo:hasAuthority dprr:3491 .
+
+# Nomisma: c_cassi_rrc
+crro:266.1 nmo:hasAuthority dprr:3492 .
+crro:266.2 nmo:hasAuthority dprr:3492 .
+crro:266.3 nmo:hasAuthority dprr:3492 .
+crro:266.4 nmo:hasAuthority dprr:3492 .
+
+# Nomisma: c_considi_noniani_rrc
+crro:424.1 nmo:hasAuthority dprr:3495 .
+
+# Nomisma: c_considivs_paetvs_rrc
+crro:465.1 nmo:hasAuthority dprr:3496 .
+crro:465.1a nmo:hasAuthority dprr:3496 .
+crro:465.1b nmo:hasAuthority dprr:3496 .
+crro:465.2 nmo:hasAuthority dprr:3496 .
+crro:465.2a nmo:hasAuthority dprr:3496 .
+crro:465.2b nmo:hasAuthority dprr:3496 .
+crro:465.3 nmo:hasAuthority dprr:3496 .
+crro:465.4 nmo:hasAuthority dprr:3496 .
+crro:465.5 nmo:hasAuthority dprr:3496 .
+crro:465.6 nmo:hasAuthority dprr:3496 .
+crro:465.6a nmo:hasAuthority dprr:3496 .
+crro:465.6b nmo:hasAuthority dprr:3496 .
+crro:465.6c nmo:hasAuthority dprr:3496 .
+crro:465.6d nmo:hasAuthority dprr:3496 .
+crro:465.7 nmo:hasAuthority dprr:3496 .
+crro:465.7a nmo:hasAuthority dprr:3496 .
+crro:465.7b nmo:hasAuthority dprr:3496 .
+crro:465.8 nmo:hasAuthority dprr:3496 .
+crro:465.8a nmo:hasAuthority dprr:3496 .
+crro:465.8b nmo:hasAuthority dprr:3496 .
+
+# Nomisma: c_cvr_trige_rrc
+crro:223.1 nmo:hasAuthority dprr:3497 .
+
+# Nomisma: c_cvr_f_trige_rrc
+crro:240.1 nmo:hasAuthority dprr:3498 .
+crro:240.1a nmo:hasAuthority dprr:3498 .
+crro:240.1b nmo:hasAuthority dprr:3498 .
+crro:240.2 nmo:hasAuthority dprr:3498 .
+crro:240.2a nmo:hasAuthority dprr:3498 .
+crro:240.2b nmo:hasAuthority dprr:3498 .
+crro:240.3 nmo:hasAuthority dprr:3498 .
+crro:240.3a nmo:hasAuthority dprr:3498 .
+crro:240.3b nmo:hasAuthority dprr:3498 .
+crro:240.4 nmo:hasAuthority dprr:3498 .
+crro:240.4a nmo:hasAuthority dprr:3498 .
+crro:240.4b nmo:hasAuthority dprr:3498 .
+crro:240.4c nmo:hasAuthority dprr:3498 .
+crro:240.5 nmo:hasAuthority dprr:3498 .
+crro:240.6 nmo:hasAuthority dprr:3498 .
+
+# Nomisma: c_fabi_c_f_rrc
+crro:322.1 nmo:hasAuthority dprr:3499 .
+crro:322.1a nmo:hasAuthority dprr:3499 .
+crro:322.1b nmo:hasAuthority dprr:3499 .
+crro:322.2 nmo:hasAuthority dprr:3499 .
+
+# Nomisma: c_font_rrc
+crro:290.1 nmo:hasAuthority dprr:3500 .
+crro:290.2 nmo:hasAuthority dprr:3500 .
+crro:290.3 nmo:hasAuthority dprr:3500 .
+crro:290.4 nmo:hasAuthority dprr:3500 .
+crro:290.5 nmo:hasAuthority dprr:3500 .
+crro:290.6 nmo:hasAuthority dprr:3500 .
+
+# Nomisma: c_hosidi_c_f_geta_iii_vir_rrc
+crro:407.1 nmo:hasAuthority dprr:3501 .
+crro:407.2 nmo:hasAuthority dprr:3501 .
+
+# Nomisma: c_ivni_or_c_ivni_c_f_rrc
+crro:210.1 nmo:hasAuthority dprr:3502 .
+crro:210.2 nmo:hasAuthority dprr:3502 .
+crro:210.3 nmo:hasAuthority dprr:3502 .
+crro:210.4 nmo:hasAuthority dprr:3502 .
+crro:210.5 nmo:hasAuthority dprr:3502 .
+crro:210.6 nmo:hasAuthority dprr:3502 .
+crro:210.7 nmo:hasAuthority dprr:3502 .
+
+# Nomisma: c_maiani_rrc
+crro:203.1 nmo:hasAuthority dprr:3503 .
+crro:203.1a nmo:hasAuthority dprr:3503 .
+crro:203.1b nmo:hasAuthority dprr:3503 .
+crro:203.2 nmo:hasAuthority dprr:3503 .
+crro:203.3 nmo:hasAuthority dprr:3503 .
+crro:203.4 nmo:hasAuthority dprr:3503 .
+crro:203.5 nmo:hasAuthority dprr:3503 .
+crro:203.6 nmo:hasAuthority dprr:3503 .
+
+# Nomisma: c_mall_rrc
+crro:335.1 nmo:hasAuthority dprr:3504 .
+crro:335.10 nmo:hasAuthority dprr:3504 .
+crro:335.10a nmo:hasAuthority dprr:3504 .
+crro:335.10b nmo:hasAuthority dprr:3504 .
+crro:335.1a nmo:hasAuthority dprr:3504 .
+crro:335.1b nmo:hasAuthority dprr:3504 .
+crro:335.1c nmo:hasAuthority dprr:3504 .
+crro:335.2 nmo:hasAuthority dprr:3504 .
+crro:335.3 nmo:hasAuthority dprr:3504 .
+crro:335.3a nmo:hasAuthority dprr:3504 .
+crro:335.3b nmo:hasAuthority dprr:3504 .
+crro:335.3c nmo:hasAuthority dprr:3504 .
+crro:335.3d nmo:hasAuthority dprr:3504 .
+crro:335.3e nmo:hasAuthority dprr:3504 .
+crro:335.3f nmo:hasAuthority dprr:3504 .
+crro:335.3g nmo:hasAuthority dprr:3504 .
+crro:335.4 nmo:hasAuthority dprr:3504 .
+crro:335.5 nmo:hasAuthority dprr:3504 .
+crro:335.5a nmo:hasAuthority dprr:3504 .
+crro:335.5b nmo:hasAuthority dprr:3504 .
+crro:335.6 nmo:hasAuthority dprr:3504 .
+crro:335.7 nmo:hasAuthority dprr:3504 .
+crro:335.7a nmo:hasAuthority dprr:3504 .
+crro:335.7b nmo:hasAuthority dprr:3504 .
+crro:335.8 nmo:hasAuthority dprr:3504 .
+crro:335.8a nmo:hasAuthority dprr:3504 .
+crro:335.8b nmo:hasAuthority dprr:3504 .
+crro:335.9 nmo:hasAuthority dprr:3504 .
+
+# Nomisma: c_malle_c_f_rrc
+crro:282.3 nmo:hasAuthority dprr:3505 .
+
+# Nomisma: c_mamil_limetanvs_c_f_rrc
+crro:360.1 nmo:hasAuthority dprr:3506 .
+crro:360.1a nmo:hasAuthority dprr:3506 .
+crro:360.1b nmo:hasAuthority dprr:3506 .
+crro:362.1 nmo:hasAuthority dprr:3506 .
+
+# Nomisma: c_mari_c_f_capit_rrc
+crro:378.1 nmo:hasAuthority dprr:3507 .
+crro:378.1a nmo:hasAuthority dprr:3507 .
+crro:378.1b nmo:hasAuthority dprr:3507 .
+crro:378.1c nmo:hasAuthority dprr:3507 .
+
+# Nomisma: c_nae_balb_rrc
+crro:382.1 nmo:hasAuthority dprr:3509 .
+crro:382.1a nmo:hasAuthority dprr:3509 .
+crro:382.1b nmo:hasAuthority dprr:3509 .
+
+# Nomisma: c_norbanvs_rrc
+crro:357.1 nmo:hasAuthority dprr:3510 .
+crro:357.1a nmo:hasAuthority dprr:3510 .
+crro:357.1b nmo:hasAuthority dprr:3510 .
+crro:491.1 nmo:hasAuthority dprr:3510 .
+crro:491.1a nmo:hasAuthority dprr:3510 .
+crro:491.1b nmo:hasAuthority dprr:3510 .
+crro:491.2 nmo:hasAuthority dprr:3510 .
+
+# Nomisma: c_nvmitori_rrc
+crro:246.1 nmo:hasAuthority dprr:3511 .
+crro:246.2 nmo:hasAuthority dprr:3511 .
+crro:246.3 nmo:hasAuthority dprr:3511 .
+crro:246.4 nmo:hasAuthority dprr:3511 .
+crro:246.4a nmo:hasAuthority dprr:3511 .
+crro:246.4b nmo:hasAuthority dprr:3511 .
+crro:246.5 nmo:hasAuthority dprr:3511 .
+
+# Nomisma: c_nvmonivs_vaala_rrc
+crro:514.1 nmo:hasAuthority dprr:3512 .
+crro:514.2 nmo:hasAuthority dprr:3512 .
+
+# Nomisma: c_plvti_rrc
+crro:278.1 nmo:hasAuthority dprr:3513 .
+crro:278.2 nmo:hasAuthority dprr:3513 .
+
+# Nomisma: c_reni_rrc
+crro:231.1 nmo:hasAuthority dprr:3515 .
+crro:231.2 nmo:hasAuthority dprr:3515 .
+crro:231.3 nmo:hasAuthority dprr:3515 .
+
+# Nomisma: c_sae_rrc
+crro:175.1 nmo:hasAuthority dprr:3516 .
+
+# Nomisma: c_serveil_c_f_rrc
+crro:423.1 nmo:hasAuthority dprr:3517 .
+
+# Nomisma: c_serveili_rrc
+crro:264.1 nmo:hasAuthority dprr:3518 .
+crro:264.2 nmo:hasAuthority dprr:3518 .
+crro:264.3 nmo:hasAuthority dprr:3518 .
+crro:264.4 nmo:hasAuthority dprr:3518 .
+crro:264.4a nmo:hasAuthority dprr:3518 .
+crro:264.4b nmo:hasAuthority dprr:3518 .
+
+# Nomisma: c_serveili_m_f_rrc
+crro:239.1 nmo:hasAuthority dprr:3519 .
+crro:239.2 nmo:hasAuthority dprr:3519 .
+crro:239.3 nmo:hasAuthority dprr:3519 .
+crro:239.4 nmo:hasAuthority dprr:3519 .
+
+# Nomisma: c_svlpici_c_f_rrc
+crro:312.1 nmo:hasAuthority dprr:3520 .
+crro:312.2 nmo:hasAuthority dprr:3520 .
+crro:312.3 nmo:hasAuthority dprr:3520 .
+crro:312.4 nmo:hasAuthority dprr:3520 .
+
+# Nomisma: c_tal_rrc
+crro:202.1 nmo:hasAuthority dprr:3521 .
+crro:202.1a nmo:hasAuthority dprr:3521 .
+crro:202.1b nmo:hasAuthority dprr:3521 .
+
+# Nomisma: c_ter_lvc_rrc
+crro:217.1 nmo:hasAuthority dprr:3522 .
+crro:217.2 nmo:hasAuthority dprr:3522 .
+crro:217.3 nmo:hasAuthority dprr:3522 .
+crro:217.4 nmo:hasAuthority dprr:3522 .
+crro:217.5 nmo:hasAuthority dprr:3522 .
+crro:217.6 nmo:hasAuthority dprr:3522 .
+
+# Nomisma: c_titini_rrc
+crro:226.1 nmo:hasAuthority dprr:3523 .
+crro:226.1a nmo:hasAuthority dprr:3523 .
+crro:226.1b nmo:hasAuthority dprr:3523 .
+crro:226.2 nmo:hasAuthority dprr:3523 .
+
+# Nomisma: c_val_c_f_flac_rrc
+crro:228.1 nmo:hasAuthority dprr:3524 .
+crro:228.2 nmo:hasAuthority dprr:3524 .
+crro:228.3 nmo:hasAuthority dprr:3524 .
+crro:228.4 nmo:hasAuthority dprr:3524 .
+
+# Nomisma: c_vibivs_varvs_rrc
+crro:494.10 nmo:hasAuthority dprr:3525 .
+crro:494.11 nmo:hasAuthority dprr:3525 .
+crro:494.12 nmo:hasAuthority dprr:3525 .
+crro:494.32 nmo:hasAuthority dprr:3525 .
+crro:494.33 nmo:hasAuthority dprr:3525 .
+crro:494.34 nmo:hasAuthority dprr:3525 .
+crro:494.35 nmo:hasAuthority dprr:3525 .
+crro:494.36 nmo:hasAuthority dprr:3525 .
+crro:494.37 nmo:hasAuthority dprr:3525 .
+crro:494.38 nmo:hasAuthority dprr:3525 .
+
+# Nomisma: c_vibivs_c_f_pansa_rrc
+crro:342.1 nmo:hasAuthority dprr:3526 .
+crro:342.2 nmo:hasAuthority dprr:3526 .
+crro:342.3 nmo:hasAuthority dprr:3526 .
+crro:342.3a nmo:hasAuthority dprr:3526 .
+crro:342.3b nmo:hasAuthority dprr:3526 .
+crro:342.4 nmo:hasAuthority dprr:3526 .
+crro:342.4a nmo:hasAuthority dprr:3526 .
+crro:342.4b nmo:hasAuthority dprr:3526 .
+crro:342.5 nmo:hasAuthority dprr:3526 .
+crro:342.5a nmo:hasAuthority dprr:3526 .
+crro:342.5b nmo:hasAuthority dprr:3526 .
+crro:342.6 nmo:hasAuthority dprr:3526 .
+crro:342.6a nmo:hasAuthority dprr:3526 .
+crro:342.6b nmo:hasAuthority dprr:3526 .
+crro:342.7 nmo:hasAuthority dprr:3526 .
+crro:342.7a nmo:hasAuthority dprr:3526 .
+crro:342.7b nmo:hasAuthority dprr:3526 .
+crro:342.7c nmo:hasAuthority dprr:3526 .
+crro:342.7d nmo:hasAuthority dprr:3526 .
+crro:342.7e nmo:hasAuthority dprr:3526 .
+crro:342.7f nmo:hasAuthority dprr:3526 .
+crro:342.8 nmo:hasAuthority dprr:3526 .
+crro:342.8a nmo:hasAuthority dprr:3526 .
+crro:342.8b nmo:hasAuthority dprr:3526 .
+crro:342.8c nmo:hasAuthority dprr:3526 .
+crro:342.9 nmo:hasAuthority dprr:3526 .
+crro:342.9a nmo:hasAuthority dprr:3526 .
+crro:342.9b nmo:hasAuthority dprr:3526 .
+
+# Nomisma: cetegvs_rrc
+crro:288.1 nmo:hasAuthority dprr:3527 .
+
+# Nomisma: cina_rrc
+crro:178.1 nmo:hasAuthority dprr:3528 .
+crro:178.2 nmo:hasAuthority dprr:3528 .
+crro:178.3 nmo:hasAuthority dprr:3528 .
+crro:178.4 nmo:hasAuthority dprr:3528 .
+crro:178.5 nmo:hasAuthority dprr:3528 .
+
+# Nomisma: cn_blasio_cn_f_rrc
+crro:296.1 nmo:hasAuthority dprr:3529 .
+crro:296.1a nmo:hasAuthority dprr:3529 .
+crro:296.1b nmo:hasAuthority dprr:3529 .
+crro:296.1c nmo:hasAuthority dprr:3529 .
+crro:296.1d nmo:hasAuthority dprr:3529 .
+crro:296.1e nmo:hasAuthority dprr:3529 .
+crro:296.1f nmo:hasAuthority dprr:3529 .
+crro:296.1g nmo:hasAuthority dprr:3529 .
+crro:296.1h nmo:hasAuthority dprr:3529 .
+crro:296.1i nmo:hasAuthority dprr:3529 .
+crro:296.1j nmo:hasAuthority dprr:3529 .
+crro:296.1k nmo:hasAuthority dprr:3529 .
+crro:296.1l nmo:hasAuthority dprr:3529 .
+crro:296.2 nmo:hasAuthority dprr:3529 .
+crro:296.3 nmo:hasAuthority dprr:3529 .
+crro:296.4 nmo:hasAuthority dprr:3529 .
+
+# Nomisma: cn_calp_rrc
+crro:153.1 nmo:hasAuthority dprr:3530 .
+
+# Nomisma: cn_cornel_l_f_sisena_rrc
+crro:310.1 nmo:hasAuthority dprr:3531 .
+
+# Nomisma: cn_domit_rrc
+crro:261.1 nmo:hasAuthority dprr:3532 .
+crro:261.2 nmo:hasAuthority dprr:3532 .
+crro:261.3 nmo:hasAuthority dprr:3532 .
+crro:261.4 nmo:hasAuthority dprr:3532 .
+
+# Nomisma: cn_geli_rrc
+crro:232.1 nmo:hasAuthority dprr:3533 .
+crro:232.2 nmo:hasAuthority dprr:3533 .
+crro:232.3 nmo:hasAuthority dprr:3533 .
+crro:232.4 nmo:hasAuthority dprr:3533 .
+
+# Nomisma: cn_lvcr_trio_rrc
+crro:237.1 nmo:hasAuthority dprr:3534 .
+crro:237.1a nmo:hasAuthority dprr:3534 .
+crro:237.1b nmo:hasAuthority dprr:3534 .
+
+# Nomisma: cnfovl_rrc
+crro:284.1 nmo:hasAuthority dprr:3536 .
+crro:284.1a nmo:hasAuthority dprr:3536 .
+crro:284.1b nmo:hasAuthority dprr:3536 .
+
+# Nomisma: d_silanvs_l_f_rrc
+crro:337.1 nmo:hasAuthority dprr:3538 .
+crro:337.1a nmo:hasAuthority dprr:3538 .
+crro:337.1b nmo:hasAuthority dprr:3538 .
+crro:337.2 nmo:hasAuthority dprr:3538 .
+crro:337.2a nmo:hasAuthority dprr:3538 .
+crro:337.2b nmo:hasAuthority dprr:3538 .
+crro:337.2c nmo:hasAuthority dprr:3538 .
+crro:337.2d nmo:hasAuthority dprr:3538 .
+crro:337.2e nmo:hasAuthority dprr:3538 .
+crro:337.2f nmo:hasAuthority dprr:3538 .
+crro:337.3 nmo:hasAuthority dprr:3538 .
+crro:337.4 nmo:hasAuthority dprr:3538 .
+crro:337.5 nmo:hasAuthority dprr:3538 .
+
+# Nomisma: gar_rrc
+crro:350A.1 nmo:hasAuthority dprr:3542 .
+crro:350A.1a nmo:hasAuthority dprr:3542 .
+crro:350A.1b nmo:hasAuthority dprr:3542 .
+crro:350A.1c nmo:hasAuthority dprr:3542 .
+crro:350A.1d nmo:hasAuthority dprr:3542 .
+crro:350A.1e nmo:hasAuthority dprr:3542 .
+crro:350A.2 nmo:hasAuthority dprr:3542 .
+crro:350A.3 nmo:hasAuthority dprr:3542 .
+crro:350A.3a nmo:hasAuthority dprr:3542 .
+crro:350A.3b nmo:hasAuthority dprr:3542 .
+crro:350A.3c nmo:hasAuthority dprr:3542 .
+crro:350A.3d nmo:hasAuthority dprr:3542 .
+crro:350A.3e nmo:hasAuthority dprr:3542 .
+crro:350A.3f nmo:hasAuthority dprr:3542 .
+
+# Nomisma: l_aemilivs_bvca_rrc
+crro:480.1 nmo:hasAuthority dprr:3543 .
+crro:480.24 nmo:hasAuthority dprr:3543 .
+crro:480.25 nmo:hasAuthority dprr:3543 .
+crro:480.26 nmo:hasAuthority dprr:3543 .
+crro:480.4 nmo:hasAuthority dprr:3543 .
+crro:480.6 nmo:hasAuthority dprr:3543 .
+crro:480.7 nmo:hasAuthority dprr:3543 .
+crro:480.7a nmo:hasAuthority dprr:3543 .
+crro:480.7b nmo:hasAuthority dprr:3543 .
+crro:480.8 nmo:hasAuthority dprr:3543 .
+
+# Nomisma: l_pl_h_rrc
+crro:134.1 nmo:hasAuthority dprr:3544 .
+crro:134.1a nmo:hasAuthority dprr:3544 .
+crro:134.1b nmo:hasAuthority dprr:3544 .
+crro:134.2 nmo:hasAuthority dprr:3544 .
+crro:134.3 nmo:hasAuthority dprr:3544 .
+crro:134.4 nmo:hasAuthority dprr:3544 .
+crro:134.5 nmo:hasAuthority dprr:3544 .
+crro:134.6 nmo:hasAuthority dprr:3544 .
+
+# Nomisma: l_antes_gragv_rrc
+crro:238.1 nmo:hasAuthority dprr:3545 .
+crro:238.2 nmo:hasAuthority dprr:3545 .
+crro:238.3 nmo:hasAuthority dprr:3545 .
+crro:238.3a nmo:hasAuthority dprr:3545 .
+crro:238.3b nmo:hasAuthority dprr:3545 .
+crro:238.3c nmo:hasAuthority dprr:3545 .
+crro:238.3d nmo:hasAuthority dprr:3545 .
+crro:238.3e nmo:hasAuthority dprr:3545 .
+crro:238.3f nmo:hasAuthority dprr:3545 .
+
+# Nomisma: l_axsivs_l_f_naso_rrc
+crro:400.1 nmo:hasAuthority dprr:3547 .
+crro:400.1a nmo:hasAuthority dprr:3547 .
+crro:400.1b nmo:hasAuthority dprr:3547 .
+
+# Nomisma: l_caesi_rrc
+crro:298.1 nmo:hasAuthority dprr:3549 .
+
+# Nomisma: l_cassi_caeician_rrc
+crro:321.1 nmo:hasAuthority dprr:3550 .
+
+# Nomisma: l_cassi_q_f_rrc
+crro:386.1 nmo:hasAuthority dprr:3551 .
+
+# Nomisma: l_censorin_rrc
+crro:360.1 nmo:hasAuthority dprr:3552 .
+crro:360.1a nmo:hasAuthority dprr:3552 .
+crro:360.1b nmo:hasAuthority dprr:3552 .
+crro:363.1 nmo:hasAuthority dprr:3552 .
+crro:363.1a nmo:hasAuthority dprr:3552 .
+crro:363.1b nmo:hasAuthority dprr:3552 .
+crro:363.1c nmo:hasAuthority dprr:3552 .
+crro:363.1d nmo:hasAuthority dprr:3552 .
+
+# Nomisma: l_cosco_m_f_rrc
+crro:282.2 nmo:hasAuthority dprr:3553 .
+
+# Nomisma: l_cossvti_c_f_sabvla_rrc
+crro:395.1 nmo:hasAuthority dprr:3554 .
+
+# Nomisma: l_cvp_rrc
+crro:218.1 nmo:hasAuthority dprr:3556 .
+
+# Nomisma: l_farsvlei_mensor_rrc
+crro:392.1 nmo:hasAuthority dprr:3557 .
+crro:392.1a nmo:hasAuthority dprr:3557 .
+crro:392.1b nmo:hasAuthority dprr:3557 .
+
+# Nomisma: l_fvri_cn_f_brocchi_rrc
+crro:414.1 nmo:hasAuthority dprr:3558 .
+
+# Nomisma: l_h_tvb_rrc
+crro:315.1 nmo:hasAuthority dprr:3559 .
+crro:315.2 nmo:hasAuthority dprr:3559 .
+
+# Nomisma: l_iti_rrc
+crro:209.1 nmo:hasAuthority dprr:3560 .
+
+# Nomisma: l_ivli_ii_rrc
+crro:323.1 nmo:hasAuthority dprr:3561 .
+
+# Nomisma: l_ivli_bvrsio_rrc
+crro:352.1 nmo:hasAuthority dprr:3562 .
+crro:352.1a nmo:hasAuthority dprr:3562 .
+crro:352.1b nmo:hasAuthority dprr:3562 .
+crro:352.1c nmo:hasAuthority dprr:3562 .
+crro:352.2 nmo:hasAuthority dprr:3562 .
+
+# Nomisma: l_lvcreti_trio_rrc
+crro:390.1 nmo:hasAuthority dprr:3563 .
+crro:390.2 nmo:hasAuthority dprr:3563 .
+
+# Nomisma: l_mamili_rrc
+crro:149.1 nmo:hasAuthority dprr:3564 .
+crro:149.1a nmo:hasAuthority dprr:3564 .
+crro:149.1b nmo:hasAuthority dprr:3564 .
+crro:149.2 nmo:hasAuthority dprr:3564 .
+crro:149.2a nmo:hasAuthority dprr:3564 .
+crro:149.2b nmo:hasAuthority dprr:3564 .
+crro:149.2c nmo:hasAuthority dprr:3564 .
+crro:149.3 nmo:hasAuthority dprr:3564 .
+crro:149.3a nmo:hasAuthority dprr:3564 .
+crro:149.3b nmo:hasAuthority dprr:3564 .
+crro:149.4 nmo:hasAuthority dprr:3564 .
+crro:149.4a nmo:hasAuthority dprr:3564 .
+crro:149.4b nmo:hasAuthority dprr:3564 .
+crro:149.5 nmo:hasAuthority dprr:3564 .
+crro:149.5a nmo:hasAuthority dprr:3564 .
+crro:149.5b nmo:hasAuthority dprr:3564 .
+
+# Nomisma: l_minvci_rrc
+crro:248.1 nmo:hasAuthority dprr:3567 .
+crro:248.2 nmo:hasAuthority dprr:3567 .
+crro:248.3 nmo:hasAuthority dprr:3567 .
+crro:248.4 nmo:hasAuthority dprr:3567 .
+
+# Nomisma: l_mvssidivs_t_f_longvs_iiii_vir_a_p_f_rrc
+crro:494.13 nmo:hasAuthority dprr:3568 .
+crro:494.14 nmo:hasAuthority dprr:3568 .
+crro:494.15 nmo:hasAuthority dprr:3568 .
+crro:494.39 nmo:hasAuthority dprr:3568 .
+crro:494.39a nmo:hasAuthority dprr:3568 .
+crro:494.39b nmo:hasAuthority dprr:3568 .
+crro:494.4 nmo:hasAuthority dprr:3568 .
+crro:494.40 nmo:hasAuthority dprr:3568 .
+crro:494.41 nmo:hasAuthority dprr:3568 .
+crro:494.42 nmo:hasAuthority dprr:3568 .
+crro:494.42a nmo:hasAuthority dprr:3568 .
+crro:494.42b nmo:hasAuthority dprr:3568 .
+crro:494.42c nmo:hasAuthority dprr:3568 .
+crro:494.43 nmo:hasAuthority dprr:3568 .
+crro:494.43a nmo:hasAuthority dprr:3568 .
+crro:494.43b nmo:hasAuthority dprr:3568 .
+crro:494.44 nmo:hasAuthority dprr:3568 .
+crro:494.44a nmo:hasAuthority dprr:3568 .
+crro:494.44b nmo:hasAuthority dprr:3568 .
+crro:494.45 nmo:hasAuthority dprr:3568 .
+crro:494.46 nmo:hasAuthority dprr:3568 .
+crro:494.7 nmo:hasAuthority dprr:3568 .
+crro:494.7a nmo:hasAuthority dprr:3568 .
+crro:494.7b nmo:hasAuthority dprr:3568 .
+crro:494.8 nmo:hasAuthority dprr:3568 .
+crro:494.8a nmo:hasAuthority dprr:3568 .
+crro:494.8b nmo:hasAuthority dprr:3568 .
+crro:494.9 nmo:hasAuthority dprr:3568 .
+crro:494.9a nmo:hasAuthority dprr:3568 .
+crro:494.9b nmo:hasAuthority dprr:3568 .
+
+# Nomisma: l_papi_rrc
+crro:384.1 nmo:hasAuthority dprr:3569 .
+
+# Nomisma: l_papivs_celsvs_iii_vir_rrc
+crro:472.1 nmo:hasAuthority dprr:3570 .
+crro:472.2 nmo:hasAuthority dprr:3570 .
+crro:472.3 nmo:hasAuthority dprr:3570 .
+crro:472.4 nmo:hasAuthority dprr:3570 .
+crro:472.4a nmo:hasAuthority dprr:3570 .
+crro:472.4b nmo:hasAuthority dprr:3570 .
+crro:472.4c nmo:hasAuthority dprr:3570 .
+
+# Nomisma: l_philippvs_rrc
+crro:293.1 nmo:hasAuthority dprr:3571 .
+crro:293.2 nmo:hasAuthority dprr:3571 .
+crro:293.3 nmo:hasAuthority dprr:3571 .
+
+# Nomisma: l_pompon_molo_rrc
+crro:334.1 nmo:hasAuthority dprr:3572 .
+crro:334.2 nmo:hasAuthority dprr:3572 .
+crro:334.3 nmo:hasAuthority dprr:3572 .
+crro:334.3a nmo:hasAuthority dprr:3572 .
+crro:334.3b nmo:hasAuthority dprr:3572 .
+crro:334.4 nmo:hasAuthority dprr:3572 .
+crro:334.5 nmo:hasAuthority dprr:3572 .
+crro:334.6 nmo:hasAuthority dprr:3572 .
+
+# Nomisma: l_pomponi_cnf_rrc
+crro:282.4 nmo:hasAuthority dprr:3573 .
+
+# Nomisma: l_porci_lici_rrc
+crro:282.5 nmo:hasAuthority dprr:3574 .
+
+# Nomisma: l_rvbri_dosseni_rrc
+crro:348.1 nmo:hasAuthority dprr:3576 .
+crro:348.2 nmo:hasAuthority dprr:3576 .
+crro:348.3 nmo:hasAuthority dprr:3576 .
+crro:348.4 nmo:hasAuthority dprr:3576 .
+crro:348.5 nmo:hasAuthority dprr:3576 .
+crro:348.6 nmo:hasAuthority dprr:3576 .
+crro:348.7 nmo:hasAuthority dprr:3576 .
+
+# Nomisma: l_rvsti_rrc
+crro:389.1 nmo:hasAuthority dprr:3577 .
+
+# Nomisma: l_savf_rrc
+crro:204.1 nmo:hasAuthority dprr:3579 .
+crro:204.2 nmo:hasAuthority dprr:3579 .
+crro:204.3 nmo:hasAuthority dprr:3579 .
+crro:204.4 nmo:hasAuthority dprr:3579 .
+crro:204.5 nmo:hasAuthority dprr:3579 .
+crro:204.6 nmo:hasAuthority dprr:3579 .
+
+# Nomisma: l_sempr_pitio_rrc
+crro:216.1 nmo:hasAuthority dprr:3580 .
+crro:216.2 nmo:hasAuthority dprr:3580 .
+crro:216.2a nmo:hasAuthority dprr:3580 .
+crro:216.2b nmo:hasAuthority dprr:3580 .
+crro:216.3 nmo:hasAuthority dprr:3580 .
+crro:216.4 nmo:hasAuthority dprr:3580 .
+crro:216.4a nmo:hasAuthority dprr:3580 .
+crro:216.4b nmo:hasAuthority dprr:3580 .
+crro:216.5 nmo:hasAuthority dprr:3580 .
+crro:216.6 nmo:hasAuthority dprr:3580 .
+
+# Nomisma: l_servivs_revfvs_rrc
+crro:515.1 nmo:hasAuthority dprr:3581 .
+crro:515.2 nmo:hasAuthority dprr:3581 .
+
+# Nomisma: l_trebani_rrc
+crro:241.1 nmo:hasAuthority dprr:3582 .
+crro:241.1a nmo:hasAuthority dprr:3582 .
+crro:241.1b nmo:hasAuthority dprr:3582 .
+crro:241.2 nmo:hasAuthority dprr:3582 .
+crro:241.3 nmo:hasAuthority dprr:3582 .
+crro:241.4 nmo:hasAuthority dprr:3582 .
+crro:241.5 nmo:hasAuthority dprr:3582 .
+crro:241.6 nmo:hasAuthority dprr:3582 .
+
+# Nomisma: l_valerivs_aciscvlvs_rrc
+crro:474.1 nmo:hasAuthority dprr:3584 .
+crro:474.1a nmo:hasAuthority dprr:3584 .
+crro:474.1b nmo:hasAuthority dprr:3584 .
+crro:474.2 nmo:hasAuthority dprr:3584 .
+crro:474.2a nmo:hasAuthority dprr:3584 .
+crro:474.2b nmo:hasAuthority dprr:3584 .
+crro:474.2c nmo:hasAuthority dprr:3584 .
+crro:474.3 nmo:hasAuthority dprr:3584 .
+crro:474.3a nmo:hasAuthority dprr:3584 .
+crro:474.3b nmo:hasAuthority dprr:3584 .
+crro:474.4 nmo:hasAuthority dprr:3584 .
+crro:474.5 nmo:hasAuthority dprr:3584 .
+crro:474.6 nmo:hasAuthority dprr:3584 .
+crro:474.7 nmo:hasAuthority dprr:3584 .
+crro:474.8 nmo:hasAuthority dprr:3584 .
+
+# Nomisma: l_vol_l_f_strab_rrc
+crro:377.1 nmo:hasAuthority dprr:3586 .
+
+# Nomisma: laterens_rrc
+crro:358.1 nmo:hasAuthority dprr:3587 .
+
+# Nomisma: m_abvri_mf_gem_rrc
+crro:250.1 nmo:hasAuthority dprr:3589 .
+crro:250.2 nmo:hasAuthority dprr:3589 .
+crro:250.3 nmo:hasAuthority dprr:3589 .
+
+# Nomisma: m_acilivs_m_f_rrc
+crro:255.1 nmo:hasAuthority dprr:3590 .
+crro:255.2 nmo:hasAuthority dprr:3590 .
+crro:255.3 nmo:hasAuthority dprr:3590 .
+crro:255.4 nmo:hasAuthority dprr:3590 .
+crro:255.5 nmo:hasAuthority dprr:3590 .
+
+# Nomisma: m_arrivs_secvndvs_rrc
+crro:513.1 nmo:hasAuthority dprr:3592 .
+crro:513.2 nmo:hasAuthority dprr:3592 .
+crro:513.3 nmo:hasAuthority dprr:3592 .
+
+# Nomisma: m_atili_saran_rrc
+crro:214.1 nmo:hasAuthority dprr:3593 .
+crro:214.1a nmo:hasAuthority dprr:3593 .
+crro:214.1b nmo:hasAuthority dprr:3593 .
+crro:214.1c nmo:hasAuthority dprr:3593 .
+crro:214.2 nmo:hasAuthority dprr:3593 .
+crro:214.2a nmo:hasAuthority dprr:3593 .
+crro:214.2b nmo:hasAuthority dprr:3593 .
+crro:214.3 nmo:hasAuthority dprr:3593 .
+crro:214.3a nmo:hasAuthority dprr:3593 .
+crro:214.3b nmo:hasAuthority dprr:3593 .
+crro:214.4 nmo:hasAuthority dprr:3593 .
+crro:214.4a nmo:hasAuthority dprr:3593 .
+crro:214.4b nmo:hasAuthority dprr:3593 .
+crro:214.5 nmo:hasAuthority dprr:3593 .
+crro:214.5a nmo:hasAuthority dprr:3593 .
+crro:214.5b nmo:hasAuthority dprr:3593 .
+crro:214.6 nmo:hasAuthority dprr:3593 .
+crro:214.7 nmo:hasAuthority dprr:3593 .
+
+# Nomisma: m_avf_rvs_rrc
+crro:227.1 nmo:hasAuthority dprr:3594 .
+crro:227.1a nmo:hasAuthority dprr:3594 .
+crro:227.1b nmo:hasAuthority dprr:3594 .
+crro:227.1c nmo:hasAuthority dprr:3594 .
+crro:227.1d nmo:hasAuthority dprr:3594 .
+
+# Nomisma: m_avreli_cota_rrc
+crro:229.1 nmo:hasAuthority dprr:3595 .
+crro:229.1a nmo:hasAuthority dprr:3595 .
+crro:229.1b nmo:hasAuthority dprr:3595 .
+crro:229.2 nmo:hasAuthority dprr:3595 .
+
+# Nomisma: m_avreli_scavri_rrc
+crro:282.1 nmo:hasAuthority dprr:3596 .
+
+# Nomisma: m_baebi_q_f_tampil_rrc
+crro:236.1 nmo:hasAuthority dprr:3597 .
+crro:236.1a nmo:hasAuthority dprr:3597 .
+crro:236.1b nmo:hasAuthority dprr:3597 .
+crro:236.1c nmo:hasAuthority dprr:3597 .
+crro:236.1d nmo:hasAuthority dprr:3597 .
+crro:236.1e nmo:hasAuthority dprr:3597 .
+crro:236.1f nmo:hasAuthority dprr:3597 .
+
+# Nomisma: m_calid_rrc
+crro:284.1 nmo:hasAuthority dprr:3598 .
+crro:284.1a nmo:hasAuthority dprr:3598 .
+crro:284.1b nmo:hasAuthority dprr:3598 .
+
+# Nomisma: m_cato_rrc
+crro:343.1 nmo:hasAuthority dprr:3599 .
+crro:343.1a nmo:hasAuthority dprr:3599 .
+crro:343.1b nmo:hasAuthority dprr:3599 .
+crro:343.1c nmo:hasAuthority dprr:3599 .
+crro:343.2 nmo:hasAuthority dprr:3599 .
+crro:343.2a nmo:hasAuthority dprr:3599 .
+crro:343.2b nmo:hasAuthority dprr:3599 .
+
+# Nomisma: m_cipi_m_f_rrc
+crro:289.1 nmo:hasAuthority dprr:3600 .
+crro:289.2 nmo:hasAuthority dprr:3600 .
+crro:289.3 nmo:hasAuthority dprr:3600 .
+crro:289.4 nmo:hasAuthority dprr:3600 .
+crro:289.5 nmo:hasAuthority dprr:3600 .
+
+# Nomisma: m_fabrini_rrc
+crro:251.1 nmo:hasAuthority dprr:3601 .
+crro:251.2 nmo:hasAuthority dprr:3601 .
+crro:251.3 nmo:hasAuthority dprr:3601 .
+crro:251.4 nmo:hasAuthority dprr:3601 .
+
+# Nomisma: m_fovri_l_f_phili_rrc
+crro:281.1 nmo:hasAuthority dprr:3603 .
+
+# Nomisma: m_lvcili_rvf_rrc
+crro:324.1 nmo:hasAuthority dprr:3604 .
+
+# Nomisma: m_marci_mn_f_rrc
+crro:245.1 nmo:hasAuthority dprr:3605 .
+crro:245.2 nmo:hasAuthority dprr:3605 .
+crro:245.3 nmo:hasAuthority dprr:3605 .
+
+# Nomisma: m_porc_laeca_rrc
+crro:270.1 nmo:hasAuthority dprr:3607 .
+
+# Nomisma: m_serveili_c_f_rrc
+crro:327.1 nmo:hasAuthority dprr:3608 .
+
+# Nomisma: m_titini_rrc
+crro:150.1 nmo:hasAuthority dprr:3609 .
+crro:150.2 nmo:hasAuthority dprr:3609 .
+crro:150.3 nmo:hasAuthority dprr:3609 .
+crro:150.4 nmo:hasAuthority dprr:3609 .
+crro:150.5 nmo:hasAuthority dprr:3609 .
+crro:150.6 nmo:hasAuthority dprr:3609 .
+
+# Nomisma: m_tvlli_rrc
+crro:280.1 nmo:hasAuthority dprr:3610 .
+
+# Nomisma: m_vargv_rrc
+crro:257.1 nmo:hasAuthority dprr:3611 .
+crro:257.2 nmo:hasAuthority dprr:3611 .
+crro:257.3 nmo:hasAuthority dprr:3611 .
+crro:257.4 nmo:hasAuthority dprr:3611 .
+crro:257.5 nmo:hasAuthority dprr:3611 .
+
+# Nomisma: m_voltei_m_f_rrc
+crro:385.1 nmo:hasAuthority dprr:3612 .
+crro:385.2 nmo:hasAuthority dprr:3612 .
+crro:385.3 nmo:hasAuthority dprr:3612 .
+crro:385.4 nmo:hasAuthority dprr:3612 .
+crro:385.5 nmo:hasAuthority dprr:3612 .
+
+# Nomisma: mat_rrc
+crro:162.1 nmo:hasAuthority dprr:3613 .
+crro:162.1a nmo:hasAuthority dprr:3613 .
+crro:162.1b nmo:hasAuthority dprr:3613 .
+crro:162.2 nmo:hasAuthority dprr:3613 .
+crro:162.2a nmo:hasAuthority dprr:3613 .
+crro:162.2b nmo:hasAuthority dprr:3613 .
+crro:162.3 nmo:hasAuthority dprr:3613 .
+crro:162.4 nmo:hasAuthority dprr:3613 .
+crro:162.5 nmo:hasAuthority dprr:3613 .
+crro:162.5a nmo:hasAuthority dprr:3613 .
+crro:162.5b nmo:hasAuthority dprr:3613 .
+crro:162.6 nmo:hasAuthority dprr:3613 .
+crro:162.6a nmo:hasAuthority dprr:3613 .
+crro:162.6b nmo:hasAuthority dprr:3613 .
+crro:162.7 nmo:hasAuthority dprr:3613 .
+crro:162.7a nmo:hasAuthority dprr:3613 .
+crro:162.7b nmo:hasAuthority dprr:3613 .
+
+# Nomisma: me_rrc
+crro:132.1 nmo:hasAuthority dprr:3614 .
+crro:132.2 nmo:hasAuthority dprr:3614 .
+crro:132.3 nmo:hasAuthority dprr:3614 .
+crro:132.4 nmo:hasAuthority dprr:3614 .
+crro:132.5 nmo:hasAuthority dprr:3614 .
+crro:132.6 nmo:hasAuthority dprr:3614 .
+crro:132.7 nmo:hasAuthority dprr:3614 .
+
+# Nomisma: messal_f_rrc
+crro:435.1 nmo:hasAuthority dprr:3615 .
+
+# Nomisma: mn_acilivs_iii_vir_rrc
+crro:442.1 nmo:hasAuthority dprr:3616 .
+crro:442.1a nmo:hasAuthority dprr:3616 .
+crro:442.1b nmo:hasAuthority dprr:3616 .
+
+# Nomisma: mn_aemilio_l_e_p_rrc
+crro:291.1 nmo:hasAuthority dprr:3617 .
+
+# Nomisma: mn_aqvil_mn_f_mn_n_rrc
+crro:401.1 nmo:hasAuthority dprr:3618 .
+
+# Nomisma: mn_fontei_rrc
+crro:307.1 nmo:hasAuthority dprr:3619 .
+crro:307.1a nmo:hasAuthority dprr:3619 .
+crro:307.1b nmo:hasAuthority dprr:3619 .
+crro:307.1c nmo:hasAuthority dprr:3619 .
+crro:307.1d nmo:hasAuthority dprr:3619 .
+
+# Nomisma: mn_fontei_c_f_rrc
+crro:353.1 nmo:hasAuthority dprr:3620 .
+crro:353.1a nmo:hasAuthority dprr:3620 .
+crro:353.1b nmo:hasAuthority dprr:3620 .
+crro:353.1c nmo:hasAuthority dprr:3620 .
+crro:353.1d nmo:hasAuthority dprr:3620 .
+crro:353.2 nmo:hasAuthority dprr:3620 .
+crro:353.3 nmo:hasAuthority dprr:3620 .
+
+# Nomisma: n_fabi_pictor_rrc
+crro:268.1 nmo:hasAuthority dprr:3622 .
+crro:268.1a nmo:hasAuthority dprr:3622 .
+crro:268.1b nmo:hasAuthority dprr:3622 .
+
+# Nomisma: natta_rrc
+crro:200.1 nmo:hasAuthority dprr:3623 .
+crro:200.2 nmo:hasAuthority dprr:3623 .
+crro:200.3 nmo:hasAuthority dprr:3623 .
+crro:200.4 nmo:hasAuthority dprr:3623 .
+crro:200.5 nmo:hasAuthority dprr:3623 .
+crro:200.6 nmo:hasAuthority dprr:3623 .
+crro:208.1 nmo:hasAuthority dprr:3623 .
+
+# Nomisma: ogvl_rrc
+crro:350A.1 nmo:hasAuthority dprr:3625 .
+crro:350A.1a nmo:hasAuthority dprr:3625 .
+crro:350A.1b nmo:hasAuthority dprr:3625 .
+crro:350A.1c nmo:hasAuthority dprr:3625 .
+crro:350A.1d nmo:hasAuthority dprr:3625 .
+crro:350A.1e nmo:hasAuthority dprr:3625 .
+crro:350A.2 nmo:hasAuthority dprr:3625 .
+crro:350A.3 nmo:hasAuthority dprr:3625 .
+crro:350A.3a nmo:hasAuthority dprr:3625 .
+crro:350A.3b nmo:hasAuthority dprr:3625 .
+crro:350A.3c nmo:hasAuthority dprr:3625 .
+crro:350A.3d nmo:hasAuthority dprr:3625 .
+crro:350A.3e nmo:hasAuthority dprr:3625 .
+crro:350A.3f nmo:hasAuthority dprr:3625 .
+
+# Nomisma: opei_rrc
+crro:190.1 nmo:hasAuthority dprr:3626 .
+crro:190.2 nmo:hasAuthority dprr:3626 .
+crro:190.3 nmo:hasAuthority dprr:3626 .
+crro:190.4 nmo:hasAuthority dprr:3626 .
+crro:190.5 nmo:hasAuthority dprr:3626 .
+crro:190.6 nmo:hasAuthority dprr:3626 .
+
+# Nomisma: opeimi_rrc
+crro:188.1 nmo:hasAuthority dprr:3627 .
+crro:188.2 nmo:hasAuthority dprr:3627 .
+crro:188.3 nmo:hasAuthority dprr:3627 .
+crro:188.4 nmo:hasAuthority dprr:3627 .
+crro:188.5 nmo:hasAuthority dprr:3627 .
+
+# Nomisma: p_paetvs_rrc
+crro:233.1 nmo:hasAuthority dprr:3628 .
+
+# Nomisma: p_svla_rrc
+crro:205.1 nmo:hasAuthority dprr:3629 .
+crro:205.2 nmo:hasAuthority dprr:3629 .
+crro:205.3 nmo:hasAuthority dprr:3629 .
+crro:205.4 nmo:hasAuthority dprr:3629 .
+crro:205.5 nmo:hasAuthority dprr:3629 .
+crro:205.6 nmo:hasAuthority dprr:3629 .
+
+# Nomisma: p_accoleivs_lariscolvs_rrc
+crro:486.1 nmo:hasAuthority dprr:3630 .
+
+# Nomisma: p_calp_rrc
+crro:247.1 nmo:hasAuthority dprr:3632 .
+crro:247.2 nmo:hasAuthority dprr:3632 .
+crro:247.3 nmo:hasAuthority dprr:3632 .
+
+# Nomisma: p_clodivs_m_f_iiii_vir_a_p_f_rrc
+crro:494.16 nmo:hasAuthority dprr:3633 .
+crro:494.17 nmo:hasAuthority dprr:3633 .
+crro:494.18 nmo:hasAuthority dprr:3633 .
+crro:494.19 nmo:hasAuthority dprr:3633 .
+crro:494.20 nmo:hasAuthority dprr:3633 .
+crro:494.20a nmo:hasAuthority dprr:3633 .
+crro:494.20b nmo:hasAuthority dprr:3633 .
+crro:494.21 nmo:hasAuthority dprr:3633 .
+crro:494.22 nmo:hasAuthority dprr:3633 .
+crro:494.23 nmo:hasAuthority dprr:3633 .
+crro:494.5 nmo:hasAuthority dprr:3633 .
+crro:494.6 nmo:hasAuthority dprr:3633 .
+crro:494.6a nmo:hasAuthority dprr:3633 .
+crro:494.6b nmo:hasAuthority dprr:3633 .
+
+# Nomisma: p_crepvsi_rrc
+crro:360.1 nmo:hasAuthority dprr:3635 .
+crro:360.1a nmo:hasAuthority dprr:3635 .
+crro:360.1b nmo:hasAuthority dprr:3635 .
+crro:361.1 nmo:hasAuthority dprr:3635 .
+crro:361.1a nmo:hasAuthority dprr:3635 .
+crro:361.1b nmo:hasAuthority dprr:3635 .
+crro:361.1c nmo:hasAuthority dprr:3635 .
+
+# Nomisma: p_fonteivs_p_f_capito_rrc
+crro:429.1 nmo:hasAuthority dprr:3636 .
+crro:429.2 nmo:hasAuthority dprr:3636 .
+crro:429.2a nmo:hasAuthority dprr:3636 .
+crro:429.2b nmo:hasAuthority dprr:3636 .
+
+# Nomisma: p_laeca_rrc
+crro:301.1 nmo:hasAuthority dprr:3638 .
+
+# Nomisma: p_mae_rrc
+crro:138.1 nmo:hasAuthority dprr:3639 .
+
+# Nomisma: p_sabin_q_rrc
+crro:331.1 nmo:hasAuthority dprr:3642 .
+
+# Nomisma: p_satrienvs_rrc
+crro:388.1 nmo:hasAuthority dprr:3643 .
+crro:388.1a nmo:hasAuthority dprr:3643 .
+crro:388.1b nmo:hasAuthority dprr:3643 .
+
+# Nomisma: p_sepvllivs_macer_rrc
+crro:480.10 nmo:hasAuthority dprr:3644 .
+crro:480.11 nmo:hasAuthority dprr:3644 .
+crro:480.12 nmo:hasAuthority dprr:3644 .
+crro:480.13 nmo:hasAuthority dprr:3644 .
+crro:480.14 nmo:hasAuthority dprr:3644 .
+crro:480.18 nmo:hasAuthority dprr:3644 .
+crro:480.21 nmo:hasAuthority dprr:3644 .
+crro:480.22 nmo:hasAuthority dprr:3644 .
+crro:480.27 nmo:hasAuthority dprr:3644 .
+crro:480.5 nmo:hasAuthority dprr:3644 .
+crro:480.5a nmo:hasAuthority dprr:3644 .
+crro:480.5b nmo:hasAuthority dprr:3644 .
+crro:480.9 nmo:hasAuthority dprr:3644 .
+
+# Nomisma: p_servili_m_f_rvlli_rrc
+crro:328.1 nmo:hasAuthority dprr:3645 .
+
+# Nomisma: pae_rrc
+crro:176.1 nmo:hasAuthority dprr:3646 .
+crro:176.2 nmo:hasAuthority dprr:3646 .
+crro:176.3 nmo:hasAuthority dprr:3646 .
+crro:176.4 nmo:hasAuthority dprr:3646 .
+crro:176.5 nmo:hasAuthority dprr:3646 .
+
+# Nomisma: petillivs_capitolinvs_rrc
+crro:487.1 nmo:hasAuthority dprr:3648 .
+crro:487.2 nmo:hasAuthority dprr:3648 .
+crro:487.2a nmo:hasAuthority dprr:3648 .
+crro:487.2b nmo:hasAuthority dprr:3648 .
+crro:487.2c nmo:hasAuthority dprr:3648 .
+
+# Nomisma: pvr_1_rrc
+crro:155.1 nmo:hasAuthority dprr:3650 .
+crro:155.2 nmo:hasAuthority dprr:3650 .
+crro:155.3 nmo:hasAuthority dprr:3650 .
+crro:155.4 nmo:hasAuthority dprr:3650 .
+
+# Nomisma: pvr_2_rrc
+crro:187.1 nmo:hasAuthority dprr:3651 .
+crro:187.2 nmo:hasAuthority dprr:3651 .
+crro:187.3 nmo:hasAuthority dprr:3651 .
+crro:187.4 nmo:hasAuthority dprr:3651 .
+crro:187.5 nmo:hasAuthority dprr:3651 .
+crro:187.6 nmo:hasAuthority dprr:3651 .
+crro:187.7 nmo:hasAuthority dprr:3651 .
+
+# Nomisma: q_creperei_rocvs_rrc
+crro:399.1 nmo:hasAuthority dprr:3653 .
+crro:399.1a nmo:hasAuthority dprr:3653 .
+crro:399.1b nmo:hasAuthority dprr:3653 .
+
+# Nomisma: q_cvrti_rrc
+crro:285.1 nmo:hasAuthority dprr:3654 .
+crro:285.2 nmo:hasAuthority dprr:3654 .
+crro:285.3 nmo:hasAuthority dprr:3654 .
+crro:285.4 nmo:hasAuthority dprr:3654 .
+crro:285.5 nmo:hasAuthority dprr:3654 .
+crro:285.5a nmo:hasAuthority dprr:3654 .
+crro:285.5b nmo:hasAuthority dprr:3654 .
+crro:285.5c nmo:hasAuthority dprr:3654 .
+crro:285.6 nmo:hasAuthority dprr:3654 .
+crro:285.7 nmo:hasAuthority dprr:3654 .
+crro:285.7a nmo:hasAuthority dprr:3654 .
+crro:285.7b nmo:hasAuthority dprr:3654 .
+
+# Nomisma: q_mar_rrc
+crro:283.1 nmo:hasAuthority dprr:3655 .
+crro:283.1a nmo:hasAuthority dprr:3655 .
+crro:283.1b nmo:hasAuthority dprr:3655 .
+
+# Nomisma: q_marc_libo_rrc
+crro:215.1 nmo:hasAuthority dprr:3656 .
+crro:215.2 nmo:hasAuthority dprr:3656 .
+crro:215.2a nmo:hasAuthority dprr:3656 .
+crro:215.2b nmo:hasAuthority dprr:3656 .
+crro:215.2c nmo:hasAuthority dprr:3656 .
+crro:215.3 nmo:hasAuthority dprr:3656 .
+crro:215.4 nmo:hasAuthority dprr:3656 .
+crro:215.5 nmo:hasAuthority dprr:3656 .
+crro:215.6 nmo:hasAuthority dprr:3656 .
+crro:215.7 nmo:hasAuthority dprr:3656 .
+
+# Nomisma: q_mari_rrc
+crro:148.1 nmo:hasAuthority dprr:3657 .
+crro:148.2 nmo:hasAuthority dprr:3657 .
+crro:148.3 nmo:hasAuthority dprr:3657 .
+crro:148.4 nmo:hasAuthority dprr:3657 .
+crro:148.5 nmo:hasAuthority dprr:3657 .
+crro:148.6 nmo:hasAuthority dprr:3657 .
+
+# Nomisma: q_pilipvs_rrc
+crro:259.1 nmo:hasAuthority dprr:3659 .
+
+# Nomisma: q_pomponi_mvsa_rrc
+crro:410.1 nmo:hasAuthority dprr:3660 .
+crro:410.10 nmo:hasAuthority dprr:3660 .
+crro:410.10a nmo:hasAuthority dprr:3660 .
+crro:410.10b nmo:hasAuthority dprr:3660 .
+crro:410.2 nmo:hasAuthority dprr:3660 .
+crro:410.2a nmo:hasAuthority dprr:3660 .
+crro:410.2b nmo:hasAuthority dprr:3660 .
+crro:410.3 nmo:hasAuthority dprr:3660 .
+crro:410.4 nmo:hasAuthority dprr:3660 .
+crro:410.5 nmo:hasAuthority dprr:3660 .
+crro:410.6 nmo:hasAuthority dprr:3660 .
+crro:410.7 nmo:hasAuthority dprr:3660 .
+crro:410.7a nmo:hasAuthority dprr:3660 .
+crro:410.7b nmo:hasAuthority dprr:3660 .
+crro:410.7c nmo:hasAuthority dprr:3660 .
+crro:410.7d nmo:hasAuthority dprr:3660 .
+crro:410.8 nmo:hasAuthority dprr:3660 .
+crro:410.9 nmo:hasAuthority dprr:3660 .
+crro:410.9a nmo:hasAuthority dprr:3660 .
+crro:410.9b nmo:hasAuthority dprr:3660 .
+crro:410.9c nmo:hasAuthority dprr:3660 .
+
+# Nomisma: q_pomponi_rvfvs_rrc
+crro:398.1 nmo:hasAuthority dprr:3661 .
+
+# Nomisma: q_sicinvs_iii_vir_rrc
+crro:440.1 nmo:hasAuthority dprr:3662 .
+crro:444.1 nmo:hasAuthority dprr:3662 .
+crro:444.1a nmo:hasAuthority dprr:3662 .
+crro:444.1b nmo:hasAuthority dprr:3662 .
+crro:444.1c nmo:hasAuthority dprr:3662 .
+
+# Nomisma: q_titi_rrc
+crro:341.1 nmo:hasAuthority dprr:3663 .
+crro:341.2 nmo:hasAuthority dprr:3663 .
+crro:341.3 nmo:hasAuthority dprr:3663 .
+crro:341.4 nmo:hasAuthority dprr:3663 .
+crro:341.4a nmo:hasAuthority dprr:3663 .
+crro:341.4b nmo:hasAuthority dprr:3663 .
+crro:341.4c nmo:hasAuthority dprr:3663 .
+crro:341.4d nmo:hasAuthority dprr:3663 .
+crro:341.5 nmo:hasAuthority dprr:3663 .
+crro:341.6 nmo:hasAuthority dprr:3663 .
+crro:341.7 nmo:hasAuthority dprr:3663 .
+
+# Nomisma: q_vr_rrc
+crro:299.1 nmo:hasAuthority dprr:3664 .
+crro:299.1a nmo:hasAuthority dprr:3664 .
+crro:299.1b nmo:hasAuthority dprr:3664 .
+
+# Nomisma: qlc_rrc
+crro:125.1 nmo:hasAuthority dprr:3665 .
+
+# Nomisma: s_fv_rrc
+crro:151.1 nmo:hasAuthority dprr:3666 .
+
+# Nomisma: safra_rrc
+crro:206.1 nmo:hasAuthority dprr:3667 .
+crro:206.2 nmo:hasAuthority dprr:3667 .
+crro:206.3 nmo:hasAuthority dprr:3667 .
+crro:206.4 nmo:hasAuthority dprr:3667 .
+crro:206.5 nmo:hasAuthority dprr:3667 .
+crro:206.6 nmo:hasAuthority dprr:3667 .
+crro:206.7 nmo:hasAuthority dprr:3667 .
+
+# Nomisma: sar_rrc
+crro:199.1 nmo:hasAuthority dprr:3668 .
+crro:199.1a nmo:hasAuthority dprr:3668 .
+crro:199.1b nmo:hasAuthority dprr:3668 .
+crro:199.2 nmo:hasAuthority dprr:3668 .
+crro:199.3 nmo:hasAuthority dprr:3668 .
+crro:199.4 nmo:hasAuthority dprr:3668 .
+crro:199.5 nmo:hasAuthority dprr:3668 .
+crro:199.6a nmo:hasAuthority dprr:3668 .
+crro:199.6b nmo:hasAuthority dprr:3668 .
+
+# Nomisma: sax_rrc
+crro:180.1 nmo:hasAuthority dprr:3669 .
+crro:180.2 nmo:hasAuthority dprr:3669 .
+crro:180.3 nmo:hasAuthority dprr:3669 .
+crro:180.4 nmo:hasAuthority dprr:3669 .
+crro:180.5 nmo:hasAuthority dprr:3669 .
+
+# Nomisma: ser_svlp_rrc
+crro:438.1 nmo:hasAuthority dprr:3671 .
+
+# Nomisma: sx_q_rrc
+crro:152.1 nmo:hasAuthority dprr:3672 .
+crro:152.1a nmo:hasAuthority dprr:3672 .
+crro:152.1b nmo:hasAuthority dprr:3672 .
+crro:152.1c nmo:hasAuthority dprr:3672 .
+
+# Nomisma: t_carisivs_iii_vir_rrc
+crro:464.1 nmo:hasAuthority dprr:3674 .
+crro:464.2 nmo:hasAuthority dprr:3674 .
+crro:464.3 nmo:hasAuthority dprr:3674 .
+crro:464.3a nmo:hasAuthority dprr:3674 .
+crro:464.3b nmo:hasAuthority dprr:3674 .
+crro:464.3c nmo:hasAuthority dprr:3674 .
+crro:464.4 nmo:hasAuthority dprr:3674 .
+crro:464.5 nmo:hasAuthority dprr:3674 .
+crro:464.6 nmo:hasAuthority dprr:3674 .
+crro:464.7 nmo:hasAuthority dprr:3674 .
+crro:464.7a nmo:hasAuthority dprr:3674 .
+crro:464.7b nmo:hasAuthority dprr:3674 .
+crro:464.8 nmo:hasAuthority dprr:3674 .
+crro:464.8a nmo:hasAuthority dprr:3674 .
+crro:464.8b nmo:hasAuthority dprr:3674 .
+
+# Nomisma: t_clovli_rrc
+crro:260.1 nmo:hasAuthority dprr:3675 .
+
+# Nomisma: t_clovli_q_rrc
+crro:332.1 nmo:hasAuthority dprr:3676 .
+crro:332.1a nmo:hasAuthority dprr:3676 .
+crro:332.1b nmo:hasAuthority dprr:3676 .
+crro:332.1c nmo:hasAuthority dprr:3676 .
+
+# Nomisma: tal_rrc
+crro:161.1 nmo:hasAuthority dprr:3678 .
+crro:161.2 nmo:hasAuthority dprr:3678 .
+crro:161.3 nmo:hasAuthority dprr:3678 .
+crro:161.4 nmo:hasAuthority dprr:3678 .
+crro:161.5 nmo:hasAuthority dprr:3678 .
+crro:161.6 nmo:hasAuthority dprr:3678 .
+
+# Nomisma: tamp_rrc
+crro:133.1 nmo:hasAuthority dprr:3679 .
+crro:133.2 nmo:hasAuthority dprr:3679 .
+crro:133.2a nmo:hasAuthority dprr:3679 .
+crro:133.2b nmo:hasAuthority dprr:3679 .
+crro:133.3 nmo:hasAuthority dprr:3679 .
+crro:133.4 nmo:hasAuthority dprr:3679 .
+crro:133.5 nmo:hasAuthority dprr:3679 .
+crro:133.6 nmo:hasAuthority dprr:3679 .
+crro:133.7 nmo:hasAuthority dprr:3679 .
+crro:133.8 nmo:hasAuthority dprr:3679 .
+crro:133.9 nmo:hasAuthority dprr:3679 .
+
+# Nomisma: ti_q_rrc
+crro:297.1 nmo:hasAuthority dprr:3680 .
+crro:297.1a nmo:hasAuthority dprr:3680 .
+crro:297.1b nmo:hasAuthority dprr:3680 .
+
+# Nomisma: ti_minvci_c_f_avgvrini_rrc
+crro:243.1 nmo:hasAuthority dprr:3681 .
+crro:243.2 nmo:hasAuthority dprr:3681 .
+crro:243.3 nmo:hasAuthority dprr:3681 .
+crro:243.4 nmo:hasAuthority dprr:3681 .
+crro:243.5 nmo:hasAuthority dprr:3681 .
+
+# Nomisma: ti_vetvr_rrc
+crro:234.1 nmo:hasAuthority dprr:3682 .
+crro:234.2 nmo:hasAuthority dprr:3682 .
+crro:234.2a nmo:hasAuthority dprr:3682 .
+crro:234.2b nmo:hasAuthority dprr:3682 .
+
+# Nomisma: tvrd_rrc
+crro:193.1 nmo:hasAuthority dprr:3683 .
+crro:193.2 nmo:hasAuthority dprr:3683 .
+crro:193.3 nmo:hasAuthority dprr:3683 .
+crro:193.4 nmo:hasAuthority dprr:3683 .
+crro:193.5 nmo:hasAuthority dprr:3683 .
+
+# Nomisma: val_rrc
+crro:191.1 nmo:hasAuthority dprr:3684 .
+crro:191.2 nmo:hasAuthority dprr:3684 .
+crro:191.3 nmo:hasAuthority dprr:3684 .
+crro:191.4 nmo:hasAuthority dprr:3684 .
+crro:191.5 nmo:hasAuthority dprr:3684 .
+crro:191.6 nmo:hasAuthority dprr:3684 .
+
+# Nomisma: d_issuer_rrc
+crro:171.1 nmo:hasAuthority dprr:3746 .
+
+# Nomisma: an_or_av_issuer_rrc
+crro:136.1 nmo:hasAuthority dprr:3748 .
+crro:136.2 nmo:hasAuthority dprr:3748 .
+crro:136.3 nmo:hasAuthority dprr:3748 .
+crro:136.4 nmo:hasAuthority dprr:3748 .
+crro:136.5 nmo:hasAuthority dprr:3748 .
+crro:136.6 nmo:hasAuthority dprr:3748 .
+crro:136.7 nmo:hasAuthority dprr:3748 .
+
+# Nomisma: l_plavtivs_plancvs_rrc
+crro:453.1 nmo:hasAuthority dprr:3775 .
+crro:453.1a nmo:hasAuthority dprr:3775 .
+crro:453.1b nmo:hasAuthority dprr:3775 .
+crro:453.1c nmo:hasAuthority dprr:3775 .
+crro:453.1d nmo:hasAuthority dprr:3775 .
+crro:453.1e nmo:hasAuthority dprr:3775 .
+
+# Nomisma: c_sax_rrc
+crro:173.1 nmo:hasAuthority dprr:3778 .
+crro:173.2 nmo:hasAuthority dprr:3778 .
+crro:173.3 nmo:hasAuthority dprr:3778 .
+crro:173.4 nmo:hasAuthority dprr:3778 .
+crro:173.5 nmo:hasAuthority dprr:3778 .
+
+# Nomisma: lent_mar_f_rrc
+crro:329.1 nmo:hasAuthority dprr:3780 .
+crro:329.1a nmo:hasAuthority dprr:3780 .
+crro:329.1c nmo:hasAuthority dprr:3780 .
+crro:329.1d nmo:hasAuthority dprr:3780 .
+crro:329.2 nmo:hasAuthority dprr:3780 .
+
+# Nomisma: c_postvmi_at_rrc
+crro:394.1 nmo:hasAuthority dprr:3792 .
+crro:394.1a nmo:hasAuthority dprr:3792 .
+crro:394.1b nmo:hasAuthority dprr:3792 .
+
+# Nomisma: t_q_rrc
+crro:267.1 nmo:hasAuthority dprr:3825 .
+crro:267.2 nmo:hasAuthority dprr:3825 .
+crro:267.3 nmo:hasAuthority dprr:3825 .
+crro:267.4 nmo:hasAuthority dprr:3825 .
+
+# Nomisma: c_fvndan_q_rrc
+crro:326.1 nmo:hasAuthority dprr:5159 .
+crro:326.2 nmo:hasAuthority dprr:5159 .
+
+# Nomisma: flavs_rrc
+crro:207.1 nmo:hasAuthority dprr:5163 .
+

@@ -260,7 +260,10 @@ def main():
             # We want to find pairs that name matching MISSED
             edh_name = edh["name"]
             edh_parts = edh_name.split()
-            edh_nomen = edh_parts[1].lower().rstrip(".,;") if len(edh_parts) >= 2 and edh_parts[0].endswith(".") else (edh_parts[0].lower().rstrip(".,;") if edh_parts else "")
+            if len(edh_parts) >= 2 and edh_parts[0].endswith("."):
+                edh_nomen = edh_parts[1].lower().rstrip(".,;")
+            else:
+                edh_nomen = edh_parts[0].lower().rstrip(".,;") if edh_parts else ""
             dprr_nomen = re.sub(r"[()]", "", dprr.get("nomen", "")).strip().lower()
 
             # Flag whether this is a NEW match (nomen doesn't match exactly)
@@ -318,7 +321,10 @@ def main():
                 "relationship": "skos:closeMatch",
                 "confidence": "candidate",
                 "method": "semantic_embedding_similarity",
-                "basis": "BAAI/bge-small-en-v1.5 cosine similarity between DPRR person descriptions and EDH person names",
+                "basis": (
+                    "BAAI/bge-small-en-v1.5 cosine similarity between "
+                    "DPRR person descriptions and EDH person names"
+                ),
                 "author": "linked-past project",
                 "date": "2026-03-30",
             },

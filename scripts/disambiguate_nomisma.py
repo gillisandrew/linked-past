@@ -114,12 +114,11 @@ def get_nomisma_definitions(store: Store) -> dict[str, str]:
 def run_matching(store_dprr, store_crro, store_nomisma):
     """Re-run the matching but include ALL candidates (not just 1:1)."""
     from scripts.match_dprr_nomisma import (
+        _extract_cognomen,
+        _extract_nomen,
+        _extract_praenomen,
         get_dprr_moneyers,
         get_nomisma_rrc_persons,
-        _extract_nomen,
-        _extract_cognomen,
-        _extract_praenomen,
-        _PRAENOMEN_MAP,
     )
 
     existing = load_existing_links()
@@ -337,7 +336,9 @@ def main():
         if isinstance(dist, float):
             dist = f"{dist:.0f}yr"
         method = c.get("disambiguation", "1:1")
-        print(f"{str(dist):>5}  {method:<22}  {c.get('dprr_date', '?'):>9}  {c['dprr_label'][:45]:<45}  {c['nomisma_label'][:40]:<40}")
+        label = c['dprr_label'][:45]
+        nom_label = c['nomisma_label'][:40]
+        print(f"{str(dist):>5}  {method:<22}  {c.get('dprr_date', '?'):>9}  {label:<45}  {nom_label:<40}")
 
     # Merge into confirmed YAML
     if confirmed:
@@ -345,7 +346,7 @@ def main():
         with conf_path.open() as f:
             conf_data = yaml.safe_load(f)
 
-        existing_pairs = {(l["source"], l["target"]) for l in conf_data["links"]}
+        existing_pairs = {(link["source"], link["target"]) for link in conf_data["links"]}
         added = 0
         for c in confirmed:
             pair = (c["dprr_uri"], c["nomisma_uri"])
@@ -356,7 +357,10 @@ def main():
                 conf_data["links"].append({
                     "source": c["dprr_uri"],
                     "target": c["nomisma_uri"],
-                    "note": f"DPRR: {c['dprr_label'][:60]}; Nomisma: {c['nomisma_label']}; disambiguated by {method} ({dist_str})",
+                    "note": (
+                        f"DPRR: {c['dprr_label'][:60]}; Nomisma: {c['nomisma_label']}; "
+                        f"disambiguated by {method} ({dist_str})"
+                    ),
                 })
                 added += 1
 

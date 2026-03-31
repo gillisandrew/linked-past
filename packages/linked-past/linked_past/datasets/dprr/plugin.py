@@ -45,7 +45,7 @@ class DPRRPlugin(DatasetPlugin):
     time_coverage = "509-31 BC"
     spatial_coverage = "Roman Republic"
     oci_dataset = "datasets/dprr"
-    oci_version = "1.3.0"
+    oci_version = "latest"
 
     def __init__(self):
         self._prefixes = load_prefixes(_CONTEXT_DIR)
@@ -104,7 +104,7 @@ class DPRRPlugin(DatasetPlugin):
     def get_version_info(self, data_dir: Path) -> VersionInfo:
         url = os.environ.get("DPRR_DATA_URL", _DEFAULT_DATA_URL)
         return VersionInfo(
-            version="1.3.0",
+            version="latest",
             source_url=url,
             fetched_at=datetime.now(timezone.utc).isoformat(),
             triple_count=0,

@@ -281,7 +281,9 @@ def main():
     print(f"{'Score':>5}  {'DPRR Date':>10}  {'DPRR Label':<45}  {'Nomisma Label':<40}")
     print("-" * 100)
     for c in candidates:
-        print(f"{c['score']:>5}  {c['dprr_date'] or '?':>10}  {c['dprr_label'][:45]:<45}  {c['nomisma_label'][:40]:<40}  {c['reasons']}")
+        label = c['dprr_label'][:45]
+        nom_label = c['nomisma_label'][:40]
+        print(f"{c['score']:>5}  {c['dprr_date'] or '?':>10}  {label:<45}  {nom_label:<40}  {c['reasons']}")
 
     # Output YAML for confirmed matches (score >= 2)
     output_path = LINKAGE_DIR / "dprr_nomisma_candidates.yaml"
@@ -300,7 +302,10 @@ def main():
             {
                 "source": c["source"],
                 "target": c["target"],
-                "note": f"DPRR: {c['dprr_label'][:60]} ({c['dprr_date'] or '?'} BC); Nomisma: {c['nomisma_label']}; score={c['score']}",
+                "note": (
+                    f"DPRR: {c['dprr_label'][:60]} ({c['dprr_date'] or '?'} BC); "
+                    f"Nomisma: {c['nomisma_label']}; score={c['score']}"
+                ),
             }
             for c in candidates
         ],

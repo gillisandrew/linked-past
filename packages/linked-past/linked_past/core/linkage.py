@@ -131,6 +131,7 @@ class LinkageGraph:
 
     def find_links(self, uri: str) -> list[dict[str, str]]:
         """Find forward and reverse links for a URI."""
+        # Named-graph links (from YAML files — have provenance)
         query = f"""
         SELECT ?target ?relationship ?confidence ?basis ?direction ?graph WHERE {{
             {{
@@ -155,12 +156,46 @@ class LinkageGraph:
         results = self._store.query(query)
         variables = [v.value for v in results.variables]
         rows = []
+        seen = set()
         for solution in results:
             row = {}
             for var_name in variables:
                 value = solution[var_name]
                 row[var_name] = value.value if value is not None else None
+            seen.add(row["target"])
             rows.append(row)
+
+        # Default-graph links (from TTL concordances — no provenance)
+        default_query = f"""
+        SELECT ?target ?relationship ?direction WHERE {{
+            {{
+                <{uri}> ?relationship ?target .
+                FILTER(isIRI(?target))
+                BIND("forward" AS ?direction)
+            }}
+            UNION
+            {{
+                ?target ?relationship <{uri}> .
+                FILTER(isIRI(?target))
+                BIND("reverse" AS ?direction)
+            }}
+        }}
+        """
+        for solution in self._store.query(default_query):
+            target = solution["target"]
+            target_val = target.value if target is not None else None
+            if target_val and target_val not in seen:
+                seen.add(target_val)
+                rel = solution["relationship"]
+                direction = solution["direction"]
+                rows.append({
+                    "target": target_val,
+                    "relationship": rel.value if rel else None,
+                    "confidence": "concordance",
+                    "basis": "Wikidata-derived concordance",
+                    "direction": direction.value if direction else None,
+                    "graph": None,
+                })
         return rows
 
     def get_provenance(self, source_uri: str, target_uri: str) -> dict[str, str] | None:

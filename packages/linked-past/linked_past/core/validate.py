@@ -270,9 +270,8 @@ def validate_and_execute(
     if parse_errors:
         return QueryResult(success=False, sparql=fixed_sparql, errors=parse_errors)
 
-    semantic_errors = validate_semantics(fixed_sparql, schema_dict)
-    if semantic_errors:
-        return QueryResult(success=False, sparql=fixed_sparql, errors=semantic_errors)
+    # Semantic hints are non-blocking — unknown classes/predicates are warnings, not errors
+    semantic_hints = validate_semantics(fixed_sparql, schema_dict)
 
     try:
         from linked_past.core.store import execute_query
@@ -280,4 +279,4 @@ def validate_and_execute(
     except Exception as e:
         return QueryResult(success=False, sparql=fixed_sparql, errors=[f"Query execution error: {e}"])
 
-    return QueryResult(success=True, sparql=fixed_sparql, rows=rows)
+    return QueryResult(success=True, sparql=fixed_sparql, rows=rows, errors=semantic_hints)

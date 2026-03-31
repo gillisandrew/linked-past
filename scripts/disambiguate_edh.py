@@ -222,7 +222,6 @@ def match_all_candidates(
             if pair in existing_pairs:
                 continue
 
-            dprr_nomen = re.sub(r"[()]", "", dprr.get("nomen", "")).strip().lower()
             dprr_cog = (dprr.get("cognomen") or "").lower().strip("() []")
             dprr_prae_label = (dprr.get("praenomenLabel") or "").lower()
             dprr_prae = _PRAENOMEN_MAP.get(dprr_prae_label.split(":")[-1].strip().lower().rstrip("."))
@@ -433,14 +432,17 @@ def main():
                     "relationship": "skos:closeMatch",
                     "confidence": "confirmed",
                     "method": "automated_name_matching",
-                    "basis": "Praenomen + nomen + cognomen matching between DPRR persons and EDH senatorial/equestrian persons",
+                    "basis": (
+                        "Praenomen + nomen + cognomen matching between "
+                        "DPRR persons and EDH senatorial/equestrian persons"
+                    ),
                     "author": "linked-past project",
                     "date": "2026-03-30",
                 },
                 "links": [],
             }
 
-        existing_in_file = {(l["source"], l["target"]) for l in conf_data["links"]}
+        existing_in_file = {(link["source"], link["target"]) for link in conf_data["links"]}
         added = 0
         for c in all_new:
             pair = (c["dprr_uri"], c["edh_uri"])

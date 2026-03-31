@@ -4,10 +4,10 @@ metadata:
   relationship: skos:closeMatch
   confidence: confirmed
   method: manual_alignment
-  basis: DPRR v1.3.0 moneyer post assertions citing Crawford RRC, cross-referenced
-    with Nomisma person authorities and CRRO coin types.
+  basis: DPRR v1.3.0 moneyer post assertions citing Crawford RRC, cross-referenced with Nomisma person authorities and CRRO
+    coin types.
   author: linked-past project
-  date: '2026-03-30'
+  date: '2026-03-31'
 links:
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/1976
   target: http://nomisma.org/id/pompey
@@ -98,8 +98,7 @@ links:
   note: Moneyer 118 BC; Cn. Domitius Ahenobarbus; cn_dom_1 is 189 BC (different person)
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/3505
   target: http://nomisma.org/id/c_mall_rrc
-  note: Monetalis 118 BC (DPRR/Broughton); Nomisma says late 90s; unique name, both
-    cite RRC
+  note: Monetalis 118 BC (DPRR/Broughton); Nomisma says late 90s; unique name, both cite RRC
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/3598
   target: http://nomisma.org/id/m_calid_rrc
   note: Monetalis 117 BC; name + date exact
@@ -120,8 +119,7 @@ links:
   note: Monetalis 113 BC; name + date exact
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/1833
   target: http://nomisma.org/id/l_torqva_q_rrc
-  note: Monetalis 113-112 BC; disambiguated from l_torqvat_rrc (65 BC) and l_manli_t_proq_rrc
-    (82 BC)
+  note: Monetalis 113-112 BC; disambiguated from l_torqvat_rrc (65 BC) and l_manli_t_proq_rrc (82 BC)
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/1776
   target: http://nomisma.org/id/t_deidi_rrc
   note: Monetalis 113 BC; name + date exact
@@ -142,8 +140,7 @@ links:
   note: Monetalis 109 BC; name + date exact
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/1757
   target: http://nomisma.org/id/mn_aqvil_rrc
-  note: Monetalis 109 BC; Mn. Aquillius + date exact; not mn_aqvil_mn_f_mn_n_rrc (71
-    BC)
+  note: Monetalis 109 BC; Mn. Aquillius + date exact; not mn_aqvil_mn_f_mn_n_rrc (71 BC)
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/1819
   target: http://nomisma.org/id/m_herenni_rrc
   note: Monetalis 108 BC; name + date exact
@@ -203,8 +200,7 @@ links:
   note: Monetalis 100 BC; P. Servilius M.f. Rullus + date exact
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/3780
   target: http://nomisma.org/id/lent_mar_f_rrc
-  note: Monetalis 100 BC; P. Cornelius Lentulus Marcellinus; not marcellinvs_rrc (50
-    BC)
+  note: Monetalis 100 BC; P. Cornelius Lentulus Marcellinus; not marcellinvs_rrc (50 BC)
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/3676
   target: http://nomisma.org/id/t_clovli_q_rrc
   note: Monetalis 98 BC; T. Cloelius Ouf. + date exact
@@ -222,8 +218,7 @@ links:
   note: Monetalis 96 BC; C. Publicius Malleolus; Nomisma says late 90s
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/3391
   target: http://nomisma.org/id/a_albinvs_s_f_rrc
-  note: Monetalis 96 BC; A. Postumius Sp.f. Albinus; not a_post_a_f_s_n_albin_rrc
-    (81 BC)
+  note: Monetalis 96 BC; A. Postumius Sp.f. Albinus; not a_post_a_f_s_n_albin_rrc (81 BC)
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/3488
   target: http://nomisma.org/id/c_alli_bala_rrc
   note: Monetalis 92 BC; C. Allius Bala + date exact
@@ -238,8 +233,7 @@ links:
   note: Monetalis 89 BC; M. Porcius Cato + date exact
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/1947
   target: http://nomisma.org/id/c_censorin_rrc
-  note: Monetalis 88 BC; C. Marcius Censorinus; not c_marcius_censorinus (Augustan
-    era)
+  note: Monetalis 88 BC; C. Marcius Censorinus; not c_marcius_censorinus (Augustan era)
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/1892
   target: http://nomisma.org/id/q_oppivs_pr_rrc
   note: Monetalis 88 BC; Q. Oppius Q.f. + date match
@@ -284,8 +278,7 @@ links:
   note: Monetalis 84 BC; C. Licinius L.f. Macer + date exact
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/1746
   target: http://nomisma.org/id/sulla
-  note: Moneyer 84 BC; L. Cornelius Sulla Felix; Nomisma has general entry (life c.
-    138-78 BC)
+  note: Moneyer 84 BC; L. Cornelius Sulla Felix; Nomisma has general entry (life c. 138-78 BC)
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/3587
   target: http://nomisma.org/id/laterens_rrc
   note: Monetalis 83 BC; Iuventius Laterensis + date exact
@@ -579,16 +572,13 @@ links:
   note: 43 BC; Petillius Capitolinus + date exact
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/1795
   target: http://nomisma.org/id/l_piso_frvgi_rrc
-  note: 'DPRR: CALP1795 L. Calpurnius (89) Piso (Caesoninus) (-100 BC); Nomisma: L.
-    Calpurnius Piso Frugi'
+  note: 'DPRR: CALP1795 L. Calpurnius (89) Piso (Caesoninus) (-100 BC); Nomisma: L. Calpurnius Piso Frugi'
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/1744
   target: http://nomisma.org/id/caldvs_iiivir_rrc
-  note: 'DPRR: COEL1744 C. Coelius (12) C. f. C. n. Caldus (-104 BC); Nomisma: C.
-    Coelius Caldus'
+  note: 'DPRR: COEL1744 C. Coelius (12) C. f. C. n. Caldus (-104 BC); Nomisma: C. Coelius Caldus'
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/3559
   target: http://nomisma.org/id/l_h_tvb_rrc
-  note: 'DPRR: HOST3559 L. Hostilius (cf. 26) Tubulus (-105 BC); Nomisma: L. Hostilius
-    Tubulus'
+  note: 'DPRR: HOST3559 L. Hostilius (cf. 26) Tubulus (-105 BC); Nomisma: L. Hostilius Tubulus'
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/1774
   target: http://nomisma.org/id/l_cot_rrc
   note: 'DPRR: AURE1774 L. Aurelius (100) Cotta (-105 BC); Nomisma: L. Aurelius Cotta'
@@ -603,16 +593,13 @@ links:
   note: 'DPRR: PORC3638 P. Porcius (21) Laeca (-110 BC); Nomisma: P. Porcius Laeca'
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/1745
   target: http://nomisma.org/id/t_manl_rrc
-  note: 'DPRR: MANL1745 T. Manlius (61, cf. 16) Mancinus (-111 BC); Nomisma: T. Manlius
-    Mancinus'
+  note: 'DPRR: MANL1745 T. Manlius (61, cf. 16) Mancinus (-111 BC); Nomisma: T. Manlius Mancinus'
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/3574
   target: http://nomisma.org/id/l_porci_lici_rrc
-  note: 'DPRR: PORC3574 L. Porcius (25) Pap. Licinus (-118 BC); Nomisma: L. Porcius
-    Licinus'
+  note: 'DPRR: PORC3574 L. Porcius (25) Pap. Licinus (-118 BC); Nomisma: L. Porcius Licinus'
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/3603
   target: http://nomisma.org/id/m_fovri_l_f_phili_rrc
-  note: 'DPRR: FURI3603 M. Furius (79) L. f. Philus (-119 BC); Nomisma: M. Furius
-    Philus'
+  note: 'DPRR: FURI3603 M. Furius (79) L. f. Philus (-119 BC); Nomisma: M. Furius Philus'
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/1687
   target: http://nomisma.org/id/q_minv_rvf_rrc
   note: 'DPRR: MINU1687 Q. Minucius (56) Rufus (-122 BC); Nomisma: Q. Minucius Rufus'
@@ -621,70 +608,55 @@ links:
   note: 'DPRR: FABI2959 Q. Fabius (92) Labeo (-124 BC); Nomisma: Q. Fabius Labeo'
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/1680
   target: http://nomisma.org/id/mn_acili_balbvs_rrc
-  note: 'DPRR: ACIL1680 M''. Acilius (26) M''.? f. L. n. Balbus (-125 BC); Nomisma:
-    Mn. Acilius Balbus'
+  note: 'DPRR: ACIL1680 M''. Acilius (26) M''.? f. L. n. Balbus (-125 BC); Nomisma: Mn. Acilius Balbus'
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/1701
   target: http://nomisma.org/id/c_metellvs_rrc
-  note: 'DPRR: CAEC1701 C. Caecilius (84) Q. f. Q. n. Metellus Caprarius (-125 BC);
-    Nomisma: C. Caecilius Metellus Caprarius'
+  note: 'DPRR: CAEC1701 C. Caecilius (84) Q. f. Q. n. Metellus Caprarius (-125 BC); Nomisma: C. Caecilius Metellus Caprarius'
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/3607
   target: http://nomisma.org/id/m_porc_laeca_rrc
-  note: 'DPRR: PORC3607 M. Porcius (17) Pap. Laeca (-125 BC); Nomisma: M. Porcius
-    Laeca'
+  note: 'DPRR: PORC3607 M. Porcius (17) Pap. Laeca (-125 BC); Nomisma: M. Porcius Laeca'
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/3518
   target: http://nomisma.org/id/c_serveili_rrc
-  note: 'DPRR: SERV3518 C. Servilius (13, 91) Vatia (-127 BC); Nomisma: C. Servilius
-    Vatia'
+  note: 'DPRR: SERV3518 C. Servilius (13, 91) Vatia (-127 BC); Nomisma: C. Servilius Vatia'
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/1615
   target: http://nomisma.org/id/q_max_rrc
-  note: 'DPRR: FABI1615 Q. Fabius (111) Q. Serviliani f. Q. n. Maximus Ebur (-127
-    BC); Nomisma: Q. Fabius Maximus'
+  note: 'DPRR: FABI1615 Q. Fabius (111) Q. Serviliani f. Q. n. Maximus Ebur (-127 BC); Nomisma: Q. Fabius Maximus'
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/1800
   target: http://nomisma.org/id/l_post_alb_rrc
-  note: 'DPRR: POST1800 L. Postumius (43) L. f. Sp. n. Albinus (-131 BC); Nomisma:
-    L. Postumius Albinus'
+  note: 'DPRR: POST1800 L. Postumius (43) L. f. Sp. n. Albinus (-131 BC); Nomisma: L. Postumius Albinus'
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/3589
   target: http://nomisma.org/id/m_abvri_mf_gem_rrc
-  note: 'DPRR: ABUR3589 M. Aburius (cf. 2) M. f. Geminus (-132 BC); Nomisma: M. Aburius
-    Geminus'
+  note: 'DPRR: ABUR3589 M. Aburius (cf. 2) M. f. Geminus (-132 BC); Nomisma: M. Aburius Geminus'
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/3486
   target: http://nomisma.org/id/c_abvri_gem_rrc
-  note: 'DPRR: ABUR3486 C. Aburius (cf. 1) Geminus (-134 BC); Nomisma: C. Aburius
-    Geminus'
+  note: 'DPRR: ABUR3486 C. Aburius (cf. 1) Geminus (-134 BC); Nomisma: C. Aburius Geminus'
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/3595
   target: http://nomisma.org/id/m_avreli_cota_rrc
   note: 'DPRR: AURE3595 M. Aurelius (105) Cotta (-139 BC); Nomisma: M. Aurelius Cotta'
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/3594
   target: http://nomisma.org/id/m_avf_rvs_rrc
-  note: 'DPRR: AUFI3594 M. Aufidius (35) (M.? f.) Rusticus (-140 BC); Nomisma: M.
-    Aufidius Rusticus'
+  note: 'DPRR: AUFI3594 M. Aufidius (35) (M.? f.) Rusticus (-140 BC); Nomisma: M. Aufidius Rusticus'
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/1669
   target: http://nomisma.org/id/l_atili_nom_rrc
-  note: 'DPRR: ATIL1669 L. Atilius (44, cf. Nomentanus 1) Cor. Nomentanus (-141 BC);
-    Nomisma: L. Atilius Nomentanus'
+  note: 'DPRR: ATIL1669 L. Atilius (44, cf. Nomentanus 1) Cor. Nomentanus (-141 BC); Nomisma: L. Atilius Nomentanus'
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/1616
   target: http://nomisma.org/id/an_rvf_rrc
-  note: 'DPRR: ANNI1616 T. Annius (78) T. f. T. n. Rufus (-144 BC); Nomisma: T. Annius
-    Rufus'
+  note: 'DPRR: ANNI1616 T. Annius (78) T. f. T. n. Rufus (-144 BC); Nomisma: T. Annius Rufus'
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/3593
   target: http://nomisma.org/id/m_atili_saran_rrc
-  note: 'DPRR: ATIL3593 M. Atilius (67, cf. 22) Saranus (-148 BC); Nomisma: M. Atilius
-    Saranus'
+  note: 'DPRR: ATIL3593 M. Atilius (67, cf. 22) Saranus (-148 BC); Nomisma: M. Atilius Saranus'
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/3656
   target: http://nomisma.org/id/q_marc_libo_rrc
   note: 'DPRR: MARC3656 Q. Marcius (70) Libo (-148 BC); Nomisma: Q. Marcius Libo'
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/3629
   target: http://nomisma.org/id/p_svla_rrc
-  note: 'DPRR: CORN3629 P. Cornelius (cf. 384) Sulla (-151 BC); Nomisma: P. Cornelius
-    Sulla'
+  note: 'DPRR: CORN3629 P. Cornelius (cf. 384) Sulla (-151 BC); Nomisma: P. Cornelius Sulla'
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/1390
   target: http://nomisma.org/id/p_blas_rrc
-  note: 'DPRR: CORN1390 P. Cornelius (76) P. f. Blasio (-169 BC); Nomisma: P. Cornelius
-    Blasio'
+  note: 'DPRR: CORN1390 P. Cornelius (76) P. f. Blasio (-169 BC); Nomisma: P. Cornelius Blasio'
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/3778
   target: http://nomisma.org/id/c_sax_rrc
-  note: 'DPRR: CLUV3778 C. Cluvius (cf. 14) (C.? f.) Saxula (-169 BC); Nomisma: C.
-    Cluvius Saxula'
+  note: 'DPRR: CLUV3778 C. Cluvius (cf. 14) (C.? f.) Saxula (-169 BC); Nomisma: C. Cluvius Saxula'
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/1323
   target: http://nomisma.org/id/lfp_rrc
   note: 'DPRR: FURI1323 L. Furius (77) Philus (-189 BC); Nomisma: L. Furius Philus'
@@ -693,38 +665,31 @@ links:
   note: 'DPRR: MANL0959 P. Manlius (98) Vulso (-210 BC); Nomisma: P. Manlius Vulso'
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/980
   target: http://nomisma.org/id/cn_co_rrc
-  note: 'DPRR: CORN0980 Cn. Cornelius (131) Dolabella (-211 BC); Nomisma: Cn. Cornelius
-    Dolabella'
+  note: 'DPRR: CORN0980 Cn. Cornelius (131) Dolabella (-211 BC); Nomisma: Cn. Cornelius Dolabella'
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/3670
   target: http://nomisma.org/id/scarpvs_imp_rrc
   note: 'DPRR: PINA3670 L. Pinarius (27) Scarpus (-31 BC); Nomisma: L. Pinarius Scarpus'
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/2638
   target: http://nomisma.org/id/p_ventidi_pont_imp_rrc
-  note: 'DPRR: VENT2638 P. Ventidius (5) P. f. Fab. Bassus (-39 BC); Nomisma: P. Ventidius
-    Bassus'
+  note: 'DPRR: VENT2638 P. Ventidius (5) P. f. Fab. Bassus (-39 BC); Nomisma: P. Ventidius Bassus'
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/2823
   target: http://nomisma.org/id/l_atratinvs_avgvr_rrc
-  note: 'DPRR: SEMP2823 L. Sempronius (26) L. f. L. n. Fal. Atratinus (-39 BC); Nomisma:
-    L. Sempronius Atratinus'
+  note: 'DPRR: SEMP2823 L. Sempronius (26) L. f. L. n. Fal. Atratinus (-39 BC); Nomisma: L. Sempronius Atratinus'
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/3061
   target: http://nomisma.org/id/q_voconivs_vitvlvs_q_design_rrc
   note: 'DPRR: VOCO3061 Q. Voconius (5) Vitulus (-39 BC); Nomisma: Q. Voconius Vitulus'
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/2788
   target: http://nomisma.org/id/q_salvivs_imp_cos_desig_rrc
-  note: 'DPRR: SALV2788 Q. Salvidienus (4) Rufus Salvius (-40 BC); Nomisma: Q. Salvidienus
-    Rufus'
+  note: 'DPRR: SALV2788 Q. Salvidienus (4) Rufus Salvius (-40 BC); Nomisma: Q. Salvidienus Rufus'
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/2777
   target: http://nomisma.org/id/q_labienvs_parthicvs_imp_rrc
-  note: 'DPRR: LABI2777 Q. Labienus (5) T. f. Parthicus (-40 BC); Nomisma: Q. Labienus
-    Parthicus'
+  note: 'DPRR: LABI2777 Q. Labienus (5) T. f. Parthicus (-40 BC); Nomisma: Q. Labienus Parthicus'
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/3052
   target: http://nomisma.org/id/ti_sempronivs_graccvs_rrc
-  note: 'DPRR: SEMP3052 Ti. Sempronius (56) Gracchus (-40 BC); Nomisma: Ti. Sempronius
-    Gracchus'
+  note: 'DPRR: SEMP3052 Ti. Sempronius (56) Gracchus (-40 BC); Nomisma: Ti. Sempronius Gracchus'
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/3097
   target: http://nomisma.org/id/c_clodivs_c_f_vestalis_rrc
-  note: 'DPRR: CLOD3097 C. Clodius (62) C. f. Arn. Vestalis (-41 BC); Nomisma: C.
-    Clodius Vestalis'
+  note: 'DPRR: CLOD3097 C. Clodius (62) C. f. Arn. Vestalis (-41 BC); Nomisma: C. Clodius Vestalis'
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/3512
   target: http://nomisma.org/id/c_nvmonivs_vaala_rrc
   note: 'DPRR: NUMO3512 C. Numonius (1) Vaala (-41 BC); Nomisma: C. Numonius Vaala'
@@ -736,97 +701,79 @@ links:
   note: 'DPRR: ARRI3592 M. Arrius (34) Secundus (-41 BC); Nomisma: M. Arrius Secundus'
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/2819
   target: http://nomisma.org/id/balbvs_pro_pr_rrc
-  note: 'DPRR: CORN2819 L. Cornelius (69) L. f. Clu. Balbus (-41 BC); Nomisma: L.
-    Cornelius Balbus'
+  note: 'DPRR: CORN2819 L. Cornelius (69) L. f. Clu. Balbus (-41 BC); Nomisma: L. Cornelius Balbus'
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/2802
   target: http://nomisma.org/id/l_gell_q_p_rrc
-  note: 'DPRR: GELL2802 L. Gellius (18) L. f. L. n. Poplicola (-41 BC); Nomisma: L.
-    Gellius Poplicola'
+  note: 'DPRR: GELL2802 L. Gellius (18) L. f. L. n. Poplicola (-41 BC); Nomisma: L. Gellius Poplicola'
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/2800
   target: http://nomisma.org/id/m_barbat_q_p_rrc
   note: 'DPRR: BARB2800 M. Barbatius (1) Pollio (-41 BC); Nomisma: M. Barbatius Pollio'
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/2806
   target: http://nomisma.org/id/m_nerva_proq_p_rrc
-  note: 'DPRR: COCC2806 M. Cocceius (13) Pap. Nerva (-41 BC); Nomisma: M. Cocceius
-    Nerva'
+  note: 'DPRR: COCC2806 M. Cocceius (13) Pap. Nerva (-41 BC); Nomisma: M. Cocceius Nerva'
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/2588
   target: http://nomisma.org/id/mvrcvs_imp_rrc
   note: 'DPRR: STAI2588 L. Staius (2) Vol. Murcus (-42 BC); Nomisma: L. Staius Murcus'
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/2720
   target: http://nomisma.org/id/casca_longvs_rrc
-  note: 'DPRR: SERV2720 P. Servilius (53) Casca Longus (-43 BC); Nomisma: P. Servilius
-    Casca Longus'
+  note: 'DPRR: SERV2720 P. Servilius (53) Casca Longus (-43 BC); Nomisma: P. Servilius Casca Longus'
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/2241
   target: http://nomisma.org/id/m_cato_rrc
-  note: 'DPRR: PORC2241 M. Porcius (16) M. f. M. n. Pap. Cato (Uticensis) (-47 BC);
-    Nomisma: M. Porcius Cato'
+  note: 'DPRR: PORC2241 M. Porcius (16) M. f. M. n. Pap. Cato (Uticensis) (-47 BC); Nomisma: M. Porcius Cato'
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/2495
   target: http://nomisma.org/id/c_vibivs_c_f_pansa_rrc
-  note: 'DPRR: VIBI2495 C. Vibius (16) C. f. C. n. Tro. Pansa Caetronianus (-48 BC);
-    Nomisma: C. Vibius Pansa'
+  note: 'DPRR: VIBI2495 C. Vibius (16) C. f. C. n. Tro. Pansa Caetronianus (-48 BC); Nomisma: C. Vibius Pansa'
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/2397
   target: http://nomisma.org/id/c_marc_cos_rrc
-  note: 'DPRR: CLAU2397 C. Claudius (217) M. f. M. n. Marcellus (-49 BC); Nomisma:
-    C. Claudius Marcellus'
+  note: 'DPRR: CLAU2397 C. Claudius (217) M. f. M. n. Marcellus (-49 BC); Nomisma: C. Claudius Marcellus'
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/2524
   target: http://nomisma.org/id/c_coil_cald_rrc
   note: 'DPRR: COEL2524 C. Coelius (14) Caldus (-51 BC); Nomisma: C. Coelius Caldus'
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/2372
   target: http://nomisma.org/id/p_crassvs_ivn_leg_pro_pr_rrc
-  note: 'DPRR: LICI2372 P. Licinius (63) M. f. (P.? n.) Crassus (-55 BC); Nomisma:
-    P. Licinius Crassus Iunianus Damasippus'
+  note: 'DPRR: LICI2372 P. Licinius (63) M. f. (P.? n.) Crassus (-55 BC); Nomisma: P. Licinius Crassus Iunianus Damasippus'
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/2082
   target: http://nomisma.org/id/cn_lentvl_rrc
-  note: 'DPRR: CORN2082 Cn. Cornelius (228, 24) P. f. Lentulus Marcellinus (-59 BC);
-    Nomisma: Cn. Cornelius Lentulus Clodianus'
+  note: 'DPRR: CORN2082 Cn. Cornelius (228, 24) P. f. Lentulus Marcellinus (-59 BC); Nomisma: Cn. Cornelius Lentulus Clodianus'
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/2518
   target: http://nomisma.org/id/libo_rrc
-  note: 'DPRR: SCRI2518 L. Scribonius (20) L. f. Libo (-62 BC); Nomisma: L. Scribonius
-    Libo'
+  note: 'DPRR: SCRI2518 L. Scribonius (20) L. f. Libo (-62 BC); Nomisma: L. Scribonius Libo'
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/2025
   target: http://nomisma.org/id/c_mall_rrc
-  note: 'DPRR: PUBL2025 C. Publicius (9) Q. f. Malleolus (-80 BC); Nomisma: C. Publicius
-    Malleolus'
+  note: 'DPRR: PUBL2025 C. Publicius (9) Q. f. Malleolus (-80 BC); Nomisma: C. Publicius Malleolus'
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/3586
   target: http://nomisma.org/id/l_vol_l_f_strab_rrc
-  note: 'DPRR: VOLU3586 L. Volumnius (3, 14) L. f. Strabo (-81 BC); Nomisma: L. Volumnius
-    Strabo'
+  note: 'DPRR: VOLU3586 L. Volumnius (3, 14) L. f. Strabo (-81 BC); Nomisma: L. Volumnius Strabo'
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/3507
   target: http://nomisma.org/id/c_mari_c_f_capit_rrc
   note: 'DPRR: MARI3507 C. Marius (33) Capito (-81 BC); Nomisma: C. Marius Capito'
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/2013
   target: http://nomisma.org/id/l_fabi_l_f_hisp_rrc
-  note: 'DPRR: FABI2013 L. Fabius (84) L. f. Hispaniensis (-82 BC); Nomisma: L. Fabius
-    Hispaniensis'
+  note: 'DPRR: FABI2013 L. Fabius (84) L. f. Hispaniensis (-82 BC); Nomisma: L. Fabius Hispaniensis'
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/3552
   target: http://nomisma.org/id/l_censorin_rrc
   note: 'DPRR: MARC3552 L. Marcius (47) Censorinus (-82 BC); Nomisma: L. Marcius Censorinus'
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/3506
   target: http://nomisma.org/id/c_mamil_limetanvs_c_f_rrc
-  note: 'DPRR: MAMI3506 C. Mamilius (8) Q. f. M. n. Pap. Limetanus (-82 BC); Nomisma:
-    C. Mamilius Limetanus'
+  note: 'DPRR: MAMI3506 C. Mamilius (8) Q. f. M. n. Pap. Limetanus (-82 BC); Nomisma: C. Mamilius Limetanus'
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/1984
   target: http://nomisma.org/id/q_anto_balb_pr_rrc
   note: 'DPRR: ANTO1984 Q. Antonius (41) Balbus (-83 BC); Nomisma: Q. Antonius Balbus'
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/2064
   target: http://nomisma.org/id/cn_len_q_rrc
-  note: 'DPRR: CORN2064 Cn. Cornelius (216) Cn. f. Cn. n. Lentulus Clodianu (-88 BC);
-    Nomisma: Cn. Cornelius Lentulus Marcellinus'
+  note: 'DPRR: CORN2064 Cn. Cornelius (216) Cn. f. Cn. n. Lentulus Clodianu (-88 BC); Nomisma: Cn. Cornelius Lentulus Marcellinus'
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/1896
   target: http://nomisma.org/id/piso_q_rrc
-  note: 'DPRR: CALP1896 L. Calpurnius (98) Piso Frugi (-90 BC); Nomisma: L. Calpurnius
-    Piso (Caesoninus)'
+  note: 'DPRR: CALP1896 L. Calpurnius (98) Piso Frugi (-90 BC); Nomisma: L. Calpurnius Piso (Caesoninus)'
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/3526
   target: http://nomisma.org/id/c_vibivs_c_f_c_n_pansa_rrc
-  note: 'DPRR: VIBI3526 C. Vibius (15) C. f. Pansa (-90 BC); Nomisma: C. Vibius Pansa
-    Caetronianus'
+  note: 'DPRR: VIBI3526 C. Vibius (15) C. f. Pansa (-90 BC); Nomisma: C. Vibius Pansa Caetronianus'
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/3640
   target: http://nomisma.org/id/p_mae_ant_mf_rrc
   note: 'DPRR: MAEN3640 P. Maenius (18) Ant[ias] (-132 BC); Nomisma: P. Maenius Ant[ias]'
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/3544
   target: http://nomisma.org/id/l_pl_h_rrc
-  note: 'DPRR: PL[A3544 L. Pl[autius] (cf. 19) H[ypsaeus] (-192 BC); Nomisma: L. Pl[autius]
-    H[ypsaeus]'
+  note: 'DPRR: PL[A3544 L. Pl[autius] (cf. 19) H[ypsaeus] (-192 BC); Nomisma: L. Pl[autius] H[ypsaeus]'
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/2458
   target: http://nomisma.org/id/c_cassivs_rrc
   note: 'DPRR: CASS2458 C. Cassius (59) Longinus (-43 BC); Nomisma: C. Cassius L.f.Longinus'
@@ -835,37 +782,388 @@ links:
   note: 'DPRR: FLAV2744 C. Flavius (11) Hemicillus (-43 BC); Nomisma: C. Flavius Hemic'
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/2456
   target: http://nomisma.org/id/p_crassvs_m_f_rrc
-  note: 'DPRR: LICI2456 P. Licinius (65, 75) Crassus Iunianus Damasippus =  (-47 BC);
-    Nomisma: P. Licinius Crassus'
+  note: 'DPRR: LICI2456 P. Licinius (65, 75) Crassus Iunianus Damasippus =  (-47 BC); Nomisma: P. Licinius Crassus'
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/1424
   target: http://nomisma.org/id/q_me_rrc
-  note: 'DPRR: CAEC1424 Q. Caecilius (94) Q. f. L. n. Metellus Macedonicus; Nomisma:
-    Q. Caecilius Metellus Macedonicus; disambiguated by date_proximity (3yr)'
+  note: 'DPRR: CAEC1424 Q. Caecilius (94) Q. f. L. n. Metellus Macedonicus; Nomisma: Q. Caecilius Metellus Macedonicus; disambiguated
+    by date_proximity (3yr)'
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/3524
   target: http://nomisma.org/id/c_val_c_f_flac_rrc
-  note: 'DPRR: VALE3524 C. Valerius (167) C. f. Flaccus; Nomisma: C. Valerius Flaccus;
-    disambiguated by date_proximity (0yr)'
+  note: 'DPRR: VALE3524 C. Valerius (167) C. f. Flaccus; Nomisma: C. Valerius Flaccus; disambiguated by date_proximity (0yr)'
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/3532
   target: http://nomisma.org/id/cn_dom_2_rrc
-  note: 'DPRR: DOMI3532 Cn. Domitius (cf. 20, Supb.3.349) (Calvinus?, Aheno; Nomisma:
-    Cn. Domitius Ahenobarbus; disambiguated by date_proximity (12yr)'
+  note: 'DPRR: DOMI3532 Cn. Domitius (cf. 20, Supb.3.349) (Calvinus?, Aheno; Nomisma: Cn. Domitius Ahenobarbus; disambiguated
+    by date_proximity (12yr)'
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/1821
   target: http://nomisma.org/id/c_val_fla_imperat_rrc
-  note: 'DPRR: VALE1821 C. Valerius (168) C. f. L. n. Flaccus; Nomisma: C. Valerius
-    Flaccus; disambiguated by date_proximity (0yr)'
+  note: 'DPRR: VALE1821 C. Valerius (168) C. f. L. n. Flaccus; Nomisma: C. Valerius Flaccus; disambiguated by date_proximity
+    (0yr)'
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/2347
   target: http://nomisma.org/id/q_c_m_p_i_rrc
-  note: 'DPRR: CAEC2347 Q. Caecilius (99) Q. f. Q. n. Fab. Metellus Pius Sc; Nomisma:
-    Q. Caecilius Metellus Pius; disambiguated by date_proximity (34yr)'
+  note: 'DPRR: CAEC2347 Q. Caecilius (99) Q. f. Q. n. Fab. Metellus Pius Sc; Nomisma: Q. Caecilius Metellus Pius; disambiguated
+    by date_proximity (34yr)'
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/2394
   target: http://nomisma.org/id/marcellinvs_rrc
-  note: 'DPRR: CORN2394 P. Cornelius (239) P. f. Lentulus Spinther; Nomisma: P. Cornelius
-    Lentulus Marcellinus; disambiguated by date_proximity (8yr)'
+  note: 'DPRR: CORN2394 P. Cornelius (239) P. f. Lentulus Spinther; Nomisma: P. Cornelius Lentulus Marcellinus; disambiguated
+    by date_proximity (8yr)'
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/2699
   target: http://nomisma.org/id/cn_domitivs_l_f_imp_rrc
-  note: 'DPRR: DOMI2699 Cn. Domitius (23) L. f. Cn. n. Ahenobarbus; Nomisma: Cn. Domitius
-    Ahenobarbus; disambiguated by date_proximity (0yr)'
+  note: 'DPRR: DOMI2699 Cn. Domitius (23) L. f. Cn. n. Ahenobarbus; Nomisma: Cn. Domitius Ahenobarbus; disambiguated by date_proximity
+    (0yr)'
 - source: http://romanrepublic.ac.uk/rdf/entity/Person/2313
   target: http://nomisma.org/id/dom_cos_iter_imp_rrc
-  note: 'DPRR: DOMI2313 Cn. Domitius (43) M. f. M. n. Men. Calvinus; Nomisma: Cn.
-    Domitius Calvinus; disambiguated by 1:1 (?)'
+  note: 'DPRR: DOMI2313 Cn. Domitius (43) M. f. M. n. Men. Calvinus; Nomisma: Cn. Domitius Calvinus; disambiguated by 1:1
+    (?)'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2324
+  target: http://nomisma.org/id/a_allienvs_pro_cos_rrc
+  note: 'Wikidata-confirmed: Aulus Allienus; DPRR 2324 = Nomisma a_allienvs_pro_cos_rrc'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3682
+  target: http://nomisma.org/id/ti_vetvr_rrc
+  note: 'Wikidata-confirmed: Tiberius Veturius Gracchus Sempronianus; DPRR 3682 = Nomisma ti_vetvr_rrc'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3525
+  target: http://nomisma.org/id/c_vibivs_varvs_rrc
+  note: 'Wikidata-confirmed: Gaius Vibius Varus; DPRR 3525 = Nomisma c_vibivs_varvs_rrc'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2015
+  target: http://nomisma.org/id/c_tarqviti_p_f_rrc
+  note: 'Wikidata-confirmed: Gaius Tarquitius; DPRR 2015 = Nomisma c_tarqviti_p_f_rrc'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3498
+  target: http://nomisma.org/id/c_cvr_f_trige_rrc
+  note: 'Wikidata-confirmed: Gaius Curiatius Trigeminus; DPRR 3498 = Nomisma c_cvr_f_trige_rrc'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3650
+  target: http://nomisma.org/id/pvr_1_rrc
+  note: 'Wikidata-confirmed: Purpurio; DPRR 3650 = Nomisma pvr_1_rrc'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3623
+  target: http://nomisma.org/id/nat_rrc
+  note: 'Wikidata-confirmed: Pinarius Natta; DPRR 3623 = Nomisma nat_rrc'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3613
+  target: http://nomisma.org/id/mat_rrc
+  note: 'Wikidata-confirmed: Matienus; DPRR 3613 = Nomisma mat_rrc'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3665
+  target: http://nomisma.org/id/qlc_rrc
+  note: 'Wikidata-confirmed: Quintus Lutatius Cerco; DPRR 3665 = Nomisma qlc_rrc'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/807
+  target: http://nomisma.org/id/m_valerivs_laevinvs_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Marcus Valerius Laevinus; DPRR 807 = Nomisma m_valerivs_laevinvs_rrc; 2 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/885
+  target: http://nomisma.org/id/m_sila_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Marcus Junius Silanus; DPRR 885 = Nomisma m_sila_rrc; 12 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/938
+  target: http://nomisma.org/id/c_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Lucius Cornelius Lentulus; DPRR 938 = Nomisma c_rrc; 6 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/983
+  target: http://nomisma.org/id/avr_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Gaius Aurunculeius; DPRR 983 = Nomisma avr_rrc; 6 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/999
+  target: http://nomisma.org/id/flamininus
+  note: 'Wikidata CRRO-issuer-confirmed: Titus Quinctius Flamininus; DPRR 999 = Nomisma flamininus; 3 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1193
+  target: http://nomisma.org/id/a_cae_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Aulus Caecilius; DPRR 1193 = Nomisma a_cae_rrc; 5 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1269
+  target: http://nomisma.org/id/c_scr_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Gaius Scribonius; DPRR 1269 = Nomisma c_scr_rrc; 7 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1366
+  target: http://nomisma.org/id/cn_dom_1_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Gnaeus Domitius Ahenobarbus; DPRR 1366 = Nomisma cn_dom_1_rrc; 4 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1383
+  target: http://nomisma.org/id/mae_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Quintus Maenius; DPRR 1383 = Nomisma mae_rrc; 7 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1393
+  target: http://nomisma.org/id/l_coil_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Lucius Coelius Antipater; DPRR 1393 = Nomisma l_coil_rrc; 1 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1520
+  target: http://nomisma.org/id/mvrena_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Lucius Licinius Murena; DPRR 1520 = Nomisma mvrena_rrc; 5 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1532
+  target: http://nomisma.org/id/l_ivli_i_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Lucius Julius; DPRR 1532 = Nomisma l_ivli_i_rrc; 1 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1537
+  target: http://nomisma.org/id/varo_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Aulus Terentius Varro; DPRR 1537 = Nomisma varo_rrc; 6 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1642
+  target: http://nomisma.org/id/sex_ivli_caisar_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Sextus Julius Caesar; DPRR 1642 = Nomisma sex_ivli_caisar_rrc; 1 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1675
+  target: http://nomisma.org/id/sex_pom_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Sextus Pompeius; DPRR 1675 = Nomisma sex_pom_rrc; 6 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1683
+  target: http://nomisma.org/id/m_avreli_scavri_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Marcus Aurelius Scaurus; DPRR 1683 = Nomisma m_avreli_scavri_rrc; 1 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1740
+  target: http://nomisma.org/id/c_anni_t_f_t_n_pro_cos_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Gaius Annius Luscus; DPRR 1740 = Nomisma c_anni_t_f_t_n_pro_cos_rrc; 11 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1787
+  target: http://nomisma.org/id/q_met_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Quintus Caecilius Metellus Nepos; DPRR 1787 = Nomisma q_met_rrc; 3 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1942
+  target: http://nomisma.org/id/ver_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Marcus Vergilius; DPRR 1942 = Nomisma ver_rrc; 14 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2014
+  target: http://nomisma.org/id/a_manli_a_f_q_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Aulus Manlius; DPRR 2014 = Nomisma a_manli_a_f_q_rrc; 3 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2087
+  target: http://nomisma.org/id/l_plaetori_l_f_q_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Lucius Plaetorius Cestianus; DPRR 2087 = Nomisma l_plaetori_l_f_q_rrc; 3 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2205
+  target: http://nomisma.org/id/l_manli_t_proq_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Lucius Manlius Torquatus; DPRR 2205 = Nomisma l_manli_t_proq_rrc; 5 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2253
+  target: http://nomisma.org/id/gnaeus_pompeius
+  note: 'Wikidata CRRO-issuer-confirmed: Gnaeus Pompeius Magnus; DPRR 2253 = Nomisma gnaeus_pompeius; 12 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2254
+  target: http://nomisma.org/id/sextus_pompey
+  note: 'Wikidata CRRO-issuer-confirmed: Sextus Pompey; DPRR 2254 = Nomisma sextus_pompey; 27 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2257
+  target: http://nomisma.org/id/l_cassi_q_f_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Lucius Cassius Longinus; DPRR 2257 = Nomisma l_cassi_q_f_rrc; 1 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2405
+  target: http://nomisma.org/id/l_procili_f_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Lucius Procilius; DPRR 2405 = Nomisma l_procili_f_rrc; 2 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2544
+  target: http://nomisma.org/id/varro_pro_q_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Terentius Varro; DPRR 2544 = Nomisma varro_pro_q_rrc; 3 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2573
+  target: http://nomisma.org/id/q_cornvfici_avgvr_imp_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Quintus Cornificius; DPRR 2573 = Nomisma q_cornvfici_avgvr_imp_rrc; 5 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2575
+  target: http://nomisma.org/id/longin_iii_v_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Lucius Cassius Longinus; DPRR 2575 = Nomisma longin_iii_v_rrc; 1 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2618
+  target: http://nomisma.org/id/m_aqvinivs_leg_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Marcus Aquinius; DPRR 2618 = Nomisma m_aqvinivs_leg_rrc; 1 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2629
+  target: http://nomisma.org/id/l_livineivs_regvlvs_iiii_vir_a_p_f_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Lucius Livineius Regulus; DPRR 2629 = Nomisma l_livineivs_regvlvs_iiii_vir_a_p_f_rrc;
+    17 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2692
+  target: http://nomisma.org/id/d_tvr_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Decimus Turullius; DPRR 2692 = Nomisma d_tvr_rrc; 1 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2719
+  target: http://nomisma.org/id/m_servilivs_leg_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Marcus Servilius; DPRR 2719 = Nomisma m_servilivs_leg_rrc; 5 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2729
+  target: http://nomisma.org/id/l_sesti_pro_q_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Lucius Sestius Albanianus Quirinalis; DPRR 2729 = Nomisma l_sesti_pro_q_rrc; 4 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2747
+  target: http://nomisma.org/id/m_silanvs_avg_q_pro_cos_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Marcus Junius Silanus; DPRR 2747 = Nomisma m_silanvs_avg_q_pro_cos_rrc; 1 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2795
+  target: http://nomisma.org/id/scarpvs_imp_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Lucius Pinarius; DPRR 2795 = Nomisma scarpvs_imp_rrc; 15 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2808
+  target: http://nomisma.org/id/agrippa
+  note: 'Wikidata CRRO-issuer-confirmed: Marcus Vipsanius Agrippa; DPRR 2808 = Nomisma agrippa; 3 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3476
+  target: http://nomisma.org/id/a_manli_q_f_ser_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Aulus Manlius Sergianus; DPRR 3476 = Nomisma a_manli_q_f_ser_rrc; 1 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3478
+  target: http://nomisma.org/id/a_post_a_f_s_n_albin_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Aulus Postumius Albinus; DPRR 3478 = Nomisma a_post_a_f_s_n_albin_rrc; 2 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3479
+  target: http://nomisma.org/id/a_spvri_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Aulus Spurius; DPRR 3479 = Nomisma a_spvri_rrc; 1 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3480
+  target: http://nomisma.org/id/al_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Aelius; DPRR 3480 = Nomisma al_rrc; 1 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3482
+  target: http://nomisma.org/id/avtr_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Lucius Autronius; DPRR 3482 = Nomisma avtr_rrc; 1 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3483
+  target: http://nomisma.org/id/bal_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Balbus; DPRR 3483 = Nomisma bal_rrc; 5 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3485
+  target: http://nomisma.org/id/c_var_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Gaius Terentius Varro; DPRR 3485 = Nomisma c_var_rrc; 2 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3487
+  target: http://nomisma.org/id/c_al_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Gaius Aelius; DPRR 3487 = Nomisma c_al_rrc; 4 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3492
+  target: http://nomisma.org/id/c_cassi_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Caius Cassius; DPRR 3492 = Nomisma c_cassi_rrc; 4 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3497
+  target: http://nomisma.org/id/c_cvr_trige_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Gaius Curiatius Trigeminus; DPRR 3497 = Nomisma c_cvr_trige_rrc; 1 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3499
+  target: http://nomisma.org/id/c_fabi_c_f_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Gaius Fabius Hadrianus; DPRR 3499 = Nomisma c_fabi_c_f_rrc; 4 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3503
+  target: http://nomisma.org/id/c_maiani_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Gaius Maianius; DPRR 3503 = Nomisma c_maiani_rrc; 8 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3511
+  target: http://nomisma.org/id/c_nvmitori_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Gaius Numitorius; DPRR 3511 = Nomisma c_nvmitori_rrc; 7 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3513
+  target: http://nomisma.org/id/c_plvti_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Gaius Plautius; DPRR 3513 = Nomisma c_plvti_rrc; 2 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3516
+  target: http://nomisma.org/id/c_sae_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Caius Saenius; DPRR 3516 = Nomisma c_sae_rrc; 1 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3520
+  target: http://nomisma.org/id/c_svlpici_c_f_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Caius Sulpicius Galba; DPRR 3520 = Nomisma c_svlpici_c_f_rrc; 4 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3521
+  target: http://nomisma.org/id/c_tal_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Caius Iuventus Thalna; DPRR 3521 = Nomisma c_tal_rrc; 3 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3523
+  target: http://nomisma.org/id/c_titini_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Gaius Titinius; DPRR 3523 = Nomisma c_titini_rrc; 4 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3527
+  target: http://nomisma.org/id/cetegvs_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Cornelius Cethegus; DPRR 3527 = Nomisma cetegvs_rrc; 1 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3528
+  target: http://nomisma.org/id/cina_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Lucius Cornelius Cinna; DPRR 3528 = Nomisma cina_rrc; 5 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3530
+  target: http://nomisma.org/id/cn_calp_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Gnaeus Calpurnius; DPRR 3530 = Nomisma cn_calp_rrc; 1 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3536
+  target: http://nomisma.org/id/cnfovl_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Cnaeus Fulvius; DPRR 3536 = Nomisma cnfovl_rrc; 3 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3553
+  target: http://nomisma.org/id/l_cosco_m_f_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Lucius Cosconius; DPRR 3553 = Nomisma l_cosco_m_f_rrc; 1 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3556
+  target: http://nomisma.org/id/l_cvp_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Lucius Cupiennius; DPRR 3556 = Nomisma l_cvp_rrc; 1 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3560
+  target: http://nomisma.org/id/l_iti_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Lucius Itius; DPRR 3560 = Nomisma l_iti_rrc; 1 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3564
+  target: http://nomisma.org/id/l_mamili_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Lucius Mamilius; DPRR 3564 = Nomisma l_mamili_rrc; 16 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3567
+  target: http://nomisma.org/id/l_minvci_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Lucius Minucius; DPRR 3567 = Nomisma l_minvci_rrc; 4 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3568
+  target: http://nomisma.org/id/l_mvssidivs_t_f_longvs_iiii_vir_a_p_f_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Lucius Mussidius Longus; DPRR 3568 = Nomisma l_mvssidivs_t_f_longvs_iiii_vir_a_p_f_rrc;
+    30 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3571
+  target: http://nomisma.org/id/l_philippvs_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Lucius Marcius Philippus; DPRR 3571 = Nomisma l_philippvs_rrc; 3 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3579
+  target: http://nomisma.org/id/l_savf_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Lucius Saufeius; DPRR 3579 = Nomisma l_savf_rrc; 6 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3590
+  target: http://nomisma.org/id/m_acilivs_m_f_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Marcus Acilius; DPRR 3590 = Nomisma m_acilivs_m_f_rrc; 5 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3596
+  target: http://nomisma.org/id/m_avreli_scavri_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Marcus Aurelius Scaurus; DPRR 3596 = Nomisma m_avreli_scavri_rrc; 1 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3597
+  target: http://nomisma.org/id/m_baebi_q_f_tampil_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Marcus Baebius Tamphilus; DPRR 3597 = Nomisma m_baebi_q_f_tampil_rrc; 7 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3601
+  target: http://nomisma.org/id/m_fabrini_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Marcus Fabrinius; DPRR 3601 = Nomisma m_fabrini_rrc; 4 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3605
+  target: http://nomisma.org/id/m_marci_mn_f_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Marcus Marcius; DPRR 3605 = Nomisma m_marci_mn_f_rrc; 3 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3609
+  target: http://nomisma.org/id/m_titini_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Marcus Titinius; DPRR 3609 = Nomisma m_titini_rrc; 6 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3610
+  target: http://nomisma.org/id/m_tvlli_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Marcus Tullius; DPRR 3610 = Nomisma m_tvlli_rrc; 1 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3614
+  target: http://nomisma.org/id/me_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Metellus; DPRR 3614 = Nomisma me_rrc; 7 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3619
+  target: http://nomisma.org/id/mn_fontei_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Manius Fonteius; DPRR 3619 = Nomisma mn_fontei_rrc; 5 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3625
+  target: http://nomisma.org/id/ogvl_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Ogulnius; DPRR 3625 = Nomisma ogvl_rrc; 14 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3626
+  target: http://nomisma.org/id/opei_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Opeimius; DPRR 3626 = Nomisma opei_rrc; 6 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3627
+  target: http://nomisma.org/id/opeimi_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Opeimius; DPRR 3627 = Nomisma opeimi_rrc; 5 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3628
+  target: http://nomisma.org/id/p_paetvs_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Publius Aelius Paetus; DPRR 3628 = Nomisma p_paetvs_rrc; 1 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3632
+  target: http://nomisma.org/id/p_calp_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Publius Calpurnius; DPRR 3632 = Nomisma p_calp_rrc; 3 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3633
+  target: http://nomisma.org/id/p_clodivs_m_f_iiii_vir_a_p_f_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Publius Clodius; DPRR 3633 = Nomisma p_clodivs_m_f_iiii_vir_a_p_f_rrc; 14 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3635
+  target: http://nomisma.org/id/p_crepvsi_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Publius Crepusius; DPRR 3635 = Nomisma p_crepvsi_rrc; 7 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3639
+  target: http://nomisma.org/id/p_mae_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Publius Maenius; DPRR 3639 = Nomisma p_mae_rrc; 1 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3642
+  target: http://nomisma.org/id/p_sabin_q_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Publius Vettius Sabinius; DPRR 3642 = Nomisma p_sabin_q_rrc; 1 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3646
+  target: http://nomisma.org/id/pae_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Aelius Paetus; DPRR 3646 = Nomisma pae_rrc; 5 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3651
+  target: http://nomisma.org/id/pvr_2_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Purpurio; DPRR 3651 = Nomisma pvr_2_rrc; 7 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3654
+  target: http://nomisma.org/id/q_cvrti_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Quintus Curtius; DPRR 3654 = Nomisma q_cvrti_rrc; 12 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3655
+  target: http://nomisma.org/id/q_mar_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Quintus Marcius; DPRR 3655 = Nomisma q_mar_rrc; 3 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3657
+  target: http://nomisma.org/id/q_mari_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Quintus Marius; DPRR 3657 = Nomisma q_mari_rrc; 6 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3659
+  target: http://nomisma.org/id/q_pilipvs_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Quintus Marcius Philippus; DPRR 3659 = Nomisma q_pilipvs_rrc; 1 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3664
+  target: http://nomisma.org/id/q_vr_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Quintus Urbinius; DPRR 3664 = Nomisma q_vr_rrc; 3 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3666
+  target: http://nomisma.org/id/s_fv_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Spurius Furius; DPRR 3666 = Nomisma s_fv_rrc; 1 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3667
+  target: http://nomisma.org/id/safra_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Safra; DPRR 3667 = Nomisma safra_rrc; 7 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3668
+  target: http://nomisma.org/id/sar_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Saranus; DPRR 3668 = Nomisma sar_rrc; 9 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3669
+  target: http://nomisma.org/id/sax_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Cluvius Saxula; DPRR 3669 = Nomisma sax_rrc; 5 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3672
+  target: http://nomisma.org/id/sx_q_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Sextus Q[uinctilius?]; DPRR 3672 = Nomisma sx_q_rrc; 4 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3678
+  target: http://nomisma.org/id/tal_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Iuventius Thalna; DPRR 3678 = Nomisma tal_rrc; 6 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3679
+  target: http://nomisma.org/id/tamp_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Baebius Tamphilus; DPRR 3679 = Nomisma tamp_rrc; 11 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3680
+  target: http://nomisma.org/id/ti_q_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Tiberius Quinctius; DPRR 3680 = Nomisma ti_q_rrc; 3 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3681
+  target: http://nomisma.org/id/ti_minvci_c_f_avgvrini_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Tiberius Minucius Augurinus; DPRR 3681 = Nomisma ti_minvci_c_f_avgvrini_rrc; 5 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3683
+  target: http://nomisma.org/id/tvrd_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Papirius Turdus; DPRR 3683 = Nomisma tvrd_rrc; 5 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3684
+  target: http://nomisma.org/id/val_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Valerius; DPRR 3684 = Nomisma val_rrc; 6 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3746
+  target: http://nomisma.org/id/d_issuer_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: D[urmius]; DPRR 3746 = Nomisma d_issuer_rrc; 1 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3748
+  target: http://nomisma.org/id/an_or_av_issuer_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Aurelius; DPRR 3748 = Nomisma an_or_av_issuer_rrc; 7 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3825
+  target: http://nomisma.org/id/t_q_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Titus Quinctius Flamininus; DPRR 3825 = Nomisma t_q_rrc; 4 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/5159
+  target: http://nomisma.org/id/c_fvndan_q_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Gaius Fundanius; DPRR 5159 = Nomisma c_fvndan_q_rrc; 2 types'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/5163
+  target: http://nomisma.org/id/flavs_rrc
+  note: 'Wikidata CRRO-issuer-confirmed: Flavus; DPRR 5163 = Nomisma flavs_rrc; 1 types'

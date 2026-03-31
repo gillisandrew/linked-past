@@ -61,4 +61,4 @@ docs/                         # Design specs and implementation plans
 
 ## License
 
-Software: [MIT](LICENSE). Dataset licenses vary — see each dataset's OCI manifest annotations or the [linked-past package README](packages/linked-past/README.md#datasets).
+Software: [AGPL-3.0](LICENSE) (main package), [LGPL-3.0](packages/linked-past-store/LICENSE) (store library). Dataset licenses vary — see each dataset's OCI manifest annotations or the [linked-past package README](packages/linked-past/README.md#datasets).

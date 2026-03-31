@@ -22,7 +22,7 @@ When you publish a paper citing a dataset, the citation should be *reproducible*
 OCI digests solve this. A reference like:
 
 ```
-ghcr.io/gillisandrew/linked-past/dprr@sha256:2aeecdfd3d99...
+ghcr.io/gillisandrew/linked-past/datasets/dprr@sha256:2aeecdfd3d99...
 ```
 
 Is a cryptographic commitment to specific bytes. Any OCI registry serving this digest must serve the same content. The digest is computed from the artifact manifest, which includes the content hashes of all layers. This is the same guarantee that software supply chain security relies on.
@@ -30,7 +30,7 @@ Is a cryptographic commitment to specific bytes. Any OCI registry serving this d
 For scholarly citation, include both the human-readable tag and the digest:
 
 ```
-DPRR RDF dataset v1.3.0 (ghcr.io/gillisandrew/linked-past/dprr:1.3.0,
+DPRR RDF dataset (ghcr.io/gillisandrew/linked-past/datasets/dprr:latest,
 digest sha256:2aeecdfd3d99...). CC BY-NC 4.0.
 ```
 
@@ -172,4 +172,4 @@ Any OCI-compliant registry works:
 
 ## License
 
-MIT. Dataset licenses are declared in OCI manifest annotations — this package is the distribution mechanism, not the data itself.
+[LGPL-3.0](LICENSE). This library can be used as a dependency by proprietary software, but modifications to the library itself must be published under LGPL-3.0. Dataset licenses are declared in OCI manifest annotations — this package is the distribution mechanism, not the data itself.

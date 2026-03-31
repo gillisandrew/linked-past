@@ -814,7 +814,7 @@ def create_mcp_server() -> FastMCP:
             by_confidence.setdefault(link["confidence"], []).append(link)
 
         lines = [f"# Links for `{uri}`\n"]
-        for level in ["confirmed", "probable", "in-data", "candidate"]:
+        for level in ["confirmed", "probable", "concordance", "in-data", "candidate"]:
             group = by_confidence.get(level, [])
             if group:
                 label = "In Dataset" if level == "in-data" else level.title()
