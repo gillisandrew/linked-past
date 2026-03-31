@@ -66,3 +66,4 @@ def test_create_mcp_server():
     assert "get_schema" in tool_names
     assert "validate_sparql" in tool_names
     assert "query" in tool_names
+    assert "disambiguate" in tool_names

@@ -989,6 +989,187 @@ def create_mcp_server() -> FastMCP:
         return content
 
     @mcp.tool()
+    def disambiguate(
+        ctx: Context,
+        uri: str | None = None,
+        name: str | None = None,
+        filiation: str | None = None,
+        office: str | None = None,
+        date: int | None = None,
+        province: str | None = None,
+    ) -> str:
+        """Disambiguate a Roman person against DPRR candidates using filiation, career, geography, and temporal signals.
+
+        Provide either a DPRR/EDH person URI (to extract context automatically) or a name
+        with optional supporting fields. Returns a ranked list of DPRR candidates with
+        per-signal scores and a confidence classification.
+
+        Args:
+            uri: EDH person URI to extract context from (overrides name if no name given).
+            name: Person name (Latin or Greek). Required if uri not provided.
+            filiation: Filiation string, e.g. "M. f. M. n." (father/grandfather abbreviations).
+            office: Office held, e.g. "cos.", "q.", "pr." (abbreviated or full).
+            date: Date of activity (negative = BC), e.g. -129 for 129 BCE.
+            province: Province name or Pleiades URI for the inscription findspot.
+        """
+        from linked_past.core.disambiguate import (
+            WEIGHTS,
+            PersonDisambiguator,
+            SignalResult,
+            extract_context_from_edh_uri,
+            extract_context_from_fields,
+            fetch_dprr_candidates,
+            fetch_dprr_family,
+            fetch_dprr_offices,
+            fetch_dprr_province_pleiades,
+            score_career,
+            score_filiation,
+            score_geography,
+            score_temporal,
+        )
+        from linked_past.core.onomastics import parse_filiation
+
+        app: AppContext = ctx.request_context.lifespan_context
+
+        # ── Build PersonContext ──────────────────────────────────────────────
+        person_ctx = None
+
+        if uri and not name:
+            try:
+                edh_store = app.registry.get_store("edh")
+                person_ctx = extract_context_from_edh_uri(uri, edh_store)
+            except KeyError:
+                return "ERROR: EDH dataset is not loaded. Run `update_dataset('edh')` first."
+            if person_ctx is None:
+                return f"ERROR: No EDH person found at `{uri}`."
+        else:
+            if not name:
+                return "ERROR: Provide either `uri` or `name`."
+            person_ctx = extract_context_from_fields(
+                name=name,
+                filiation=filiation,
+                office=office,
+                date=date,
+                province=province,
+                uri=uri,
+            )
+
+        if person_ctx.nomen is None:
+            return (
+                f"ERROR: Could not parse a nomen from '{person_ctx.name}'. "
+                "Provide a full Roman name (e.g. 'L. Aquillius Florus')."
+            )
+
+        # ── Fetch DPRR candidates ────────────────────────────────────────────
+        try:
+            dprr_store = app.registry.get_store("dprr")
+        except KeyError:
+            return "ERROR: DPRR dataset is not loaded. Run `update_dataset('dprr')` first."
+
+        candidates = fetch_dprr_candidates(dprr_store, person_ctx.nomen)
+        if not candidates:
+            return (
+                f"No DPRR candidates found for nomen **{person_ctx.nomen}**.\n\n"
+                "Try `search_entities()` with the nomen to check spelling."
+            )
+
+        # ── Parse inscription filiation ──────────────────────────────────────
+        inscription_filiation: dict[str, str] = {}
+        if person_ctx.filiation:
+            inscription_filiation = parse_filiation(person_ctx.filiation)
+
+        # ── Score each candidate ─────────────────────────────────────────────
+        disambiguator = PersonDisambiguator()
+        candidates_signals = []
+
+        for cand in candidates:
+            cand_uri = cand.get("person", "")
+            cand_label = cand.get("label", cand_uri)
+            era_from_raw = cand.get("eraFrom")
+            era_to_raw = cand.get("eraTo")
+            try:
+                era_from = int(era_from_raw) if era_from_raw else None
+            except (ValueError, TypeError):
+                era_from = None
+            try:
+                era_to = int(era_to_raw) if era_to_raw else None
+            except (ValueError, TypeError):
+                era_to = None
+
+            # Fetch supporting data for this candidate
+            dprr_offices = fetch_dprr_offices(dprr_store, cand_uri)
+            dprr_family = fetch_dprr_family(dprr_store, cand_uri)
+            province_pleiades = fetch_dprr_province_pleiades(dprr_store, app.linkage, cand_uri)
+
+            # Compute signals
+            t_score, t_expl, t_absent = score_temporal(
+                era_from, era_to,
+                person_ctx.date_start, person_ctx.date_end,
+            )
+            c_score, c_expl, c_absent = score_career(
+                dprr_offices, era_from,
+                person_ctx.office, person_ctx.date_start,
+            )
+            f_score, f_expl, f_absent = score_filiation(dprr_family, inscription_filiation)
+            g_score, g_expl, g_absent = score_geography(
+                province_pleiades, person_ctx.findspot_uri,
+            )
+
+            signals = {
+                "filiation": SignalResult(f_score, WEIGHTS["filiation"], f_expl, f_absent),
+                "career":    SignalResult(c_score, WEIGHTS["career"],    c_expl, c_absent),
+                "geography": SignalResult(g_score, WEIGHTS["geography"], g_expl, g_absent),
+                "temporal":  SignalResult(t_score, WEIGHTS["temporal"],  t_expl, t_absent),
+            }
+            candidates_signals.append((cand_uri, cand_label, signals))
+
+        ranked = disambiguator.rank_candidates(candidates_signals)
+
+        # ── Format output ────────────────────────────────────────────────────
+        conf_icons = {"strong": "✓✓", "probable": "✓", "ambiguous": "?"}
+        lines = [
+            f"# Disambiguation: {person_ctx.name}\n",
+            f"**Nomen searched:** {person_ctx.nomen}  ",
+            f"**Praenomen:** {person_ctx.praenomen or '(unknown)'}  ",
+            f"**Office:** {person_ctx.office or '(none)'}  ",
+            f"**Date:** {person_ctx.date_start or '(none)'}  ",
+            f"**Filiation parsed:** {inscription_filiation or '(none)'}",
+            "",
+            f"Found **{len(ranked)}** candidate(s).\n",
+        ]
+
+        for i, match in enumerate(ranked, 1):
+            icon = conf_icons.get(match.confidence, "?")
+            lines.append(
+                f"## {i}. {icon} [{match.confidence.upper()}] score={match.score:.3f}"
+            )
+            lines.append(f"**URI:** `{match.dprr_uri}`")
+            lines.append(f"**Label:** {match.dprr_label}")
+            lines.append("")
+            lines.append("| Signal | Score | Weight | Note |")
+            lines.append("|--------|-------|--------|------|")
+            for sig_name, sig in match.signals.items():
+                absent_flag = " (absent)" if sig.is_absent else ""
+                lines.append(
+                    f"| {sig_name} | {sig.score:.2f}{absent_flag} | {sig.weight:.2f} | {sig.explanation} |"
+                )
+            lines.append("")
+
+        if ranked:
+            top = ranked[0]
+            lines.append("---")
+            lines.append(f"**Best match:** `{top.dprr_uri}` — {top.dprr_label}")
+            lines.append(
+                f"**Confidence:** {top.confidence} (score {top.score:.3f})"
+            )
+            lines.append(
+                "Use `explore_entity(uri)` for full DPRR record or "
+                "`find_links(uri)` for cross-references."
+            )
+
+        return "\n".join(lines)
+
+    @mcp.tool()
     def analyze_question(ctx: Context, question: str) -> str:
         """Analyze a natural language question to determine which datasets, entities, and concepts are relevant. Call this before writing SPARQL to get targeted guidance."""
         app: AppContext = ctx.request_context.lifespan_context
