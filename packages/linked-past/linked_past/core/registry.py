@@ -76,6 +76,7 @@ class DatasetRegistry:
                 if name in data:
                     self._metadata[name] = data[name]
             self._load_void(name, dataset_dir)
+            self._load_schema(name, dataset_dir)
             return
 
         dataset_dir.mkdir(parents=True, exist_ok=True)
@@ -94,6 +95,7 @@ class DatasetRegistry:
         self._stores[name] = get_read_only_store(store_path)
         self._save_registry(name, plugin, dataset_dir, triple_count)
         self._load_void(name, dataset_dir)
+        self._load_schema(name, dataset_dir)
 
     def initialize_all(self) -> None:
         """Initialize all registered datasets (may download data)."""
@@ -161,6 +163,28 @@ class DatasetRegistry:
             del vs
         except Exception as e:
             logger.debug("Could not load VoID for %s: %s", name, e)
+
+    def _load_schema(self, name: str, dataset_dir: Path) -> None:
+        """Load auto-generated schema from dataset directory if present."""
+        schema_path = dataset_dir / "_schema.yaml"
+        if not schema_path.exists():
+            return
+        try:
+            import yaml
+
+            with open(schema_path) as f:
+                data = yaml.safe_load(f)
+            classes = data.get("classes", {})
+            if classes:
+                meta = self._metadata.setdefault(name, {})
+                meta["auto_schema"] = classes
+                # Merge into plugin's live schema
+                plugin = self._plugins.get(name)
+                if plugin:
+                    plugin.set_auto_schema(classes)
+                logger.info("Loaded auto-generated schema for %s: %d classes", name, len(classes))
+        except Exception as e:
+            logger.debug("Could not load schema for %s: %s", name, e)
 
     def _save_registry(self, name: str, plugin: DatasetPlugin, dataset_dir: Path, triple_count: int) -> None:
         version_info = plugin.get_version_info(dataset_dir)

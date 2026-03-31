@@ -78,6 +78,38 @@ def get_relevant_tips(tips: list[dict], class_names: set[str], limit: int = 5) -
     return [tip for _, tip in scored[:limit]]
 
 
+def merge_schemas(hand_written: dict, auto_generated: dict) -> dict:
+    """Merge auto-generated schema classes into hand-written schemas.
+
+    Hand-written classes always win. Auto-generated classes are added only
+    if their name doesn't exist in the hand-written schema.
+    """
+    merged = dict(hand_written)
+    for cls_name, cls_data in auto_generated.items():
+        if cls_name not in merged:
+            merged[cls_name] = cls_data
+    return merged
+
+
+def render_auto_detected_summary(all_schemas: dict, hand_written_names: set[str]) -> str:
+    """Render a summary of auto-detected classes not in the hand-written schema."""
+    auto_only = {
+        name: data for name, data in all_schemas.items()
+        if name not in hand_written_names
+    }
+    if not auto_only:
+        return ""
+    lines = []
+    for cls_name, cls_data in auto_only.items():
+        uri = cls_data.get("uri", "")
+        comment = cls_data.get("comment", "")
+        if comment:
+            lines.append(f"- **{cls_name}** (`{uri}`) — {comment}")
+        else:
+            lines.append(f"- **{cls_name}** (`{uri}`)")
+    return "## Additional Classes (auto-detected)\n\n" + "\n".join(lines)
+
+
 def get_relevant_examples(examples: list[dict], class_names: set[str], limit: int = 3) -> list[dict]:
     """Return examples whose classes overlap with class_names, sorted by overlap size."""
     scored = []

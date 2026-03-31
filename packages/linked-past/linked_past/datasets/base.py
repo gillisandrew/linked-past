@@ -94,3 +94,20 @@ class DatasetPlugin(ABC):
     def check_for_updates(self) -> UpdateInfo | None:
         """Compare local vs upstream. Returns None if up to date."""
         return None
+
+    def set_auto_schema(self, auto_schema: dict | None) -> None:
+        """Merge auto-generated schema classes into this plugin's schemas.
+
+        Called by the registry after loading _schema.yaml from the dataset directory.
+        Only adds classes not already in the hand-written schema.
+        """
+        if not auto_schema or not hasattr(self, "_schemas"):
+            return
+        from linked_past.core.context import merge_schemas
+        from linked_past.core.validate import build_schema_dict
+
+        original_count = len(self._schemas)
+        self._schemas = merge_schemas(self._schemas, auto_schema)
+        new_count = len(self._schemas) - original_count
+        if new_count > 0 and hasattr(self, "_schema_dict") and hasattr(self, "_prefixes"):
+            self._schema_dict = build_schema_dict(self._schemas, self._prefixes)
