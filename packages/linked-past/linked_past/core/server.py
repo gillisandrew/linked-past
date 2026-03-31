@@ -518,9 +518,23 @@ def create_mcp_server() -> FastMCP:
 
         # Check meta-entities first (fast, cross-dataset)
         meta_results = []
-        if app.meta and not dataset:  # Only for cross-dataset searches
+        if app.meta and not dataset:
+            # 1. Substring match on canonical name + description
             meta_matches = app.meta.search(query_text, k=5)
-            for entity in meta_matches:
+
+            # 2. Semantic search via embeddings (catches "the Roman general" → Pompey)
+            if app.embeddings:
+                embed_hits = app.embeddings.search(query_text, k=10, dataset="_meta")
+                seen_ids = {e.id for e in meta_matches}
+                for hit in embed_hits:
+                    # Find the meta-entity whose description matches
+                    for entity in app.meta.all_entities():
+                        if entity.description == hit["text"] and entity.id not in seen_ids:
+                            meta_matches.append(entity)
+                            seen_ids.add(entity.id)
+                            break
+
+            for entity in meta_matches[:10]:
                 meta_results.append(entity)
         registry = app.registry
 
