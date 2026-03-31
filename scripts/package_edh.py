@@ -6,6 +6,7 @@ import zipfile
 from pathlib import Path
 
 from linked_past_store import push_dataset, verify_turtle
+from linked_past_store.ontology import extract_schema, generate_schemas_yaml
 from linked_past_store.void import generate_void
 
 LOCAL_ZIP = Path(__file__).parent.parent / "edh_linked_data.zip"
@@ -71,6 +72,11 @@ def main(version="2021-12-16"):
         )
         print(f"Generated VoID: {void.triples:,} triples, {void.classes} classes")
 
+        # Extract schema
+        schema = extract_schema(data_path=out_path)
+        generate_schemas_yaml(schema, tmpdir / "_schema.yaml")
+        print(f"Extracted schema: {len(schema.classes)} classes")
+
         # Push
         annotations = {
             **ANNOTATIONS,
@@ -80,9 +86,8 @@ def main(version="2021-12-16"):
         ref = f"{ARTIFACT_REF}:{version}"
         digest = push_dataset(
             ref,
-            out_path,
+            [out_path, tmpdir / "_void.ttl", tmpdir / "_schema.yaml"],
             annotations=annotations,
-            void_path=tmpdir / "_void.ttl",
         )
         print(f"Done: {ref}")
         if digest:
