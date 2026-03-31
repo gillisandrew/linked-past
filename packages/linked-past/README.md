@@ -113,8 +113,9 @@ uv run ruff check .  # lint
 1. Create `linked_past/datasets/{name}/` with `plugin.py` and `context/` YAML files
 2. Follow the `DatasetPlugin` ABC in `linked_past/datasets/base.py`
 3. Register in `linked_past/core/server.py`
-4. Create `scripts/package_{name}.py` to push data to OCI
-5. Add URI namespace to `linked_past/core/registry.py`
+4. Add the dataset entry to `datasets.yaml` (OCI refs, license, citation, thresholds)
+5. Create an ingest script (`scripts/ingest_{name}.py`) or use `scripts/ingest_generic.py` with `fetch_url`/`source_format`
+6. Add URI namespace to `linked_past/core/registry.py`
 
 ### Data Pipeline
 

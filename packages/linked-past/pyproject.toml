@@ -11,6 +11,8 @@ dependencies = [
     "pyyaml",
     "mcp",
     "toons>=0.5.3",
+    "fastembed",
+    "numpy",
     "linked-past-store",
 ]
 
