@@ -4,7 +4,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 from linked_past_store.cache import ArtifactCache
-from linked_past_store.pull import pull_dataset
+from linked_past_store.pull import _classify_changes, pull_dataset
 
 
 def test_pull_dataset_cache_miss_downloads(tmp_path):
@@ -89,6 +89,42 @@ def test_pull_dataset_copies_all_files(tmp_path):
     assert (output_dir / "data.ttl").exists()
     assert (output_dir / "_schema.yaml").exists()
     assert (output_dir / "_void.ttl").exists()
+
+
+def test_classify_changes_data_changed():
+    old_layers = {"dprr.ttl": "sha256:aaa", "_void.ttl": "sha256:bbb"}
+    new_layers = {"dprr.ttl": "sha256:xxx", "_void.ttl": "sha256:bbb"}  # data changed
+    assert _classify_changes(old_layers, new_layers) == "data"
+
+
+def test_classify_changes_sidecar_only():
+    old_layers = {"dprr.ttl": "sha256:aaa", "_void.ttl": "sha256:bbb"}
+    new_layers = {"dprr.ttl": "sha256:aaa", "_void.ttl": "sha256:xxx"}  # only sidecar changed
+    assert _classify_changes(old_layers, new_layers) == "sidecar"
+
+
+def test_classify_changes_nothing():
+    old_layers = {"dprr.ttl": "sha256:aaa", "_void.ttl": "sha256:bbb"}
+    new_layers = {"dprr.ttl": "sha256:aaa", "_void.ttl": "sha256:bbb"}
+    assert _classify_changes(old_layers, new_layers) == "none"
+
+
+def test_classify_changes_new_data_file():
+    old_layers = {"dprr.ttl": "sha256:aaa"}
+    new_layers = {"dprr.ttl": "sha256:aaa", "extra.ttl": "sha256:ccc"}  # new data file
+    assert _classify_changes(old_layers, new_layers) == "data"
+
+
+def test_classify_changes_removed_data_file():
+    old_layers = {"dprr.ttl": "sha256:aaa", "extra.ttl": "sha256:bbb"}
+    new_layers = {"dprr.ttl": "sha256:aaa"}  # extra.ttl removed
+    assert _classify_changes(old_layers, new_layers) == "data"
+
+
+def test_classify_changes_new_sidecar():
+    old_layers = {"dprr.ttl": "sha256:aaa"}
+    new_layers = {"dprr.ttl": "sha256:aaa", "_schema.yaml": "sha256:ccc"}  # new sidecar
+    assert _classify_changes(old_layers, new_layers) == "sidecar"
 
 
 def test_pull_dataset_cache_hit_skips_download(tmp_path):
