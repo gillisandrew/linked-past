@@ -11,7 +11,9 @@ ARTIFACT_REF = "ghcr.io/gillisandrew/linked-past/periodo"
 
 ANNOTATIONS = {
     "org.opencontainers.image.source": "https://perio.do",
-    "org.opencontainers.image.description": "PeriodO: A Gazetteer of Period Definitions — RDF dataset (converted from JSON-LD)",
+    "org.opencontainers.image.description": (
+        "PeriodO: A Gazetteer of Period Definitions (converted from JSON-LD)"
+    ),
     "org.opencontainers.image.licenses": "CC0-1.0",
     "org.opencontainers.image.url": "https://github.com/gillisandrew/linked-past",
     "org.opencontainers.image.vendor": "PeriodO project (UNC Chapel Hill / UT Austin)",

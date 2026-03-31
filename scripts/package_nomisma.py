@@ -20,7 +20,9 @@ ARTIFACT_REF = "ghcr.io/gillisandrew/linked-past/nomisma"
 
 ANNOTATIONS = {
     "org.opencontainers.image.source": "https://nomisma.org",
-    "org.opencontainers.image.description": "Nomisma.org numismatic concept vocabulary — RDF dataset (sanitized for Oxigraph)",
+    "org.opencontainers.image.description": (
+        "Nomisma.org numismatic concept vocabulary (sanitized for Oxigraph)"
+    ),
     "org.opencontainers.image.licenses": "CC-BY-4.0",
     "org.opencontainers.image.url": "https://github.com/gillisandrew/linked-past",
     "org.opencontainers.image.vendor": "Nomisma.org / American Numismatic Society",
