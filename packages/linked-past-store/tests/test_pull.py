@@ -63,6 +63,34 @@ def test_pull_dataset_raises_if_no_ttl(tmp_path):
             assert "No .ttl file" in str(e)
 
 
+def test_pull_dataset_copies_all_files(tmp_path):
+    """pull_dataset should copy all files, not just .ttl."""
+    cache_dir = tmp_path / "cache"
+    output_dir = tmp_path / "output"
+
+    def fake_pull(target, outdir):
+        outdir = Path(outdir)
+        outdir.mkdir(parents=True, exist_ok=True)
+        (outdir / "data.ttl").write_text("rdf content")
+        (outdir / "_schema.yaml").write_text("classes: {}")
+        (outdir / "_void.ttl").write_text("void content")
+        return [str(outdir / "data.ttl")]
+
+    with (
+        patch("linked_past_store.cache.oras.client.OrasClient") as MockClient,
+        patch("linked_past_store.cache._default_cache_dir", return_value=cache_dir),
+        patch("linked_past_store.cache._resolve_digest", return_value="sha256:abc123"),
+    ):
+        mock = MagicMock()
+        MockClient.return_value = mock
+        mock.pull.side_effect = fake_pull
+        result = pull_dataset("ghcr.io/test/dataset:v1", output_dir, force=True)
+
+    assert (output_dir / "data.ttl").exists()
+    assert (output_dir / "_schema.yaml").exists()
+    assert (output_dir / "_void.ttl").exists()
+
+
 def test_pull_dataset_cache_hit_skips_download(tmp_path):
     """On cache hit, returns cached file without downloading."""
     cache_dir = tmp_path / "cache"

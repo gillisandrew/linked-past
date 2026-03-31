@@ -38,20 +38,24 @@ def pull_dataset(
     cache = ArtifactCache()
     blob_dir = cache.pull(ref, force=force)
 
-    # Copy from cache to output directory
-    ttl_files = cache.find_ttl(blob_dir)
+    # Copy ALL files from cache to output directory
+    all_files = [f for f in blob_dir.iterdir() if f.is_file() or f.is_symlink()]
+    if not all_files:
+        raise RuntimeError(f"No files found in artifact {ref}")
+
+    ttl_files = []
+    for src in all_files:
+        dst = output_dir / src.name
+        if dst != src:
+            shutil.copy2(src, dst, follow_symlinks=True)
+        if src.suffix == ".ttl":
+            ttl_files.append(dst)
+
     if not ttl_files:
         raise RuntimeError(f"No .ttl file found in artifact {ref}")
 
-    copied = []
-    for src in ttl_files:
-        dst = output_dir / src.name
-        if dst != src:
-            shutil.copy2(src, dst)
-        copied.append(dst)
-
-    logger.info("Pulled %s → %s (%d files)", ref, output_dir, len(copied))
-    return copied[0]
+    logger.info("Pulled %s → %s (%d files)", ref, output_dir, len(all_files))
+    return ttl_files[0]
 
 
 def pull_for_dataset(
