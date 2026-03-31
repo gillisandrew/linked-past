@@ -96,6 +96,53 @@ def _build_embeddings(registry: DatasetRegistry, data_dir: Path) -> EmbeddingInd
                                     f"{cls_name} — {ex['question']}\n{ex['sparql']}",
                                 )
 
+        # Embed SKOS vocabulary terms from dataset stores
+        for name in registry.list_datasets():
+            try:
+                store = registry.get_store(name)
+            except KeyError:
+                continue
+            # Find SKOS concept schemes with their concepts
+            schemes = list(store.query(
+                "PREFIX skos: <http://www.w3.org/2004/02/skos/core#> "
+                "SELECT ?scheme (SAMPLE(?sl) AS ?schemeLabel) (COUNT(?c) AS ?n) WHERE { "
+                "  ?c a skos:Concept ; skos:inScheme ?scheme . "
+                "  OPTIONAL { ?scheme skos:prefLabel ?sl } "
+                "} GROUP BY ?scheme HAVING (COUNT(?c) > 1) ORDER BY DESC(?n)"
+            ))
+            for row in schemes:
+                scheme_uri = str(row[0]).strip("<>")
+                scheme_label = row[1].value if row[1] else scheme_uri.rsplit("/", 1)[-1]
+                concept_count = int(row[2].value)
+
+                # Get concept labels (limit to avoid huge docs)
+                concepts = list(store.query(
+                    "PREFIX skos: <http://www.w3.org/2004/02/skos/core#> "
+                    f"SELECT ?label WHERE {{ "
+                    f"  ?c a skos:Concept ; skos:inScheme <{scheme_uri}> ; skos:prefLabel ?label . "
+                    f"  FILTER(lang(?label) = 'en' || lang(?label) = '') "
+                    f"}} LIMIT 100"
+                ))
+                if not concepts:
+                    continue
+                labels = [r[0].value for r in concepts]
+                doc = f"Vocabulary: {scheme_label} ({concept_count} terms). Values: {', '.join(labels)}"
+                embeddings.add(name, "skos_vocab", doc)
+
+                # Also embed individual concepts that have descriptions
+                described = list(store.query(
+                    "PREFIX skos: <http://www.w3.org/2004/02/skos/core#> "
+                    f"SELECT ?label ?note WHERE {{ "
+                    f"  ?c a skos:Concept ; skos:inScheme <{scheme_uri}> ; "
+                    f"     skos:prefLabel ?label . "
+                    f"  {{ ?c skos:scopeNote ?note }} UNION {{ ?c skos:definition ?note }} "
+                    f"  FILTER(lang(?label) = 'en' || lang(?label) = '') "
+                    f"  FILTER(lang(?note) = 'en' || lang(?note) = '') "
+                    f"}} LIMIT 50"
+                ))
+                for dr in described:
+                    embeddings.add(name, "skos_concept", f"{dr[0].value}: {dr[1].value}")
+
         embeddings.build()
         logger.info("Embedding index built and cached")
         return embeddings
