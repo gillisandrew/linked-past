@@ -949,6 +949,50 @@ def create_mcp_server() -> FastMCP:
             return f"Report ({format}) written to {path} ({len(app.session_log)} entries)"
         return content
 
+    @mcp.tool()
+    def analyze_question(ctx: Context, question: str) -> str:
+        """Analyze a natural language question to determine which datasets, entities, and concepts are relevant. Call this before writing SPARQL to get targeted guidance."""
+        app: AppContext = ctx.request_context.lifespan_context
+        from linked_past.core.extraction import extract_question
+
+        available = [n for n in app.registry.list_datasets() if n in app.registry._stores]
+        extraction = extract_question(question, available)
+
+        lines = ["# Question Analysis\n"]
+        lines.append(f"**Intent:** {extraction.intent}")
+        if extraction.entities:
+            lines.append(f"**Entities:** {', '.join(extraction.entities)}")
+        if extraction.classes:
+            lines.append(f"**Concepts:** {', '.join(extraction.classes)}")
+        if extraction.temporal:
+            lines.append(f"**Temporal:** {extraction.temporal}")
+        if extraction.spatial:
+            lines.append(f"**Spatial:** {extraction.spatial}")
+        if extraction.steps:
+            lines.append("**Steps:**")
+            for i, step in enumerate(extraction.steps, 1):
+                lines.append(f"  {i}. {step}")
+        lines.append(f"\n**Suggested datasets:** {', '.join(extraction.suggested_datasets)}")
+
+        # Get relevant schemas for suggested datasets
+        lines.append("\n## Relevant Schemas\n")
+        for ds_name in extraction.suggested_datasets:
+            try:
+                plugin = app.registry.get_plugin(ds_name)
+                lines.append(f"### {plugin.display_name}\n")
+                # Get relevant context using extraction terms
+                search_terms = " ".join(extraction.entities + extraction.classes)
+                if search_terms and hasattr(plugin, "get_relevant_context"):
+                    ctx_text = plugin.get_relevant_context(
+                        "SELECT ?x WHERE { ?x a ?type }"  # Dummy SPARQL to trigger context
+                    )
+                    if ctx_text:
+                        lines.append(ctx_text)
+            except KeyError:
+                pass
+
+        return "\n".join(lines)
+
     return mcp
 
 
