@@ -1043,6 +1043,29 @@ def _cmd_status(args):
         print(f"{name:12s} {status:14s} {triples:>10s}  {plugin.display_name}")
 
 
+def _cmd_rebuild(args):
+    """Clear and rebuild embedding + meta-entity caches."""
+    data_dir = get_data_dir()
+
+    for db_name in ["embeddings.db", "meta_entities.db"]:
+        db_path = data_dir / db_name
+        if db_path.exists():
+            db_path.unlink()
+            print(f"Cleared {db_name}")
+        else:
+            print(f"{db_name} not found (nothing to clear)")
+
+    print("\nRebuilding (this may take 30-60s for embeddings)...")
+    ctx = build_app_context(eager=False)
+    embed_count = 0
+    meta_count = 0
+    if ctx.embeddings:
+        embed_count = ctx.embeddings._conn.execute("SELECT COUNT(*) FROM documents").fetchone()[0]
+    if ctx.meta:
+        meta_count = len(ctx.meta.all_entities())
+    print(f"Done: {embed_count} embeddings, {meta_count} meta-entities")
+
+
 def main():
     import argparse
 
@@ -1067,6 +1090,10 @@ def main():
     # status: show what's installed
     status = sub.add_parser("status", help="Show dataset installation status")
     status.set_defaults(func=_cmd_status)
+
+    # rebuild: clear caches and rebuild embeddings/meta-entities
+    rebuild = sub.add_parser("rebuild", help="Clear and rebuild embedding + meta-entity caches")
+    rebuild.set_defaults(func=_cmd_rebuild)
 
     # Also support bare --host/--port for backward compat (no subcommand = serve)
     parser.add_argument("--host", default="127.0.0.1", help=argparse.SUPPRESS)

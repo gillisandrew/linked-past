@@ -74,10 +74,28 @@ class MetaEntityIndex:
         self._extend_with_edh(clusters, registry)
 
         # Step 4: Build descriptions from dataset properties
+        # Merge clusters that produce the same entity ID (e.g., confirmed + probable links
+        # for the same person create separate clusters that should be unified)
         for cluster_id, cluster in clusters.items():
             entity = self._build_entity(cluster_id, cluster, registry)
-            self._entities[entity.id] = entity
-            for uris in entity.uris.values():
+            if entity.id in self._entities:
+                # Merge URIs from both entities
+                existing = self._entities[entity.id]
+                for ds, uri_list in entity.uris.items():
+                    if ds not in existing.uris:
+                        existing.uris[ds] = uri_list
+                    else:
+                        for uri in uri_list:
+                            if uri not in existing.uris[ds]:
+                                existing.uris[ds].append(uri)
+                # Keep the richer description
+                if len(entity.description) > len(existing.description):
+                    existing.description = entity.description
+                if entity.wikidata_qid and not existing.wikidata_qid:
+                    existing.wikidata_qid = entity.wikidata_qid
+            else:
+                self._entities[entity.id] = entity
+            for uris in self._entities[entity.id].uris.values():
                 for uri in uris:
                     self._uri_to_id[uri] = entity.id
 
