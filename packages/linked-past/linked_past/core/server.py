@@ -422,10 +422,12 @@ def _collect_see_also(
 
 def create_mcp_server() -> FastMCP:
 
+    # Build context once, shared across all sessions
+    _shared_ctx = build_app_context(skip_embeddings=False)
+
     @asynccontextmanager
     async def lifespan(server: FastMCP):
-        ctx = build_app_context(skip_embeddings=False)
-        yield ctx
+        yield _shared_ctx
 
     mcp = FastMCP(
         "linked-past",
