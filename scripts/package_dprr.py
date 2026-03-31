@@ -56,8 +56,16 @@ def main(version="latest"):
         )
         print(f"Generated VoID: {void.triples:,} triples, {void.classes} classes")
 
-        # Extract schema
-        schema = extract_schema(data_path=data_file)
+        # Fetch published ontology (curl needed — urllib triggers bot check)
+        ontology_path = tmpdir / "_ontology.ttl"
+        print("Downloading ontology from https://romanrepublic.ac.uk/rdf/ontology...")
+        import subprocess as _sp
+
+        _sp.run(
+            ["curl", "-sL", "-o", str(ontology_path), "https://romanrepublic.ac.uk/rdf/ontology"],
+            check=True,
+        )
+        schema = extract_schema(ontology_path=ontology_path, data_path=data_file)
         generate_schemas_yaml(schema, tmpdir / "_schema.yaml")
         print(f"Extracted schema: {len(schema.classes)} classes")
 
@@ -70,7 +78,7 @@ def main(version="latest"):
         ref = f"{ARTIFACT_REF}:{version}"
         digest = push_dataset(
             ref,
-            [data_file, tmpdir / "_void.ttl", tmpdir / "_schema.yaml"],
+            [data_file, tmpdir / "_void.ttl", tmpdir / "_schema.yaml", ontology_path],
             annotations=annotations,
         )
         print(f"Done: {ref}")
