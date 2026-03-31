@@ -1,4 +1,4 @@
-"""Download Nomisma concept vocabulary, sanitize, and push to OCI registry.
+"""Download Nomisma concept vocabulary, sanitize, generate VoID, and push to OCI registry.
 
 The upstream Nomisma Turtle has syntax issues:
 - Parentheses in local names: nm:foo(bar) → nm:foo%28bar%29
@@ -9,11 +9,14 @@ We fix these by regex-replacing known patterns, then verify with pyoxigraph.
 """
 
 import re
-import subprocess
 import sys
 import tempfile
 import urllib.request
 from pathlib import Path
+
+from linked_past_store import push_dataset, verify_turtle
+from linked_past_store.void import generate_void
+from pyoxigraph import RdfFormat, Store
 
 SOURCE_URL = "http://nomisma.org/nomisma.org.ttl"
 ARTIFACT_REF = "ghcr.io/gillisandrew/linked-past/nomisma"
@@ -37,23 +40,20 @@ def _percent_encode_local_name(match: re.Match) -> str:
     """Percent-encode invalid characters in a prefixed local name."""
     prefix = match.group(1)
     local = match.group(2)
-    # Percent-encode parentheses and other invalid chars
     local = local.replace("(", "%28").replace(")", "%29")
     return f"{prefix}:{local}"
 
 
-def _sanitize_turtle(raw_text: str) -> tuple[str, int]:
+def _sanitize_nomisma(raw_text: str) -> tuple[str, int]:
     """Fix known syntax issues in Nomisma Turtle. Returns (fixed_text, fix_count)."""
     fixes = 0
 
     # Fix 1: Percent-encode parentheses in nm: local names
-    # Match nm:something(something) patterns
     pattern = re.compile(r'\b(nm):([a-zA-Z_][^\s;,.\]]*\([^\s;,.]*\))')
     raw_text, n = pattern.subn(_percent_encode_local_name, raw_text)
     fixes += n
 
     # Fix 2: Remove lines with empty local name (nm: followed by whitespace + ; or .)
-    # These are dangling references like "dcterms:isReplacedBy nm: ;"
     empty_ref = re.compile(r'^\s+\S+\s+nm:\s*[;.]\s*$', re.MULTILINE)
     raw_text, n = empty_ref.subn('', raw_text)
     fixes += n
@@ -71,12 +71,8 @@ def main(version="latest"):
 
         raw_text = raw_path.read_text(errors="replace")
         print("Sanitizing Turtle (fixing invalid local names)...")
-        fixed_text, fix_count = _sanitize_turtle(raw_text)
+        fixed_text, fix_count = _sanitize_nomisma(raw_text)
         print(f"Applied {fix_count} regex fixes")
-
-        # Write fixed text, then do block-by-block verification as fallback
-        # for any remaining issues (invalid Unicode, etc.)
-        from pyoxigraph import RdfFormat, Store
 
         # Extract prefix block
         prefix_lines = []
@@ -92,6 +88,7 @@ def main(version="latest"):
         remainder = fixed_text[fixed_text.index(prefix_lines[-1]) + len(prefix_lines[-1]):]
         blocks = remainder.split("\n\n")
 
+        # Block-by-block verification — drop blocks that don't parse
         clean_path = tmpdir / "nomisma.ttl"
         kept = 0
         dropped = 0
@@ -114,21 +111,42 @@ def main(version="latest"):
 
         print(f"Kept {kept:,} blocks, dropped {dropped:,}")
 
-        # Final verification
-        print("Final verification...")
-        store = Store()
-        store.bulk_load(path=str(clean_path), format=RdfFormat.TURTLE)
-        print(f"Verified: {len(store):,} triples")
-        del store
+        # Verify
+        result = verify_turtle(clean_path)
+        if not result.ok:
+            print(f"Verification failed: {result.errors[0]}")
+            sys.exit(1)
+        print(f"Verified: {result.triple_count:,} triples")
 
+        # Generate VoID
+        void = generate_void(
+            data_path=clean_path,
+            dataset_id="nomisma",
+            title="Nomisma.org Numismatic Concept Vocabulary",
+            license_uri="https://creativecommons.org/licenses/by/4.0/",
+            source_uri="https://nomisma.org/",
+            citation="Gruber, E. & Meadows, A. (2021). ISAW Papers 20.6",
+            publisher="Nomisma.org / American Numismatic Society",
+            output_path=tmpdir / "void.ttl",
+        )
+        print(f"Generated VoID: {void.triples:,} triples, {void.classes} classes")
+
+        # Push
+        annotations = {
+            **ANNOTATIONS,
+            "org.opencontainers.image.version": version,
+            "dev.linked-past.triples": str(result.triple_count),
+        }
         ref = f"{ARTIFACT_REF}:{version}"
-        print(f"Pushing to {ref}...")
-        cmd = ["oras", "push", ref, "nomisma.ttl:application/x-turtle"]
-        for key, val in ANNOTATIONS.items():
-            cmd.extend(["--annotation", f"{key}={val}"])
-        cmd.extend(["--annotation", f"org.opencontainers.image.version={version}"])
-        subprocess.run(cmd, cwd=str(tmpdir), check=True)
+        digest = push_dataset(
+            ref,
+            clean_path,
+            annotations=annotations,
+            void_path=tmpdir / "void.ttl",
+        )
         print(f"Done: {ref}")
+        if digest:
+            print(f"Digest: {digest}")
 
 
 if __name__ == "__main__":

@@ -1,10 +1,12 @@
-"""Download OCRE RDF, convert to Turtle, and push to OCI registry."""
+"""Download OCRE RDF, convert to Turtle, generate VoID, and push to OCI registry."""
 
-import subprocess
 import sys
 import tempfile
 import urllib.request
 from pathlib import Path
+
+from linked_past_store import push_dataset, verify_turtle
+from linked_past_store.void import generate_void
 
 SOURCE_URL = "https://numismatics.org/ocre/nomisma.rdf"
 ARTIFACT_REF = "ghcr.io/gillisandrew/linked-past/ocre"
@@ -39,14 +41,42 @@ def main(version="latest"):
         g.serialize(str(ttl_path), format="turtle")
         print(f"Created {ttl_path} ({ttl_path.stat().st_size:,} bytes), {len(g)} triples")
 
+        # Verify
+        result = verify_turtle(ttl_path)
+        if not result.ok:
+            print(f"Verification failed: {result.errors[0]}")
+            sys.exit(1)
+        print(f"Verified: {result.triple_count:,} triples")
+
+        # Generate VoID
+        void = generate_void(
+            data_path=ttl_path,
+            dataset_id="ocre",
+            title="Online Coins of the Roman Empire (OCRE)",
+            license_uri="https://opendatacommons.org/licenses/odbl/1-0/",
+            source_uri="https://numismatics.org/ocre",
+            citation="ANS, OCRE. Based on Mattingly et al., Roman Imperial Coinage (RIC)",
+            publisher="American Numismatic Society",
+            output_path=tmpdir / "void.ttl",
+        )
+        print(f"Generated VoID: {void.triples:,} triples, {void.classes} classes")
+
+        # Push
+        annotations = {
+            **ANNOTATIONS,
+            "org.opencontainers.image.version": version,
+            "dev.linked-past.triples": str(result.triple_count),
+        }
         ref = f"{ARTIFACT_REF}:{version}"
-        print(f"Pushing to {ref}...")
-        cmd = ["oras", "push", ref, "ocre.ttl:application/x-turtle"]
-        for key, val in ANNOTATIONS.items():
-            cmd.extend(["--annotation", f"{key}={val}"])
-        cmd.extend(["--annotation", f"org.opencontainers.image.version={version}"])
-        subprocess.run(cmd, cwd=str(tmpdir), check=True)
+        digest = push_dataset(
+            ref,
+            ttl_path,
+            annotations=annotations,
+            void_path=tmpdir / "void.ttl",
+        )
         print(f"Done: {ref}")
+        if digest:
+            print(f"Digest: {digest}")
 
 
 if __name__ == "__main__":
