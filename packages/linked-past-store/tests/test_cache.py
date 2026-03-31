@@ -188,3 +188,77 @@ class TestLayerCache:
         assert (blob_dir / "_void.ttl").exists()
         assert (blob_dir / "data.ttl").read_text() == "rdf content"
         assert (blob_dir / "_void.ttl").read_text() == "void content"
+
+
+# -- Task 4: Layer-aware pull + digest verification --
+
+
+class TestDigestVerification:
+    def test_verify_correct_digest(self, tmp_path):
+        import hashlib
+
+        from linked_past_store.cache import _verify_digest
+
+        f = tmp_path / "test.txt"
+        f.write_bytes(b"hello world")
+        expected = "sha256:" + hashlib.sha256(b"hello world").hexdigest()
+        assert _verify_digest(f, expected)
+
+    def test_verify_wrong_digest(self, tmp_path):
+        from linked_past_store.cache import _verify_digest
+
+        f = tmp_path / "test.txt"
+        f.write_bytes(b"hello world")
+        assert not _verify_digest(
+            f,
+            "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+        )
+
+
+class TestAssembleBlobDirSymlinkFallback:
+    def test_falls_back_to_copy_when_symlink_fails(self, tmp_path):
+        cache = ArtifactCache(tmp_path / "cache")
+        cache.put_layer("sha256:aaa", "data.ttl", _write_tmp(tmp_path, "data.ttl", "content"))
+        layers = [LayerInfo("sha256:aaa", "data.ttl", 100, False)]
+
+        with patch("pathlib.Path.symlink_to", side_effect=OSError("not supported")):
+            blob_dir = cache.assemble_blob_dir("sha256:manifest1", layers)
+
+        assert (blob_dir / "data.ttl").exists()
+        assert (blob_dir / "data.ttl").read_text() == "content"
+        assert not (blob_dir / "data.ttl").is_symlink()  # copy, not symlink
+
+
+class TestLayerAwarePull:
+    def test_skips_cached_layers(self, tmp_path):
+        """When one layer is already cached, only the missing layers are downloaded."""
+        cache = ArtifactCache(tmp_path / "cache")
+
+        # Pre-populate one layer in cache
+        cache.put_layer(
+            "sha256:aaa111", "dprr.ttl", _write_tmp(tmp_path, "dprr.ttl", "existing rdf")
+        )
+
+        manifest_json = json.dumps(SAMPLE_MANIFEST)
+        download_calls = []
+
+        def fake_blob_fetch(ref, digest, outpath):
+            download_calls.append(digest)
+            Path(outpath).write_text(f"content of {digest}")
+
+        with (
+            patch("linked_past_store.cache._fetch_manifest_json", return_value=manifest_json),
+            patch("linked_past_store.cache._resolve_digest", return_value="sha256:manifest_new"),
+            patch.object(cache, "_download_layer", side_effect=fake_blob_fetch),
+        ):
+            blob_dir = cache.pull("ghcr.io/test/dataset:v1", force=True)
+
+        # dprr.ttl was cached — should NOT be in download_calls
+        assert "sha256:aaa111" not in download_calls
+        # _void.ttl and _schema.yaml were missing — should be downloaded
+        assert "sha256:bbb222" in download_calls
+        assert "sha256:ccc333" in download_calls
+        # Assembled blob dir has all files
+        assert (blob_dir / "dprr.ttl").exists()
+        assert (blob_dir / "_void.ttl").exists()
+        assert (blob_dir / "_schema.yaml").exists()
