@@ -8,7 +8,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-
 WEIGHTS = {
     "filiation": 0.4,
     "career": 0.3,
@@ -185,3 +184,95 @@ def score_filiation(
             return 0.0, f"grandfather mismatch: inscription {insc_grandfather}, DPRR {dprr_grandfather}", False
 
     return 0.5, f"father matches ({insc_father}), grandfather not verifiable", False
+
+
+def score_geography(
+    dprr_province_pleiades_uris: list[str],
+    findspot_pleiades_uri: str | None,
+    is_italian_findspot: bool = False,
+    has_italian_career: bool = False,
+) -> tuple[float, str, bool]:
+    """Score geographic match between DPRR provincial posts and inscription findspot.
+    Returns (score, explanation, is_absent).
+
+    dprr_province_pleiades_uris: Pleiades URIs for provinces where DPRR person served
+    findspot_pleiades_uri: Pleiades URI for the inscription's findspot
+    is_italian_findspot: True if findspot is in Italia/Rome/Italian region
+    has_italian_career: True if DPRR person held posts in Italia/Rome
+    """
+    if not findspot_pleiades_uri:
+        return 0.0, "no findspot data", True
+    if not dprr_province_pleiades_uris:
+        # No provincial posts — check Italy fallback
+        if is_italian_findspot and has_italian_career:
+            return 0.3, "Italy-based career + Italian findspot", False
+        return 0.0, "no provincial posts recorded", True
+
+    if findspot_pleiades_uri in dprr_province_pleiades_uris:
+        return 1.0, f"findspot matches provincial post ({findspot_pleiades_uri})", False
+
+    # Check Italy fallback
+    if is_italian_findspot and has_italian_career:
+        return 0.3, "Italy-based career + Italian findspot (no provincial match)", False
+
+    return 0.0, f"findspot {findspot_pleiades_uri} not in served provinces", False
+
+
+class PersonDisambiguator:
+    """Scores DPRR person candidates against contextual evidence."""
+
+    def _compute_weighted_score(self, signals: dict[str, SignalResult]) -> float:
+        """Compute weighted score with redistribution for absent signals.
+
+        Absent signals (is_absent=True) have their weight redistributed
+        proportionally to present signals.
+        """
+        present_weight = 0.0
+        weighted_sum = 0.0
+
+        for sig in signals.values():
+            if not sig.is_absent:
+                present_weight += sig.weight
+                weighted_sum += sig.weight * sig.score
+
+        if present_weight == 0.0:
+            return 0.0
+        return weighted_sum / present_weight
+
+    @staticmethod
+    def _classify_confidence(top_score: float, gap: float) -> str:
+        """Classify match confidence based on top score and gap to next candidate."""
+        if top_score >= 0.7 and gap >= 0.2:
+            return "strong"
+        elif top_score >= 0.5 and gap >= 0.1:
+            return "probable"
+        return "ambiguous"
+
+    def rank_candidates(
+        self,
+        candidates_signals: list[tuple[str, str, dict[str, SignalResult]]],
+    ) -> list[CandidateMatch]:
+        """Rank candidates by weighted score.
+
+        candidates_signals: list of (dprr_uri, dprr_label, signals_dict)
+        """
+        scored = []
+        for dprr_uri, dprr_label, signals in candidates_signals:
+            score = self._compute_weighted_score(signals)
+            scored.append((score, dprr_uri, dprr_label, signals))
+
+        scored.sort(key=lambda x: -x[0])
+
+        results = []
+        for i, (score, uri, label, signals) in enumerate(scored):
+            gap = score - scored[i + 1][0] if i + 1 < len(scored) else score
+            confidence = self._classify_confidence(score, gap)
+            results.append(CandidateMatch(
+                dprr_uri=uri,
+                dprr_label=label,
+                score=score,
+                confidence=confidence,
+                signals=signals,
+            ))
+
+        return results

@@ -2,8 +2,11 @@
 
 import pytest
 from linked_past.core.disambiguate import (
+    PersonDisambiguator,
+    SignalResult,
     score_career,
     score_filiation,
+    score_geography,
     score_temporal,
 )
 
@@ -108,3 +111,104 @@ class TestScoreFiliation:
         score, explanation, is_absent = score_filiation(family, {"father": "marcus"})
         assert score == 0.0
         assert is_absent
+
+
+class TestScoreGeography:
+    def test_province_match(self):
+        provinces = ["https://pleiades.stoa.org/places/837#this"]
+        score, explanation, is_absent = score_geography(provinces, "https://pleiades.stoa.org/places/837#this")
+        assert score == 1.0
+        assert not is_absent
+
+    def test_no_match(self):
+        provinces = ["https://pleiades.stoa.org/places/775#this"]  # Africa
+        score, explanation, is_absent = score_geography(provinces, "https://pleiades.stoa.org/places/837#this")  # Asia
+        assert score == 0.0
+        assert not is_absent  # data present, just doesn't match
+
+    def test_no_findspot(self):
+        provinces = ["https://pleiades.stoa.org/places/837#this"]
+        score, explanation, is_absent = score_geography(provinces, None)
+        assert score == 0.0
+        assert is_absent
+
+    def test_no_provinces(self):
+        score, explanation, is_absent = score_geography([], "https://pleiades.stoa.org/places/837#this")
+        assert score == 0.0
+        assert is_absent
+
+    def test_italy_fallback(self):
+        score, explanation, is_absent = score_geography([], None, is_italian_findspot=True, has_italian_career=True)
+        assert score == 0.0  # no findspot URI → absent
+        assert is_absent
+
+    def test_italy_career_italian_findspot(self):
+        score, explanation, is_absent = score_geography(
+            [], "https://pleiades.stoa.org/places/423025#this",
+            is_italian_findspot=True, has_italian_career=True,
+        )
+        assert score == 0.3
+        assert not is_absent
+
+
+class TestPersonDisambiguator:
+    def test_weighted_combination(self):
+        """Test that the orchestrator combines signal scores correctly."""
+        disambiguator = PersonDisambiguator()
+
+        # Candidate A: filiation match + career match
+        signals_a = {
+            "filiation": SignalResult(1.0, 0.4, "father+grandfather match", False),
+            "career": SignalResult(1.0, 0.3, "consul -147 confirmed", False),
+            "geography": SignalResult(0.0, 0.2, "no findspot", True),
+            "temporal": SignalResult(1.0, 0.1, "within era", False),
+        }
+        # Candidate B: only temporal overlap
+        signals_b = {
+            "filiation": SignalResult(0.0, 0.4, "father mismatch", False),
+            "career": SignalResult(0.0, 0.3, "office not held", False),
+            "geography": SignalResult(0.0, 0.2, "no findspot", True),
+            "temporal": SignalResult(1.0, 0.1, "within era", False),
+        }
+
+        score_a = disambiguator._compute_weighted_score(signals_a)
+        score_b = disambiguator._compute_weighted_score(signals_b)
+
+        assert score_a > 0.7
+        assert score_b < 0.2
+        assert score_a > score_b
+
+    def test_weight_redistribution_missing_signals(self):
+        """When a signal has no data, its weight redistributes to others."""
+        disambiguator = PersonDisambiguator()
+
+        signals = {
+            "filiation": SignalResult(0.0, 0.4, "no filiation", True),  # absent
+            "career": SignalResult(1.0, 0.3, "consul confirmed", False),
+            "geography": SignalResult(0.0, 0.2, "no findspot", True),  # absent
+            "temporal": SignalResult(1.0, 0.1, "within era", False),
+        }
+
+        score = disambiguator._compute_weighted_score(signals)
+        # career (0.3) + temporal (0.1) = 0.4 available → normalized to 1.0
+        assert score == pytest.approx(1.0, abs=0.01)
+
+    def test_all_signals_absent(self):
+        """When all signals are absent, score is 0."""
+        disambiguator = PersonDisambiguator()
+        signals = {
+            "filiation": SignalResult(0.0, 0.4, "absent", True),
+            "career": SignalResult(0.0, 0.3, "absent", True),
+            "geography": SignalResult(0.0, 0.2, "absent", True),
+            "temporal": SignalResult(0.0, 0.1, "absent", True),
+        }
+        assert disambiguator._compute_weighted_score(signals) == 0.0
+
+    def test_confidence_strong(self):
+        assert PersonDisambiguator._classify_confidence(0.8, 0.3) == "strong"
+
+    def test_confidence_probable(self):
+        assert PersonDisambiguator._classify_confidence(0.6, 0.15) == "probable"
+
+    def test_confidence_ambiguous(self):
+        assert PersonDisambiguator._classify_confidence(0.4, 0.05) == "ambiguous"
