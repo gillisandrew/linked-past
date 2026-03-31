@@ -943,8 +943,9 @@ def create_mcp_server() -> FastMCP:
                     lines.append(f"- **Initialized:** {meta.get('triple_count', '?')} triples loaded")
                     lines.append(f"- **Version:** {meta.get('version', 'unknown')}")
 
-                    # Hot-reload: add new dataset to embedding index
+                    # Hot-reload: rebuild embedding index for this dataset
                     if app.embeddings:
+                        app.embeddings.clear_dataset(ds_name)
                         app.embeddings.add(ds_name, "dataset", f"{plugin.display_name}: {plugin.description}")
                         if hasattr(plugin, "_examples"):
                             for ex in plugin._examples:
@@ -954,7 +955,22 @@ def create_mcp_server() -> FastMCP:
                                 app.embeddings.add(ds_name, "tip", f"{tip['title']}: {tip['body']}")
                         if hasattr(plugin, "_schemas"):
                             for cls_name, cls_data in plugin._schemas.items():
-                                app.embeddings.add(ds_name, "schema", f"{cls_name}: {cls_data.get('comment', '')}")
+                                label = cls_data.get("label", cls_name)
+                                uri = cls_data.get("uri", "")
+                                comment = cls_data.get("comment", "")
+                                if uri:
+                                    app.embeddings.add(ds_name, "schema_label", f"{label} ({uri})")
+                                else:
+                                    app.embeddings.add(ds_name, "schema_label", label)
+                                if comment:
+                                    app.embeddings.add(ds_name, "schema_comment", f"{cls_name}: {comment}")
+                                if hasattr(plugin, "_examples"):
+                                    for ex in plugin._examples:
+                                        if cls_name.lower() in ex.get("sparql", "").lower():
+                                            app.embeddings.add(
+                                                ds_name, "schema_example",
+                                                f"{cls_name} — {ex['question']}\n{ex['sparql']}",
+                                            )
                         app.embeddings.build()
                         lines.append("- **Embeddings:** rebuilt")
                 except Exception as e:
