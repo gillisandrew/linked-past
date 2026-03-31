@@ -84,7 +84,7 @@ def test_pull_dataset_copies_all_files(tmp_path):
         mock = MagicMock()
         MockClient.return_value = mock
         mock.pull.side_effect = fake_pull
-        result = pull_dataset("ghcr.io/test/dataset:v1", output_dir, force=True)
+        pull_dataset("ghcr.io/test/dataset:v1", output_dir, force=True)
 
     assert (output_dir / "data.ttl").exists()
     assert (output_dir / "_schema.yaml").exists()

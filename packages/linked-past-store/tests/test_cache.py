@@ -5,7 +5,6 @@ from unittest.mock import patch
 
 from linked_past_store.cache import ArtifactCache, LayerInfo
 
-
 SAMPLE_MANIFEST = {
     "schemaVersion": 2,
     "mediaType": "application/vnd.oci.image.manifest.v1+json",
@@ -52,7 +51,7 @@ class TestParseManifestLayers:
     def test_extracts_filenames(self, tmp_path):
         cache = ArtifactCache(tmp_path / "cache")
         layers = cache.parse_layers(SAMPLE_MANIFEST)
-        filenames = [l.filename for l in layers]
+        filenames = [layer.filename for layer in layers]
         assert "dprr.ttl" in filenames
         assert "_void.ttl" in filenames
         assert "_schema.yaml" in filenames
@@ -60,7 +59,7 @@ class TestParseManifestLayers:
     def test_classifies_sidecars(self, tmp_path):
         cache = ArtifactCache(tmp_path / "cache")
         layers = cache.parse_layers(SAMPLE_MANIFEST)
-        by_name = {l.filename: l for l in layers}
+        by_name = {layer.filename: layer for layer in layers}
         assert not by_name["dprr.ttl"].is_sidecar
         assert by_name["_void.ttl"].is_sidecar
         assert by_name["_schema.yaml"].is_sidecar
@@ -68,7 +67,7 @@ class TestParseManifestLayers:
     def test_extracts_digests_and_sizes(self, tmp_path):
         cache = ArtifactCache(tmp_path / "cache")
         layers = cache.parse_layers(SAMPLE_MANIFEST)
-        by_name = {l.filename: l for l in layers}
+        by_name = {layer.filename: layer for layer in layers}
         assert by_name["dprr.ttl"].digest == "sha256:aaa111"
         assert by_name["dprr.ttl"].size == 45000000
         assert by_name["_void.ttl"].digest == "sha256:bbb222"

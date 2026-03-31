@@ -61,6 +61,23 @@ def _ref_to_path(ref: str) -> str:
     return ref.replace(":", "/")
 
 
+def _fetch_manifest_json(ref: str) -> str | None:
+    """Fetch raw manifest JSON from OCI registry."""
+    try:
+        result = subprocess.run(
+            ["oras", "manifest", "fetch", ref],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        if result.returncode != 0:
+            return None
+        return result.stdout
+    except Exception as e:
+        logger.debug("Failed to fetch manifest for %s: %s", ref, e)
+        return None
+
+
 def _resolve_digest(ref: str) -> str | None:
     """Resolve an OCI ref to its manifest digest without downloading."""
     try:
@@ -186,6 +203,25 @@ class ArtifactCache:
                 is_sidecar=filename.startswith("_"),
             ))
         return layers
+
+    def fetch_manifest(self, ref: str) -> dict | None:
+        """Fetch manifest from registry and cache it locally."""
+        raw = _fetch_manifest_json(ref)
+        if not raw:
+            return None
+        manifest = json.loads(raw)
+        # Cache the manifest JSON alongside the digest file
+        manifest_path = self._manifests_dir / (_ref_to_path(ref) + ".json")
+        manifest_path.parent.mkdir(parents=True, exist_ok=True)
+        manifest_path.write_text(raw)
+        return manifest
+
+    def get_manifest(self, ref: str) -> dict | None:
+        """Get cached manifest for a ref, or None."""
+        manifest_path = self._manifests_dir / (_ref_to_path(ref) + ".json")
+        if manifest_path.exists():
+            return json.loads(manifest_path.read_text())
+        return None
 
     def digest_for(self, ref: str) -> str | None:
         """Get the cached digest for a ref, or None."""
