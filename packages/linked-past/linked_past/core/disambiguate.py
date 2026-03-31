@@ -12,6 +12,7 @@ from dataclasses import dataclass, field
 from linked_past.core.onomastics import (
     is_greek,
     normalize_praenomen,
+    parse_filiation,
     parse_office,
     parse_roman_name,
     transliterate_greek,
@@ -286,6 +287,66 @@ class PersonDisambiguator:
 
         return results
 
+    def disambiguate(
+        self,
+        context: PersonContext,
+        dprr_store,
+        linkage=None,
+        max_candidates: int = 10,
+    ) -> list[CandidateMatch]:
+        """Full disambiguation: find DPRR candidates by nomen and score each.
+
+        This is the main entry point that orchestrates candidate lookup,
+        signal scoring, and ranking.
+        """
+        if not context.nomen:
+            return []
+
+        candidates = fetch_dprr_candidates(dprr_store, context.nomen)
+        if not candidates:
+            return []
+
+        # Parse filiation from context
+        insc_filiation = {}
+        if context.filiation:
+            if isinstance(context.filiation, dict):
+                insc_filiation = context.filiation
+            else:
+                insc_filiation = parse_filiation(context.filiation)
+
+        candidates_signals = []
+        for cand in candidates:
+            person_uri = cand["person"]
+            label = cand.get("label", "")
+            era_from = int(cand["eraFrom"]) if cand.get("eraFrom") else None
+            era_to = int(cand["eraTo"]) if cand.get("eraTo") else None
+
+            offices = fetch_dprr_offices(dprr_store, person_uri)
+            family = fetch_dprr_family(dprr_store, person_uri)
+            province_uris = fetch_dprr_province_pleiades(
+                dprr_store, linkage, person_uri,
+            ) if linkage else []
+
+            f_s, f_e, f_a = score_filiation(family, insc_filiation)
+            c_s, c_e, c_a = score_career(
+                offices, era_from, context.office, context.date_start,
+            )
+            g_s, g_e, g_a = score_geography(province_uris, context.findspot_uri)
+            t_s, t_e, t_a = score_temporal(
+                era_from, era_to, context.date_start, context.date_end,
+            )
+
+            signals = {
+                "filiation": SignalResult(f_s, WEIGHTS["filiation"], f_e, f_a),
+                "career": SignalResult(c_s, WEIGHTS["career"], c_e, c_a),
+                "geography": SignalResult(g_s, WEIGHTS["geography"], g_e, g_a),
+                "temporal": SignalResult(t_s, WEIGHTS["temporal"], t_e, t_a),
+            }
+            candidates_signals.append((person_uri, label, signals))
+
+        ranked = self.rank_candidates(candidates_signals)
+        return ranked[:max_candidates]
+
 
 # ── Context extraction ──────────────────────────────────────────────────────
 
@@ -395,7 +456,7 @@ def extract_context_from_edh_uri(uri: str, edh_store) -> PersonContext | None:
     filiation_str = None
     office_str = None
     if edition_text:
-        filiation_str = edition_text  # parse_filiation will extract from full text
+        filiation_str = edition_text  # disambiguate() will call parse_filiation
         office_str = parse_office(edition_text)
 
     return PersonContext(
