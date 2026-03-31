@@ -1,7 +1,6 @@
 """Tests for RDF verification."""
 
 from linked_past_store.verify import detect_format, verify_turtle
-
 from pyoxigraph import RdfFormat
 
 
