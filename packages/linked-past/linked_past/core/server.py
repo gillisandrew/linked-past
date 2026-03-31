@@ -897,8 +897,8 @@ def create_mcp_server() -> FastMCP:
         return "\n".join(lines)
 
     @mcp.tool()
-    def update_dataset(ctx: Context, dataset: str | None = None) -> str:
-        """Check status, initialize unloaded datasets, or check for updates. If a dataset is registered but not yet initialized (no local data), this will download and load it."""
+    def update_dataset(ctx: Context, dataset: str | None = None, force: bool = False) -> str:
+        """Check status, initialize unloaded datasets, or force re-download. If a dataset is registered but not yet initialized (no local data), this will download and load it. Use force=True to re-pull from the registry even if already initialized."""
         app: AppContext = ctx.request_context.lifespan_context
         registry = app.registry
 
@@ -918,6 +918,21 @@ def create_mcp_server() -> FastMCP:
                 initialized = True
             except KeyError:
                 initialized = False
+
+            # Force re-download: delete store so it gets rebuilt
+            if force and initialized:
+                import shutil
+
+                dataset_dir = registry._data_dir / ds_name
+                store_path = dataset_dir / "store"
+                if store_path.exists():
+                    # Close existing store first
+                    if ds_name in registry._stores:
+                        del registry._stores[ds_name]
+                    shutil.rmtree(store_path)
+                initialized = False
+                lines.append(f"## {plugin.display_name}\n")
+                lines.append("- **Force update:** deleted local store, re-downloading...")
 
             if not initialized:
                 lines.append(f"## {plugin.display_name}\n")
