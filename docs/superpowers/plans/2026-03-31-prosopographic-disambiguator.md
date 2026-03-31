@@ -215,7 +215,8 @@ def parse_office(text: str) -> str | None:
         (r"\bpr\b\.(?!\s*q)", "praetor"),  # pr. but not pr. q. (proquaestor)
         (r"\btr\.\s*pl\b\.?", "tribunus plebis"),
         (r"\baed\b\.?", "aedilis"),
-        (r"\bq\b\.(?!\s*f)", "quaestor"),  # q. but not q. f. (which is filiation)
+        (r"(?<!\w)q\.\s*(?:restituit|designat|pro\b|urbana)", "quaestor"),  # q. followed by role context
+        (r"\bquaestor\b", "quaestor"),  # full word
         (r"\bleg\b\.?", "legatus"),
         (r"\bpropr\b\.?", "propraetor"),
     ]
@@ -270,65 +271,72 @@ from linked_past.core.disambiguate import (
 
 class TestScoreTemporal:
     def test_midpoint_within_era(self):
-        # Inscription dated -147, person era -185 to -129
-        score, explanation = score_temporal(era_from=-185, era_to=-129, date_start=-150, date_end=-140)
+        score, explanation, is_absent = score_temporal(era_from=-185, era_to=-129, date_start=-150, date_end=-140)
         assert score == 1.0
+        assert not is_absent
 
     def test_partial_overlap(self):
-        # Inscription dated 0-50 AD, person era -100 to 0
-        score, explanation = score_temporal(era_from=-100, era_to=0, date_start=0, date_end=50)
+        score, explanation, is_absent = score_temporal(era_from=-100, era_to=0, date_start=0, date_end=50)
         assert score == 0.5
+        assert not is_absent
 
     def test_no_overlap(self):
-        # Inscription dated 100 AD, person era -300 to -200
-        score, explanation = score_temporal(era_from=-300, era_to=-200, date_start=100, date_end=150)
+        score, explanation, is_absent = score_temporal(era_from=-300, era_to=-200, date_start=100, date_end=150)
         assert score == 0.0
+        assert not is_absent
 
     def test_no_inscription_date(self):
-        score, explanation = score_temporal(era_from=-185, era_to=-129, date_start=None, date_end=None)
+        score, explanation, is_absent = score_temporal(era_from=-185, era_to=-129, date_start=None, date_end=None)
         assert score == 0.0
+        assert is_absent
 
     def test_no_era_data(self):
-        score, explanation = score_temporal(era_from=None, era_to=None, date_start=-147, date_end=-140)
+        score, explanation, is_absent = score_temporal(era_from=None, era_to=None, date_start=-147, date_end=-140)
         assert score == 0.0
+        assert is_absent
 
 
 class TestScoreCareer:
     def test_exact_office_and_date(self):
-        # Person held consulship in -147, inscription says cos. dated -147
         offices = [{"office": "Office: consul", "date_start": -147}]
-        score, explanation = score_career(offices, era_from=-185, office="consul", date=-147)
+        score, explanation, is_absent = score_career(offices, era_from=-185, office="consul", date=-147)
         assert score == 1.0
+        assert not is_absent
 
     def test_office_match_close_date(self):
-        # Person held consulship in -147, inscription dated -140
         offices = [{"office": "Office: consul", "date_start": -147}]
-        score, explanation = score_career(offices, era_from=-185, office="consul", date=-140)
+        score, explanation, is_absent = score_career(offices, era_from=-185, office="consul", date=-140)
         assert score == 0.7
 
     def test_office_match_no_date(self):
         offices = [{"office": "Office: consul", "date_start": -147}]
-        score, explanation = score_career(offices, era_from=-185, office="consul", date=None)
+        score, explanation, is_absent = score_career(offices, era_from=-185, office="consul", date=None)
         assert score == 0.5
 
     def test_office_not_held(self):
         offices = [{"office": "Office: praetor", "date_start": -150}]
-        score, explanation = score_career(offices, era_from=-185, office="consul", date=-147)
-        assert score == 0.3  # career level plausible
+        score, explanation, is_absent = score_career(offices, era_from=-185, office="consul", date=-147)
+        assert score == 0.3
 
     def test_cursus_age_violation(self):
-        # Person born -150, consul inscription dated -130 — age 20, impossible
         offices = [{"office": "Office: consul", "date_start": -130}]
-        score, explanation = score_career(offices, era_from=-150, office="consul", date=-130)
-        assert score == 0.0  # too young
+        score, explanation, is_absent = score_career(offices, era_from=-150, office="consul", date=-130)
+        assert score == 0.0
+
+    def test_office_before_birth(self):
+        offices = [{"office": "Office: consul", "date_start": -200}]
+        score, explanation, is_absent = score_career(offices, era_from=-150, office="consul", date=-200)
+        assert score == 0.0
+        assert "before birth" in explanation or "impossible" in explanation
 
     def test_no_office_in_inscription(self):
         offices = [{"office": "Office: consul", "date_start": -147}]
-        score, explanation = score_career(offices, era_from=-185, office=None, date=None)
-        assert score == 0.0  # signal absent
+        score, explanation, is_absent = score_career(offices, era_from=-185, office=None, date=None)
+        assert score == 0.0
+        assert is_absent
 
     def test_no_dprr_offices(self):
-        score, explanation = score_career([], era_from=-185, office="consul", date=-147)
+        score, explanation, is_absent = score_career([], era_from=-185, office="consul", date=-147)
         assert score == 0.0
 ```
 
@@ -390,13 +398,20 @@ class PersonContext:
 
 
 @dataclass
+class SignalResult:
+    score: float        # 0.0–1.0
+    weight: float       # from WEIGHTS dict
+    explanation: str
+    is_absent: bool     # True if signal has no data (weight redistributed)
+
+
+@dataclass
 class CandidateMatch:
     dprr_uri: str
     dprr_label: str
     score: float
     confidence: str  # "strong", "probable", "ambiguous"
-    signals: dict[str, tuple[float, float, str]] = field(default_factory=dict)
-    # signal_name → (score, max_weight, explanation)
+    signals: dict[str, SignalResult] = field(default_factory=dict)
 
 
 def score_temporal(
@@ -404,12 +419,14 @@ def score_temporal(
     era_to: int | None,
     date_start: int | None,
     date_end: int | None,
-) -> tuple[float, str]:
-    """Score temporal overlap between DPRR era and inscription dates."""
+) -> tuple[float, str, bool]:
+    """Score temporal overlap between DPRR era and inscription dates.
+    Returns (score, explanation, is_absent).
+    """
     if era_from is None and era_to is None:
-        return 0.0, "no DPRR era data"
+        return 0.0, "no DPRR era data", True
     if date_start is None and date_end is None:
-        return 0.0, "no inscription date"
+        return 0.0, "no inscription date", True
 
     # Use midpoint of inscription date range
     if date_start is not None and date_end is not None:
@@ -423,12 +440,12 @@ def score_temporal(
     e_to = era_to if era_to is not None else 100
 
     if e_from <= mid <= e_to:
-        return 1.0, f"inscription date {mid:.0f} within era {e_from}..{e_to}"
+        return 1.0, f"inscription date {mid:.0f} within era {e_from}..{e_to}", False
     elif (date_start is not None and date_end is not None and
           not (date_end < e_from or date_start > e_to)):
-        return 0.5, f"partial overlap: inscription {date_start}..{date_end}, era {e_from}..{e_to}"
+        return 0.5, f"partial overlap: inscription {date_start}..{date_end}, era {e_from}..{e_to}", False
     else:
-        return 0.0, f"no overlap: inscription ~{mid:.0f}, era {e_from}..{e_to}"
+        return 0.0, f"no overlap: inscription ~{mid:.0f}, era {e_from}..{e_to}", False
 
 
 def score_career(
@@ -436,22 +453,26 @@ def score_career(
     era_from: int | None,
     office: str | None,
     date: int | None,
-) -> tuple[float, str]:
-    """Score career/office match between DPRR person and inscription evidence."""
+) -> tuple[float, str, bool]:
+    """Score career/office match between DPRR person and inscription evidence.
+    Returns (score, explanation, is_absent).
+    """
     if office is None:
-        return 0.0, "no office in inscription"
+        return 0.0, "no office in inscription", True
 
     # Normalize office name for comparison
     office_label = f"Office: {office}"
 
     # Check cursus age constraint
     if era_from is not None and date is not None:
-        age_at_date = abs(date - era_from)
+        age_at_date = date - era_from  # positive = person alive; negative = office before birth
+        if age_at_date < 0:
+            return 0.0, f"impossible: office at {date} before birth ~{era_from}", False
         min_age = _MIN_AGE_FOR_OFFICE.get(office, 25)
         if age_at_date < min_age:
-            return 0.0, f"cursus violation: age {age_at_date} at {date}, min {min_age} for {office}"
+            return 0.0, f"cursus violation: age {age_at_date} at {date}, min {min_age} for {office}", False
         if age_at_date > _MAX_AGE:
-            return 0.0, f"implausible: age {age_at_date} at {date}"
+            return 0.0, f"implausible: age {age_at_date} at {date}", False
 
     # Check if DPRR person held this office
     held_offices = [o for o in dprr_offices if office in o.get("office", "").lower()]
@@ -459,27 +480,27 @@ def score_career(
         # Office not held — but if they held a higher office, career level is plausible
         any_offices = len(dprr_offices) > 0
         if any_offices:
-            return 0.3, f"{office} not held, but career active"
-        return 0.0, f"no offices recorded"
+            return 0.3, f"{office} not held, but career active", False
+        return 0.0, f"no offices recorded", False
 
     # Office held — check date proximity
     if date is None:
-        return 0.5, f"{office} held (no inscription date to compare)"
+        return 0.5, f"{office} held (no inscription date to compare)", False
 
     closest = min(held_offices, key=lambda o: abs((o.get("date_start") or 0) - date))
     closest_date = closest.get("date_start")
     if closest_date is None:
-        return 0.5, f"{office} held (no DPRR date to compare)"
+        return 0.5, f"{office} held (no DPRR date to compare)", False
 
     gap = abs(closest_date - date)
     if gap <= 5:
-        return 1.0, f"{office} held in {closest_date}, inscription {date} (±{gap}yr)"
+        return 1.0, f"{office} held in {closest_date}, inscription {date} (±{gap}yr)", False
     elif gap <= 10:
-        return 0.7, f"{office} held in {closest_date}, inscription {date} (±{gap}yr)"
+        return 0.7, f"{office} held in {closest_date}, inscription {date} (±{gap}yr)", False
     elif gap <= 20:
-        return 0.5, f"{office} held in {closest_date}, inscription {date} (±{gap}yr)"
+        return 0.5, f"{office} held in {closest_date}, inscription {date} (±{gap}yr)", False
     else:
-        return 0.3, f"{office} held in {closest_date}, inscription {date} (±{gap}yr, distant)"
+        return 0.3, f"{office} held in {closest_date}, inscription {date} (±{gap}yr, distant)", False
 ```
 
 - [ ] **Step 4: Run tests to verify they pass**
@@ -512,31 +533,33 @@ from linked_past.core.disambiguate import score_filiation
 
 class TestScoreFiliation:
     def test_father_and_grandfather_match(self):
-        # DPRR person's father praenomen = manius, grandfather = manius
-        # Inscription filiation = M'. f. M'. n.
         family = {"father_praenomen": "manius", "grandfather_praenomen": "manius"}
-        score, explanation = score_filiation(family, {"father": "manius", "grandfather": "manius"})
+        score, explanation, is_absent = score_filiation(family, {"father": "manius", "grandfather": "manius"})
         assert score == 1.0
+        assert not is_absent
 
     def test_father_match_only(self):
         family = {"father_praenomen": "lucius", "grandfather_praenomen": None}
-        score, explanation = score_filiation(family, {"father": "lucius"})
+        score, explanation, is_absent = score_filiation(family, {"father": "lucius"})
         assert score == 0.5
 
     def test_father_mismatch(self):
         family = {"father_praenomen": "marcus", "grandfather_praenomen": None}
-        score, explanation = score_filiation(family, {"father": "lucius"})
+        score, explanation, is_absent = score_filiation(family, {"father": "lucius"})
         assert score == 0.0
+        assert not is_absent  # data present, just doesn't match
 
     def test_no_filiation_data(self):
         family = {"father_praenomen": "marcus", "grandfather_praenomen": None}
-        score, explanation = score_filiation(family, {})
+        score, explanation, is_absent = score_filiation(family, {})
         assert score == 0.0
+        assert is_absent
 
     def test_no_family_data(self):
         family = {}
-        score, explanation = score_filiation(family, {"father": "marcus"})
+        score, explanation, is_absent = score_filiation(family, {"father": "marcus"})
         assert score == 0.0
+        assert is_absent
 ```
 
 - [ ] **Step 2: Run test to verify it fails**
@@ -552,16 +575,17 @@ Add to `disambiguate.py`:
 def score_filiation(
     dprr_family: dict[str, str | None],
     inscription_filiation: dict[str, str],
-) -> tuple[float, str]:
+) -> tuple[float, str, bool]:
     """Score filiation match between DPRR family data and inscription filiation.
+    Returns (score, explanation, is_absent).
 
     dprr_family: {"father_praenomen": "marcus", "grandfather_praenomen": "gnaeus"}
     inscription_filiation: {"father": "marcus", "grandfather": "gnaeus"} (from parse_filiation)
     """
     if not inscription_filiation:
-        return 0.0, "no filiation in inscription"
+        return 0.0, "no filiation in inscription", True
     if not dprr_family:
-        return 0.0, "no family data in DPRR"
+        return 0.0, "no family data in DPRR", True
 
     insc_father = inscription_filiation.get("father")
     insc_grandfather = inscription_filiation.get("grandfather")
@@ -569,22 +593,22 @@ def score_filiation(
     dprr_grandfather = dprr_family.get("grandfather_praenomen")
 
     if not insc_father:
-        return 0.0, "no father in filiation"
+        return 0.0, "no father in filiation", True
 
     if not dprr_father:
-        return 0.0, "DPRR father unknown"
+        return 0.0, "DPRR father unknown", True
 
     if insc_father != dprr_father:
-        return 0.0, f"father mismatch: inscription {insc_father}, DPRR {dprr_father}"
+        return 0.0, f"father mismatch: inscription {insc_father}, DPRR {dprr_father}", False
 
     # Father matches
     if insc_grandfather and dprr_grandfather:
         if insc_grandfather == dprr_grandfather:
-            return 1.0, f"father ({insc_father}) + grandfather ({insc_grandfather}) match"
+            return 1.0, f"father ({insc_father}) + grandfather ({insc_grandfather}) match", False
         else:
-            return 0.0, f"grandfather mismatch: inscription {insc_grandfather}, DPRR {dprr_grandfather}"
+            return 0.0, f"grandfather mismatch: inscription {insc_grandfather}, DPRR {dprr_grandfather}", False
 
-    return 0.5, f"father matches ({insc_father}), grandfather not verifiable"
+    return 0.5, f"father matches ({insc_father}), grandfather not verifiable", False
 ```
 
 - [ ] **Step 4: Run tests to verify they pass**
@@ -617,24 +641,40 @@ from linked_past.core.disambiguate import score_geography
 
 class TestScoreGeography:
     def test_province_match(self):
-        # DPRR person served in Asia, inscription found at Pleiades URI in Asia
         provinces = ["https://pleiades.stoa.org/places/837#this"]
-        score, explanation = score_geography(provinces, "https://pleiades.stoa.org/places/837#this")
+        score, explanation, is_absent = score_geography(provinces, "https://pleiades.stoa.org/places/837#this")
         assert score == 1.0
+        assert not is_absent
 
     def test_no_match(self):
         provinces = ["https://pleiades.stoa.org/places/775#this"]  # Africa
-        score, explanation = score_geography(provinces, "https://pleiades.stoa.org/places/837#this")  # Asia
+        score, explanation, is_absent = score_geography(provinces, "https://pleiades.stoa.org/places/837#this")  # Asia
         assert score == 0.0
+        assert not is_absent  # data present, just doesn't match
 
     def test_no_findspot(self):
         provinces = ["https://pleiades.stoa.org/places/837#this"]
-        score, explanation = score_geography(provinces, None)
+        score, explanation, is_absent = score_geography(provinces, None)
         assert score == 0.0
+        assert is_absent
 
     def test_no_provinces(self):
-        score, explanation = score_geography([], "https://pleiades.stoa.org/places/837#this")
+        score, explanation, is_absent = score_geography([], "https://pleiades.stoa.org/places/837#this")
         assert score == 0.0
+        assert is_absent
+
+    def test_italy_fallback(self):
+        score, explanation, is_absent = score_geography([], None, is_italian_findspot=True, has_italian_career=True)
+        assert score == 0.0  # no findspot URI → absent
+        assert is_absent
+
+    def test_italy_career_italian_findspot(self):
+        score, explanation, is_absent = score_geography(
+            [], "https://pleiades.stoa.org/places/423025#this",
+            is_italian_findspot=True, has_italian_career=True,
+        )
+        assert score == 0.3
+        assert not is_absent
 ```
 
 - [ ] **Step 2: Run test to verify it fails**
@@ -650,23 +690,33 @@ Add to `disambiguate.py`:
 def score_geography(
     dprr_province_pleiades_uris: list[str],
     findspot_pleiades_uri: str | None,
-) -> tuple[float, str]:
+    is_italian_findspot: bool = False,
+    has_italian_career: bool = False,
+) -> tuple[float, str, bool]:
     """Score geographic match between DPRR provincial posts and inscription findspot.
+    Returns (score, explanation, is_absent).
 
     dprr_province_pleiades_uris: Pleiades URIs for provinces where DPRR person served
-        (resolved via linkage graph: DPRR Province → Pleiades Place)
     findspot_pleiades_uri: Pleiades URI for the inscription's findspot
-        (resolved via EDH geography → Pleiades)
+    is_italian_findspot: True if findspot is in Italia/Rome/Italian region
+    has_italian_career: True if DPRR person held posts in Italia/Rome
     """
     if not findspot_pleiades_uri:
-        return 0.0, "no findspot data"
+        return 0.0, "no findspot data", True
     if not dprr_province_pleiades_uris:
-        return 0.0, "no provincial posts recorded"
+        # No provincial posts — check Italy fallback
+        if is_italian_findspot and has_italian_career:
+            return 0.3, "Italy-based career + Italian findspot", False
+        return 0.0, "no provincial posts recorded", True
 
     if findspot_pleiades_uri in dprr_province_pleiades_uris:
-        return 1.0, f"findspot matches provincial post ({findspot_pleiades_uri})"
+        return 1.0, f"findspot matches provincial post ({findspot_pleiades_uri})", False
 
-    return 0.0, f"findspot {findspot_pleiades_uri} not in served provinces"
+    # Check Italy fallback
+    if is_italian_findspot and has_italian_career:
+        return 0.3, "Italy-based career + Italian findspot (no provincial match)", False
+
+    return 0.0, f"findspot {findspot_pleiades_uri} not in served provinces", False
 ```
 
 - [ ] **Step 4: Run tests to verify they pass**
@@ -694,7 +744,7 @@ git commit -m "feat: add geography signal scorer"
 Add to `test_disambiguate.py`:
 
 ```python
-from linked_past.core.disambiguate import PersonDisambiguator, PersonContext
+from linked_past.core.disambiguate import PersonDisambiguator, PersonContext, SignalResult
 
 
 class TestPersonDisambiguator:
@@ -702,20 +752,19 @@ class TestPersonDisambiguator:
         """Test that the orchestrator combines signal scores correctly."""
         disambiguator = PersonDisambiguator()
 
-        # Mock pre-computed signal scores for two candidates
         # Candidate A: filiation match + career match
-        # Candidate B: only temporal overlap
         signals_a = {
-            "filiation": (1.0, 0.4, "father+grandfather match"),
-            "career": (1.0, 0.3, "consul -147 confirmed"),
-            "geography": (0.0, 0.2, "no findspot"),
-            "temporal": (1.0, 0.1, "within era"),
+            "filiation": SignalResult(1.0, 0.4, "father+grandfather match", False),
+            "career": SignalResult(1.0, 0.3, "consul -147 confirmed", False),
+            "geography": SignalResult(0.0, 0.2, "no findspot", True),
+            "temporal": SignalResult(1.0, 0.1, "within era", False),
         }
+        # Candidate B: only temporal overlap
         signals_b = {
-            "filiation": (0.0, 0.4, "father mismatch"),
-            "career": (0.0, 0.3, "office not held"),
-            "geography": (0.0, 0.2, "no findspot"),
-            "temporal": (1.0, 0.1, "within era"),
+            "filiation": SignalResult(0.0, 0.4, "father mismatch", False),
+            "career": SignalResult(0.0, 0.3, "office not held", False),
+            "geography": SignalResult(0.0, 0.2, "no findspot", True),
+            "temporal": SignalResult(1.0, 0.1, "within era", False),
         }
 
         score_a = disambiguator._compute_weighted_score(signals_a)
@@ -729,18 +778,27 @@ class TestPersonDisambiguator:
         """When a signal has no data, its weight redistributes to others."""
         disambiguator = PersonDisambiguator()
 
-        # Only career and temporal have data (filiation and geography absent)
         signals = {
-            "filiation": (0.0, 0.4, "no filiation in inscription"),  # absent
-            "career": (1.0, 0.3, "consul confirmed"),
-            "geography": (0.0, 0.2, "no findspot"),  # absent
-            "temporal": (1.0, 0.1, "within era"),
+            "filiation": SignalResult(0.0, 0.4, "no filiation", True),  # absent
+            "career": SignalResult(1.0, 0.3, "consul confirmed", False),
+            "geography": SignalResult(0.0, 0.2, "no findspot", True),  # absent
+            "temporal": SignalResult(1.0, 0.1, "within era", False),
         }
 
         score = disambiguator._compute_weighted_score(signals)
-        # With redistribution: career (0.3) + temporal (0.1) = 0.4 available
-        # Normalized: career = 0.3/0.4 * 1.0, temporal = 0.1/0.4 * 1.0 → total = 1.0
+        # career (0.3) + temporal (0.1) = 0.4 available → normalized to 1.0
         assert score == pytest.approx(1.0, abs=0.01)
+
+    def test_all_signals_absent(self):
+        """When all signals are absent, score is 0."""
+        disambiguator = PersonDisambiguator()
+        signals = {
+            "filiation": SignalResult(0.0, 0.4, "absent", True),
+            "career": SignalResult(0.0, 0.3, "absent", True),
+            "geography": SignalResult(0.0, 0.2, "absent", True),
+            "temporal": SignalResult(0.0, 0.1, "absent", True),
+        }
+        assert disambiguator._compute_weighted_score(signals) == 0.0
 
     def test_confidence_strong(self):
         assert PersonDisambiguator._classify_confidence(0.8, 0.3) == "strong"
@@ -765,22 +823,19 @@ Add to `disambiguate.py`:
 class PersonDisambiguator:
     """Scores DPRR person candidates against contextual evidence."""
 
-    def _compute_weighted_score(self, signals: dict[str, tuple[float, float, str]]) -> float:
+    def _compute_weighted_score(self, signals: dict[str, SignalResult]) -> float:
         """Compute weighted score with redistribution for absent signals.
 
-        A signal is 'absent' if its explanation indicates no data (score == 0.0
-        and explanation starts with 'no '). Absent signals' weights are
-        redistributed proportionally to present signals.
+        Absent signals (is_absent=True) have their weight redistributed
+        proportionally to present signals.
         """
         present_weight = 0.0
         weighted_sum = 0.0
 
-        for name, (score, weight, explanation) in signals.items():
-            # Signal is absent if score is 0 AND explanation indicates missing data
-            is_absent = score == 0.0 and explanation.startswith("no ")
-            if not is_absent:
-                present_weight += weight
-                weighted_sum += weight * score
+        for sig in signals.values():
+            if not sig.is_absent:
+                present_weight += sig.weight
+                weighted_sum += sig.weight * sig.score
 
         if present_weight == 0.0:
             return 0.0
@@ -797,7 +852,7 @@ class PersonDisambiguator:
 
     def rank_candidates(
         self,
-        candidates_signals: list[tuple[str, str, dict[str, tuple[float, float, str]]]],
+        candidates_signals: list[tuple[str, str, dict[str, SignalResult]]],
     ) -> list[CandidateMatch]:
         """Rank candidates by weighted score.
 
@@ -936,7 +991,7 @@ def fetch_dprr_candidates(dprr_store, nomen: str) -> list[dict]:
     SELECT DISTINCT ?person ?label ?nomen ?cognomen ?praenomenLabel
            ?eraFrom ?eraTo WHERE {{
       ?person a vocab:Person ;
-              rdfs:label ?label ;
+              vocab:hasPersonName ?label ;
               vocab:hasNomen ?nomen .
       FILTER(LCASE(?nomen) = "{nomen.lower()}")
       OPTIONAL {{ ?person vocab:hasCognomen ?cognomen }}
@@ -971,32 +1026,48 @@ def fetch_dprr_offices(dprr_store, person_uri: str) -> list[dict]:
 
 
 def fetch_dprr_family(dprr_store, person_uri: str) -> dict[str, str | None]:
-    """Get father's and grandfather's praenomina for a DPRR person."""
+    """Get father's and grandfather's praenomina for a DPRR person.
+
+    Chains RelationshipAssertions: person ← father of ← father → father of → grandfather.
+    """
     from linked_past.core.store import execute_query
 
+    # Query for father AND grandfather in one SPARQL query using property path chaining
     sparql = f"""
     PREFIX vocab: <http://romanrepublic.ac.uk/rdf/ontology#>
     PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-    SELECT ?relLabel ?relatedPraenomen WHERE {{
-      ?ra a vocab:RelationshipAssertion ;
-          vocab:isAboutPerson ?related ;
-          vocab:hasRelatedPerson <{person_uri}> ;
-          vocab:hasRelationship ?rel .
-      ?rel rdfs:label ?relLabel .
-      FILTER(?relLabel IN ("Relationship: father of"))
-      ?related vocab:hasPraenomen ?prae .
-      ?prae rdfs:label ?relatedPraenomen .
+    SELECT ?fatherPrae ?grandfatherPrae WHERE {{
+      # Find father: someone whose "father of" relationship points to person_uri
+      ?ra1 a vocab:RelationshipAssertion ;
+           vocab:isAboutPerson ?father ;
+           vocab:hasRelatedPerson <{person_uri}> ;
+           vocab:hasRelationship ?rel1 .
+      ?rel1 rdfs:label "Relationship: father of" .
+      ?father vocab:hasPraenomen ?fprae .
+      ?fprae rdfs:label ?fatherPrae .
+
+      # Find grandfather: someone whose "father of" relationship points to father
+      OPTIONAL {{
+        ?ra2 a vocab:RelationshipAssertion ;
+             vocab:isAboutPerson ?grandfather ;
+             vocab:hasRelatedPerson ?father ;
+             vocab:hasRelationship ?rel2 .
+        ?rel2 rdfs:label "Relationship: father of" .
+        ?grandfather vocab:hasPraenomen ?gprae .
+        ?gprae rdfs:label ?grandfatherPrae .
+      }}
     }}
+    LIMIT 1
     """
     rows = execute_query(dprr_store, sparql)
     result: dict[str, str | None] = {"father_praenomen": None, "grandfather_praenomen": None}
     for r in rows:
-        prae_label = r.get("relatedPraenomen", "")
-        prae = normalize_praenomen(prae_label.replace("Praenomen: ", ""))
-        if prae:
-            result["father_praenomen"] = prae
-    # Grandfather requires chaining — find father first, then father's father
-    # For now, only extract direct father. Grandfather requires a second query.
+        father_label = r.get("fatherPrae", "")
+        if father_label:
+            result["father_praenomen"] = normalize_praenomen(father_label.replace("Praenomen: ", ""))
+        grandfather_label = r.get("grandfatherPrae", "")
+        if grandfather_label:
+            result["grandfather_praenomen"] = normalize_praenomen(grandfather_label.replace("Praenomen: ", ""))
     return result
 
 
@@ -1040,6 +1111,145 @@ git commit -m "feat: add context extraction and SPARQL data fetchers for disambi
 
 ---
 
+### Task 6b: Implement `extract_context_from_edh_uri`
+
+**Files:**
+- Modify: `packages/linked-past/linked_past/core/disambiguate.py`
+- Modify: `packages/linked-past/tests/test_disambiguate.py`
+
+- [ ] **Step 1: Write failing test**
+
+Add to `test_disambiguate.py`:
+
+```python
+from linked_past.core.disambiguate import extract_context_from_edh_uri
+
+
+class TestExtractContextFromEDH:
+    def test_returns_none_for_missing_uri(self):
+        """With a mock empty store, extraction returns None."""
+        from pyoxigraph import Store as OxStore
+        store = OxStore()
+        result = extract_context_from_edh_uri("https://example.org/nonexistent", store)
+        assert result is None
+```
+
+- [ ] **Step 2: Run test to verify it fails**
+
+Run: `uv run pytest packages/linked-past/tests/test_disambiguate.py::TestExtractContextFromEDH -v`
+Expected: FAIL — function not defined.
+
+- [ ] **Step 3: Implement `extract_context_from_edh_uri`**
+
+Add to `disambiguate.py`:
+
+```python
+def extract_context_from_edh_uri(uri: str, edh_store) -> PersonContext | None:
+    """Extract a PersonContext from an EDH person URI by querying the EDH store.
+
+    Fetches: name, inscription text (for filiation/office parsing), dates, findspot.
+    """
+    from linked_past.core.store import execute_query
+
+    # Step 1: Get person name and attestation
+    person_sparql = f"""
+    PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+    PREFIX lawd: <http://lawd.info/ontology/>
+    SELECT ?name ?att WHERE {{
+      <{uri}> foaf:name ?name .
+      OPTIONAL {{ <{uri}> lawd:hasAttestation ?att }}
+    }}
+    LIMIT 1
+    """
+    person_rows = execute_query(edh_store, person_sparql)
+    if not person_rows:
+        return None
+
+    name = person_rows[0].get("name", "")
+    att_uri = person_rows[0].get("att")
+
+    # Step 2: Get inscription data from attestation
+    edition_text = None
+    date_start = None
+    date_end = None
+    findspot_uri = None
+
+    if att_uri:
+        # Extract inscription URI from attestation (remove /N#ref suffix)
+        import re
+        insc_uri = re.sub(r"/\d+#.*$", "", att_uri)
+
+        insc_sparql = f"""
+        PREFIX epi: <http://edh-www.adw.uni-heidelberg.de/lod/ontology#>
+        PREFIX nmo: <http://nomisma.org/ontology#>
+        PREFIX lawd: <http://lawd.info/ontology/1.0/>
+        SELECT ?editionText ?startDate ?endDate ?foundAt WHERE {{
+          <{insc_uri}> epi:editionText ?editionText .
+          OPTIONAL {{ <{insc_uri}> nmo:hasStartDate ?startDate }}
+          OPTIONAL {{ <{insc_uri}> nmo:hasEndDate ?endDate }}
+          OPTIONAL {{ <{insc_uri}> lawd:foundAt ?foundAt }}
+        }}
+        LIMIT 1
+        """
+        insc_rows = execute_query(edh_store, insc_sparql)
+        if insc_rows:
+            edition_text = insc_rows[0].get("editionText")
+            raw_start = insc_rows[0].get("startDate")
+            raw_end = insc_rows[0].get("endDate")
+            findspot_uri = insc_rows[0].get("foundAt")
+            try:
+                date_start = int(raw_start) if raw_start else None
+            except (ValueError, TypeError):
+                date_start = None
+            try:
+                date_end = int(raw_end) if raw_end else None
+            except (ValueError, TypeError):
+                date_end = None
+
+    # Step 3: Parse name (with Greek transliteration)
+    if is_greek(name):
+        normalized = transliterate_greek(name)
+    else:
+        normalized = name
+
+    parsed = parse_roman_name(normalized)
+
+    # Step 4: Parse filiation and office from edition text
+    filiation_str = None
+    office_str = None
+    if edition_text:
+        filiation_str = edition_text  # parse_filiation will extract from full text
+        office_str = parse_office(edition_text)
+
+    return PersonContext(
+        name=name,
+        normalized_name=normalized,
+        praenomen=parsed.get("praenomen"),
+        nomen=parsed.get("nomen"),
+        cognomen=parsed.get("cognomen"),
+        filiation=filiation_str,
+        office=office_str,
+        date_start=date_start,
+        date_end=date_end,
+        findspot_uri=findspot_uri,
+        source_uri=uri,
+    )
+```
+
+- [ ] **Step 4: Run tests to verify they pass**
+
+Run: `uv run pytest packages/linked-past/tests/test_disambiguate.py -v`
+Expected: All tests PASS.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add packages/linked-past/linked_past/core/disambiguate.py packages/linked-past/tests/test_disambiguate.py
+git commit -m "feat: add extract_context_from_edh_uri for automatic EDH context extraction"
+```
+
+---
+
 ### Task 7: Register MCP tool in server.py
 
 **Files:**
@@ -1066,6 +1276,8 @@ def disambiguate(
 
     from linked_past.core.disambiguate import (
         PersonDisambiguator,
+        SignalResult,
+        extract_context_from_edh_uri,
         extract_context_from_fields,
         fetch_dprr_candidates,
         fetch_dprr_family,
@@ -1084,17 +1296,22 @@ def disambiguate(
     # Build context
     if uri and not name:
         # Extract from EDH store
-        # TODO in future: implement extract_context_from_edh_uri
-        return f"Error: EDH URI extraction not yet implemented. Provide `name` instead."
-
-    context = extract_context_from_fields(
-        name=name or "",
-        filiation=filiation,
-        office=office,
-        date=date,
-        province=province,
-        uri=uri,
-    )
+        try:
+            edh_store = app.registry.get_store("edh")
+        except KeyError:
+            return "Error: EDH dataset not loaded."
+        context = extract_context_from_edh_uri(uri, edh_store)
+        if context is None:
+            return f"Error: could not find EDH person at `{uri}`."
+    else:
+        context = extract_context_from_fields(
+            name=name or "",
+            filiation=filiation,
+            office=office,
+            date=date,
+            province=province,
+            uri=uri,
+        )
 
     if not context.nomen:
         return f"Error: could not parse nomen from name '{name}'."
@@ -1123,16 +1340,16 @@ def disambiguate(
         province_uris = fetch_dprr_province_pleiades(dprr_store, app.linkage, person_uri)
 
         # Score signals
-        fil_score, fil_expl = score_filiation(family, insc_filiation)
-        car_score, car_expl = score_career(offices, era_from, context.office, context.date_start)
-        geo_score, geo_expl = score_geography(province_uris, context.findspot_uri)
-        tmp_score, tmp_expl = score_temporal(era_from, era_to, context.date_start, context.date_end)
+        fil_score, fil_expl, fil_absent = score_filiation(family, insc_filiation)
+        car_score, car_expl, car_absent = score_career(offices, era_from, context.office, context.date_start)
+        geo_score, geo_expl, geo_absent = score_geography(province_uris, context.findspot_uri)
+        tmp_score, tmp_expl, tmp_absent = score_temporal(era_from, era_to, context.date_start, context.date_end)
 
         signals = {
-            "filiation": (fil_score, 0.4, fil_expl),
-            "career": (car_score, 0.3, car_expl),
-            "geography": (geo_score, 0.2, geo_expl),
-            "temporal": (tmp_score, 0.1, tmp_expl),
+            "filiation": SignalResult(fil_score, 0.4, fil_expl, fil_absent),
+            "career": SignalResult(car_score, 0.3, car_expl, car_absent),
+            "geography": SignalResult(geo_score, 0.2, geo_expl, geo_absent),
+            "temporal": SignalResult(tmp_score, 0.1, tmp_expl, tmp_absent),
         }
         candidates_signals.append((person_uri, label, signals))
 
@@ -1154,8 +1371,8 @@ def disambiguate(
 
     for i, match in enumerate(ranked[:10]):
         lines.append(f"### {i+1}. {match.dprr_label} (score: {match.score:.2f})\n")
-        for sig_name, (score, weight, expl) in match.signals.items():
-            lines.append(f"- {sig_name.title()}: **{score * weight:.2f}/{weight:.1f}** — {expl}")
+        for sig_name, sig in match.signals.items():
+            lines.append(f"- {sig_name.title()}: **{sig.score * sig.weight:.2f}/{sig.weight:.1f}** — {sig.explanation}")
         lines.append(f"**Confidence: {match.confidence}**\n")
 
     if ranked:
@@ -1168,16 +1385,52 @@ def disambiguate(
     return output
 ```
 
-- [ ] **Step 2: Run the full test suite**
+- [ ] **Step 2: Update `test_server.py` to verify tool registration**
+
+In `packages/linked-past/tests/test_server.py`, find the `test_create_mcp_server` test and add:
+
+```python
+assert "disambiguate" in tool_names
+```
+
+- [ ] **Step 3: Run the full test suite**
 
 Run: `uv run pytest && uv run ruff check .`
 Expected: All pass.
 
+- [ ] **Step 4: Commit**
+
+```bash
+git add packages/linked-past/linked_past/core/server.py packages/linked-past/tests/test_server.py
+git commit -m "feat: register disambiguate MCP tool"
+```
+
+---
+
+### Task 7b: Aquillius golden integration test
+
+**Files:**
+- Modify: `packages/linked-past/tests/test_disambiguate.py`
+
+- [ ] **Step 1: Write golden integration test using inline Turtle fixtures**
+
+Add to `test_disambiguate.py` an `AQUILLIUS_TURTLE` fixture containing three Aquillii (Person/1614 cos. 129, Person/1757 cos. 101, Person/4686 quaestor c. 70) with RelationshipAssertions (1614 father of 1757, 1757 father of 4686) and PostAssertions (quaestor for 4686, consul for 1757). Use `pyoxigraph.Store` + `load_rdf()` for an ephemeral store.
+
+Tests:
+- `test_filiation_scores_1_for_florus` — verify `fetch_dprr_family(store, Person/4686)` returns father=manius, grandfather=manius, and `score_filiation` returns 1.0 for "M'. f. M'. n."
+- `test_career_scores_for_quaestor` — verify Person/4686 scores ≥ 0.7 for quaestor office dated -70
+- `test_florus_ranks_above_grandfather` — run full disambiguation with 3 Aquillii candidates, verify Person/4686 ranks #1
+
+- [ ] **Step 2: Run test**
+
+Run: `uv run pytest packages/linked-past/tests/test_disambiguate.py::TestAquilliusGoldenCase -v`
+Expected: All 3 tests PASS.
+
 - [ ] **Step 3: Commit**
 
 ```bash
-git add packages/linked-past/linked_past/core/server.py
-git commit -m "feat: register disambiguate MCP tool"
+git add packages/linked-past/tests/test_disambiguate.py
+git commit -m "test: add Aquillius golden integration test for disambiguation engine"
 ```
 
 ---
@@ -1257,15 +1510,83 @@ def main():
     existing = {(l["source"], l["target"]) for l in conf_data["links"]}
     print(f"  {len(existing)} existing confirmed links")
 
-    # Re-run name matching to get all ambiguous candidates
-    # (import the matching function from the EDH script)
-    import sys
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-    from scripts.match_dprr_edh import get_dprr_persons, get_edh_elite_persons, match_candidates
+    # Get all name-matched candidates using the onomastics module
+    # (replicates the matching logic from match_dprr_edh.py using shared utilities)
+    from linked_past.core.onomastics import parse_roman_name, normalize_praenomen, is_greek, transliterate_greek
+    from linked_past.core.store import execute_query
+    import re
 
-    dprr_persons = get_dprr_persons(dprr_store)
-    edh_persons = get_edh_elite_persons(edh_store)
-    all_candidates = match_candidates(dprr_persons, edh_persons)
+    # Query DPRR persons
+    dprr_rows = execute_query(dprr_store, """
+        PREFIX vocab: <http://romanrepublic.ac.uk/rdf/ontology#>
+        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+        SELECT DISTINCT ?person ?label ?nomen ?cognomen ?praenomenLabel ?eraFrom ?eraTo WHERE {
+          ?person a vocab:Person ; vocab:hasPersonName ?label ; vocab:hasNomen ?nomen .
+          OPTIONAL { ?person vocab:hasCognomen ?cognomen }
+          OPTIONAL { ?person vocab:hasPraenomen ?prae . ?prae rdfs:label ?praenomenLabel }
+          OPTIONAL { ?person vocab:hasEraFrom ?eraFrom }
+          OPTIONAL { ?person vocab:hasEraTo ?eraTo }
+        }
+    """)
+    # Query EDH elite persons
+    edh_rows = execute_query(edh_store, """
+        PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+        SELECT ?person ?name WHERE {
+          ?person a <http://lawd.info/ontology/Person> ; foaf:name ?name .
+          FILTER EXISTS {
+            ?person foaf:member ?s .
+            FILTER(?s IN (
+              <https://edh-www.adw.uni-heidelberg.de/edh/social_status/senatorial_order>,
+              <https://edh-www.adw.uni-heidelberg.de/edh/social_status/equestrian_order>
+            ))
+          }
+        }
+    """)
+
+    # Build nomen index and match (same logic as match_dprr_edh.py)
+    dprr_by_nomen = defaultdict(list)
+    for d in dprr_rows:
+        nomen = re.sub(r"[()]", "", d.get("nomen", "")).strip().lower()
+        if nomen and len(nomen) > 2:
+            dprr_by_nomen[nomen].append(d)
+
+    all_candidates = []
+    for edh in edh_rows:
+        name = edh.get("name", "")
+        if not name or len(name) < 5:
+            continue
+        norm_name = transliterate_greek(name) if is_greek(name) else name
+        parsed = parse_roman_name(norm_name)
+        edh_nomen = (parsed.get("nomen") or "").lower()
+        edh_cog = (parsed.get("cognomen") or "").lower()
+        edh_prae = parsed.get("praenomen")
+        if not edh_nomen or len(edh_nomen) < 3:
+            continue
+        for dprr in dprr_by_nomen.get(edh_nomen, []):
+            dprr_prae_label = (dprr.get("praenomenLabel") or "").lower()
+            dprr_prae = normalize_praenomen(dprr_prae_label.split(":")[-1].strip())
+            dprr_cog = (dprr.get("cognomen") or "").lower().strip("() []")
+            score = 1  # nomen
+            if edh_prae and dprr_prae:
+                if edh_prae == dprr_prae:
+                    score += 2
+                else:
+                    continue
+            if edh_cog and dprr_cog:
+                if edh_cog == dprr_cog:
+                    score += 2
+                elif edh_cog in dprr_cog or dprr_cog in edh_cog:
+                    score += 1
+                else:
+                    continue
+            if score >= 5:
+                all_candidates.append({
+                    "dprr_uri": dprr["person"],
+                    "edh_uri": edh["person"],
+                    "dprr_label": dprr.get("label", ""),
+                    "edh_name": name,
+                    "dprr_era": f"{dprr.get('eraFrom', '?')} to {dprr.get('eraTo', '?')}",
+                })
 
     # Filter to ambiguous only (not already confirmed, not 1:1)
     all_candidates = [c for c in all_candidates if (c["dprr_uri"], c["edh_uri"]) not in existing]
