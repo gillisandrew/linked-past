@@ -87,7 +87,7 @@ def test_nomisma_plugin_load(tmp_path):
 
 def test_nomisma_plugin_oci_attributes():
     plugin = NomismaPlugin()
-    assert plugin.oci_dataset == "nomisma"
+    assert plugin.oci_dataset == "datasets/nomisma"
     assert plugin.oci_version == "latest"
 
 

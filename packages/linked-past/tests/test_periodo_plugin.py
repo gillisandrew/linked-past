@@ -84,7 +84,7 @@ def test_periodo_plugin_load(tmp_path):
 
 def test_periodo_plugin_oci_attributes():
     plugin = PeriodOPlugin()
-    assert plugin.oci_dataset == "periodo"
+    assert plugin.oci_dataset == "datasets/periodo"
     assert plugin.oci_version == "latest"
 
 

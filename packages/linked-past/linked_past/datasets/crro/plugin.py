@@ -43,7 +43,7 @@ class CRROPlugin(DatasetPlugin):
     url = "https://numismatics.org/crro"
     time_coverage = "c. 280-27 BC"
     spatial_coverage = "Roman Republic"
-    oci_dataset = "crro"
+    oci_dataset = "datasets/crro"
     oci_version = "latest"
 
     def __init__(self):

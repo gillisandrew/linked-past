@@ -10,7 +10,7 @@ from linked_past_store.ontology import extract_schema, generate_schemas_yaml
 from linked_past_store.void import generate_void
 
 SOURCE_URL = "http://n2t.net/ark:/99152/p0d.jsonld"
-ARTIFACT_REF = "ghcr.io/gillisandrew/linked-past/periodo"
+ARTIFACT_REF = "ghcr.io/gillisandrew/linked-past/datasets/periodo"
 
 ANNOTATIONS = {
     "org.opencontainers.image.source": "https://github.com/gillisandrew/linked-past",

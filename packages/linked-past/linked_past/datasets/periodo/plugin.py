@@ -42,7 +42,7 @@ class PeriodOPlugin(DatasetPlugin):
     url = "https://perio.do"
     time_coverage = "All periods (prehistoric through modern)"
     spatial_coverage = "Global"
-    oci_dataset = "periodo"
+    oci_dataset = "datasets/periodo"
     oci_version = "latest"
 
     def __init__(self):

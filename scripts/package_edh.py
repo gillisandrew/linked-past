@@ -10,7 +10,7 @@ from linked_past_store.ontology import extract_schema, generate_schemas_yaml
 from linked_past_store.void import generate_void
 
 LOCAL_ZIP = Path(__file__).parent.parent / "edh_linked_data.zip"
-ARTIFACT_REF = "ghcr.io/gillisandrew/linked-past/edh"
+ARTIFACT_REF = "ghcr.io/gillisandrew/linked-past/datasets/edh"
 
 ANNOTATIONS = {
     "org.opencontainers.image.source": "https://github.com/gillisandrew/linked-past",

@@ -43,7 +43,7 @@ class OCREPlugin(DatasetPlugin):
     url = "https://numismatics.org/ocre"
     time_coverage = "c. 31 BC - 491 AD"
     spatial_coverage = "Roman Empire"
-    oci_dataset = "ocre"
+    oci_dataset = "datasets/ocre"
     oci_version = "latest"
 
     def __init__(self):

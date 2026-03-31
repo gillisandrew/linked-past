@@ -79,7 +79,7 @@ def test_pleiades_plugin_load(tmp_path):
 
 def test_pleiades_plugin_oci_attributes():
     plugin = PleiadesPlugin()
-    assert plugin.oci_dataset == "pleiades"
+    assert plugin.oci_dataset == "datasets/pleiades"
     assert plugin.oci_version == "latest"
 
 

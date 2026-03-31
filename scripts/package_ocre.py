@@ -11,7 +11,7 @@ from linked_past_store.ontology import extract_schema, generate_schemas_yaml
 from linked_past_store.void import generate_void
 
 SOURCE_URL = "https://numismatics.org/ocre/nomisma.rdf"
-ARTIFACT_REF = "ghcr.io/gillisandrew/linked-past/ocre"
+ARTIFACT_REF = "ghcr.io/gillisandrew/linked-past/datasets/ocre"
 
 ANNOTATIONS = {
     "org.opencontainers.image.source": "https://github.com/gillisandrew/linked-past",

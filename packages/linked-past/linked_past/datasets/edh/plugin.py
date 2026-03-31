@@ -43,7 +43,7 @@ class EDHPlugin(DatasetPlugin):
     url = "https://edh.ub.uni-heidelberg.de"
     time_coverage = "Antiquity through Late Antiquity"
     spatial_coverage = "Roman Empire"
-    oci_dataset = "edh"
+    oci_dataset = "datasets/edh"
     oci_version = "latest"
 
     def __init__(self):

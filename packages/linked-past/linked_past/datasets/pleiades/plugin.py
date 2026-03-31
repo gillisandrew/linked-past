@@ -42,7 +42,7 @@ class PleiadesPlugin(DatasetPlugin):
     url = "https://pleiades.stoa.org"
     time_coverage = "Archaic period through Late Antiquity"
     spatial_coverage = "Greek and Roman world"
-    oci_dataset = "pleiades"
+    oci_dataset = "datasets/pleiades"
     oci_version = "latest"
 
     def __init__(self):

@@ -20,7 +20,7 @@ from linked_past_store.void import generate_void
 from pyoxigraph import RdfFormat, Store
 
 SOURCE_URL = "http://nomisma.org/nomisma.org.ttl"
-ARTIFACT_REF = "ghcr.io/gillisandrew/linked-past/nomisma"
+ARTIFACT_REF = "ghcr.io/gillisandrew/linked-past/datasets/nomisma"
 
 ANNOTATIONS = {
     "org.opencontainers.image.source": "https://github.com/gillisandrew/linked-past",

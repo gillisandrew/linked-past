@@ -41,7 +41,7 @@ class NomismaPlugin(DatasetPlugin):
     url = "http://nomisma.org"
     time_coverage = "Ancient through modern numismatics"
     spatial_coverage = "Global"
-    oci_dataset = "nomisma"
+    oci_dataset = "datasets/nomisma"
     oci_version = "latest"
 
     def __init__(self):

@@ -73,7 +73,7 @@ def test_ocre_plugin_load(tmp_path):
 
 def test_ocre_plugin_oci_attributes():
     plugin = OCREPlugin()
-    assert plugin.oci_dataset == "ocre"
+    assert plugin.oci_dataset == "datasets/ocre"
 
 
 def test_ocre_plugin_version_info(tmp_path):

@@ -68,7 +68,7 @@ def test_edh_plugin_load(tmp_path):
 
 def test_edh_plugin_oci_attributes():
     plugin = EDHPlugin()
-    assert plugin.oci_dataset == "edh"
+    assert plugin.oci_dataset == "datasets/edh"
     assert plugin.oci_version == "latest"
 
 

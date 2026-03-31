@@ -44,7 +44,7 @@ class DPRRPlugin(DatasetPlugin):
     url = "https://romanrepublic.ac.uk"
     time_coverage = "509-31 BC"
     spatial_coverage = "Roman Republic"
-    oci_dataset = "dprr"
+    oci_dataset = "datasets/dprr"
     oci_version = "1.3.0"
 
     def __init__(self):
