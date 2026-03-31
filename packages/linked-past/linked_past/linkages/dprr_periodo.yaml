@@ -8,9 +8,33 @@ metadata:
   author: linked-past project
   date: "2026-03-30"
 links:
+  # ── Existing links ──
   - source: "http://romanrepublic.ac.uk/rdf/entity/Era/Republic"
     target: "http://n2t.net/ark:/99152/p05krdxmkzt"
     note: "Roman Republic period (509-31 BC)"
   - source: "http://romanrepublic.ac.uk/rdf/entity/Era/LateRepublic"
     target: "http://n2t.net/ark:/99152/p05krdxmkzv"
     note: "Late Roman Republic (133-31 BC)"
+  # ── New sub-period links ──
+  - source: "http://romanrepublic.ac.uk/rdf/entity/Era/EarlyRepublic"
+    target: "http://n2t.net/ark:/99152/p06c6g36mkq"
+    note: "Early Republic (510-265 BC) — pre-Punic Wars"
+  - source: "http://romanrepublic.ac.uk/rdf/entity/Era/ConquestOfItaly"
+    target: "http://n2t.net/ark:/99152/p0pf7xrpjj8"
+    note: "Epoch of the Roman Conquest of Italy (389-265 BC)"
+  - source: "http://romanrepublic.ac.uk/rdf/entity/Era/SocialWar"
+    target: "http://n2t.net/ark:/99152/p06c6g3rjxq"
+    note: "Social War (90-88 BC)"
+  - source: "http://romanrepublic.ac.uk/rdf/entity/Era/CaesarsCivilWar"
+    target: "http://n2t.net/ark:/99152/p06c6g3btfz"
+    note: "Caesar's Civil War (49-45 BC)"
+  - source: "http://romanrepublic.ac.uk/rdf/entity/Era/PostCaesarCivilWars"
+    target: "http://n2t.net/ark:/99152/p06c6g364pz"
+    note: "Civil Wars after Caesar's assassination (43-31 BC)"
+  # ── Alternative authority definitions for the full Republic ──
+  - source: "http://romanrepublic.ac.uk/rdf/entity/Era/Republic"
+    target: "http://n2t.net/ark:/99152/p06c6g3p3g3"
+    note: "Republic (510-30 BC) — alternative authority definition"
+  - source: "http://romanrepublic.ac.uk/rdf/entity/Era/Republic"
+    target: "http://n2t.net/ark:/99152/p08m57h65c8"
+    note: "Roman Republican (509-26 BC) — numismatic periodization"

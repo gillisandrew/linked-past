@@ -136,3 +136,13 @@ links:
   target: https://edh-www.adw.uni-heidelberg.de/edh/person/HD068211/6
   note: 'DPRR: AUTR2070 P. Autronius (7) L. f. Paetus; EDH: Π. Αὐτρώνιος; Greek transliteration
     → p. autronius'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/4686
+  target: https://edh-www.adw.uni-heidelberg.de/edh/person/HD051507/2
+  note: 'DPRR: Aquillius Florus (q. c. 70 BC); EDH: L. Aquillius Florus (Smyrna milestone
+    HD051507); manual identification — filiation M. f. M. n. matches DPRR genealogy
+    exactly'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1757
+  target: https://edh-www.adw.uni-heidelberg.de/edh/person/HD051507/1
+  note: 'DPRR: M". Aquillius (cos. 101 BC, proconsul Asia 128-126); EDH: M. Aquillius
+    M. f. cos. (Smyrna milestone HD051507); named as consul who built the road his
+    grandson restored'
