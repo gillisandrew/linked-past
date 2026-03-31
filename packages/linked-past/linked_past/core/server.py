@@ -7,6 +7,7 @@ import asyncio
 import difflib
 import logging
 import os
+import time
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from pathlib import Path
@@ -37,6 +38,11 @@ class AppContext:
     registry: DatasetRegistry
     linkage: LinkageGraph | None = None
     embeddings: EmbeddingIndex | None = None
+    session_log: list = None
+
+    def __post_init__(self):
+        if self.session_log is None:
+            self.session_log = []
 
 
 def _build_embeddings(registry: DatasetRegistry, data_dir: Path) -> EmbeddingIndex | None:
@@ -153,6 +159,134 @@ def _find_store_xrefs(uri: str, registry: DatasetRegistry) -> list[dict]:
     except Exception as e:
         logger.warning("Failed to query store xrefs for %s: %s", uri, e)
     return results
+
+
+def _log_tool_call(app: AppContext, tool_name: str, inputs: dict, result: str, duration_ms: int = 0):
+    """Append a tool call to the session log."""
+    from datetime import datetime, timezone
+
+    # Summarize the result (don't store full output for large results)
+    if len(result) > 2000:
+        output_summary = result[:500] + f"\n... ({len(result)} chars total)"
+    else:
+        output_summary = result
+
+    entry = {
+        "id": f"entry_{len(app.session_log) + 1:03d}",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "tool": tool_name,
+        "inputs": {k: v for k, v in inputs.items() if v is not None},
+        "output_preview": output_summary,
+        "output_length": len(result),
+        "duration_ms": duration_ms,
+    }
+    dataset = inputs.get("dataset")
+    if dataset:
+        meta = app.registry.get_metadata(dataset)
+        if meta:
+            entry["dataset_version"] = meta
+    app.session_log.append(entry)
+
+
+
+def _render_provenance_table(log: list, registry: DatasetRegistry) -> str:
+    """Render a provenance table from the session log."""
+    lines = ["## Data Sources and Queries\n"]
+    lines.append("| # | Tool | Dataset | Version | Input | Output |")
+    lines.append("|---|------|---------|---------|-------|--------|")
+
+    datasets_used = {}
+    for entry in log:
+        idx = entry["id"]
+        tool = entry["tool"]
+        inputs = entry["inputs"]
+        dataset = inputs.get("dataset", inputs.get("query_text", "—"))
+        version_info = entry.get("dataset_version", {})
+        version = version_info.get("version", "—")
+
+        # Track datasets for citation
+        ds_name = inputs.get("dataset")
+        if ds_name and ds_name not in datasets_used:
+            datasets_used[ds_name] = version_info
+
+        # Summarize input
+        if "sparql" in inputs:
+            sparql = inputs["sparql"]
+            input_summary = f"`{sparql[:60]}...`" if len(sparql) > 60 else f"`{sparql}`"
+        elif "query_text" in inputs:
+            input_summary = f'"{inputs["query_text"]}"'
+        elif "uri" in inputs:
+            input_summary = f"`{inputs['uri']}`"
+        else:
+            input_summary = "—"
+
+        output_len = entry.get("output_length", 0)
+        duration = entry.get("duration_ms", 0)
+        output_summary = f"{output_len} chars, {duration}ms"
+
+        lines.append(f"| {idx} | {tool} | {dataset} | {version} | {input_summary} | {output_summary} |")
+
+    # Citations
+    if datasets_used:
+        lines.append("\n## Dataset Citations\n")
+        for ds_name, meta in datasets_used.items():
+            try:
+                plugin = registry.get_plugin(ds_name)
+                version = meta.get("version", "unknown")
+                triples = meta.get("triple_count", "?")
+                lines.append(
+                    f"- **{plugin.display_name}** v{version} ({triples:,} triples). "
+                    f"{plugin.license}. Cite as: {plugin.citation}"
+                )
+            except KeyError:
+                lines.append(f"- **{ds_name}**: metadata unavailable")
+
+    return "\n".join(lines)
+
+
+def _render_markdown_report(log: list, registry: DatasetRegistry) -> str:
+    """Render a full markdown report from the session log."""
+    from datetime import datetime, timezone
+
+    lines = ["# Research Session Report\n"]
+    lines.append(f"**Generated:** {datetime.now(timezone.utc).isoformat()}")
+    lines.append(f"**Tool calls:** {len(log)}\n")
+
+    # Group by tool type
+    queries = [e for e in log if e["tool"] == "query"]
+    searches = [e for e in log if e["tool"] == "search_entities"]
+    explorations = [e for e in log if e["tool"] in ("explore_entity", "find_links", "get_provenance")]
+
+    if queries:
+        lines.append(f"## Queries ({len(queries)})\n")
+        for entry in queries:
+            sparql = entry["inputs"].get("sparql", "")
+            dataset = entry["inputs"].get("dataset", "?")
+            version_info = entry.get("dataset_version", {})
+            version = version_info.get("version", "?")
+            lines.append(f"### {entry['id']}: {dataset} v{version}\n")
+            lines.append(f"```sparql\n{sparql}\n```\n")
+            lines.append(f"**Results:** {entry.get('output_length', '?')} chars, {entry.get('duration_ms', '?')}ms\n")
+
+    if searches:
+        lines.append(f"## Entity Searches ({len(searches)})\n")
+        for entry in searches:
+            query_text = entry["inputs"].get("query_text", "?")
+            dataset = entry["inputs"].get("dataset", "all")
+            lines.append(f"- **\"{query_text}\"** in {dataset}")
+        lines.append("")
+
+    if explorations:
+        lines.append(f"## Entity Explorations ({len(explorations)})\n")
+        for entry in explorations:
+            uri = entry["inputs"].get("uri", "?")
+            lines.append(f"- `{entry['tool']}({uri})`")
+        lines.append("")
+
+    # Provenance table
+    lines.append(f"\n{_render_provenance_table(log, registry)}")
+
+    return "\n".join(lines)
 
 
 def _collect_see_also(
@@ -286,6 +420,7 @@ def create_mcp_server() -> FastMCP:
     @mcp.tool()
     async def query(ctx: Context, sparql: str, dataset: str, timeout: int | None = None) -> str:
         """Validate and execute a SPARQL query against a dataset's local RDF store. Returns results in tabular format with dataset citation."""
+        t0 = time.monotonic()
         app: AppContext = ctx.request_context.lifespan_context
         plugin = app.registry.get_plugin(dataset)
         store = app.registry.get_store(dataset)
@@ -319,11 +454,14 @@ def create_mcp_server() -> FastMCP:
             f"      Cite as: {plugin.citation}\n"
             f"Tool: linked-past, https://github.com/gillisandrew/linked-past"
         )
-        return table + see_also + footer
+        output = table + see_also + footer
+        _log_tool_call(app, "query", {"sparql": sparql, "dataset": dataset}, output, int((time.monotonic() - t0) * 1000))
+        return output
 
     @mcp.tool()
     def search_entities(ctx: Context, query_text: str, dataset: str | None = None) -> str:
         """Search entity labels across datasets. Returns matching entities with URIs, labels, types, and dataset provenance. Use for entity disambiguation."""
+        t0 = time.monotonic()
         app: AppContext = ctx.request_context.lifespan_context
         registry = app.registry
 
@@ -379,7 +517,9 @@ def create_mcp_server() -> FastMCP:
                 logger.warning("Search failed for %s: %s", ds_name, e)
 
         if not all_results:
-            return f"No entities found matching '{query_text}'."
+            output = f"No entities found matching '{query_text}'."
+            _log_tool_call(app, "search_entities", {"query_text": query_text, "dataset": dataset}, output, int((time.monotonic() - t0) * 1000))
+            return output
 
         by_dataset: dict[str, list] = {}
         for r in all_results:
@@ -396,11 +536,14 @@ def create_mcp_server() -> FastMCP:
                 lines.append(f"  ... and {len(results) - 10} more")
             lines.append("")
 
-        return "\n".join(lines)
+        output = "\n".join(lines)
+        _log_tool_call(app, "search_entities", {"query_text": query_text, "dataset": dataset}, output, int((time.monotonic() - t0) * 1000))
+        return output
 
     @mcp.tool()
     def explore_entity(ctx: Context, uri: str) -> str:
         """Explore an entity across datasets. Returns properties from its home dataset, cross-links from the linkage graph, and suggested next steps."""
+        t0 = time.monotonic()
         app: AppContext = ctx.request_context.lifespan_context
         registry = app.registry
 
@@ -460,11 +603,14 @@ def create_mcp_server() -> FastMCP:
         lines.append(f"- Search for related entities: `search_entities('{last_segment}')`")
         lines.append(f"- Find cross-dataset links: `find_links('{uri}')`")
 
-        return "\n".join(lines)
+        output = "\n".join(lines)
+        _log_tool_call(app, "explore_entity", {"uri": uri}, output, int((time.monotonic() - t0) * 1000))
+        return output
 
     @mcp.tool()
     def find_links(ctx: Context, uri: str) -> str:
         """Find all cross-dataset links for an entity. Checks both the curated linkage graph AND the dataset stores for SKOS/OWL cross-reference predicates (closeMatch, exactMatch, sameAs)."""
+        t0 = time.monotonic()
         app: AppContext = ctx.request_context.lifespan_context
 
         # Collect from curated linkage graph
@@ -508,7 +654,9 @@ def create_mcp_server() -> FastMCP:
                     )
                 lines.append("")
 
-        return "\n".join(lines)
+        output = "\n".join(lines)
+        _log_tool_call(app, "find_links", {"uri": uri}, output, int((time.monotonic() - t0) * 1000))
+        return output
 
     @mcp.tool()
     def get_provenance(ctx: Context, uri: str, predicate: str | None = None) -> str:
@@ -666,6 +814,28 @@ def create_mcp_server() -> FastMCP:
             lines.append("")
 
         return "\n".join(lines)
+
+    @mcp.tool()
+    def export_report(ctx: Context, format: str = "markdown", path: str | None = None) -> str:
+        """Export the current session's queries and results as a report. Formats: 'json' (raw log), 'provenance' (methods table), 'markdown' (full report)."""
+        app: AppContext = ctx.request_context.lifespan_context
+
+        if not app.session_log:
+            return "No tool calls recorded in this session yet."
+
+        if format == "json":
+            import json as json_mod
+
+            content = json_mod.dumps(app.session_log, indent=2, default=str)
+        elif format == "provenance":
+            content = _render_provenance_table(app.session_log, app.registry)
+        else:
+            content = _render_markdown_report(app.session_log, app.registry)
+
+        if path:
+            Path(path).write_text(content)
+            return f"Report ({format}) written to {path} ({len(app.session_log)} entries)"
+        return content
 
     return mcp
 

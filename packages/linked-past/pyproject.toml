@@ -3,7 +3,7 @@ name = "linked-past"
 version = "0.1.0"
 description = "Multi-dataset prosopographical SPARQL tools for AI agents. Natural-language queries with scholarly citations across linked ancient world datasets."
 readme = "README.md"
-license = "MIT"
+license = "AGPL-3.0-or-later"
 requires-python = ">=3.13"
 dependencies = [
     "pyoxigraph",
