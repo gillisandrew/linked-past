@@ -24,10 +24,21 @@ from __future__ import annotations
 import json
 import logging
 import subprocess
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
 import oras.client
+
+
+@dataclass
+class LayerInfo:
+    """Metadata for a single OCI layer."""
+
+    digest: str       # "sha256:abc123..."
+    filename: str     # "dprr.ttl" or "_schema.yaml"
+    size: int         # bytes
+    is_sidecar: bool  # True if filename starts with "_"
 
 logger = logging.getLogger(__name__)
 
@@ -161,6 +172,20 @@ class ArtifactCache:
     def find_ttl(self, blob_dir: Path) -> list[Path]:
         """Find all .ttl files in a blob directory."""
         return sorted(blob_dir.glob("*.ttl"))
+
+    def parse_layers(self, manifest: dict) -> list[LayerInfo]:
+        """Parse OCI manifest layers into LayerInfo objects."""
+        layers = []
+        for layer in manifest.get("layers", []):
+            annotations = layer.get("annotations", {})
+            filename = annotations.get("org.opencontainers.image.title", "unknown")
+            layers.append(LayerInfo(
+                digest=layer["digest"],
+                filename=filename,
+                size=layer.get("size", 0),
+                is_sidecar=filename.startswith("_"),
+            ))
+        return layers
 
     def digest_for(self, ref: str) -> str | None:
         """Get the cached digest for a ref, or None."""
