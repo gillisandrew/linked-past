@@ -25,6 +25,102 @@ packages/linked-past-store/tests/
 
 ---
 
+### Task 0: Fix pull_dataset to copy all files (not just *.ttl)
+
+**Files:**
+- Modify: `packages/linked-past-store/linked_past_store/pull.py`
+- Modify: `packages/linked-past-store/tests/test_pull.py`
+
+The current `pull_dataset` only copies `*.ttl` files from the blob directory to the output directory. This means `_schema.yaml` never reaches the dataset directory, breaking the sidecar update path. Fix: copy ALL files from the blob dir.
+
+- [ ] **Step 1: Write failing test**
+
+Add to `test_pull.py`:
+
+```python
+def test_pull_dataset_copies_all_files(tmp_path):
+    """pull_dataset should copy all files, not just .ttl."""
+    cache_dir = tmp_path / "cache"
+    output_dir = tmp_path / "output"
+
+    def fake_pull(target, outdir):
+        outdir = Path(outdir)
+        outdir.mkdir(parents=True, exist_ok=True)
+        (outdir / "data.ttl").write_text("rdf content")
+        (outdir / "_schema.yaml").write_text("classes: {}")
+        (outdir / "_void.ttl").write_text("void content")
+        return [str(outdir / "data.ttl")]
+
+    with (
+        patch("linked_past_store.cache.oras.client.OrasClient") as MockClient,
+        patch("linked_past_store.cache._default_cache_dir", return_value=cache_dir),
+        patch("linked_past_store.cache._resolve_digest", return_value="sha256:abc123"),
+    ):
+        mock = MagicMock()
+        MockClient.return_value = mock
+        mock.pull.side_effect = fake_pull
+        result = pull_dataset("ghcr.io/test/dataset:v1", output_dir, force=True)
+
+    assert (output_dir / "data.ttl").exists()
+    assert (output_dir / "_schema.yaml").exists()
+    assert (output_dir / "_void.ttl").exists()
+```
+
+- [ ] **Step 2: Run test to verify it fails**
+
+Run: `uv run pytest packages/linked-past-store/tests/test_pull.py::test_pull_dataset_copies_all_files -v`
+Expected: FAIL — `_schema.yaml` not copied.
+
+- [ ] **Step 3: Fix pull_dataset to copy all files**
+
+In `pull.py`, replace the `find_ttl` + copy loop with a copy of all files:
+
+```python
+def pull_dataset(ref, output_dir, force=False):
+    # ... (cache.pull unchanged) ...
+
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    cache = ArtifactCache()
+    blob_dir = cache.pull(ref, force=force)
+
+    # Copy ALL files from cache to output directory
+    all_files = [f for f in blob_dir.iterdir() if f.is_file() or f.is_symlink()]
+    if not all_files:
+        raise RuntimeError(f"No files found in artifact {ref}")
+
+    ttl_files = []
+    for src in all_files:
+        dst = output_dir / src.name
+        if dst != src:
+            shutil.copy2(src, dst, follow_symlinks=True)
+        if src.suffix == ".ttl":
+            ttl_files.append(dst)
+
+    if not ttl_files:
+        raise RuntimeError(f"No .ttl file found in artifact {ref}")
+
+    logger.info("Pulled %s → %s (%d files)", ref, output_dir, len(all_files))
+    return ttl_files[0]
+```
+
+Also add `import shutil` at the top of `pull.py` if not already present.
+
+- [ ] **Step 4: Run all pull tests**
+
+Run: `uv run pytest packages/linked-past-store/tests/test_pull.py -v`
+Expected: All PASS.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add packages/linked-past-store/linked_past_store/pull.py packages/linked-past-store/tests/test_pull.py
+git commit -m "fix: pull_dataset copies all files from blob dir, not just *.ttl"
+```
+
+---
+
 ### Task 1: LayerInfo dataclass and manifest parsing
 
 **Files:**
@@ -449,6 +545,36 @@ git commit -m "feat: add per-layer blob cache storage with symlink assembly"
 Add to `test_cache.py`:
 
 ```python
+class TestDigestVerification:
+    def test_verify_correct_digest(self, tmp_path):
+        import hashlib
+        from linked_past_store.cache import _verify_digest
+        f = tmp_path / "test.txt"
+        f.write_bytes(b"hello world")
+        expected = "sha256:" + hashlib.sha256(b"hello world").hexdigest()
+        assert _verify_digest(f, expected)
+
+    def test_verify_wrong_digest(self, tmp_path):
+        from linked_past_store.cache import _verify_digest
+        f = tmp_path / "test.txt"
+        f.write_bytes(b"hello world")
+        assert not _verify_digest(f, "sha256:0000000000000000000000000000000000000000000000000000000000000000")
+
+
+class TestAssembleBlobDirSymlinkFallback:
+    def test_falls_back_to_copy_when_symlink_fails(self, tmp_path):
+        cache = ArtifactCache(tmp_path / "cache")
+        cache.put_layer("sha256:aaa", "data.ttl", _write_tmp(tmp_path, "data.ttl", "content"))
+        layers = [LayerInfo("sha256:aaa", "data.ttl", 100, False)]
+
+        with patch("pathlib.Path.symlink_to", side_effect=OSError("not supported")):
+            blob_dir = cache.assemble_blob_dir("sha256:manifest1", layers)
+
+        assert (blob_dir / "data.ttl").exists()
+        assert (blob_dir / "data.ttl").read_text() == "content"
+        assert not (blob_dir / "data.ttl").is_symlink()  # copy, not symlink
+
+
 class TestLayerAwarePull:
     def test_skips_cached_layers(self, tmp_path):
         """When one layer is already cached, only the missing layer is downloaded."""
@@ -496,10 +622,12 @@ Add method to `ArtifactCache`:
 
 ```python
     def _download_layer(self, ref: str, digest: str, outpath: str) -> None:
-        """Download a single layer blob by digest."""
+        """Download a single layer blob by digest and verify its content hash."""
+        # oras blob fetch uses repo@digest syntax (strip tag from ref)
+        repo = ref.rsplit(":", 1)[0]
         try:
             subprocess.run(
-                ["oras", "blob", "fetch", ref, "--output", outpath, digest],
+                ["oras", "blob", "fetch", f"{repo}@{digest}", "--output", outpath],
                 capture_output=True,
                 text=True,
                 timeout=120,
@@ -508,6 +636,28 @@ Add method to `ArtifactCache`:
         except (subprocess.CalledProcessError, FileNotFoundError) as e:
             logger.warning("oras blob fetch failed for %s: %s", digest[:20], e)
             raise
+
+        # Verify downloaded content matches declared digest
+        if not _verify_digest(Path(outpath), digest):
+            Path(outpath).unlink(missing_ok=True)
+            raise RuntimeError(
+                f"Digest verification failed for {digest}: "
+                f"downloaded content does not match expected hash"
+            )
+```
+
+Add module-level digest verification function to `cache.py`:
+
+```python
+def _verify_digest(path: Path, expected: str) -> bool:
+    """Verify a file's SHA-256 digest matches the expected OCI digest."""
+    import hashlib
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(8192), b""):
+            h.update(chunk)
+    actual = f"sha256:{h.hexdigest()}"
+    return actual == expected
 ```
 
 Replace the existing `pull()` method body with the layer-aware version:
@@ -550,13 +700,18 @@ Replace the existing `pull()` method body with the layer-aware version:
                 if not self.has_layer(layer.digest):
                     logger.info("Downloading layer %s (%s, %d bytes)",
                                 layer.filename, layer.digest[:20], layer.size)
-                    tmp_file = self._cache_dir / "tmp" / layer.filename
-                    tmp_file.parent.mkdir(parents=True, exist_ok=True)
+                    import tempfile
+                    tmp_dir = self._cache_dir / "tmp"
+                    tmp_dir.mkdir(parents=True, exist_ok=True)
+                    with tempfile.NamedTemporaryFile(
+                        dir=tmp_dir, suffix=f"_{layer.filename}", delete=False,
+                    ) as tmp_file:
+                        tmp_path = Path(tmp_file.name)
                     try:
-                        self._download_layer(ref, layer.digest, str(tmp_file))
-                        self.put_layer(layer.digest, layer.filename, tmp_file)
+                        self._download_layer(ref, layer.digest, str(tmp_path))
+                        self.put_layer(layer.digest, layer.filename, tmp_path)
                     finally:
-                        tmp_file.unlink(missing_ok=True)
+                        tmp_path.unlink(missing_ok=True)
                 else:
                     logger.info("Layer cached: %s (%s)", layer.filename, layer.digest[:20])
 
@@ -657,6 +812,13 @@ def test_classify_changes_nothing():
 def test_classify_changes_new_data_file():
     old_layers = {"dprr.ttl": "sha256:aaa"}
     new_layers = {"dprr.ttl": "sha256:aaa", "extra.ttl": "sha256:ccc"}  # new data file
+    result = _classify_changes(old_layers, new_layers)
+    assert result == "data"
+
+
+def test_classify_changes_removed_data_file():
+    old_layers = {"dprr.ttl": "sha256:aaa", "extra.ttl": "sha256:bbb"}
+    new_layers = {"dprr.ttl": "sha256:aaa"}  # extra.ttl removed
     result = _classify_changes(old_layers, new_layers)
     assert result == "data"
 
