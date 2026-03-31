@@ -46,6 +46,14 @@ class TestParseRomanName:
         assert result["nomen"] == "Aquillius"
         assert result["cognomen"] == "Florus"
 
+    def test_transliterated_greek_name(self):
+        """After Greek transliteration, full Latin praenomina like 'gaius' should be recognized."""
+        # Γάιος Ἰούλιος Καῖσαρ → gaius iulius caesar
+        transliterated = transliterate_greek("Γάιος Ἰούλιος Καῖσαρ")
+        result = parse_roman_name(transliterated)
+        assert result["praenomen"] == "gaius"
+        assert result["nomen"] == "iulius"
+
     def test_dprr_label_format(self):
         result = parse_roman_name("AQUI1614 M'. Aquillius (10) M'. f. M'. n.", is_dprr=True)
         assert result["praenomen"] == "manius"
@@ -57,8 +65,12 @@ class TestTransliterateGreek:
         assert transliterate_greek("Μάρκος") == "marcus"
 
     def test_kappa_to_c(self):
+        # Κόιντος is a known praenomen → replaced directly as "quintus"
         result = transliterate_greek("Κόιντος")
-        assert result.startswith("c")  # κ → c
+        assert result == "quintus"
+        # Non-praenomen κ still maps to c
+        result2 = transliterate_greek("Κορνήλιος")
+        assert result2.startswith("c")  # κ → c in general transliteration
 
     def test_aquillius(self):
         result = transliterate_greek("Ἀκύλλιος")

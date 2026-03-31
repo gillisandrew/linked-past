@@ -11,6 +11,7 @@ import unicodedata
 # ── Praenomen maps ──
 
 PRAENOMEN_MAP: dict[str, str] = {
+    # Abbreviated forms
     "c.": "gaius", "c": "gaius",
     "cn.": "gnaeus", "cn": "gnaeus",
     "l.": "lucius", "l": "lucius",
@@ -27,6 +28,13 @@ PRAENOMEN_MAP: dict[str, str] = {
     "d.": "decimus", "d": "decimus",
     "n.": "numerius",
     "ap.": "appius", "ap": "appius",
+    # Full Latin forms (needed after Greek transliteration: Γάιος → gaius)
+    "gaius": "gaius", "gnaeus": "gnaeus", "lucius": "lucius",
+    "marcus": "marcus", "manius": "manius", "publius": "publius",
+    "quintus": "quintus", "sextus": "sextus", "servius": "servius",
+    "spurius": "spurius", "titus": "titus", "tiberius": "tiberius",
+    "aulus": "aulus", "decimus": "decimus", "numerius": "numerius",
+    "appius": "appius",
     # Greek equivalents
     "γ.": "gaius", "γάιος": "gaius", "γαίου": "gaius",
     "γν.": "gnaeus", "γναῖος": "gnaeus",
@@ -112,7 +120,8 @@ def is_greek(text: str) -> bool:
 def transliterate_greek(text: str) -> str:
     """Transliterate Greek text to Latin equivalent for Roman name matching.
 
-    Handles: diphthongs, aspirates, standard letter mappings, and
+    Handles: known praenomina (exact replacement before general rules),
+    diphthongs, aspirates, standard letter mappings, and
     common Greek→Latin name ending conversions (-ιος→-ius, -ος→-us).
     """
     if not is_greek(text):
@@ -120,6 +129,20 @@ def transliterate_greek(text: str) -> str:
 
     # Normalize and strip accents/breathing marks
     result = strip_accents(text.lower())
+
+    # Replace known Greek praenomina with Latin forms BEFORE general rules.
+    # This prevents diphthong rules from mangling e.g. Γαιος → "gaeus" (αι→ae)
+    # when the correct form is "gaius".
+    words = result.split()
+    for i, word in enumerate(words):
+        latin = GREEK_PRAENOMINA.get(word)
+        if latin:
+            words[i] = latin
+    result = " ".join(words)
+
+    # Re-check: if no Greek chars remain (all words were praenomina), return
+    if not any("\u0370" <= c <= "\u03FF" for c in result):
+        return result
 
     # Apply digraph replacements (longest first)
     for greek, latin in _GREEK_DIGRAPHS:
