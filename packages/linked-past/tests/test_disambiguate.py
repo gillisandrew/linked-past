@@ -4,6 +4,7 @@ import pytest
 from linked_past.core.disambiguate import (
     PersonDisambiguator,
     SignalResult,
+    extract_context_from_fields,
     score_career,
     score_filiation,
     score_geography,
@@ -212,3 +213,32 @@ class TestPersonDisambiguator:
 
     def test_confidence_ambiguous(self):
         assert PersonDisambiguator._classify_confidence(0.4, 0.05) == "ambiguous"
+
+
+class TestExtractContextFromFields:
+    def test_basic_latin_name(self):
+        ctx = extract_context_from_fields(
+            name="P. Cornelius Scipio",
+            filiation="P. f. Cn. n.",
+            office="cos.",
+            date=-147,
+        )
+        assert ctx.praenomen == "publius"
+        assert ctx.nomen == "Cornelius"
+        assert ctx.cognomen == "Scipio"
+        assert ctx.filiation == "P. f. Cn. n."
+        assert ctx.office == "consul"
+        assert ctx.date_start == -147
+        assert ctx.date_end == -147
+
+    def test_greek_name_transliterated(self):
+        ctx = extract_context_from_fields(name="Κ. Ἀνχάριος")
+        assert ctx.praenomen is not None  # κ → c → gaius or quintus
+        assert "ancharius" in ctx.normalized_name.lower() or "anchar" in ctx.normalized_name.lower()
+
+    def test_no_optional_fields(self):
+        ctx = extract_context_from_fields(name="Aquillius")
+        assert ctx.name == "Aquillius"
+        assert ctx.office is None
+        assert ctx.filiation is None
+        assert ctx.date_start is None

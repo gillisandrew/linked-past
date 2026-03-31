@@ -8,6 +8,14 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from linked_past.core.onomastics import (
+    is_greek,
+    normalize_praenomen,
+    parse_office,
+    parse_roman_name,
+    transliterate_greek,
+)
+
 WEIGHTS = {
     "filiation": 0.4,
     "career": 0.3,
@@ -276,3 +284,156 @@ class PersonDisambiguator:
             ))
 
         return results
+
+
+# ── Context extraction ──────────────────────────────────────────────────────
+
+
+def extract_context_from_fields(
+    name: str,
+    filiation: str | None = None,
+    office: str | None = None,
+    date: int | None = None,
+    province: str | None = None,
+    uri: str | None = None,
+) -> PersonContext:
+    """Build PersonContext from manually provided fields."""
+    if is_greek(name):
+        normalized = transliterate_greek(name)
+    else:
+        normalized = name
+
+    parsed = parse_roman_name(normalized)
+    parsed_office = parse_office(office) if office else None
+
+    return PersonContext(
+        name=name,
+        normalized_name=normalized,
+        praenomen=parsed.get("praenomen"),
+        nomen=parsed.get("nomen"),
+        cognomen=parsed.get("cognomen"),
+        filiation=filiation,
+        office=parsed_office,
+        date_start=date,
+        date_end=date,
+        findspot_uri=province,
+        source_uri=uri,
+    )
+
+
+# ── SPARQL data fetchers ────────────────────────────────────────────────────
+
+
+def fetch_dprr_candidates(dprr_store, nomen: str) -> list[dict]:
+    """Find DPRR persons matching a nomen. Returns list of person dicts."""
+    from linked_past.core.store import execute_query
+
+    sparql = f"""
+    PREFIX vocab: <http://romanrepublic.ac.uk/rdf/ontology#>
+    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+    SELECT DISTINCT ?person ?label ?nomen ?cognomen ?praenomenLabel
+           ?eraFrom ?eraTo WHERE {{
+      ?person a vocab:Person ;
+              vocab:hasPersonName ?label ;
+              vocab:hasNomen ?nomen .
+      FILTER(LCASE(?nomen) = "{nomen.lower()}")
+      OPTIONAL {{ ?person vocab:hasCognomen ?cognomen }}
+      OPTIONAL {{ ?person vocab:hasPraenomen ?prae . ?prae rdfs:label ?praenomenLabel }}
+      OPTIONAL {{ ?person vocab:hasEraFrom ?eraFrom }}
+      OPTIONAL {{ ?person vocab:hasEraTo ?eraTo }}
+    }}
+    """
+    return execute_query(dprr_store, sparql)
+
+
+def fetch_dprr_offices(dprr_store, person_uri: str) -> list[dict]:
+    """Get all offices held by a DPRR person."""
+    from linked_past.core.store import execute_query
+
+    sparql = f"""
+    PREFIX vocab: <http://romanrepublic.ac.uk/rdf/ontology#>
+    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+    SELECT ?officeName ?dateStart WHERE {{
+      ?pa a vocab:PostAssertion ;
+          vocab:isAboutPerson <{person_uri}> ;
+          vocab:hasOffice ?office .
+      ?office rdfs:label ?officeName .
+      OPTIONAL {{ ?pa vocab:hasDateStart ?dateStart }}
+    }}
+    """
+    rows = execute_query(dprr_store, sparql)
+    return [{
+        "office": r.get("officeName", ""),
+        "date_start": int(r["dateStart"]) if r.get("dateStart") else None,
+    } for r in rows]
+
+
+def fetch_dprr_family(dprr_store, person_uri: str) -> dict[str, str | None]:
+    """Get father's and grandfather's praenomina for a DPRR person.
+
+    Chains RelationshipAssertions: person ← father of ← father → father of → grandfather.
+    """
+    from linked_past.core.store import execute_query
+
+    sparql = f"""
+    PREFIX vocab: <http://romanrepublic.ac.uk/rdf/ontology#>
+    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+    SELECT ?fatherPrae ?grandfatherPrae WHERE {{
+      # Find father: someone whose "father of" relationship points to person_uri
+      ?ra1 a vocab:RelationshipAssertion ;
+           vocab:isAboutPerson ?father ;
+           vocab:hasRelatedPerson <{person_uri}> ;
+           vocab:hasRelationship ?rel1 .
+      ?rel1 rdfs:label "Relationship: father of" .
+      ?father vocab:hasPraenomen ?fprae .
+      ?fprae rdfs:label ?fatherPrae .
+
+      # Find grandfather: someone whose "father of" relationship points to father
+      OPTIONAL {{
+        ?ra2 a vocab:RelationshipAssertion ;
+             vocab:isAboutPerson ?grandfather ;
+             vocab:hasRelatedPerson ?father ;
+             vocab:hasRelationship ?rel2 .
+        ?rel2 rdfs:label "Relationship: father of" .
+        ?grandfather vocab:hasPraenomen ?gprae .
+        ?gprae rdfs:label ?grandfatherPrae .
+      }}
+    }}
+    LIMIT 1
+    """
+    rows = execute_query(dprr_store, sparql)
+    result: dict[str, str | None] = {"father_praenomen": None, "grandfather_praenomen": None}
+    for r in rows:
+        father_label = r.get("fatherPrae", "")
+        if father_label:
+            result["father_praenomen"] = normalize_praenomen(father_label.replace("Praenomen: ", ""))
+        grandfather_label = r.get("grandfatherPrae", "")
+        if grandfather_label:
+            result["grandfather_praenomen"] = normalize_praenomen(grandfather_label.replace("Praenomen: ", ""))
+    return result
+
+
+def fetch_dprr_province_pleiades(dprr_store, linkage, person_uri: str) -> list[str]:
+    """Get Pleiades URIs for provinces where a DPRR person served."""
+    from linked_past.core.store import execute_query
+
+    sparql = f"""
+    PREFIX vocab: <http://romanrepublic.ac.uk/rdf/ontology#>
+    SELECT DISTINCT ?province WHERE {{
+      ?pap a vocab:PostAssertionProvince ;
+           vocab:hasPostAssertion ?pa ;
+           vocab:hasProvince ?province .
+      ?pa vocab:isAboutPerson <{person_uri}> .
+    }}
+    """
+    rows = execute_query(dprr_store, sparql)
+    pleiades_uris = []
+    for r in rows:
+        province_uri = r.get("province", "")
+        if province_uri and linkage:
+            links = linkage.find_links(province_uri)
+            for link in links:
+                target = link.get("target", "")
+                if "pleiades.stoa.org" in target:
+                    pleiades_uris.append(target)
+    return pleiades_uris
