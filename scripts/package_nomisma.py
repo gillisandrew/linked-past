@@ -87,12 +87,28 @@ def main(version="latest"):
         prefix_block = "\n".join(prefix_lines) + "\n"
 
         remainder = fixed_text[fixed_text.index(prefix_lines[-1]) + len(prefix_lines[-1]):]
-        blocks = remainder.split("\n\n")
 
-        # Block-by-block verification — drop blocks that don't parse
+        # Split on concept boundaries (lines starting with a prefixed name + ' a ')
+        # NOT on blank lines — concepts often contain internal blank lines
+        import re
+
+        concept_pattern = re.compile(r'^(?=\S+:\S+ a )', re.MULTILINE)
+        blocks = concept_pattern.split(remainder)
+
+        # concept_pattern.split loses the matched line — re-attach from raw lines
+        # Instead, use finditer to get positions
+        starts = [m.start() for m in concept_pattern.finditer(remainder)]
+        if starts:
+            blocks = []
+            for i, start in enumerate(starts):
+                end = starts[i + 1] if i + 1 < len(starts) else len(remainder)
+                blocks.append(remainder[start:end])
+
+        # Concept-by-concept verification — drop concepts that don't parse
         clean_path = tmpdir / "nomisma.ttl"
         kept = 0
         dropped = 0
+        drop_errors: dict[str, int] = {}
         with open(clean_path, "w") as out:
             out.write(prefix_block + "\n")
             for block in blocks:
@@ -107,10 +123,15 @@ def main(version="latest"):
                         out.write(block + "\n\n")
                         kept += 1
                     del s
-                except Exception:
+                except Exception as e:
                     dropped += 1
+                    err_key = str(e).split(":")[0][:60]
+                    drop_errors[err_key] = drop_errors.get(err_key, 0) + 1
 
-        print(f"Kept {kept:,} blocks, dropped {dropped:,}")
+        print(f"Kept {kept:,} concepts, dropped {dropped:,}")
+        if drop_errors:
+            for err, count in sorted(drop_errors.items(), key=lambda x: -x[1])[:5]:
+                print(f"  {err}: {count}")
 
         # Verify
         result = verify_turtle(clean_path)
