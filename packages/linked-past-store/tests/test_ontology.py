@@ -224,3 +224,26 @@ def test_generate_schemas_yaml_writes_file(owl_file, tmp_path):
     data = yaml.safe_load(out.read_text())
     assert "classes" in data
     assert "Person" in data["classes"]
+
+
+SAMPLE_DATA_WITH_META = textwrap.dedent("""\
+    @prefix ex: <http://example.org/> .
+    @prefix owl: <http://www.w3.org/2002/07/owl#> .
+    @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+    ex:person1 a ex:Person ;
+        ex:hasName "Caesar" .
+
+    ex:Person a owl:Class ;
+        rdfs:label "Person" .
+""")
+
+
+def test_empirical_extraction_filters_metaclasses():
+    store = Store()
+    store.load(SAMPLE_DATA_WITH_META.encode(), format=RdfFormat.TURTLE)
+    schema = extract_from_data(store, filter_meta=True)
+    assert "Person" in schema.classes
+    assert "Class" not in schema.classes
+    for name, cls in schema.classes.items():
+        assert not cls.uri.startswith("http://www.w3.org/"), f"Meta class {name} should be filtered"

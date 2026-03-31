@@ -27,6 +27,13 @@ _OWL_DATATYPE_PROPERTY = "http://www.w3.org/2002/07/owl#DatatypeProperty"
 _OWL_OBJECT_PROPERTY = "http://www.w3.org/2002/07/owl#ObjectProperty"
 _RDF_PROPERTY = "http://www.w3.org/1999/02/22-rdf-syntax-ns#Property"
 
+# Namespaces to filter from empirical extraction (ontology machinery, not domain classes)
+_META_NAMESPACES = frozenset({
+    "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+    "http://www.w3.org/2000/01/rdf-schema#",
+    "http://www.w3.org/2002/07/owl#",
+})
+
 
 def _uri(node: Any) -> str:
     """Extract URI string from a NamedNode (strips angle brackets)."""
@@ -246,7 +253,7 @@ def extract_from_ontology(path: Path | str) -> Schema:
     return schema
 
 
-def extract_from_data(store: Store) -> Schema:
+def extract_from_data(store: Store, *, filter_meta: bool = False) -> Schema:
     """Empirically extract schema by querying used classes/predicates in a store."""
     schema = Schema()
 
@@ -258,6 +265,9 @@ def extract_from_data(store: Store) -> Schema:
         cls_str = str(cls_node)
         if cls_str.startswith("<") and cls_str.endswith(">"):
             class_uris.append(cls_str[1:-1])
+
+    if filter_meta:
+        class_uris = [u for u in class_uris if not any(u.startswith(ns) for ns in _META_NAMESPACES)]
 
     for class_uri in class_uris:
         local = class_uri.rsplit("#", 1)[-1] if "#" in class_uri else class_uri.rsplit("/", 1)[-1]
@@ -314,7 +324,7 @@ def extract_schema(
     if data_path is not None:
         logger.info("Falling back to empirical extraction from %s", data_path)
         store = _load_store(Path(data_path))
-        return extract_from_data(store)
+        return extract_from_data(store, filter_meta=True)
     raise ValueError("At least one of data_path or ontology_path must be provided")
 
 
