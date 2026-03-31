@@ -6,6 +6,7 @@ career, geography, temporal overlap) using weighted linear combination.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 
 from linked_past.core.onomastics import (
@@ -317,6 +318,97 @@ def extract_context_from_fields(
         date_start=date,
         date_end=date,
         findspot_uri=province,
+        source_uri=uri,
+    )
+
+
+def extract_context_from_edh_uri(uri: str, edh_store) -> PersonContext | None:
+    """Extract a PersonContext from an EDH person URI by querying the EDH store.
+
+    Fetches: name, inscription text (for filiation/office parsing), dates, findspot.
+    """
+    from linked_past.core.store import execute_query
+
+    # Step 1: Get person name and attestation
+    person_sparql = f"""
+    PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+    PREFIX lawd: <http://lawd.info/ontology/>
+    SELECT ?name ?att WHERE {{
+      <{uri}> foaf:name ?name .
+      OPTIONAL {{ <{uri}> lawd:hasAttestation ?att }}
+    }}
+    LIMIT 1
+    """
+    person_rows = execute_query(edh_store, person_sparql)
+    if not person_rows:
+        return None
+
+    name = person_rows[0].get("name", "")
+    att_uri = person_rows[0].get("att")
+
+    # Step 2: Get inscription data from attestation
+    edition_text = None
+    date_start = None
+    date_end = None
+    findspot_uri = None
+
+    if att_uri:
+        # Extract inscription URI from attestation (remove /N#ref suffix)
+        insc_uri = re.sub(r"/\d+#.*$", "", att_uri)
+
+        insc_sparql = f"""
+        PREFIX epi: <http://edh-www.adw.uni-heidelberg.de/lod/ontology#>
+        PREFIX nmo: <http://nomisma.org/ontology#>
+        PREFIX lawd: <http://lawd.info/ontology/1.0/>
+        SELECT ?editionText ?startDate ?endDate ?foundAt WHERE {{
+          <{insc_uri}> epi:editionText ?editionText .
+          OPTIONAL {{ <{insc_uri}> nmo:hasStartDate ?startDate }}
+          OPTIONAL {{ <{insc_uri}> nmo:hasEndDate ?endDate }}
+          OPTIONAL {{ <{insc_uri}> lawd:foundAt ?foundAt }}
+        }}
+        LIMIT 1
+        """
+        insc_rows = execute_query(edh_store, insc_sparql)
+        if insc_rows:
+            edition_text = insc_rows[0].get("editionText")
+            raw_start = insc_rows[0].get("startDate")
+            raw_end = insc_rows[0].get("endDate")
+            findspot_uri = insc_rows[0].get("foundAt")
+            try:
+                date_start = int(raw_start) if raw_start else None
+            except (ValueError, TypeError):
+                date_start = None
+            try:
+                date_end = int(raw_end) if raw_end else None
+            except (ValueError, TypeError):
+                date_end = None
+
+    # Step 3: Parse name (with Greek transliteration)
+    if is_greek(name):
+        normalized = transliterate_greek(name)
+    else:
+        normalized = name
+
+    parsed = parse_roman_name(normalized)
+
+    # Step 4: Parse filiation and office from edition text
+    filiation_str = None
+    office_str = None
+    if edition_text:
+        filiation_str = edition_text  # parse_filiation will extract from full text
+        office_str = parse_office(edition_text)
+
+    return PersonContext(
+        name=name,
+        normalized_name=normalized,
+        praenomen=parsed.get("praenomen"),
+        nomen=parsed.get("nomen"),
+        cognomen=parsed.get("cognomen"),
+        filiation=filiation_str,
+        office=office_str,
+        date_start=date_start,
+        date_end=date_end,
+        findspot_uri=findspot_uri,
         source_uri=uri,
     )
 

@@ -4,6 +4,7 @@ import pytest
 from linked_past.core.disambiguate import (
     PersonDisambiguator,
     SignalResult,
+    extract_context_from_edh_uri,
     extract_context_from_fields,
     score_career,
     score_filiation,
@@ -242,3 +243,12 @@ class TestExtractContextFromFields:
         assert ctx.office is None
         assert ctx.filiation is None
         assert ctx.date_start is None
+
+
+class TestExtractContextFromEDH:
+    def test_returns_none_for_missing_uri(self):
+        """With an empty in-memory store, extraction returns None."""
+        from pyoxigraph import Store as OxStore
+        store = OxStore()
+        result = extract_context_from_edh_uri("https://example.org/nonexistent", store)
+        assert result is None
