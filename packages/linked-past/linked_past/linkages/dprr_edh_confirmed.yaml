@@ -1,0 +1,82 @@
+metadata:
+  source_dataset: dprr
+  target_dataset: edh
+  relationship: skos:closeMatch
+  confidence: confirmed
+  method: automated_name_matching
+  basis: Praenomen + nomen + cognomen matching between DPRR persons and EDH senatorial/equestrian
+    persons
+  author: linked-past project
+  date: '2026-03-30'
+links:
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2907
+  target: https://edh-www.adw.uni-heidelberg.de/edh/person/HD067417/1
+  note: 'DPRR: ACIL2907 M. Acilius (16) M''. f.  Glabrio; EDH: M. Acilius Glabrio;
+    cos. suff. 33'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1408
+  target: https://edh-www.adw.uni-heidelberg.de/edh/person/HD001720/1
+  note: 'DPRR: ANIC1408 L. Anicius (15) L. f. L. n. Gallus; EDH: L. Anicius Gallus;
+    cos. 160'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2941
+  target: https://edh-www.adw.uni-heidelberg.de/edh/person/HD033152/1
+  note: 'DPRR: APPU2941 C. Appuleius (31) M. f. Tappo; EDH: C. Appuleius Tappo; pr.
+    late Repulic/early Augustan'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2422
+  target: https://edh-www.adw.uni-heidelberg.de/edh/person/HD000733/1
+  note: 'DPRR: ATEI2422 C. Ateius (7) C. f. Capito; EDH: C. Ateius Capito; tr. pl.
+    55'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/4570
+  target: https://edh-www.adw.uni-heidelberg.de/edh/person/HD000646/1
+  note: 'DPRR: ATIL4570 C. Atilius (not in RE) Tro. Glabrio; EDH: C. Atilius Glabrio;
+    praef. fabr. before 40'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2947
+  target: https://edh-www.adw.uni-heidelberg.de/edh/person/HD031693/1
+  note: 'DPRR: CEST2947 C. Cestius (7) L. f. Pob. Epulo; EDH: C. Cestius Epulo; pr.
+    before 12'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3097
+  target: https://edh-www.adw.uni-heidelberg.de/edh/person/HD004213/1
+  note: 'DPRR: CLOD3097 C. Clodius (62) C. f. Arn. Vestalis; EDH: C. Clodius Vestalis;
+    procos. after 41'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2881
+  target: https://edh-www.adw.uni-heidelberg.de/edh/person/HD022823/1
+  note: 'DPRR: MARI2881 T. Marius (30) C. f. Ste. Siculus; EDH: T. Marius Siculus;
+    tr. mil. after 36'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/4358
+  target: https://edh-www.adw.uni-heidelberg.de/edh/person/HD000718/16
+  note: 'DPRR: NONI4358 Sex. Nonius (46) Quinctilianus; EDH: Sex. Nonius Quinctilianus;
+    son of L. Nonius (14) L. f. T?. n. Vel. Asprenas (cos. suff. 36)'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2334
+  target: https://edh-www.adw.uni-heidelberg.de/edh/person/HD061161/1
+  note: 'DPRR: NUME2334 Q. Numerius (5) Q. f. Vel. Rufus; EDH: Q. Numerius Rufus;
+    tr. pl. 57'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/4689
+  target: https://edh-www.adw.uni-heidelberg.de/edh/person/HD002749/1
+  note: 'DPRR: OTAC4689 L. Otacilius (not in RE) P. f. Rufus; EDH: L. Otacilius Rufus;
+    tr. pl. late C2 or early C1'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1900
+  target: https://edh-www.adw.uni-heidelberg.de/edh/person/HD002908/1
+  note: 'DPRR: PLAU1900 M. Plautius (29) Silvanus; EDH: M. Plautius Silvanus; tr.
+    pl. 89'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3661
+  target: https://edh-www.adw.uni-heidelberg.de/edh/person/HD013186/1
+  note: 'DPRR: POMP3661 Q. Pomponius (26) Rufus; EDH: Q. Pomponius Rufus; brother
+    of? Sex. Pomponius (14)'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2433
+  target: https://edh-www.adw.uni-heidelberg.de/edh/person/HD034171/1
+  note: 'DPRR: SERV2433 P. Servilius (67) P. f. C. n. Isauricus; EDH: P. Servilius
+    Isauricus; cos. 48'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2729
+  target: https://edh-www.adw.uni-heidelberg.de/edh/person/HD033614/2
+  note: 'DPRR: SEST2729 L. Sestius (3) P. f. L. n. Quirinalis Alb-; EDH: L. Sestius
+    Quirinalis; cos. suff. 23'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2360
+  target: https://edh-www.adw.uni-heidelberg.de/edh/person/HD001657/3
+  note: 'DPRR: SILI2360 P. Silius (8) (Nerva); EDH: P.? Silius? Nerva?; pr. before
+    57'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2924
+  target: https://edh-www.adw.uni-heidelberg.de/edh/person/HD024225/2
+  note: 'DPRR: TARI2924 L. Tarius (3) Rufus; EDH: L. Tarius Rufus; leg. lieut. 31'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1398
+  target: https://edh-www.adw.uni-heidelberg.de/edh/person/HD030823/3
+  note: 'DPRR: VOCO1398 Q. Voconius (4) Hor. Saxa; EDH: Q. Voconius Saxa Fidus; tr.
+    pl. 169'
