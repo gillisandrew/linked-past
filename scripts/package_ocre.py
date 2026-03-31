@@ -1,5 +1,6 @@
-"""Download OCRE RDF, convert to Turtle, generate VoID, and push to OCI registry."""
+"""Download OCRE RDF, convert to Turtle via rapper, generate VoID, and push to OCI registry."""
 
+import subprocess
 import sys
 import tempfile
 import urllib.request
@@ -25,8 +26,6 @@ ANNOTATIONS = {
 
 
 def main(version="latest"):
-    from rdflib import Graph
-
     with tempfile.TemporaryDirectory() as tmpdir:
         tmpdir = Path(tmpdir)
         print(f"Downloading {SOURCE_URL}...")
@@ -34,12 +33,15 @@ def main(version="latest"):
         urllib.request.urlretrieve(SOURCE_URL, str(rdf_path))
         print(f"Downloaded {rdf_path} ({rdf_path.stat().st_size:,} bytes)")
 
-        print("Converting RDF/XML to Turtle...")
-        g = Graph()
-        g.parse(str(rdf_path), format="xml")
+        print("Converting RDF/XML to Turtle via rapper...")
         ttl_path = tmpdir / "ocre.ttl"
-        g.serialize(str(ttl_path), format="turtle")
-        print(f"Created {ttl_path} ({ttl_path.stat().st_size:,} bytes), {len(g)} triples")
+        subprocess.run(
+            ["rapper", "-i", "rdfxml", "-o", "turtle", str(rdf_path)],
+            stdout=open(ttl_path, "w"),
+            stderr=subprocess.PIPE,
+            check=True,
+        )
+        print(f"Created {ttl_path} ({ttl_path.stat().st_size:,} bytes)")
 
         # Verify
         result = verify_turtle(ttl_path)
