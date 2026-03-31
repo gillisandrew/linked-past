@@ -36,6 +36,8 @@ def _fix_lang_tag(match: re.Match) -> str:
     text = match.group(1)
     tag = match.group(2)
     parts = tag.split("-")
+    if not any(len(part) > 8 for part in parts):
+        return match.group(0)  # Valid tag, return unchanged
     fixed_parts = [part[:8] if len(part) > 8 else part for part in parts]
     return f'"{text}"@{"-".join(fixed_parts)}'
 
@@ -59,15 +61,16 @@ def sanitize_turtle(
 
     text = input_path.read_text(errors="replace")
     input_size = len(text)
-    fixes = 0
+    original = text
 
-    # Fix BCP 47 language tags
-    text, n = _LANG_TAG.subn(_fix_lang_tag, text)
-    fixes += n
+    # Fix BCP 47 language tags (only those with subtags > 8 chars)
+    text = _LANG_TAG.sub(_fix_lang_tag, text)
 
     # Fix bare DOIs missing scheme
-    text, n = _BARE_DOI.subn(r"<https://\1", text)
-    fixes += n
+    text = _BARE_DOI.sub(r"<https://\1", text)
+
+    # Count actual changes by diffing
+    fixes = sum(1 for a, b in zip(original.splitlines(), text.splitlines()) if a != b)
 
     output_path.write_text(text)
     output_size = len(text)
