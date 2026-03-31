@@ -63,6 +63,9 @@ def pull_for_dataset(
 ) -> Path:
     """Pull a dataset by name from the configured registry.
 
+    If the upstream digest has changed since the last pull, the local
+    Oxigraph store is invalidated (deleted) so it gets rebuilt on next init.
+
     Args:
         dataset: Dataset name (e.g., "dprr", "pleiades")
         output_dir: Directory to copy files into
@@ -74,4 +77,21 @@ def pull_for_dataset(
         "LINKED_PAST_REGISTRY", "ghcr.io/gillisandrew/linked-past"
     )
     ref = f"{registry}/{dataset}:{version}"
-    return pull_dataset(ref, output_dir, force=force)
+    output_dir = Path(output_dir)
+
+    # Check current digest before pulling
+    cache = ArtifactCache()
+    old_digest = cache.digest_for(ref)
+
+    result = pull_dataset(ref, output_dir, force=force)
+
+    # If digest changed, invalidate the Oxigraph store
+    new_digest = cache.digest_for(ref)
+    if old_digest and new_digest and old_digest != new_digest:
+        store_path = output_dir / "store"
+        if store_path.exists():
+            shutil.rmtree(store_path)
+            logger.info("Store invalidated for %s (digest changed: %s → %s)",
+                        dataset, old_digest[:20], new_digest[:20])
+
+    return result
