@@ -48,6 +48,7 @@ class PleiadesPlugin(DatasetPlugin):
     def __init__(self):
         self._prefixes = load_prefixes(_CONTEXT_DIR)
         self._schemas = load_schemas(_CONTEXT_DIR)
+        self._hand_written_class_names = set(self._schemas.keys())
         self._examples = load_examples(_CONTEXT_DIR)
         self._tips = load_tips(_CONTEXT_DIR)
         self._schema_dict = build_schema_dict(self._schemas, self._prefixes)
@@ -65,11 +66,17 @@ class PleiadesPlugin(DatasetPlugin):
         class_summary = render_class_summary(self._schemas)
         cross_tips = get_cross_cutting_tips(self._tips)
         tips_md = render_tips(cross_tips)
-        return (
+        result = (
             f"## Prefixes\n\n```sparql\n{prefix_lines}\n```\n\n"
             f"## Classes\n\n{class_summary}\n\n"
             f"## General Tips\n\n{tips_md}"
         )
+        from linked_past.core.context import render_auto_detected_summary
+
+        auto_section = render_auto_detected_summary(self._schemas, self._hand_written_class_names)
+        if auto_section:
+            result += f"\n\n{auto_section}"
+        return result
 
     def validate(self, sparql: str) -> ValidationResult:
         hints = validate_semantics(sparql, self._schema_dict)
