@@ -38,6 +38,7 @@ class AppContext:
     registry: DatasetRegistry
     linkage: LinkageGraph | None = None
     embeddings: EmbeddingIndex | None = None
+    meta: object = None  # MetaEntityIndex
     session_log: list = None
 
     def __post_init__(self):
@@ -46,11 +47,19 @@ class AppContext:
 
 
 def _build_embeddings(registry: DatasetRegistry, data_dir: Path) -> EmbeddingIndex | None:
-    """Build embedding index from all plugin context. Returns None on failure."""
+    """Load or build embedding index from plugin context. Skips rebuild if DB is populated."""
     try:
         embeddings_path = data_dir / "embeddings.db"
         embeddings = EmbeddingIndex(embeddings_path)
 
+        # Check if already populated — skip expensive rebuild
+        existing = embeddings._conn.execute("SELECT COUNT(*) FROM documents WHERE embedding IS NOT NULL").fetchone()[0]
+        if existing > 0:
+            logger.info("Embedding index loaded from cache (%d documents)", existing)
+            return embeddings
+
+        # First time — build from scratch
+        logger.info("Building embedding index (first time)...")
         for name in registry.list_datasets():
             plugin = registry.get_plugin(name)
             embeddings.add(name, "dataset", f"{plugin.display_name}: {plugin.description}")
@@ -65,6 +74,7 @@ def _build_embeddings(registry: DatasetRegistry, data_dir: Path) -> EmbeddingInd
                     embeddings.add(name, "schema", f"{cls_name}: {cls_data.get('comment', '')}")
 
         embeddings.build()
+        logger.info("Embedding index built and cached")
         return embeddings
     except Exception as e:
         logger.warning("Failed to build embedding index: %s", e)
@@ -110,7 +120,49 @@ def build_app_context(*, eager: bool = False) -> AppContext:
 
     embeddings = _build_embeddings(registry, data_dir)
 
-    return AppContext(registry=registry, linkage=linkage, embeddings=embeddings)
+    # Build meta-entity index (skip if already cached)
+    meta = None
+    try:
+        from linked_past.core.meta_entities import MetaEntity, MetaEntityIndex
+
+        meta_db = data_dir / "meta_entities.db"
+        meta = MetaEntityIndex(meta_db)
+
+        # Check if already populated
+        if meta._conn:
+            existing = meta._conn.execute("SELECT COUNT(*) FROM meta_entities").fetchone()[0]
+        else:
+            existing = 0
+
+        if existing > 0:
+            # Load from cache
+            for row in meta._conn.execute("SELECT * FROM meta_entities"):
+                import json as json_mod
+
+                entity = MetaEntity(
+                    id=row[0], canonical_name=row[1], entity_type=row[2],
+                    description=row[3], date_range=row[4],
+                    uris=json_mod.loads(row[5]) if row[5] else {},
+                    wikidata_qid=row[6],
+                )
+                meta._entities[entity.id] = entity
+                for uris in entity.uris.values():
+                    for uri in uris:
+                        meta._uri_to_id[uri] = entity.id
+            logger.info("Meta-entity index loaded from cache (%d entities)", existing)
+        else:
+            count = meta.build_from_linkage(linkage, registry)
+            logger.info("Built %d meta-entities", count)
+
+            # Add meta-entity descriptions to embedding index
+            if embeddings and count > 0:
+                for entity in meta.all_entities():
+                    embeddings.add("_meta", "meta_entity", entity.description)
+                embeddings.build()
+    except Exception as e:
+        logger.warning("Failed to build meta-entities: %s", e)
+
+    return AppContext(registry=registry, linkage=linkage, embeddings=embeddings, meta=meta)
 
 
 # SKOS/OWL predicates that indicate cross-dataset references
@@ -460,9 +512,16 @@ def create_mcp_server() -> FastMCP:
 
     @mcp.tool()
     def search_entities(ctx: Context, query_text: str, dataset: str | None = None) -> str:
-        """Search entity labels across datasets. Returns matching entities with URIs, labels, types, and dataset provenance. Use for entity disambiguation."""
+        """Search entity labels across datasets. Checks meta-entities first (unified cross-dataset), then SPARQL label search per dataset."""
         t0 = time.monotonic()
         app: AppContext = ctx.request_context.lifespan_context
+
+        # Check meta-entities first (fast, cross-dataset)
+        meta_results = []
+        if app.meta and not dataset:  # Only for cross-dataset searches
+            meta_matches = app.meta.search(query_text, k=5)
+            for entity in meta_matches:
+                meta_results.append(entity)
         registry = app.registry
 
         datasets_to_search = [dataset] if dataset else registry.list_datasets()
@@ -516,16 +575,40 @@ def create_mcp_server() -> FastMCP:
             except Exception as e:
                 logger.warning("Search failed for %s: %s", ds_name, e)
 
-        if not all_results:
+        if not all_results and not meta_results:
             output = f"No entities found matching '{query_text}'."
             _log_tool_call(app, "search_entities", {"query_text": query_text, "dataset": dataset}, output, int((time.monotonic() - t0) * 1000))
             return output
 
+        lines = [f"# Search Results for '{query_text}'\n"]
+
+        # Meta-entity results first (cross-dataset unified entities)
+        if meta_results:
+            lines.append("## Unified Entities (cross-dataset)\n")
+            for entity in meta_results:
+                ds_list = ", ".join(f"{ds}({len(uris)})" for ds, uris in entity.uris.items())
+                lines.append(f"- **{entity.canonical_name}**")
+                if entity.date_range:
+                    lines.append(f"  {entity.date_range}")
+                lines.append(f"  Datasets: {ds_list}")
+                if entity.wikidata_qid:
+                    qid = entity.wikidata_qid.split("/")[-1]
+                    lines.append(f"  Wikidata: {qid}")
+                # List URIs
+                for ds, uris in entity.uris.items():
+                    for uri in uris[:3]:
+                        lines.append(f"  - `{uri}` ({ds})")
+                    if len(uris) > 3:
+                        lines.append(f"  - ... and {len(uris) - 3} more in {ds}")
+                lines.append("")
+
+        # Per-dataset SPARQL results
         by_dataset: dict[str, list] = {}
         for r in all_results:
             by_dataset.setdefault(r["dataset"], []).append(r)
 
-        lines = [f"# Search Results for '{query_text}'\n"]
+        if by_dataset:
+            lines.append("## Per-Dataset Results\n")
         for ds_name, results in by_dataset.items():
             plugin = registry.get_plugin(ds_name)
             lines.append(f"## {plugin.display_name}\n")
@@ -549,6 +632,19 @@ def create_mcp_server() -> FastMCP:
 
         ds_name = registry.dataset_for_uri(uri)
         lines = [f"# Entity: `{uri}`\n"]
+
+        # Check if this URI belongs to a meta-entity
+        if app.meta:
+            meta_entity = app.meta.get_by_uri(uri)
+            if meta_entity:
+                lines.append(f"**Unified Entity:** {meta_entity.canonical_name}")
+                if meta_entity.date_range:
+                    lines.append(f"**Period:** {meta_entity.date_range}")
+                ds_list = ", ".join(f"{ds}({len(uris)})" for ds, uris in meta_entity.uris.items())
+                lines.append(f"**Also in:** {ds_list}")
+                if meta_entity.wikidata_qid:
+                    lines.append(f"**Wikidata:** {meta_entity.wikidata_qid.split('/')[-1]}")
+                lines.append("")
 
         if ds_name:
             plugin = registry.get_plugin(ds_name)
