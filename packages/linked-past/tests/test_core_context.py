@@ -1,7 +1,6 @@
 # tests/test_core_context.py
 
 import yaml
-
 from linked_past.core.context import (
     get_cross_cutting_tips,
     get_relevant_examples,

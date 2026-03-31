@@ -14,6 +14,7 @@ resolution-markers = [
 members = [
     "linked-past",
     "linked-past-store",
+    "linked-past-workspace",
 ]
 
 [[package]]
@@ -433,7 +434,7 @@ wheels = [
 [[package]]
 name = "linked-past"
 version = "0.1.0"
-source = { editable = "." }
+source = { editable = "packages/linked-past" }
 dependencies = [
     { name = "fastembed" },
     { name = "linked-past-store" },
@@ -443,16 +444,6 @@ dependencies = [
     { name = "pyyaml" },
     { name = "rdflib" },
     { name = "toons" },
-]
-
-[package.dev-dependencies]
-analysis = [
-    { name = "pandas" },
-]
-dev = [
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "ruff" },
 ]
 
 [package.metadata]
@@ -465,14 +456,6 @@ requires-dist = [
     { name = "pyyaml" },
     { name = "rdflib" },
     { name = "toons", specifier = ">=0.5.3" },
-]
-
-[package.metadata.requires-dev]
-analysis = [{ name = "pandas" }]
-dev = [
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "ruff" },
 ]
 
 [[package]]
@@ -488,6 +471,35 @@ dependencies = [
 requires-dist = [
     { name = "oras" },
     { name = "pyoxigraph" },
+]
+
+[[package]]
+name = "linked-past-workspace"
+version = "0.0.0"
+source = { virtual = "." }
+
+[package.dev-dependencies]
+analysis = [
+    { name = "pandas" },
+]
+dev = [
+    { name = "linked-past" },
+    { name = "linked-past-store" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "ruff" },
+]
+
+[package.metadata]
+
+[package.metadata.requires-dev]
+analysis = [{ name = "pandas" }]
+dev = [
+    { name = "linked-past", editable = "packages/linked-past" },
+    { name = "linked-past-store", editable = "packages/linked-past-store" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "ruff" },
 ]
 
 [[package]]

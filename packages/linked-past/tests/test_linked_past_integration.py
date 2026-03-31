@@ -4,7 +4,6 @@
 import json
 
 import pytest
-
 from linked_past.core.server import build_app_context
 from linked_past.core.validate import parse_and_fix_prefixes, validate_and_execute
 

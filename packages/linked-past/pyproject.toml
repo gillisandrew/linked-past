@@ -1,0 +1,27 @@
+[project]
+name = "linked-past"
+version = "0.1.0"
+description = "Multi-dataset prosopographical SPARQL tools for AI agents. Natural-language queries with scholarly citations across linked ancient world datasets."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.13"
+dependencies = [
+    "pyoxigraph",
+    "rdflib",
+    "pyyaml",
+    "mcp",
+    "toons>=0.5.3",
+    "fastembed",
+    "numpy",
+    "linked-past-store",
+]
+
+[tool.uv.sources]
+linked-past-store = { workspace = true }
+
+[project.scripts]
+linked-past-server = "linked_past.core.server:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

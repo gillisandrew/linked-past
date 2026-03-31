@@ -1,7 +1,6 @@
 """Tests for the linkage graph store."""
 
 import pytest
-
 from linked_past.core.linkage import LinkageGraph
 
 SAMPLE_LINKAGE = {

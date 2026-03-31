@@ -2,7 +2,6 @@
 from pathlib import Path
 
 import pytest
-
 from linked_past.core.store import (
     create_store,
     execute_query,

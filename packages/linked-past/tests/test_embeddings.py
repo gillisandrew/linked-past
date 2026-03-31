@@ -4,7 +4,6 @@ import tempfile
 from pathlib import Path
 
 import pytest
-
 from linked_past.core.embeddings import EmbeddingIndex
 
 

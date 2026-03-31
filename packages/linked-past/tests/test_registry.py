@@ -2,7 +2,6 @@
 import json
 
 import pytest
-
 from linked_past.core.registry import DatasetRegistry
 from linked_past.datasets.base import DatasetPlugin, ValidationResult, VersionInfo
 
