@@ -303,6 +303,185 @@ linked-past-store void inspect ghcr.io/myorg/dataset:v1.0
 - Signposting headers for HTTP content negotiation on artifact URIs
 - W3C PROV-O provenance chain (sanitization + verification steps)
 
+## Potential Addition: Ontology-Aware Schema Generation
+
+### Problem
+
+Each dataset plugin requires a hand-written `schemas.yaml` that lists classes, properties, and ranges for SPARQL validation and schema display. This is error-prone, incomplete, and doesn't capture class hierarchy or property inheritance.
+
+Some datasets publish formal OWL/RDFS ontologies (e.g., DPRR publishes a full OWL ontology with 30+ classes, domain/range declarations, and rich `rdfs:comment` annotations). Others only use predicates implicitly. The current approach treats both the same — manual YAML regardless.
+
+### Proposed Solution
+
+Add an optional **Layer 3: ontology.ttl** to the OCI artifact, plus an `ontology.py` module in `linked-past-store` that can extract schemas from either formal ontologies or empirical data analysis.
+
+#### Artifact Structure (Extended)
+
+```
+OCI Artifact
+├── Layer 1: {dataset}.ttl          (application/x-turtle)     — data
+├── Layer 2: void.ttl               (application/x-turtle)     — dataset metadata
+├── Layer 3: ontology.ttl           (application/x-turtle)     — schema (optional)
+└── Manifest annotations
+```
+
+Layer 3 is the dataset's ontology — either the upstream OWL/RDFS file (if published) or an auto-generated schema extracted from the data.
+
+#### Schema Extraction Pipeline
+
+```
+Has ontology file?
+  │
+  ├─ YES → Parse OWL/RDFS
+  │        Extract: classes, properties, domains, ranges, hierarchy, comments
+  │        Output: complete, authoritative schema
+  │
+  └─ NO  → Empirical extraction from data
+           Query: SELECT ?class ?pred (COUNT(*) AS ?n) WHERE { ?s a ?class ; ?pred ?o }
+           Output: de facto schema (what's actually used)
+           Note: may miss abstract classes, won't have hierarchy or comments
+  │
+  ▼
+Generate schemas.yaml (for runtime validation)
+Generate schema docs (for get_schema tool display)
+Enrich VoID with class/property counts
+```
+
+#### What Formal Ontology Parsing Provides
+
+Using the DPRR ontology as an example:
+
+**Class hierarchy:**
+```
+ThingWithID
+├── ThingWithName
+│   ├── Person
+│   └── AuthorityList
+│       ├── AuthorityWithAbbreviation
+│       │   ├── Office
+│       │   ├── Praenomen
+│       │   └── Status
+│       └── AuthorityWithDescription
+├── Assertion
+│   ├── AssertionWithDateRange
+│   │   ├── PostAssertion
+│   │   └── StatusAssertion
+│   ├── RelationshipAssertion
+│   ├── TribeAssertion
+│   └── DateInformation
+└── NoteContainer
+    ├── Note
+    └── NoteForProvince
+        ├── PostAssertionProvince
+        └── StatusAssertionProvince
+```
+
+**Property inheritance:** `isUncertain` is declared on `Assertion` with `rdfs:domain :Assertion`. This means it's valid on all 6+ assertion subclasses — something our hand-written `schemas.yaml` doesn't express. A validator that understands hierarchy can correctly allow `isUncertain` on a `TribeAssertion` without listing it explicitly.
+
+**Rich comments as documentation:** Every class and property has `rdfs:comment` from the ontology author. These are better than our hand-written one-liners:
+
+```
+:PostAssertion rdfs:comment "provides a mechanism that a DPRR person held
+  a particular office at a particular date or date range."
+
+:isUncertain rdfs:comment "When true, specifies that the information in
+  the Assertion is uncertain. Only appears if 'true'."
+```
+
+These comments can directly populate the `get_schema` tool output and the schema descriptions in VoID.
+
+#### What Empirical Extraction Provides (Fallback)
+
+For datasets without ontologies (EDH, Pleiades, Nomisma), query the loaded store:
+
+```sparql
+# Classes by usage
+SELECT ?class (COUNT(DISTINCT ?s) AS ?instances)
+WHERE { ?s a ?class }
+GROUP BY ?class ORDER BY DESC(?instances)
+
+# Properties per class
+SELECT ?class ?pred (SAMPLE(?o) AS ?example) (COUNT(*) AS ?usage)
+WHERE { ?s a ?class ; ?pred ?o }
+GROUP BY ?class ?pred ORDER BY ?class DESC(?usage)
+
+# Infer ranges from actual values
+SELECT ?pred (DATATYPE(?o) AS ?range) (COUNT(*) AS ?n)
+WHERE { ?s ?pred ?o . FILTER(isLiteral(?o)) }
+GROUP BY ?pred ?range
+```
+
+This produces:
+- List of all classes with instance counts
+- Properties used on each class with usage frequency
+- Inferred ranges from literal datatypes
+- Example values for documentation
+
+Missing compared to formal ontology:
+- No class hierarchy (flat list)
+- No abstract classes (only instantiated ones)
+- No `rdfs:comment` documentation
+- Inferred ranges may be noisy (multiple datatypes per property)
+
+#### Implementation in `linked-past-store`
+
+```python
+# linked_past_store/ontology.py
+
+def extract_from_ontology(ontology_path: Path) -> Schema:
+    """Parse OWL/RDFS ontology file. Returns complete schema with hierarchy."""
+
+def extract_from_data(store: Store) -> Schema:
+    """Empirical schema extraction from loaded RDF data. Best-effort fallback."""
+
+def generate_schemas_yaml(schema: Schema, output_path: Path) -> None:
+    """Write schema to YAML format compatible with linked-past plugin context."""
+
+def extract_schema(
+    data_path: Path | None = None,
+    ontology_path: Path | None = None,
+) -> Schema:
+    """Extract schema from ontology (preferred) or data (fallback)."""
+```
+
+#### CLI
+
+```bash
+# From ontology file
+linked-past-store ontology extract ontology.ttl --output schemas.yaml
+
+# From data (empirical)
+linked-past-store ontology extract --from-data dataset.ttl --output schemas.yaml
+
+# Both (ontology + data counts for VoID)
+linked-past-store ontology extract ontology.ttl --enrich-from dataset.ttl --output schemas.yaml
+```
+
+#### Interaction with Existing Components
+
+| Component | Current | With Ontology |
+|---|---|---|
+| `schemas.yaml` | Hand-written | Auto-generated (ontology or empirical) |
+| `tips.yaml` | Hand-written | Hand-written (domain expertise, not extractable) |
+| `examples.yaml` | Hand-written | Hand-written (pedagogical, not extractable) |
+| `prefixes.yaml` | Hand-written | Auto-extractable from ontology `@prefix` declarations |
+| Validation | Flat class→property map | Hierarchy-aware (property valid on class or any ancestor) |
+| `get_schema` | Renders YAML | Renders YAML + ontology comments |
+| VoID | Class/property counts | Counts + hierarchy depth + comment excerpts |
+
+#### Heterogeneous Dataset Support
+
+| Dataset | Ontology Available | Strategy |
+|---|---|---|
+| DPRR | Full OWL (published by Bradley) | Parse ontology → authoritative schema |
+| Nomisma | NMO OWL (published at nomisma.org/ontology) | Parse ontology → authoritative schema |
+| EDH | RDFS classes in vocabulary files | Parse RDFS → partial schema + empirical enrichment |
+| Pleiades | RDFS vocab (published at pleiades.stoa.org/places/vocab) | Parse RDFS → partial schema + empirical enrichment |
+| PeriodO | SHACL shapes (published at data.perio.do) | Parse SHACL → constraint-based schema (different approach) |
+| CRRO/OCRE | Uses NMO (same as Nomisma) | Inherit from Nomisma schema |
+
+The key insight: **parse what's available, fall back to empirical, layer human curation on top.** The three layers (ontology → data → human) complement each other.
+
 ## Design Principles
 
 1. **Annotations are the index, VoID is the authority.** OCI annotations provide fast flat lookup. VoID provides the full queryable description. They should agree; if they diverge, VoID wins.
