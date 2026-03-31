@@ -3,7 +3,7 @@ name = "linked-past-store"
 version = "0.1.0"
 description = "Distribute scholarly RDF datasets as OCI artifacts. Content-addressable, version-tracked, annotated storage via container registries."
 readme = "README.md"
-license = "MIT"
+license = "LGPL-3.0-or-later"
 requires-python = ">=3.13"
 dependencies = [
     "oras",

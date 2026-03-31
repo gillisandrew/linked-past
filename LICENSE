@@ -40,7 +40,8 @@ License identifiers are declared in each OCI artifact's manifest annotations
 ## linked-past-store subpackage
 
 The `linked-past-store` distribution library (packages/linked-past-store/)
-is licensed under the MIT License to allow unrestricted use as a dependency:
+is licensed under the GNU Lesser General Public License v3.0 (LGPL-3.0).
+It can be used as a dependency by proprietary software, but modifications
+to the library itself must be published under LGPL-3.0.
 
-MIT License — Copyright (c) 2025-2026 Andrew Gillis
 See packages/linked-past-store/LICENSE for the full text.
