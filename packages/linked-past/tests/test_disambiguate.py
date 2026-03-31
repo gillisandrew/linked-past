@@ -252,3 +252,198 @@ class TestExtractContextFromEDH:
         store = OxStore()
         result = extract_context_from_edh_uri("https://example.org/nonexistent", store)
         assert result is None
+
+
+# ── Aquillius golden integration test ───────────────────────────────────────
+
+AQUILLIUS_TURTLE = """\
+@prefix vocab: <http://romanrepublic.ac.uk/rdf/ontology#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+
+# Praenomen: Manius
+<http://romanrepublic.ac.uk/rdf/entity/Praenomen/1> a vocab:Praenomen ;
+    rdfs:label "Praenomen: M'." .
+
+# ── Person 1614: M'. Aquillius cos. 129 BCE ──────────────────────────────
+<http://romanrepublic.ac.uk/rdf/entity/Person/1614> a vocab:Person ;
+    vocab:hasPersonName "AQUI1614 M'. Aquillius (10) M'. f. M'. n." ;
+    vocab:hasNomen "Aquillius" ;
+    vocab:hasPraenomen <http://romanrepublic.ac.uk/rdf/entity/Praenomen/1> ;
+    vocab:hasEraFrom "-185"^^xsd:integer ;
+    vocab:hasEraTo   "-129"^^xsd:integer .
+
+<http://romanrepublic.ac.uk/rdf/entity/PostAssertion/1614a> a vocab:PostAssertion ;
+    vocab:isAboutPerson <http://romanrepublic.ac.uk/rdf/entity/Person/1614> ;
+    vocab:hasOffice <http://romanrepublic.ac.uk/rdf/entity/Office/consul> ;
+    vocab:hasDateStart "-129"^^xsd:integer .
+
+<http://romanrepublic.ac.uk/rdf/entity/Office/consul> a vocab:Office ;
+    rdfs:label "Office: consul" .
+
+# ── Person 1757: M'. Aquillius cos. 101 BCE ──────────────────────────────
+<http://romanrepublic.ac.uk/rdf/entity/Person/1757> a vocab:Person ;
+    vocab:hasPersonName "AQUI1757 M'. Aquillius (11) M'. f. M'. n." ;
+    vocab:hasNomen "Aquillius" ;
+    vocab:hasPraenomen <http://romanrepublic.ac.uk/rdf/entity/Praenomen/1> ;
+    vocab:hasEraFrom "-155"^^xsd:integer ;
+    vocab:hasEraTo   "-101"^^xsd:integer .
+
+<http://romanrepublic.ac.uk/rdf/entity/PostAssertion/1757a> a vocab:PostAssertion ;
+    vocab:isAboutPerson <http://romanrepublic.ac.uk/rdf/entity/Person/1757> ;
+    vocab:hasOffice <http://romanrepublic.ac.uk/rdf/entity/Office/consul> ;
+    vocab:hasDateStart "-101"^^xsd:integer .
+
+# ── Person 4686: L. Aquillius M. f. M. n. Florus q. c.70 BCE ────────────
+<http://romanrepublic.ac.uk/rdf/entity/Person/4686> a vocab:Person ;
+    vocab:hasPersonName "AQUI4686 L. Aquillius (12) M'. f. M'. n. Florus" ;
+    vocab:hasNomen "Aquillius" ;
+    vocab:hasPraenomen <http://romanrepublic.ac.uk/rdf/entity/Praenomen/lucius> ;
+    vocab:hasEraFrom "-115"^^xsd:integer ;
+    vocab:hasEraTo   "-60"^^xsd:integer .
+
+<http://romanrepublic.ac.uk/rdf/entity/Praenomen/lucius> a vocab:Praenomen ;
+    rdfs:label "Praenomen: L." .
+
+<http://romanrepublic.ac.uk/rdf/entity/PostAssertion/4686a> a vocab:PostAssertion ;
+    vocab:isAboutPerson <http://romanrepublic.ac.uk/rdf/entity/Person/4686> ;
+    vocab:hasOffice <http://romanrepublic.ac.uk/rdf/entity/Office/quaestor> ;
+    vocab:hasDateStart "-70"^^xsd:integer .
+
+<http://romanrepublic.ac.uk/rdf/entity/Office/quaestor> a vocab:Office ;
+    rdfs:label "Office: quaestor" .
+
+# ── Relationship: 1614 is father of 1757 ────────────────────────────────
+<http://romanrepublic.ac.uk/rdf/entity/Relationship/fatherOf> a vocab:Relationship ;
+    rdfs:label "Relationship: father of" .
+
+<http://romanrepublic.ac.uk/rdf/entity/RelationshipAssertion/ra1> a vocab:RelationshipAssertion ;
+    vocab:isAboutPerson <http://romanrepublic.ac.uk/rdf/entity/Person/1614> ;
+    vocab:hasRelatedPerson <http://romanrepublic.ac.uk/rdf/entity/Person/1757> ;
+    vocab:hasRelationship <http://romanrepublic.ac.uk/rdf/entity/Relationship/fatherOf> .
+
+# ── Relationship: 1757 is father of 4686 ────────────────────────────────
+<http://romanrepublic.ac.uk/rdf/entity/RelationshipAssertion/ra2> a vocab:RelationshipAssertion ;
+    vocab:isAboutPerson <http://romanrepublic.ac.uk/rdf/entity/Person/1757> ;
+    vocab:hasRelatedPerson <http://romanrepublic.ac.uk/rdf/entity/Person/4686> ;
+    vocab:hasRelationship <http://romanrepublic.ac.uk/rdf/entity/Relationship/fatherOf> .
+"""
+
+_DPRR_BASE = "http://romanrepublic.ac.uk/rdf/entity/Person/"
+
+
+@pytest.fixture
+def aquillius_store(tmp_path):
+    """Ephemeral Oxigraph store pre-loaded with the Aquillius family fixture."""
+    from pyoxigraph import RdfFormat
+    from pyoxigraph import Store as OxStore
+
+    store = OxStore()
+    store.bulk_load(
+        input=AQUILLIUS_TURTLE.encode(),
+        format=RdfFormat.TURTLE,
+    )
+    return store
+
+
+class TestAquilliusGolden:
+    """Golden integration tests using the Aquillius family fixture."""
+
+    def test_filiation_scores_1_for_florus(self, aquillius_store):
+        """Person/4686 (Florus): father=manius, grandfather=manius — filiation score = 1.0."""
+        from linked_past.core.disambiguate import fetch_dprr_family, score_filiation
+
+        family = fetch_dprr_family(aquillius_store, f"{_DPRR_BASE}4686")
+        assert family["father_praenomen"] == "manius", f"Expected manius, got {family['father_praenomen']}"
+        assert family["grandfather_praenomen"] == "manius", f"Expected manius, got {family['grandfather_praenomen']}"
+
+        inscription_filiation = {"father": "manius", "grandfather": "manius"}
+        score, explanation, is_absent = score_filiation(family, inscription_filiation)
+        assert score == 1.0, f"Expected 1.0 but got {score}: {explanation}"
+        assert not is_absent
+
+    def test_career_scores_for_quaestor(self, aquillius_store):
+        """Person/4686: held quaestor at -70 — career score >= 0.7."""
+        from linked_past.core.disambiguate import fetch_dprr_offices, score_career
+
+        offices = fetch_dprr_offices(aquillius_store, f"{_DPRR_BASE}4686")
+        assert any("quaestor" in (o.get("office") or "").lower() for o in offices), \
+            f"Quaestor office not found in: {offices}"
+
+        score, explanation, is_absent = score_career(
+            dprr_offices=offices,
+            era_from=-115,
+            office="quaestor",
+            date=-70,
+        )
+        assert score >= 0.7, f"Expected >= 0.7 but got {score}: {explanation}"
+        assert not is_absent
+
+    def test_florus_ranks_above_grandfather(self, aquillius_store):
+        """Full disambiguation: inscription for quaestor ~70 BCE ranks Person/4686 first."""
+        from linked_past.core.disambiguate import (
+            WEIGHTS,
+            PersonDisambiguator,
+            SignalResult,
+            fetch_dprr_candidates,
+            fetch_dprr_family,
+            fetch_dprr_offices,
+            fetch_dprr_province_pleiades,
+            score_career,
+            score_filiation,
+            score_geography,
+            score_temporal,
+        )
+        from linked_past.core.onomastics import parse_filiation
+
+        # Inscription context: quaestor ~70 BCE, father=manius, grandfather=manius
+        inscription_filiation = parse_filiation("M'. f. M'. n.")
+        person_office = "quaestor"
+        person_date = -70
+
+        candidates = fetch_dprr_candidates(aquillius_store, "Aquillius")
+        assert len(candidates) == 3, f"Expected 3 candidates, got {len(candidates)}"
+
+        disambiguator = PersonDisambiguator()
+        candidates_signals = []
+
+        for cand in candidates:
+            cand_uri = cand.get("person", "")
+            cand_label = cand.get("label", cand_uri)
+            era_from_raw = cand.get("eraFrom")
+            era_to_raw = cand.get("eraTo")
+            try:
+                era_from = int(era_from_raw) if era_from_raw else None
+            except (ValueError, TypeError):
+                era_from = None
+            try:
+                era_to = int(era_to_raw) if era_to_raw else None
+            except (ValueError, TypeError):
+                era_to = None
+
+            dprr_offices = fetch_dprr_offices(aquillius_store, cand_uri)
+            dprr_family = fetch_dprr_family(aquillius_store, cand_uri)
+            province_pleiades = fetch_dprr_province_pleiades(aquillius_store, None, cand_uri)
+
+            t_score, t_expl, t_absent = score_temporal(era_from, era_to, person_date, person_date)
+            c_score, c_expl, c_absent = score_career(dprr_offices, era_from, person_office, person_date)
+            f_score, f_expl, f_absent = score_filiation(dprr_family, inscription_filiation)
+            g_score, g_expl, g_absent = score_geography(province_pleiades, None)
+
+            signals = {
+                "filiation": SignalResult(f_score, WEIGHTS["filiation"], f_expl, f_absent),
+                "career":    SignalResult(c_score, WEIGHTS["career"],    c_expl, c_absent),
+                "geography": SignalResult(g_score, WEIGHTS["geography"], g_expl, g_absent),
+                "temporal":  SignalResult(t_score, WEIGHTS["temporal"],  t_expl, t_absent),
+            }
+            candidates_signals.append((cand_uri, cand_label, signals))
+
+        ranked = disambiguator.rank_candidates(candidates_signals)
+        assert len(ranked) == 3
+
+        top = ranked[0]
+        assert top.dprr_uri == f"{_DPRR_BASE}4686", (
+            f"Expected Person/4686 to rank first, but got {top.dprr_uri} "
+            f"(score {top.score:.3f}). Full ranking: "
+            + ", ".join(f"{m.dprr_uri.rsplit('/', 1)[-1]}={m.score:.3f}" for m in ranked)
+        )
