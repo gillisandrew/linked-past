@@ -71,7 +71,30 @@ def _build_embeddings(registry: DatasetRegistry, data_dir: Path) -> EmbeddingInd
                     embeddings.add(name, "tip", f"{tip['title']}: {tip['body']}")
             if hasattr(plugin, "_schemas"):
                 for cls_name, cls_data in plugin._schemas.items():
-                    embeddings.add(name, "schema", f"{cls_name}: {cls_data.get('comment', '')}")
+                    # Multi-document: separate embeddings for label+URI vs comment
+                    label = cls_data.get("label", cls_name)
+                    uri = cls_data.get("uri", "")
+                    comment = cls_data.get("comment", "")
+
+                    # Document 1: class label + URI (matches "what class is X?")
+                    if uri:
+                        embeddings.add(name, "schema_label", f"{label} ({uri})")
+                    else:
+                        embeddings.add(name, "schema_label", label)
+
+                    # Document 2: class description (matches semantic questions)
+                    if comment:
+                        embeddings.add(name, "schema_comment", f"{cls_name}: {comment}")
+
+                    # Document 3+: example queries that reference this class
+                    if hasattr(plugin, "_examples"):
+                        for ex in plugin._examples:
+                            if cls_name.lower() in ex.get("sparql", "").lower():
+                                embeddings.add(
+                                    name,
+                                    "schema_example",
+                                    f"{cls_name} — {ex['question']}\n{ex['sparql']}",
+                                )
 
         embeddings.build()
         logger.info("Embedding index built and cached")
