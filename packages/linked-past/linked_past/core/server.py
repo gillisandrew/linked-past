@@ -97,18 +97,25 @@ def _build_search_index(registry: DatasetRegistry, data_dir: Path) -> SearchInde
                 scheme_uri = str(row[0]).strip("<>")
                 scheme_label = row[1].value if row[1] else scheme_uri.rsplit("/", 1)[-1]
                 concept_count = int(row[2].value)
+                # For small vocabularies (<1000), index all labels; for large ones, sample
+                limit = "LIMIT 500" if concept_count > 1000 else ""
                 concepts = list(store.query(
                     "PREFIX skos: <http://www.w3.org/2004/02/skos/core#> "
                     f"SELECT ?label WHERE {{ "
                     f"  ?c a skos:Concept ; skos:inScheme <{scheme_uri}> ; skos:prefLabel ?label . "
                     f"  FILTER(lang(?label) = 'en' || lang(?label) = '') "
-                    f"}} LIMIT 100"
+                    f"}} {limit}"
                 ))
                 if not concepts:
                     continue
                 labels = [r[0].value for r in concepts]
-                search.add(name, "skos_vocab",
-                           f"Vocabulary: {scheme_label} ({concept_count} terms). Values: {', '.join(labels)}")
+                # Batch labels into docs of ~50 each for better FTS matching
+                for i in range(0, len(labels), 50):
+                    batch = labels[i:i + 50]
+                    search.add(name, "skos_vocab",
+                               f"Vocabulary: {scheme_label} ({concept_count} terms). "
+                               f"Values: {', '.join(batch)}")
+                # Index concepts that have descriptions
                 described = list(store.query(
                     "PREFIX skos: <http://www.w3.org/2004/02/skos/core#> "
                     f"SELECT ?label ?note WHERE {{ "
@@ -117,7 +124,7 @@ def _build_search_index(registry: DatasetRegistry, data_dir: Path) -> SearchInde
                     f"  {{ ?c skos:scopeNote ?note }} UNION {{ ?c skos:definition ?note }} "
                     f"  FILTER(lang(?label) = 'en' || lang(?label) = '') "
                     f"  FILTER(lang(?note) = 'en' || lang(?note) = '') "
-                    f"}} LIMIT 50"
+                    f"}}"
                 ))
                 for dr in described:
                     search.add(name, "skos_concept", f"{dr[0].value}: {dr[1].value}")
