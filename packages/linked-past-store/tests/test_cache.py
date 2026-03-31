@@ -1,6 +1,7 @@
 """Tests for ArtifactCache layer-level caching."""
 
 import json
+from pathlib import Path
 from unittest.mock import patch
 
 from linked_past_store.cache import ArtifactCache, LayerInfo
@@ -118,3 +119,72 @@ class TestFetchManifest:
     def test_get_manifest_returns_none_if_not_cached(self, tmp_path):
         cache = ArtifactCache(tmp_path / "cache")
         assert cache.get_manifest("ghcr.io/test/nonexistent:v1") is None
+
+
+# -- Helpers --
+
+
+def _write_tmp(tmp_path: Path, filename: str, content: str) -> Path:
+    """Write a temp file and return its path."""
+    p = tmp_path / "tmp_files" / filename
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(content)
+    return p
+
+
+# -- Task 3: Per-layer cache storage --
+
+
+class TestLayerCache:
+    def test_has_layer_false_when_missing(self, tmp_path):
+        cache = ArtifactCache(tmp_path / "cache")
+        assert not cache.has_layer("sha256:nonexistent")
+
+    def test_has_layer_true_when_present(self, tmp_path):
+        cache = ArtifactCache(tmp_path / "cache")
+        layer_dir = cache._layers_dir / "abc123"
+        layer_dir.mkdir(parents=True)
+        (layer_dir / "data.ttl").write_text("content")
+        assert cache.has_layer("sha256:abc123")
+
+    def test_put_layer_stores_file(self, tmp_path):
+        cache = ArtifactCache(tmp_path / "cache")
+        src = tmp_path / "data.ttl"
+        src.write_text("@prefix ex: <http://example.org/> .\n")
+        cache.put_layer("sha256:abc123", "data.ttl", src)
+        layer_path = cache._layers_dir / "abc123" / "data.ttl"
+        assert layer_path.exists()
+        assert layer_path.read_text() == src.read_text()
+
+    def test_get_layer_path(self, tmp_path):
+        cache = ArtifactCache(tmp_path / "cache")
+        layer_dir = cache._layers_dir / "abc123"
+        layer_dir.mkdir(parents=True)
+        (layer_dir / "data.ttl").write_text("content")
+        result = cache.get_layer_path("sha256:abc123", "data.ttl")
+        assert result is not None
+        assert result.name == "data.ttl"
+
+    def test_get_layer_path_none_when_missing(self, tmp_path):
+        cache = ArtifactCache(tmp_path / "cache")
+        assert cache.get_layer_path("sha256:nonexistent", "data.ttl") is None
+
+    def test_assemble_blob_dir_creates_symlinks(self, tmp_path):
+        cache = ArtifactCache(tmp_path / "cache")
+        # Pre-populate layer cache
+        for digest, filename, content in [
+            ("sha256:aaa", "data.ttl", "rdf content"),
+            ("sha256:bbb", "_void.ttl", "void content"),
+        ]:
+            cache.put_layer(digest, filename, _write_tmp(tmp_path, filename, content))
+
+        layers = [
+            LayerInfo("sha256:aaa", "data.ttl", 100, False),
+            LayerInfo("sha256:bbb", "_void.ttl", 50, True),
+        ]
+        blob_dir = cache.assemble_blob_dir("sha256:manifest_digest", layers)
+
+        assert (blob_dir / "data.ttl").exists()
+        assert (blob_dir / "_void.ttl").exists()
+        assert (blob_dir / "data.ttl").read_text() == "rdf content"
+        assert (blob_dir / "_void.ttl").read_text() == "void content"

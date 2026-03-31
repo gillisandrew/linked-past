@@ -103,6 +103,7 @@ class ArtifactCache:
         self._cache_dir = cache_dir or _default_cache_dir()
         self._manifests_dir = self._cache_dir / "manifests"
         self._blobs_dir = self._cache_dir / "blobs" / "sha256"
+        self._layers_dir = self._cache_dir / "layers"
         self._gc_path = self._cache_dir / "gc.json"
 
     def get(self, ref: str) -> Path | None:
@@ -222,6 +223,52 @@ class ArtifactCache:
         if manifest_path.exists():
             return json.loads(manifest_path.read_text())
         return None
+
+    # -- Per-layer cache storage --
+
+    def has_layer(self, digest: str) -> bool:
+        """Check if a layer blob exists in the layer cache."""
+        layer_dir = self._layers_dir / digest.replace("sha256:", "")
+        return layer_dir.exists() and any(layer_dir.iterdir())
+
+    def put_layer(self, digest: str, filename: str, src_path: Path) -> None:
+        """Store a file in the per-layer cache."""
+        import shutil
+
+        layer_dir = self._layers_dir / digest.replace("sha256:", "")
+        layer_dir.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(src_path, layer_dir / filename)
+
+    def get_layer_path(self, digest: str, filename: str) -> Path | None:
+        """Get the path to a cached layer file, or None."""
+        layer_path = self._layers_dir / digest.replace("sha256:", "") / filename
+        if layer_path.exists():
+            return layer_path
+        return None
+
+    def assemble_blob_dir(self, manifest_digest: str, layers: list[LayerInfo]) -> Path:
+        """Assemble a blob directory from cached layers using symlinks (copy fallback)."""
+        import shutil
+
+        blob_dir = self._blobs_dir / manifest_digest.replace("sha256:", "")
+        blob_dir.mkdir(parents=True, exist_ok=True)
+
+        for layer in layers:
+            src = self.get_layer_path(layer.digest, layer.filename)
+            if src is None:
+                raise FileNotFoundError(
+                    f"Layer {layer.digest} ({layer.filename}) not in cache"
+                )
+            dst = blob_dir / layer.filename
+            if dst.exists() or dst.is_symlink():
+                dst.unlink()
+            try:
+                dst.symlink_to(src.resolve())
+            except OSError:
+                # Symlinks not supported (some Windows configs) — fall back to copy
+                shutil.copy2(src, dst)
+
+        return blob_dir
 
     def digest_for(self, ref: str) -> str | None:
         """Get the cached digest for a ref, or None."""
