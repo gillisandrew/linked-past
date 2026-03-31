@@ -22,10 +22,10 @@ ANNOTATIONS = {
     "org.opencontainers.image.licenses": "CC-BY-3.0",
     "org.opencontainers.image.url": "https://github.com/gillisandrew/linked-past",
     "org.opencontainers.image.vendor": "Institute for the Study of the Ancient World (NYU)",
-    "dev.linked-past.dataset": "pleiades",
-    "dev.linked-past.source-url": SOURCE_URL,
-    "dev.linked-past.format": "text/turtle",
-    "dev.linked-past.citation": (
+    "io.github.gillisandrew.linked-past.dataset": "pleiades",
+    "io.github.gillisandrew.linked-past.source-url": SOURCE_URL,
+    "io.github.gillisandrew.linked-past.format": "text/turtle",
+    "io.github.gillisandrew.linked-past.citation": (
         "Bagnall, R. et al. (eds.), Pleiades. DOI: 10.5281/zenodo.1193921"
     ),
 }
@@ -109,7 +109,7 @@ def main(version="latest"):
         annotations = {
             **ANNOTATIONS,
             "org.opencontainers.image.version": version,
-            "dev.linked-past.triples": str(result.triple_count),
+            "io.github.gillisandrew.linked-past.triples": str(result.triple_count),
         }
         ref = f"{ARTIFACT_REF}:{version}"
         digest = push_dataset(

@@ -18,10 +18,10 @@ ANNOTATIONS = {
     "org.opencontainers.image.licenses": "CC-BY-SA-4.0",
     "org.opencontainers.image.url": "https://github.com/gillisandrew/linked-past",
     "org.opencontainers.image.vendor": "Heidelberg Academy of Sciences",
-    "dev.linked-past.dataset": "edh",
-    "dev.linked-past.source-url": "https://edh.ub.uni-heidelberg.de/data/export",
-    "dev.linked-past.format": "text/turtle",
-    "dev.linked-past.citation": "Epigraphic Database Heidelberg, CC BY-SA 4.0",
+    "io.github.gillisandrew.linked-past.dataset": "edh",
+    "io.github.gillisandrew.linked-past.source-url": "https://edh.ub.uni-heidelberg.de/data/export",
+    "io.github.gillisandrew.linked-past.format": "text/turtle",
+    "io.github.gillisandrew.linked-past.citation": "Epigraphic Database Heidelberg, CC BY-SA 4.0",
 }
 
 
@@ -81,7 +81,7 @@ def main(version="2021-12-16"):
         annotations = {
             **ANNOTATIONS,
             "org.opencontainers.image.version": version,
-            "dev.linked-past.triples": str(result.triple_count),
+            "io.github.gillisandrew.linked-past.triples": str(result.triple_count),
         }
         ref = f"{ARTIFACT_REF}:{version}"
         digest = push_dataset(

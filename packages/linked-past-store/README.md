@@ -44,9 +44,9 @@ Each artifact carries metadata in OCI annotations:
 | `org.opencontainers.image.source` | Upstream project URL | `https://romanrepublic.ac.uk` |
 | `org.opencontainers.image.description` | Human-readable description | `Digital Prosopography of the Roman Republic` |
 | `org.opencontainers.image.version` | Version tag | `1.3.0` |
-| `dev.linked-past.citation` | Scholarly citation | `Broughton, MRR I-III` |
-| `dev.linked-past.source-url` | Original data download URL | `https://example.org/data.ttl` |
-| `dev.linked-past.format` | RDF serialization format | `text/turtle` |
+| `io.github.gillisandrew.linked-past.citation` | Scholarly citation | `Broughton, MRR I-III` |
+| `io.github.gillisandrew.linked-past.source-url` | Original data download URL | `https://example.org/data.ttl` |
+| `io.github.gillisandrew.linked-past.format` | RDF serialization format | `text/turtle` |
 
 ## Installation
 
@@ -73,7 +73,7 @@ push_dataset(
     annotations={
         "org.opencontainers.image.licenses": "CC-BY-4.0",
         "org.opencontainers.image.source": "https://example.org",
-        "dev.linked-past.citation": "Smith et al. (2024)",
+        "io.github.gillisandrew.linked-past.citation": "Smith et al. (2024)",
     },
 )
 ```

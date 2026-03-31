@@ -20,10 +20,10 @@ ANNOTATIONS = {
     "org.opencontainers.image.licenses": "CC0-1.0",
     "org.opencontainers.image.url": "https://github.com/gillisandrew/linked-past",
     "org.opencontainers.image.vendor": "PeriodO project (UNC Chapel Hill / UT Austin)",
-    "dev.linked-past.dataset": "periodo",
-    "dev.linked-past.source-url": SOURCE_URL,
-    "dev.linked-past.format": "text/turtle",
-    "dev.linked-past.citation": "Golden, P. & Shaw, R. (2016). PeerJ Computer Science 2:e44",
+    "io.github.gillisandrew.linked-past.dataset": "periodo",
+    "io.github.gillisandrew.linked-past.source-url": SOURCE_URL,
+    "io.github.gillisandrew.linked-past.format": "text/turtle",
+    "io.github.gillisandrew.linked-past.citation": "Golden, P. & Shaw, R. (2016). PeerJ Computer Science 2:e44",
 }
 
 
@@ -73,7 +73,7 @@ def main(version="latest"):
         annotations = {
             **ANNOTATIONS,
             "org.opencontainers.image.version": version,
-            "dev.linked-past.triples": str(result.triple_count),
+            "io.github.gillisandrew.linked-past.triples": str(result.triple_count),
         }
         ref = f"{ARTIFACT_REF}:{version}"
         digest = push_dataset(

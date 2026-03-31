@@ -19,9 +19,9 @@ ANNOTATIONS = {
     "org.opencontainers.image.licenses": "CC-BY-NC-4.0",
     "org.opencontainers.image.url": "https://github.com/gillisandrew/linked-past",
     "org.opencontainers.image.vendor": "King's College London",
-    "dev.linked-past.dataset": "dprr",
-    "dev.linked-past.source-url": SOURCE_URL,
-    "dev.linked-past.format": "text/turtle",
+    "io.github.gillisandrew.linked-past.dataset": "dprr",
+    "io.github.gillisandrew.linked-past.source-url": SOURCE_URL,
+    "io.github.gillisandrew.linked-past.format": "text/turtle",
 }
 
 
@@ -65,7 +65,7 @@ def main(version="latest"):
         annotations = {
             **ANNOTATIONS,
             "org.opencontainers.image.version": version,
-            "dev.linked-past.triples": str(result.triple_count),
+            "io.github.gillisandrew.linked-past.triples": str(result.triple_count),
         }
         ref = f"{ARTIFACT_REF}:{version}"
         digest = push_dataset(

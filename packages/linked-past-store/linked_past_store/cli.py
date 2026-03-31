@@ -15,7 +15,7 @@ def cmd_push(args):
     if args.license:
         annotations["org.opencontainers.image.licenses"] = args.license
     if args.citation:
-        annotations["dev.linked-past.citation"] = args.citation
+        annotations["io.github.gillisandrew.linked-past.citation"] = args.citation
     if args.source:
         annotations["org.opencontainers.image.source"] = args.source
 
@@ -201,7 +201,7 @@ def cmd_bom(args):
                 "description": annotations.get("org.opencontainers.image.description", ""),
                 "version": annotations.get("org.opencontainers.image.version", tag),
                 "source": annotations.get("org.opencontainers.image.source", ""),
-                "citation": annotations.get("dev.linked-past.citation", ""),
+                "citation": annotations.get("io.github.gillisandrew.linked-past.citation", ""),
             })
 
     if not bom:

@@ -19,10 +19,10 @@ ANNOTATIONS = {
     "org.opencontainers.image.licenses": "ODbL-1.0",
     "org.opencontainers.image.url": "https://github.com/gillisandrew/linked-past",
     "org.opencontainers.image.vendor": "American Numismatic Society",
-    "dev.linked-past.dataset": "crro",
-    "dev.linked-past.source-url": SOURCE_URL,
-    "dev.linked-past.format": "text/turtle",
-    "dev.linked-past.citation": "ANS, CRRO. Based on Crawford (1974) Roman Republican Coinage",
+    "io.github.gillisandrew.linked-past.dataset": "crro",
+    "io.github.gillisandrew.linked-past.source-url": SOURCE_URL,
+    "io.github.gillisandrew.linked-past.format": "text/turtle",
+    "io.github.gillisandrew.linked-past.citation": "ANS, CRRO. Based on Crawford (1974) Roman Republican Coinage",
 }
 
 
@@ -73,7 +73,7 @@ def main(version="latest"):
         annotations = {
             **ANNOTATIONS,
             "org.opencontainers.image.version": version,
-            "dev.linked-past.triples": str(result.triple_count),
+            "io.github.gillisandrew.linked-past.triples": str(result.triple_count),
         }
         ref = f"{ARTIFACT_REF}:{version}"
         digest = push_dataset(

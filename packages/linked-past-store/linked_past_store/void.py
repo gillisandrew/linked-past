@@ -12,7 +12,7 @@ from linked_past_store.verify import detect_format
 
 logger = logging.getLogger(__name__)
 
-_DATASET_BASE = "https://linked-past.dev/datasets/"
+_DATASET_BASE = "https://gillisandrew.github.io/linked-past/datasets/"
 
 _VOID_PREFIXES = """\
 @prefix void: <http://rdfs.org/ns/void#> .
