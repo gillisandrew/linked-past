@@ -1,0 +1,124 @@
+dprr:
+  raw_ref: ghcr.io/gillisandrew/linked-past/raw/dprr:latest
+  clean_ref: ghcr.io/gillisandrew/linked-past/datasets/dprr:latest
+  ingest_script: scripts/ingest_dprr.py
+  min_triple_count: 600000
+  license: CC-BY-NC-4.0
+  source_url: https://romanrepublic.ac.uk
+  description: "Digital Prosopography of the Roman Republic — persons, offices, relationships (509-31 BC)"
+  citation: |
+    @misc{mouritsen2017dprr,
+      author       = {Mouritsen, Henrik and Rathbone, Dominic and Bradley, John and Robb, Maggie},
+      title        = {{Digital Prosopography of the Roman Republic}},
+      year         = {2017},
+      howpublished = {\url{https://romanrepublic.ac.uk/}},
+      publisher    = {King's College London},
+      note         = {AHRC-funded project. Maintained by King's Digital Lab. CC BY-NC 4.0}
+    }
+
+pleiades:
+  raw_ref: ghcr.io/gillisandrew/linked-past/raw/pleiades:latest
+  clean_ref: ghcr.io/gillisandrew/linked-past/datasets/pleiades:latest
+  ingest_script: scripts/ingest_pleiades.py
+  min_triple_count: 2500000
+  license: CC-BY-3.0
+  source_url: https://pleiades.stoa.org/
+  description: "Gazetteer of ancient places — coordinates, names, time periods"
+  citation: |
+    @misc{pleiades,
+      author       = {Bagnall, Roger and Talbert, Richard and Elliott, Tom and Gillies, Sean},
+      title        = {Pleiades: A Gazetteer of Past Places},
+      howpublished = {\url{https://pleiades.stoa.org/}},
+      year         = {2006--2025},
+      doi          = {10.5281/zenodo.1193921},
+      note         = {CC BY 3.0}
+    }
+
+periodo:
+  raw_ref: ghcr.io/gillisandrew/linked-past/raw/periodo:latest
+  clean_ref: ghcr.io/gillisandrew/linked-past/datasets/periodo:latest
+  ingest_script: scripts/ingest_periodo.py
+  min_triple_count: 170000
+  license: CC0-1.0
+  source_url: https://perio.do/
+  description: "Gazetteer of period definitions from scholarly sources"
+  citation: |
+    @misc{periodo,
+      author       = {Rabinowitz, Adam and Shaw, Ryan},
+      title        = {{PeriodO}: A Gazetteer of Period Definitions},
+      howpublished = {\url{https://perio.do/}},
+      year         = {2014--2026},
+      note         = {Canonical dataset: \url{http://n2t.net/ark:/99152/p0d}. CC0 1.0}
+    }
+
+nomisma:
+  raw_ref: ghcr.io/gillisandrew/linked-past/raw/nomisma:latest
+  clean_ref: ghcr.io/gillisandrew/linked-past/datasets/nomisma:latest
+  ingest_script: scripts/ingest_nomisma.py
+  min_triple_count: 400000
+  license: CC-BY-4.0
+  source_url: http://nomisma.org/
+  description: "Numismatic concept vocabulary — persons, mints, denominations"
+  citation: |
+    @misc{nomisma_org,
+      author       = {Gruber, Ethan and Meadows, Andrew and Heath, Sebastian},
+      title        = {{Nomisma.org: Linked Open Data for Numismatics}},
+      howpublished = {\url{http://nomisma.org/}},
+      year         = {2010},
+      note         = {American Numismatic Society, ISAW (NYU), DAI. CC BY 4.0}
+    }
+
+crro:
+  raw_ref: ghcr.io/gillisandrew/linked-past/raw/crro:latest
+  clean_ref: ghcr.io/gillisandrew/linked-past/datasets/crro:latest
+  ingest_script: scripts/ingest_generic.py
+  fetch_url: https://numismatics.org/crro/nomisma.rdf
+  source_format: rdf-xml
+  min_triple_count: 50000
+  license: ODbL-1.0
+  source_url: https://numismatics.org/crro/
+  description: "Roman Republican coin types (Crawford's RRC) — 2,602 types with iconography and Nomisma links"
+  citation: |
+    @misc{gruber_crro,
+      author       = {Gruber, Ethan},
+      title        = {{Coinage of the Roman Republic Online (CRRO)}},
+      year         = {2015},
+      howpublished = {\url{https://numismatics.org/crro/}},
+      note         = {American Numismatic Society. Based on Crawford, M.H. (1974) Roman Republican Coinage. ODbL 1.0}
+    }
+
+ocre:
+  raw_ref: ghcr.io/gillisandrew/linked-past/raw/ocre:latest
+  clean_ref: ghcr.io/gillisandrew/linked-past/datasets/ocre:latest
+  ingest_script: scripts/ingest_generic.py
+  fetch_url: https://numismatics.org/ocre/nomisma.rdf
+  source_format: rdf-xml
+  min_triple_count: 1100000
+  license: ODbL-1.0
+  source_url: https://numismatics.org/ocre/
+  description: "Roman Imperial coin types (RIC) — ~50,000 types with iconography and Nomisma links"
+  citation: |
+    @misc{gruber_ocre,
+      author       = {Gruber, Ethan},
+      title        = {{Online Coins of the Roman Empire (OCRE)}},
+      year         = {2012},
+      howpublished = {\url{https://numismatics.org/ocre/}},
+      note         = {American Numismatic Society and ISAW (NYU). ODbL 1.0}
+    }
+
+edh:
+  raw_ref: ghcr.io/gillisandrew/linked-past/raw/edh:latest
+  clean_ref: ghcr.io/gillisandrew/linked-past/datasets/edh:latest
+  ingest_script: scripts/ingest_edh.py
+  min_triple_count: 1500000
+  license: CC-BY-SA-4.0
+  source_url: https://edh.ub.uni-heidelberg.de/
+  description: "81,000+ Latin inscriptions with transcriptions, findspots, and dates"
+  citation: |
+    @misc{edh,
+      author       = {{Epigraphic Database Heidelberg}},
+      title        = {Epigraphic Database Heidelberg},
+      howpublished = {\url{https://edh.ub.uni-heidelberg.de/}},
+      year         = {1997--2021},
+      note         = {Founded by G\'eza Alf\"oldy; directed by Christian Witschel. Heidelberg Academy of Sciences and Humanities. CC BY-SA 4.0}
+    }
