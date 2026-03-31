@@ -52,53 +52,6 @@ def _query_all(store: Store, sparql: str) -> list[dict]:
     return rows
 
 
-def _parse_roman_name(name: str) -> dict:
-    """Parse a Roman name string into praenomen, nomen, cognomen components."""
-    # Remove question marks, brackets
-    clean = re.sub(r"[?\[\]]", "", name).strip()
-    parts = clean.split()
-    if not parts:
-        return {}
-
-    result = {}
-
-    # Try to identify praenomen
-    first_lower = parts[0].lower().rstrip(".")
-    first_with_dot = parts[0].lower()
-    prae = _PRAENOMEN_MAP.get(first_with_dot) or _PRAENOMEN_MAP.get(first_lower)
-    if prae:
-        result["praenomen"] = prae
-        parts = parts[1:]
-
-    if not parts:
-        return result
-
-    # Next part is typically nomen (gens name, ending in -ius/-ia)
-    result["nomen"] = parts[0].rstrip(".,;")
-
-    # Remaining parts are cognomen(s), skip filiation like "f.", "n."
-    cognomina = []
-    skip_next = False
-    for i, p in enumerate(parts[1:], 1):
-        p_clean = p.rstrip(".,;")
-        if skip_next:
-            skip_next = False
-            continue
-        if p_clean.lower() in ("f", "n", "fil", "filius", "nepos"):
-            continue
-        if len(p_clean) <= 2 and p_clean[0].isupper():
-            # Likely abbreviation like tribe or filiation
-            skip_next = True
-            continue
-        if p_clean and p_clean[0].isupper():
-            cognomina.append(p_clean)
-
-    if cognomina:
-        result["cognomen"] = cognomina[0]
-        if len(cognomina) > 1:
-            result["cognomina_extra"] = cognomina[1:]
-
-    return result
 
 
 def get_dprr_persons(store: Store) -> list[dict]:
@@ -185,10 +138,7 @@ def match_candidates(
         # Transliterate Greek names to Latin
         normalized_name, was_greek = _normalize_edh_name(name)
 
-        # Try Greek praenomen lookup first
-        if was_greek:
-            first_word = _strip_accents(name.split()[0].lower()) if name.split() else ""
-            greek_prae = _GREEK_PRAENOMINA.get(first_word)
+        # Greek praenomen lookup handled in name parsing below
 
         parsed = _parse_roman_name(normalized_name)
         edh_nomen = (parsed.get("nomen") or "").lower()
@@ -211,7 +161,6 @@ def match_candidates(
             dprr_matches = dprr_matches + dprr_by_nomen.get(masc, [])
 
         for dprr in dprr_matches:
-            dprr_nomen = re.sub(r"[()]", "", dprr.get("nomen", "")).strip().lower()
             dprr_cog = (dprr.get("cognomen") or "").lower().strip("() []")
             dprr_prae_label = (dprr.get("praenomenLabel") or "").lower()
             dprr_prae = _PRAENOMEN_MAP.get(dprr_prae_label.split(":")[-1].strip().lower().rstrip("."))
@@ -291,7 +240,7 @@ def main():
     if conf_path.exists():
         with conf_path.open() as f:
             conf_data = yaml.safe_load(f)
-        existing_pairs = {(l["source"], l["target"]) for l in conf_data.get("links", [])}
+        existing_pairs = {(lnk["source"], lnk["target"]) for lnk in conf_data.get("links", [])}
         print(f"  {len(existing_pairs)} existing confirmed links")
 
     print("Matching candidates...")
@@ -304,7 +253,6 @@ def main():
 
     # Separate Greek-origin matches
     greek_cands = [c for c in candidates if c.get("was_greek")]
-    latin_cands = [c for c in candidates if not c.get("was_greek")]
     if greek_cands:
         print(f"  {len(greek_cands)} from Greek transliteration")
 
@@ -323,12 +271,12 @@ def main():
     # Print safe matches
     if safe:
         print(f"\n{'=' * 140}")
-        print(f"{'Score':>5}  {'Src':>5}  {'DPRR Label':<50}  {'EDH Name':<35}  {'Transliterated':<25}  {'DPRR Office':<15}")
-        print(f"{'-' * 140}")
+        hdr = f"{'Score':>5}  {'Src':>5}  {'DPRR Label':<50}  {'EDH Name':<35}"
+        print(hdr)
+        print("-" * len(hdr))
         for c in safe:
             src = "GRK" if c.get("was_greek") else "LAT"
-            trans = (c.get("edh_normalized") or "")[:25]
-            print(f"{c['score']:>5}  {src:>5}  {c['dprr_label'][:50]:<50}  {c['edh_name'][:35]:<35}  {trans:<25}  {c['dprr_office'][:15]}")
+            print(f"{c['score']:>5}  {src:>5}  {c['dprr_label'][:50]:<50}  {c['edh_name'][:35]}")
 
     # Merge safe matches into confirmed file
     if safe:
@@ -343,14 +291,17 @@ def main():
                     "relationship": "skos:closeMatch",
                     "confidence": "confirmed",
                     "method": "automated_name_matching",
-                    "basis": "Praenomen + nomen + cognomen matching between DPRR persons and EDH senatorial/equestrian persons, including Greek transliteration",
+                    "basis": (
+                    "Praenomen + nomen + cognomen matching between DPRR persons"
+                    " and EDH senatorial/equestrian persons, incl. Greek transliteration"
+                ),
                     "author": "linked-past project",
                     "date": "2026-03-30",
                 },
                 "links": [],
             }
 
-        existing_in_file = {(l["source"], l["target"]) for l in conf_data["links"]}
+        existing_in_file = {(lnk["source"], lnk["target"]) for lnk in conf_data["links"]}
         added = 0
         for c in safe:
             pair = (c["dprr_uri"], c["edh_uri"])
@@ -379,8 +330,8 @@ def main():
         print(f"{'-' * 140}")
         for c in greek_cands:
             is_safe = c in safe
-            trans = (c.get("edh_normalized") or "")[:25]
-            print(f"{c['score']:>5}  {c['dprr_label'][:50]:<50}  {c['edh_name'][:35]:<35}  {trans:<25}  {'YES' if is_safe else 'no'}")
+            safe_flag = "YES" if is_safe else "no"
+            print(f"{c['score']:>5}  {c['dprr_label'][:50]:<50}  {c['edh_name'][:35]:<35}  {safe_flag}")
 
     # Write ambiguous for review (skip writing file to avoid clutter)
     if ambiguous:
