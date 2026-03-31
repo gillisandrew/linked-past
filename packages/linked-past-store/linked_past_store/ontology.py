@@ -83,30 +83,49 @@ class Schema:
 
     classes: dict[str, ClassInfo] = field(default_factory=dict)
 
-    def to_schemas_yaml(self, prefix_map: dict[str, str] | None = None) -> dict[str, Any]:
-        """Convert to schemas.yaml compatible dict with optional URI shortening."""
+    def to_schemas_yaml(self, prefix_map: dict[str, str] | None = None) -> str:
+        """Convert to schemas.yaml string compatible with linked-past plugin context format.
+
+        Output structure matches hand-written schemas.yaml files:
+        ```yaml
+        classes:
+          ClassName:
+            label: "Human Label"
+            comment: "Description"
+            uri: "vocab:ClassName"
+            properties:
+              - pred: "vocab:hasFoo"
+                range: "xsd:string"
+                comment: "..."
+        ```
+        """
         pm = prefix_map or {}
-        result: dict[str, Any] = {}
-        for uri, cls in self.classes.items():
-            short_uri = _shorten(uri, pm)
+        classes_dict: dict[str, Any] = {}
+        for local_name, cls in self.classes.items():
             entry: dict[str, Any] = {}
+            if cls.label:
+                entry["label"] = cls.label
             if cls.comment:
                 entry["comment"] = cls.comment
-            if cls.parent:
-                entry["parent"] = _shorten(cls.parent, pm)
-            props: dict[str, Any] = {}
-            for prop in cls.properties:
-                short_pred = _shorten(prop.predicate, pm)
-                prop_entry: dict[str, Any] = {}
-                if prop.range:
-                    prop_entry["range"] = _shorten(prop.range, pm)
-                if prop.comment:
-                    prop_entry["comment"] = prop.comment
-                props[short_pred] = prop_entry
-            if props:
-                entry["properties"] = props
-            result[short_uri] = entry
-        return result
+            entry["uri"] = _shorten(cls.uri, pm)
+            if cls.properties:
+                props_list = []
+                for prop in cls.properties:
+                    prop_entry: dict[str, Any] = {"pred": _shorten(prop.predicate, pm)}
+                    if prop.range:
+                        prop_entry["range"] = _shorten(prop.range, pm)
+                    if prop.comment:
+                        prop_entry["comment"] = prop.comment
+                    props_list.append(prop_entry)
+                entry["properties"] = props_list
+            classes_dict[local_name] = entry
+
+        return yaml.dump(
+            {"classes": classes_dict},
+            default_flow_style=False,
+            sort_keys=False,
+            allow_unicode=True,
+        )
 
 
 def _load_store(path: Path) -> Store:
@@ -157,16 +176,26 @@ def extract_from_ontology(path: Path | str) -> Schema:
             if subj_str.startswith("<") and subj_str.endswith(">"):
                 class_uris.add(subj_str[1:-1])
 
+    # Build URI -> local name mapping
+    uri_to_local: dict[str, str] = {}
+    for uri in class_uris:
+        local = uri.rsplit("#", 1)[-1] if "#" in uri else uri.rsplit("/", 1)[-1]
+        uri_to_local[uri] = local
+
     for uri in class_uris:
         label = _get_literal(store, uri, _RDFS_LABEL)
         comment = _get_literal(store, uri, _RDFS_COMMENT)
         parent = _get_named_node(store, uri, _RDFS_SUBCLASS_OF)
-        schema.classes[uri] = ClassInfo(
+        local_name = uri_to_local[uri]
+        schema.classes[local_name] = ClassInfo(
             uri=uri,
             label=label,
             comment=comment,
             parent=parent,
         )
+
+    # Build reverse lookup: URI -> local name (for property assignment)
+    uri_to_key: dict[str, str] = {cls.uri: key for key, cls in schema.classes.items()}
 
     # Find all properties (owl:DatatypeProperty, owl:ObjectProperty, rdf:Property)
     # Map domain URI -> list of PropertyInfo
@@ -185,28 +214,33 @@ def extract_from_ontology(path: Path | str) -> Schema:
                 prop_info = PropertyInfo(predicate=prop_uri, range=range_uri, comment=comment)
                 domain_props.setdefault(domain, []).append(prop_info)
 
-    # Assign direct properties to classes
+    # Assign direct properties to classes (look up by URI)
     for domain_uri, props in domain_props.items():
-        if domain_uri in schema.classes:
-            schema.classes[domain_uri].properties.extend(props)
+        key = uri_to_key.get(domain_uri)
+        if key:
+            schema.classes[key].properties.extend(props)
         else:
             # Domain class not declared as owl:Class — add it anyway
-            schema.classes[domain_uri] = ClassInfo(uri=domain_uri, properties=list(props))
+            local = domain_uri.rsplit("#", 1)[-1] if "#" in domain_uri else domain_uri.rsplit("/", 1)[-1]
+            schema.classes[local] = ClassInfo(uri=domain_uri, properties=list(props))
+            uri_to_key[domain_uri] = local
 
     # Property inheritance: subclasses get parent properties
-    # Build parent map and iterate until stable
+    # parent field stores a URI — resolve to local key for lookup
     changed = True
     while changed:
         changed = False
-        for uri, cls in schema.classes.items():
-            if cls.parent and cls.parent in schema.classes:
-                parent_cls = schema.classes[cls.parent]
-                existing_preds = {p.predicate for p in cls.properties}
-                for parent_prop in parent_cls.properties:
-                    if parent_prop.predicate not in existing_preds:
-                        cls.properties.append(parent_prop)
-                        existing_preds.add(parent_prop.predicate)
-                        changed = True
+        for _key, cls in schema.classes.items():
+            if cls.parent:
+                parent_key = uri_to_key.get(cls.parent)
+                if parent_key and parent_key in schema.classes:
+                    parent_cls = schema.classes[parent_key]
+                    existing_preds = {p.predicate for p in cls.properties}
+                    for parent_prop in parent_cls.properties:
+                        if parent_prop.predicate not in existing_preds:
+                            cls.properties.append(parent_prop)
+                            existing_preds.add(parent_prop.predicate)
+                            changed = True
 
     logger.info("Extracted %d classes from ontology %s", len(schema.classes), path.name)
     return schema
@@ -226,12 +260,17 @@ def extract_from_data(store: Store) -> Schema:
             class_uris.append(cls_str[1:-1])
 
     for class_uri in class_uris:
-        schema.classes[class_uri] = ClassInfo(uri=class_uri)
+        local = class_uri.rsplit("#", 1)[-1] if "#" in class_uri else class_uri.rsplit("/", 1)[-1]
+        schema.classes[local] = ClassInfo(uri=class_uri, label=local)
 
-    # For each class, find used predicates and infer ranges
+    # Build URI -> local name lookup for property assignment
+    uri_to_key: dict[str, str] = {cls.uri: key for key, cls in schema.classes.items()}
+
+    # For each class, find used predicates with a sample object (for range inference)
     for class_uri in class_uris:
         pred_results = store.query(
-            f"SELECT DISTINCT ?pred ?o WHERE {{ ?s a <{class_uri}> ; ?pred ?o . }}"
+            f"SELECT ?pred (SAMPLE(?o) AS ?sample) "
+            f"WHERE {{ ?s a <{class_uri}> ; ?pred ?o }} GROUP BY ?pred"
         )
         props: dict[str, PropertyInfo] = {}
         for row in pred_results:
@@ -243,21 +282,22 @@ def extract_from_data(store: Store) -> Schema:
             pred_uri = pred_str[1:-1]
             if pred_uri == _RDF_TYPE:
                 continue
-            # Infer range from object type
+            # Infer range from sample object
             obj_str = str(obj_node)
-            if pred_uri not in props:
-                if obj_str.startswith("<") and obj_str.endswith(">"):
-                    range_uri = ""  # Named node but we don't know the type
-                else:
-                    # Literal — try to get datatype
-                    try:
-                        dt = obj_node.datatype
-                        range_uri = _uri(dt) if dt else ""
-                    except AttributeError:
-                        range_uri = ""
-                props[pred_uri] = PropertyInfo(predicate=pred_uri, range=range_uri)
+            if obj_str.startswith("<") and obj_str.endswith(">"):
+                range_uri = ""  # Named node but we don't know the type
+            else:
+                # Literal — try to get datatype
+                try:
+                    dt = obj_node.datatype
+                    range_uri = _uri(dt) if dt else ""
+                except AttributeError:
+                    range_uri = ""
+            props[pred_uri] = PropertyInfo(predicate=pred_uri, range=range_uri)
 
-        schema.classes[class_uri].properties = list(props.values())
+        key = uri_to_key.get(class_uri, class_uri)
+        if key in schema.classes:
+            schema.classes[key].properties = list(props.values())
 
     logger.info("Empirically extracted %d classes from store", len(schema.classes))
     return schema
@@ -285,6 +325,6 @@ def generate_schemas_yaml(
 ) -> None:
     """Write schema to a schemas.yaml file compatible with plugin context format."""
     output_path = Path(output_path)
-    data = schema.to_schemas_yaml(prefix_map or {})
-    output_path.write_text(yaml.dump(data, default_flow_style=False, allow_unicode=True))
+    content = schema.to_schemas_yaml(prefix_map)
+    output_path.write_text(content)
     logger.info("Wrote schemas.yaml to %s", output_path)

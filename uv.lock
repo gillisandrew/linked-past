@@ -465,12 +465,14 @@ source = { editable = "packages/linked-past-store" }
 dependencies = [
     { name = "oras" },
     { name = "pyoxigraph" },
+    { name = "pyyaml" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "oras" },
     { name = "pyoxigraph" },
+    { name = "pyyaml" },
 ]
 
 [[package]]

@@ -149,6 +149,54 @@ def test_void_description_dataclass():
     assert vd.linksets == []
 
 
+def test_distinct_subjects_objects(data_file):
+    void_desc = generate_void(data_file, DATASET_ID, "Test Dataset")
+    # 3 typed subjects + predicates themselves are subjects in some sense,
+    # but distinct subjects = all unique ?s across all triples
+    assert void_desc.distinct_subjects > 0
+    assert void_desc.distinct_objects > 0
+
+
+def test_class_partitions(data_file):
+    void_desc = generate_void(data_file, DATASET_ID, "Test Dataset")
+    assert len(void_desc.class_partitions) == 2
+
+    by_uri = {cp.class_uri: cp for cp in void_desc.class_partitions}
+    assert "http://example.org/Person" in by_uri
+    assert "http://example.org/Office" in by_uri
+    assert by_uri["http://example.org/Person"].entities == 2
+    assert by_uri["http://example.org/Office"].entities == 1
+
+
+def test_property_partitions(data_file):
+    void_desc = generate_void(data_file, DATASET_ID, "Test Dataset")
+    # 4 predicates: rdf:type, ex:hasName, ex:hasAge, ex:hasTitle
+    assert len(void_desc.property_partitions) == 4
+
+    by_uri = {pp.property_uri: pp for pp in void_desc.property_partitions}
+    rdf_type = "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+    assert rdf_type in by_uri
+    assert by_uri[rdf_type].triples == 3
+    assert by_uri[rdf_type].distinct_subjects == 3
+
+    assert "http://example.org/hasName" in by_uri
+    assert by_uri["http://example.org/hasName"].triples == 2
+    assert by_uri["http://example.org/hasName"].distinct_objects == 2  # "Julius Caesar", "Pompey"
+
+
+def test_to_turtle_contains_partitions(data_file):
+    void_desc = generate_void(data_file, DATASET_ID, "Test Dataset")
+    turtle = void_desc.to_turtle()
+    assert "void:classPartition" in turtle
+    assert "void:propertyPartition" in turtle
+    assert "void:distinctSubjects" in turtle
+    assert "void:distinctObjects" in turtle
+    # Still valid Turtle
+    store = Store()
+    store.load(turtle.encode(), format=RdfFormat.TURTLE)
+    assert len(store) > 0
+
+
 def test_to_turtle_with_linksets():
     vd = VoidDescription(
         dataset_id="http://example.org/d",

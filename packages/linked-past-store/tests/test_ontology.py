@@ -5,13 +5,14 @@ from __future__ import annotations
 import textwrap
 
 import pytest
+import yaml
 from linked_past_store.ontology import (
     extract_from_data,
     extract_from_ontology,
     extract_schema,
     generate_schemas_yaml,
 )
-from pyoxigraph import Store
+from pyoxigraph import RdfFormat, Store
 
 SAMPLE_OWL = textwrap.dedent("""\
     @prefix owl: <http://www.w3.org/2002/07/owl#> .
@@ -61,15 +62,9 @@ SAMPLE_DATA = textwrap.dedent("""\
 """)
 
 PREFIX_MAP = {
-    "http://example.org/onto#": ":",
+    "http://example.org/onto#": "vocab:",
     "http://www.w3.org/2001/XMLSchema#": "xsd:",
 }
-
-PERSON_URI = "http://example.org/onto#Person"
-THING_URI = "http://example.org/onto#ThingWithName"
-HAS_NAME_URI = "http://example.org/onto#hasName"
-HAS_AGE_URI = "http://example.org/onto#hasAge"
-HAS_FRIEND_URI = "http://example.org/onto#hasFriend"
 
 
 @pytest.fixture()
@@ -86,44 +81,47 @@ def data_file(tmp_path):
     return f
 
 
+# --- OWL extraction tests ---
+
+
 def test_owl_class_extraction(owl_file):
     schema = extract_from_ontology(owl_file)
-    assert PERSON_URI in schema.classes
-    assert THING_URI in schema.classes
+    assert "Person" in schema.classes
+    assert "ThingWithName" in schema.classes
     assert len(schema.classes) == 2
 
 
 def test_owl_class_labels_and_comments(owl_file):
     schema = extract_from_ontology(owl_file)
-    person = schema.classes[PERSON_URI]
+    person = schema.classes["Person"]
     assert person.label == "Person"
     assert person.comment == "A historical person."
-    thing = schema.classes[THING_URI]
+    assert person.uri == "http://example.org/onto#Person"
+    thing = schema.classes["ThingWithName"]
     assert thing.label == "Thing With Name"
     assert thing.comment == "An entity that has a name."
 
 
 def test_owl_class_hierarchy(owl_file):
     schema = extract_from_ontology(owl_file)
-    person = schema.classes[PERSON_URI]
-    assert person.parent == THING_URI
-    thing = schema.classes[THING_URI]
+    person = schema.classes["Person"]
+    assert person.parent == "http://example.org/onto#ThingWithName"
+    thing = schema.classes["ThingWithName"]
     assert thing.parent == ""
 
 
 def test_property_extraction_direct(owl_file):
     schema = extract_from_ontology(owl_file)
-    person = schema.classes[PERSON_URI]
+    person = schema.classes["Person"]
     pred_uris = {p.predicate for p in person.properties}
-    # Direct properties on Person
-    assert HAS_AGE_URI in pred_uris
-    assert HAS_FRIEND_URI in pred_uris
+    assert "http://example.org/onto#hasAge" in pred_uris
+    assert "http://example.org/onto#hasFriend" in pred_uris
 
 
 def test_property_range_and_comment(owl_file):
     schema = extract_from_ontology(owl_file)
-    thing = schema.classes[THING_URI]
-    has_name = next(p for p in thing.properties if p.predicate == HAS_NAME_URI)
+    thing = schema.classes["ThingWithName"]
+    has_name = next(p for p in thing.properties if p.predicate == "http://example.org/onto#hasName")
     assert has_name.range == "http://www.w3.org/2001/XMLSchema#string"
     assert has_name.comment == "The name of the entity."
 
@@ -131,48 +129,50 @@ def test_property_range_and_comment(owl_file):
 def test_inherited_properties(owl_file):
     """Person (subClassOf ThingWithName) should inherit hasName."""
     schema = extract_from_ontology(owl_file)
-    person = schema.classes[PERSON_URI]
+    person = schema.classes["Person"]
     pred_uris = {p.predicate for p in person.properties}
-    assert HAS_NAME_URI in pred_uris, "Person should inherit hasName from ThingWithName"
+    assert "http://example.org/onto#hasName" in pred_uris
+
+
+# --- Empirical extraction tests ---
 
 
 def test_empirical_extraction_classes(data_file):
     schema = extract_schema(data_path=data_file)
-    ex_person = "http://example.org/Person"
-    ex_office = "http://example.org/Office"
-    assert ex_person in schema.classes
-    assert ex_office in schema.classes
+    assert "Person" in schema.classes
+    assert "Office" in schema.classes
 
 
 def test_empirical_extraction_properties(data_file):
     schema = extract_schema(data_path=data_file)
-    ex_person = "http://example.org/Person"
-    pred_uris = {p.predicate for p in schema.classes[ex_person].properties}
+    pred_uris = {p.predicate for p in schema.classes["Person"].properties}
     assert "http://example.org/hasName" in pred_uris
     assert "http://example.org/hasAge" in pred_uris
 
 
 def test_empirical_extraction_via_store():
     store = Store()
-    store.load(SAMPLE_DATA.encode(), format="text/turtle")
+    store.load(SAMPLE_DATA.encode(), format=RdfFormat.TURTLE)
     schema = extract_from_data(store)
-    ex_person = "http://example.org/Person"
-    assert ex_person in schema.classes
-    pred_uris = {p.predicate for p in schema.classes[ex_person].properties}
+    assert "Person" in schema.classes
+    pred_uris = {p.predicate for p in schema.classes["Person"].properties}
     assert "http://example.org/hasName" in pred_uris
+
+
+# --- Dispatcher tests ---
 
 
 def test_extract_schema_prefers_ontology(owl_file, data_file):
     """When both paths provided, ontology should be used."""
     schema = extract_schema(data_path=data_file, ontology_path=owl_file)
-    # Ontology has http://example.org/onto#Person, data has http://example.org/Person
-    assert PERSON_URI in schema.classes
-    assert "http://example.org/Person" not in schema.classes
+    # Ontology has ThingWithName; data does not
+    assert "ThingWithName" in schema.classes
 
 
 def test_extract_schema_falls_back_to_data(data_file):
     schema = extract_schema(data_path=data_file, ontology_path=None)
-    assert "http://example.org/Person" in schema.classes
+    assert "Person" in schema.classes
+    assert "ThingWithName" not in schema.classes
 
 
 def test_extract_schema_no_paths_raises():
@@ -180,31 +180,47 @@ def test_extract_schema_no_paths_raises():
         extract_schema()
 
 
-def test_yaml_output_prefix_shortening(owl_file):
-    schema = extract_from_ontology(owl_file)
-    yaml_dict = schema.to_schemas_yaml(PREFIX_MAP)
-    # Shortened URIs should appear as keys
-    assert ":Person" in yaml_dict
-    assert ":ThingWithName" in yaml_dict
-    person_entry = yaml_dict[":Person"]
-    assert person_entry["parent"] == ":ThingWithName"
+# --- YAML output tests ---
 
 
-def test_yaml_output_property_range_shortened(owl_file):
+def test_to_schemas_yaml_returns_string(owl_file):
     schema = extract_from_ontology(owl_file)
-    yaml_dict = schema.to_schemas_yaml(PREFIX_MAP)
-    thing_entry = yaml_dict[":ThingWithName"]
-    props = thing_entry["properties"]
-    assert ":hasName" in props
-    assert props[":hasName"]["range"] == "xsd:string"
+    result = schema.to_schemas_yaml(PREFIX_MAP)
+    assert isinstance(result, str)
+
+
+def test_yaml_output_structure(owl_file):
+    schema = extract_from_ontology(owl_file)
+    content = schema.to_schemas_yaml(PREFIX_MAP)
+    data = yaml.safe_load(content)
+    assert "classes" in data
+    assert "Person" in data["classes"]
+    assert "ThingWithName" in data["classes"]
+
+    person = data["classes"]["Person"]
+    assert person["label"] == "Person"
+    assert person["comment"] == "A historical person."
+    assert person["uri"] == "vocab:Person"
+    assert isinstance(person["properties"], list)
+
+
+def test_yaml_output_property_format(owl_file):
+    schema = extract_from_ontology(owl_file)
+    content = schema.to_schemas_yaml(PREFIX_MAP)
+    data = yaml.safe_load(content)
+
+    thing = data["classes"]["ThingWithName"]
+    props = thing["properties"]
+    has_name = next(p for p in props if p["pred"] == "vocab:hasName")
+    assert has_name["range"] == "xsd:string"
+    assert has_name["comment"] == "The name of the entity."
 
 
 def test_generate_schemas_yaml_writes_file(owl_file, tmp_path):
-    import yaml
-
     schema = extract_from_ontology(owl_file)
     out = tmp_path / "schemas.yaml"
     generate_schemas_yaml(schema, out, PREFIX_MAP)
     assert out.exists()
     data = yaml.safe_load(out.read_text())
-    assert ":Person" in data
+    assert "classes" in data
+    assert "Person" in data["classes"]

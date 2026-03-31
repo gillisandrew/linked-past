@@ -43,14 +43,22 @@ def push_dataset(
         if not void_path.exists():
             raise FileNotFoundError(f"VoID file not found: {void_path}")
 
-    # All files must be in same directory for oras push
+    # oras push uses filenames relative to cwd — use absolute paths via
+    # relative-to-cwd references. All files should be in the same directory;
+    # if void_path is elsewhere, use its absolute path.
     cwd = paths[0].parent
 
     cmd = ["oras", "push", ref]
     for p in paths:
         cmd.append(f"{p.name}:{media_type}")
     if void_path:
-        cmd.append(f"{void_path.name}:{media_type}")
+        # If void_path is in the same dir, use name; otherwise use relative path from cwd
+        try:
+            rel = void_path.relative_to(cwd)
+            cmd.append(f"{rel}:{media_type}")
+        except ValueError:
+            # Different directory — use absolute path
+            cmd.append(f"{void_path.resolve()}:{media_type}")
 
     if annotations:
         for key, val in annotations.items():

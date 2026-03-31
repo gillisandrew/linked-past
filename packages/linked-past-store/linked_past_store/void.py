@@ -12,8 +12,6 @@ from linked_past_store.verify import detect_format
 
 logger = logging.getLogger(__name__)
 
-_RDF_TYPE = "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
-
 _VOID_PREFIXES = """\
 @prefix void: <http://rdfs.org/ns/void#> .
 @prefix dcterms: <http://purl.org/dc/terms/> .
@@ -35,6 +33,24 @@ def _longest_common_prefix(uris: list[str]) -> str:
 
 
 @dataclass
+class ClassPartition:
+    """A VoID class partition: a class URI with its instance count."""
+
+    class_uri: str
+    entities: int = 0
+
+
+@dataclass
+class PropertyPartition:
+    """A VoID property partition: a predicate URI with its triple count."""
+
+    property_uri: str
+    triples: int = 0
+    distinct_subjects: int = 0
+    distinct_objects: int = 0
+
+
+@dataclass
 class VoidDescription:
     """VoID description of an RDF dataset."""
 
@@ -44,6 +60,8 @@ class VoidDescription:
     entities: int = 0
     classes: int = 0
     properties: int = 0
+    distinct_subjects: int = 0
+    distinct_objects: int = 0
     uri_space: str = ""
     example_resource: str = ""
     license_uri: str = ""
@@ -51,6 +69,8 @@ class VoidDescription:
     citation: str = ""
     publisher: str = ""
     description: str = ""
+    class_partitions: list[ClassPartition] = field(default_factory=list)
+    property_partitions: list[PropertyPartition] = field(default_factory=list)
     linksets: list[dict] = field(default_factory=list)
 
     def to_turtle(self) -> str:
@@ -76,6 +96,10 @@ class VoidDescription:
             lines.append(f"    void:classes {self.classes}")
         if self.properties:
             lines.append(f"    void:properties {self.properties}")
+        if self.distinct_subjects:
+            lines.append(f"    void:distinctSubjects {self.distinct_subjects}")
+        if self.distinct_objects:
+            lines.append(f"    void:distinctObjects {self.distinct_objects}")
         if self.uri_space:
             escaped_space = self.uri_space.replace("\\", "\\\\").replace('"', '\\"')
             lines.append(f'    void:uriSpace "{escaped_space}"')
@@ -89,6 +113,23 @@ class VoidDescription:
         if self.publisher:
             escaped_pub = self.publisher.replace("\\", "\\\\").replace('"', '\\"')
             lines.append(f'    dcterms:publisher [ a foaf:Agent ; foaf:name "{escaped_pub}" ]')
+
+        # Class partitions
+        for cp in self.class_partitions:
+            lines.append(
+                f"    void:classPartition [ void:class <{cp.class_uri}> ; void:entities {cp.entities} ]"
+            )
+
+        # Property partitions
+        for pp in self.property_partitions:
+            pp_parts = [f"void:property <{pp.property_uri}>"]
+            if pp.triples:
+                pp_parts.append(f"void:triples {pp.triples}")
+            if pp.distinct_subjects:
+                pp_parts.append(f"void:distinctSubjects {pp.distinct_subjects}")
+            if pp.distinct_objects:
+                pp_parts.append(f"void:distinctObjects {pp.distinct_objects}")
+            lines.append(f"    void:propertyPartition [ {' ; '.join(pp_parts)} ]")
 
         # Linksets
         for ls in self.linksets:
@@ -106,19 +147,17 @@ class VoidDescription:
                 subset_lines.append("    ]")
                 lines.append("\n".join(subset_lines))
 
-        # Join with " ;\n" separator and close with " ."
-        # First line is the subject declaration, rest are property lines
-        subject_line = lines[len(_VOID_PREFIXES.splitlines()) + 1]  # noqa: F841
-        prefix_block = _VOID_PREFIXES
-        prop_lines = lines[len(_VOID_PREFIXES.splitlines()) + 1:]
+        # lines[0] = prefix block, lines[1] = subject declaration, lines[2:] = properties
+        prefix_block = lines[0]
+        subject = lines[1]
+        props = lines[2:]
 
-        if len(prop_lines) == 1:
-            # Just the type declaration, no properties
-            return prefix_block + prop_lines[0] + " .\n"
+        if not props:
+            return prefix_block + subject + " .\n"
 
-        turtle = prefix_block + prop_lines[0] + " ;\n"
-        for i, prop_line in enumerate(prop_lines[1:], 1):
-            if i < len(prop_lines) - 1:
+        turtle = prefix_block + subject + " ;\n"
+        for i, prop_line in enumerate(props):
+            if i < len(props) - 1:
                 turtle += prop_line + " ;\n"
             else:
                 turtle += prop_line + " .\n"
@@ -168,6 +207,42 @@ def generate_void(
     pred_results = store.query("SELECT DISTINCT ?p WHERE { ?s ?p ?o . }")
     prop_count = sum(1 for _ in pred_results)
 
+    # Distinct subjects and objects (borrowed from void-generator)
+    ds_results = store.query("SELECT (COUNT(DISTINCT ?s) AS ?n) WHERE { ?s ?p ?o }")
+    distinct_subjects = int(next(iter(ds_results))[0].value)
+
+    do_results = store.query("SELECT (COUNT(DISTINCT ?o) AS ?n) WHERE { ?s ?p ?o }")
+    distinct_objects = int(next(iter(do_results))[0].value)
+
+    # Class partitions: instance count per class
+    cp_results = store.query(
+        "SELECT ?c (COUNT(DISTINCT ?s) AS ?n) WHERE { ?s a ?c . FILTER(isIRI(?c)) } "
+        "GROUP BY ?c ORDER BY DESC(?n)"
+    )
+    class_partitions = []
+    for row in cp_results:
+        uri = str(row[0])
+        if uri.startswith("<") and uri.endswith(">"):
+            uri = uri[1:-1]
+        class_partitions.append(ClassPartition(class_uri=uri, entities=int(row[1].value)))
+
+    # Property partitions: triple count, distinct subjects/objects per predicate
+    pp_results = store.query(
+        "SELECT ?p (COUNT(*) AS ?triples) (COUNT(DISTINCT ?s) AS ?ds) (COUNT(DISTINCT ?o) AS ?do) "
+        "WHERE { ?s ?p ?o } GROUP BY ?p ORDER BY DESC(?triples)"
+    )
+    property_partitions = []
+    for row in pp_results:
+        uri = str(row[0])
+        if uri.startswith("<") and uri.endswith(">"):
+            uri = uri[1:-1]
+        property_partitions.append(PropertyPartition(
+            property_uri=uri,
+            triples=int(row[1].value),
+            distinct_subjects=int(row[2].value),
+            distinct_objects=int(row[3].value),
+        ))
+
     # Compute URI space from typed subjects
     uri_space = _longest_common_prefix(typed_subjects) if typed_subjects else ""
 
@@ -181,8 +256,12 @@ def generate_void(
         entities=entity_count,
         classes=class_count,
         properties=prop_count,
+        distinct_subjects=distinct_subjects,
+        distinct_objects=distinct_objects,
         uri_space=uri_space,
         example_resource=example_resource,
+        class_partitions=class_partitions,
+        property_partitions=property_partitions,
         license_uri=license_uri,
         source_uri=source_uri,
         citation=citation,
