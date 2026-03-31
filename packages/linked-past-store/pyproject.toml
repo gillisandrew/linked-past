@@ -1,0 +1,18 @@
+[project]
+name = "linked-past-store"
+version = "0.1.0"
+description = "Distribute scholarly RDF datasets as OCI artifacts. Content-addressable, version-tracked, annotated storage via container registries."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.13"
+dependencies = [
+    "oras",
+    "pyoxigraph",
+]
+
+[project.scripts]
+linked-past-store = "linked_past_store.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

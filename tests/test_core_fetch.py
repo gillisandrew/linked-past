@@ -20,7 +20,7 @@ def test_default_registry():
 
 
 def test_pull_artifact_calls_oras(tmp_path):
-    with patch("linked_past.core.fetch.oras.client.OrasClient") as MockClient:
+    with patch("linked_past_store.pull.oras.client.OrasClient") as MockClient:
         mock_instance = MagicMock()
         MockClient.return_value = mock_instance
         mock_instance.pull.return_value = [str(tmp_path / "data.ttl")]
@@ -30,7 +30,7 @@ def test_pull_artifact_calls_oras(tmp_path):
 
 
 def test_pull_artifact_returns_path(tmp_path):
-    with patch("linked_past.core.fetch.oras.client.OrasClient") as MockClient:
+    with patch("linked_past_store.pull.oras.client.OrasClient") as MockClient:
         mock_instance = MagicMock()
         MockClient.return_value = mock_instance
         ttl_file = tmp_path / "data.ttl"

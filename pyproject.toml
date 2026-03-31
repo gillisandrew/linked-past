@@ -10,15 +10,20 @@ dependencies = [
     "rdflib",
     "pyyaml",
     "mcp",
-    "oras",
     "toons>=0.5.3",
     "fastembed",
     "numpy",
+    "linked-past-store",
 ]
+
+[tool.uv.sources]
+linked-past-store = { workspace = true }
 
 [project.scripts]
 linked-past-server = "linked_past.core.server:main"
-dprr-server = "linked_past.core.server:main"
+
+[tool.uv.workspace]
+members = ["packages/*"]
 
 [build-system]
 requires = ["hatchling"]

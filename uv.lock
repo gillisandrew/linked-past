@@ -10,6 +10,12 @@ resolution-markers = [
     "python_full_version < '3.14' and sys_platform != 'emscripten' and sys_platform != 'win32'",
 ]
 
+[manifest]
+members = [
+    "linked-past",
+    "linked-past-store",
+]
+
 [[package]]
 name = "annotated-doc"
 version = "0.0.4"
@@ -430,9 +436,9 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "fastembed" },
+    { name = "linked-past-store" },
     { name = "mcp" },
     { name = "numpy" },
-    { name = "oras" },
     { name = "pyoxigraph" },
     { name = "pyyaml" },
     { name = "rdflib" },
@@ -452,9 +458,9 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "fastembed" },
+    { name = "linked-past-store", editable = "packages/linked-past-store" },
     { name = "mcp" },
     { name = "numpy" },
-    { name = "oras" },
     { name = "pyoxigraph" },
     { name = "pyyaml" },
     { name = "rdflib" },
@@ -467,6 +473,21 @@ dev = [
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "ruff" },
+]
+
+[[package]]
+name = "linked-past-store"
+version = "0.1.0"
+source = { editable = "packages/linked-past-store" }
+dependencies = [
+    { name = "oras" },
+    { name = "pyoxigraph" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "oras" },
+    { name = "pyoxigraph" },
 ]
 
 [[package]]
