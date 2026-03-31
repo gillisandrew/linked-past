@@ -14,7 +14,7 @@ SOURCE_URL = "https://numismatics.org/crro/nomisma.rdf"
 ARTIFACT_REF = "ghcr.io/gillisandrew/linked-past/crro"
 
 ANNOTATIONS = {
-    "org.opencontainers.image.source": "https://numismatics.org/crro",
+    "org.opencontainers.image.source": "https://github.com/gillisandrew/linked-past",
     "org.opencontainers.image.description": "Coinage of the Roman Republic Online — RRC coin type corpus",
     "org.opencontainers.image.licenses": "ODbL-1.0",
     "org.opencontainers.image.url": "https://github.com/gillisandrew/linked-past",

@@ -23,7 +23,7 @@ SOURCE_URL = "http://nomisma.org/nomisma.org.ttl"
 ARTIFACT_REF = "ghcr.io/gillisandrew/linked-past/nomisma"
 
 ANNOTATIONS = {
-    "org.opencontainers.image.source": "https://nomisma.org",
+    "org.opencontainers.image.source": "https://github.com/gillisandrew/linked-past",
     "org.opencontainers.image.description": (
         "Nomisma.org numismatic concept vocabulary (sanitized for Oxigraph)"
     ),

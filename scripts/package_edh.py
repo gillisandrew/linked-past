@@ -13,7 +13,7 @@ LOCAL_ZIP = Path(__file__).parent.parent / "edh_linked_data.zip"
 ARTIFACT_REF = "ghcr.io/gillisandrew/linked-past/edh"
 
 ANNOTATIONS = {
-    "org.opencontainers.image.source": "https://edh.ub.uni-heidelberg.de",
+    "org.opencontainers.image.source": "https://github.com/gillisandrew/linked-past",
     "org.opencontainers.image.description": "Epigraphic Database Heidelberg — 81K+ Latin inscriptions",
     "org.opencontainers.image.licenses": "CC-BY-SA-4.0",
     "org.opencontainers.image.url": "https://github.com/gillisandrew/linked-past",

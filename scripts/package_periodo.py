@@ -13,7 +13,7 @@ SOURCE_URL = "http://n2t.net/ark:/99152/p0d.jsonld"
 ARTIFACT_REF = "ghcr.io/gillisandrew/linked-past/periodo"
 
 ANNOTATIONS = {
-    "org.opencontainers.image.source": "https://perio.do",
+    "org.opencontainers.image.source": "https://github.com/gillisandrew/linked-past",
     "org.opencontainers.image.description": (
         "PeriodO: A Gazetteer of Period Definitions (converted from JSON-LD)"
     ),

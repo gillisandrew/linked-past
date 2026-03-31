@@ -15,7 +15,7 @@ SOURCE_URL = "https://atlantides.org/downloads/pleiades/rdf/pleiades-latest.tar.
 ARTIFACT_REF = "ghcr.io/gillisandrew/linked-past/pleiades"
 
 ANNOTATIONS = {
-    "org.opencontainers.image.source": "https://pleiades.stoa.org",
+    "org.opencontainers.image.source": "https://github.com/gillisandrew/linked-past",
     "org.opencontainers.image.description": (
         "Pleiades: A Gazetteer of Past Places (sanitized for Oxigraph)"
     ),

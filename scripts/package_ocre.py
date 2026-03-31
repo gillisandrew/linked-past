@@ -14,7 +14,7 @@ SOURCE_URL = "https://numismatics.org/ocre/nomisma.rdf"
 ARTIFACT_REF = "ghcr.io/gillisandrew/linked-past/ocre"
 
 ANNOTATIONS = {
-    "org.opencontainers.image.source": "https://numismatics.org/ocre",
+    "org.opencontainers.image.source": "https://github.com/gillisandrew/linked-past",
     "org.opencontainers.image.description": "Online Coins of the Roman Empire — RIC coin type corpus",
     "org.opencontainers.image.licenses": "ODbL-1.0",
     "org.opencontainers.image.url": "https://github.com/gillisandrew/linked-past",

@@ -14,7 +14,7 @@ SOURCE_URL = "https://github.com/gillisandrew/dprr-mcp/releases/latest/download/
 ARTIFACT_REF = "ghcr.io/gillisandrew/linked-past/dprr"
 
 ANNOTATIONS = {
-    "org.opencontainers.image.source": "https://romanrepublic.ac.uk",
+    "org.opencontainers.image.source": "https://github.com/gillisandrew/linked-past",
     "org.opencontainers.image.description": "Digital Prosopography of the Roman Republic (DPRR) RDF dataset",
     "org.opencontainers.image.licenses": "CC-BY-NC-4.0",
     "org.opencontainers.image.url": "https://github.com/gillisandrew/linked-past",
