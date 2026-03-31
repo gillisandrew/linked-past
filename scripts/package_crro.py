@@ -13,7 +13,7 @@ ANNOTATIONS = {
     "org.opencontainers.image.source": "https://numismatics.org/crro",
     "org.opencontainers.image.description": "Coinage of the Roman Republic Online — RRC coin type corpus",
     "org.opencontainers.image.licenses": "ODbL-1.0",
-    "org.opencontainers.image.url": "https://github.com/gillisandrew/dprr-tool",
+    "org.opencontainers.image.url": "https://github.com/gillisandrew/linked-past",
     "org.opencontainers.image.vendor": "American Numismatic Society",
     "dev.linked-past.dataset": "crro",
     "dev.linked-past.source-url": SOURCE_URL,

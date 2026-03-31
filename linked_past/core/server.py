@@ -317,7 +317,7 @@ def create_mcp_server() -> FastMCP:
             f"\n\n─── Sources ───\n"
             f"Data: {plugin.display_name} v{version}. {plugin.license}.\n"
             f"      Cite as: {plugin.citation}\n"
-            f"Tool: linked-past, https://github.com/gillisandrew/dprr-tool"
+            f"Tool: linked-past, https://github.com/gillisandrew/linked-past"
         )
         return table + see_also + footer
 

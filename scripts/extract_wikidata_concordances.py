@@ -58,7 +58,7 @@ def run_construct(query: str) -> bytes:
     url = f"{WIKIDATA_ENDPOINT}?{params}"
     req = urllib.request.Request(
         url,
-        headers={"Accept": "text/turtle", "User-Agent": "linked-past/0.1 (https://github.com/gillisandrew/dprr-tool)"},
+        headers={"Accept": "text/turtle", "User-Agent": "linked-past/0.1 (https://github.com/gillisandrew/linked-past)"},
     )
     with urllib.request.urlopen(req, timeout=120) as resp:
         return resp.read()

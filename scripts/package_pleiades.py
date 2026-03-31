@@ -21,7 +21,7 @@ ANNOTATIONS = {
     "org.opencontainers.image.source": "https://pleiades.stoa.org",
     "org.opencontainers.image.description": "Pleiades: A Gazetteer of Past Places — RDF dataset (sanitized for Oxigraph)",
     "org.opencontainers.image.licenses": "CC-BY-3.0",
-    "org.opencontainers.image.url": "https://github.com/gillisandrew/dprr-tool",
+    "org.opencontainers.image.url": "https://github.com/gillisandrew/linked-past",
     "org.opencontainers.image.vendor": "Institute for the Study of the Ancient World (NYU)",
     "dev.linked-past.dataset": "pleiades",
     "dev.linked-past.source-url": SOURCE_URL,

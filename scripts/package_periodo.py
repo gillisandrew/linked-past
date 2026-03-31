@@ -13,7 +13,7 @@ ANNOTATIONS = {
     "org.opencontainers.image.source": "https://perio.do",
     "org.opencontainers.image.description": "PeriodO: A Gazetteer of Period Definitions — RDF dataset (converted from JSON-LD)",
     "org.opencontainers.image.licenses": "CC0-1.0",
-    "org.opencontainers.image.url": "https://github.com/gillisandrew/dprr-tool",
+    "org.opencontainers.image.url": "https://github.com/gillisandrew/linked-past",
     "org.opencontainers.image.vendor": "PeriodO project (UNC Chapel Hill / UT Austin)",
     "dev.linked-past.dataset": "periodo",
     "dev.linked-past.source-url": SOURCE_URL,

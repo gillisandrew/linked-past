@@ -13,7 +13,7 @@ ANNOTATIONS = {
     "org.opencontainers.image.source": "https://numismatics.org/ocre",
     "org.opencontainers.image.description": "Online Coins of the Roman Empire — RIC coin type corpus",
     "org.opencontainers.image.licenses": "ODbL-1.0",
-    "org.opencontainers.image.url": "https://github.com/gillisandrew/dprr-tool",
+    "org.opencontainers.image.url": "https://github.com/gillisandrew/linked-past",
     "org.opencontainers.image.vendor": "American Numismatic Society",
     "dev.linked-past.dataset": "ocre",
     "dev.linked-past.source-url": SOURCE_URL,

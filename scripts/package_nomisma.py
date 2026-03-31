@@ -22,7 +22,7 @@ ANNOTATIONS = {
     "org.opencontainers.image.source": "https://nomisma.org",
     "org.opencontainers.image.description": "Nomisma.org numismatic concept vocabulary — RDF dataset (sanitized for Oxigraph)",
     "org.opencontainers.image.licenses": "CC-BY-4.0",
-    "org.opencontainers.image.url": "https://github.com/gillisandrew/dprr-tool",
+    "org.opencontainers.image.url": "https://github.com/gillisandrew/linked-past",
     "org.opencontainers.image.vendor": "Nomisma.org / American Numismatic Society",
     "dev.linked-past.dataset": "nomisma",
     "dev.linked-past.source-url": SOURCE_URL,

@@ -14,7 +14,7 @@ ANNOTATIONS = {
     "org.opencontainers.image.source": "https://romanrepublic.ac.uk",
     "org.opencontainers.image.description": "Digital Prosopography of the Roman Republic (DPRR) RDF dataset",
     "org.opencontainers.image.licenses": "CC-BY-NC-4.0",
-    "org.opencontainers.image.url": "https://github.com/gillisandrew/dprr-tool",
+    "org.opencontainers.image.url": "https://github.com/gillisandrew/linked-past",
     "org.opencontainers.image.vendor": "King's College London",
     "dev.linked-past.dataset": "dprr",
     "dev.linked-past.source-url": SOURCE_URL,
