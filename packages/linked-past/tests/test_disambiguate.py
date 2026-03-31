@@ -3,6 +3,7 @@
 import pytest
 from linked_past.core.disambiguate import (
     score_career,
+    score_filiation,
     score_temporal,
 )
 
@@ -76,3 +77,34 @@ class TestScoreCareer:
     def test_no_dprr_offices(self):
         score, explanation, is_absent = score_career([], era_from=-185, office="consul", date=-147)
         assert score == 0.0
+
+
+class TestScoreFiliation:
+    def test_father_and_grandfather_match(self):
+        family = {"father_praenomen": "manius", "grandfather_praenomen": "manius"}
+        score, explanation, is_absent = score_filiation(family, {"father": "manius", "grandfather": "manius"})
+        assert score == 1.0
+        assert not is_absent
+
+    def test_father_match_only(self):
+        family = {"father_praenomen": "lucius", "grandfather_praenomen": None}
+        score, explanation, is_absent = score_filiation(family, {"father": "lucius"})
+        assert score == 0.5
+
+    def test_father_mismatch(self):
+        family = {"father_praenomen": "marcus", "grandfather_praenomen": None}
+        score, explanation, is_absent = score_filiation(family, {"father": "lucius"})
+        assert score == 0.0
+        assert not is_absent  # data present, just doesn't match
+
+    def test_no_filiation_data(self):
+        family = {"father_praenomen": "marcus", "grandfather_praenomen": None}
+        score, explanation, is_absent = score_filiation(family, {})
+        assert score == 0.0
+        assert is_absent
+
+    def test_no_family_data(self):
+        family = {}
+        score, explanation, is_absent = score_filiation(family, {"father": "marcus"})
+        assert score == 0.0
+        assert is_absent

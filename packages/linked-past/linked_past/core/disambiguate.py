@@ -146,3 +146,42 @@ def score_career(
         return 0.5, f"{office} held in {closest_date}, inscription {date} (±{gap}yr)", False
     else:
         return 0.3, f"{office} held in {closest_date}, inscription {date} (±{gap}yr, distant)", False
+
+
+def score_filiation(
+    dprr_family: dict[str, str | None],
+    inscription_filiation: dict[str, str],
+) -> tuple[float, str, bool]:
+    """Score filiation match between DPRR family data and inscription filiation.
+    Returns (score, explanation, is_absent).
+
+    dprr_family: {"father_praenomen": "marcus", "grandfather_praenomen": "gnaeus"}
+    inscription_filiation: {"father": "marcus", "grandfather": "gnaeus"} (from parse_filiation)
+    """
+    if not inscription_filiation:
+        return 0.0, "no filiation in inscription", True
+    if not dprr_family:
+        return 0.0, "no family data in DPRR", True
+
+    insc_father = inscription_filiation.get("father")
+    insc_grandfather = inscription_filiation.get("grandfather")
+    dprr_father = dprr_family.get("father_praenomen")
+    dprr_grandfather = dprr_family.get("grandfather_praenomen")
+
+    if not insc_father:
+        return 0.0, "no father in filiation", True
+
+    if not dprr_father:
+        return 0.0, "DPRR father unknown", True
+
+    if insc_father != dprr_father:
+        return 0.0, f"father mismatch: inscription {insc_father}, DPRR {dprr_father}", False
+
+    # Father matches
+    if insc_grandfather and dprr_grandfather:
+        if insc_grandfather == dprr_grandfather:
+            return 1.0, f"father ({insc_father}) + grandfather ({insc_grandfather}) match", False
+        else:
+            return 0.0, f"grandfather mismatch: inscription {insc_grandfather}, DPRR {dprr_grandfather}", False
+
+    return 0.5, f"father matches ({insc_father}), grandfather not verifiable", False
