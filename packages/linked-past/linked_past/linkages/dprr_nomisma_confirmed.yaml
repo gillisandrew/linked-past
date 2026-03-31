@@ -1,576 +1,839 @@
 metadata:
   source_dataset: dprr
   target_dataset: nomisma
-  relationship: "skos:closeMatch"
+  relationship: skos:closeMatch
   confidence: confirmed
   method: manual_alignment
-  basis: >-
-    DPRR v1.3.0 moneyer post assertions citing Crawford RRC,
-    cross-referenced with Nomisma person authorities and CRRO coin types.
+  basis: DPRR v1.3.0 moneyer post assertions citing Crawford RRC, cross-referenced
+    with Nomisma person authorities and CRRO coin types.
   author: linked-past project
-  date: "2026-03-30"
+  date: '2026-03-30'
 links:
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/1976"
-    target: "http://nomisma.org/id/pompey"
-    note: "RRC moneyer 71, 49 BC; DPRR proconsul Hispania 77-49 BC"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/1889"
-    target: "http://nomisma.org/id/q_c_m_p_i_rrc"
-    note: "RRC moneyer 81 BC; DPRR proconsul Hispania Ulterior 79-71 BC"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/1957"
-    target: "http://nomisma.org/id/julius_caesar"
-    note: "RRC 468; DPRR moneyer 49-44 BC"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3502"
-    target: "http://nomisma.org/id/c_ivni_or_c_ivni_c_f_rrc"
-    note: "Monetalis 149 BC; name + filiation + date exact match"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3580"
-    target: "http://nomisma.org/id/l_sempr_pitio_rrc"
-    note: "Monetalis 148 BC; name + cognomen + date exact match"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3522"
-    target: "http://nomisma.org/id/c_ter_lvc_rrc"
-    note: "Monetalis 147 BC; name + cognomen + date exact match"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3489"
-    target: "http://nomisma.org/id/c_antesti_rrc"
-    note: "Monetalis 146 BC; name + date exact match"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/1534"
-    target: "http://nomisma.org/id/m_ivni_rrc"
-    note: "Monetalis 145 BC; praenomen + nomen + date match"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3533"
-    target: "http://nomisma.org/id/cn_geli_rrc"
-    note: "Monetalis 138 BC; name + date exact match"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3515"
-    target: "http://nomisma.org/id/c_reni_rrc"
-    note: "Monetalis 138 BC; name + date exact match"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3534"
-    target: "http://nomisma.org/id/cn_lvcr_trio_rrc"
-    note: "Monetalis 136 BC; name + cognomen + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3545"
-    target: "http://nomisma.org/id/l_antes_gragv_rrc"
-    note: "Monetalis 136 BC; name + cognomen + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3519"
-    target: "http://nomisma.org/id/c_serveili_m_f_rrc"
-    note: "Monetalis 136 BC; name + filiation M.f. + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3582"
-    target: "http://nomisma.org/id/l_trebani_rrc"
-    note: "Monetalis 135 BC; name + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3491"
-    target: "http://nomisma.org/id/c_avg_rrc"
-    note: "Monetalis 135 BC; full name + cognomen Augurinus + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/1639"
-    target: "http://nomisma.org/id/l_opeimi_rrc"
-    note: "Monetalis 131 BC; name + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3126"
-    target: "http://nomisma.org/id/m_opeimi_rrc"
-    note: "Monetalis 131 BC; name + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3611"
-    target: "http://nomisma.org/id/m_vargv_rrc"
-    note: "Monetalis 130 BC; name + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3675"
-    target: "http://nomisma.org/id/t_clovli_rrc"
-    note: "Monetalis 128 BC; name + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/1677"
-    target: "http://nomisma.org/id/m_metellvs_q_f_rrc"
-    note: "Monetalis 127 BC; name + filiation Q.f. + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3622"
-    target: "http://nomisma.org/id/n_fabi_pictor_rrc"
-    note: "Monetalis 126 BC; full name + cognomen Pictor + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/1682"
-    target: "http://nomisma.org/id/c_cato_rrc"
-    note: "Monetalis 123 BC; full name Porcius Cato + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3602"
-    target: "http://nomisma.org/id/m_fan_c_f_rrc"
-    note: "Monetalis 123 BC; name + filiation C.f. + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/1696"
-    target: "http://nomisma.org/id/m_carbo_rrc"
-    note: "Monetalis 122 BC; full name Papirius Carbo + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/1689"
-    target: "http://nomisma.org/id/carbo_rrc"
-    note: "Monetalis 121 BC; full name Cn. Papirius Carbo + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/1679"
-    target: "http://nomisma.org/id/l_lic_rrc"
-    note: "Moneyer 118 BC; L. Licinius Crassus (cos. 95); RRC citation in both"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3531"
-    target: "http://nomisma.org/id/cn_cornel_l_f_sisena_rrc"
-    note: "Monetalis 118 BC; name + filiation L.f. + date overlap"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3573"
-    target: "http://nomisma.org/id/l_pomponi_cnf_rrc"
-    note: "Monetalis 118 BC; name + filiation Cn.f. + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/1763"
-    target: "http://nomisma.org/id/cn_dom_2_rrc"
-    note: "Moneyer 118 BC; Cn. Domitius Ahenobarbus; cn_dom_1 is 189 BC (different person)"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3505"
-    target: "http://nomisma.org/id/c_mall_rrc"
-    note: "Monetalis 118 BC (DPRR/Broughton); Nomisma says late 90s; unique name, both cite RRC"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3598"
-    target: "http://nomisma.org/id/m_calid_rrc"
-    note: "Monetalis 117 BC; name + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/1834"
-    target: "http://nomisma.org/id/m_sergi_silvs_q_rrc"
-    note: "Monetalis 116 BC; full name + cognomen Silus + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3600"
-    target: "http://nomisma.org/id/m_cipi_m_f_rrc"
-    note: "Monetalis 114 BC; name + filiation M.f. + date overlap"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3500"
-    target: "http://nomisma.org/id/c_font_rrc"
-    note: "Monetalis 114 BC; name + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3617"
-    target: "http://nomisma.org/id/mn_aemilio_l_e_p_rrc"
-    note: "Monetalis 114 BC; praenomen Mn. + nomen Aemilius Lepidus + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/1760"
-    target: "http://nomisma.org/id/p_nerva_rrc"
-    note: "Monetalis 113 BC; name + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/1833"
-    target: "http://nomisma.org/id/l_torqva_q_rrc"
-    note: "Monetalis 113-112 BC; disambiguated from l_torqvat_rrc (65 BC) and l_manli_t_proq_rrc (82 BC)"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/1776"
-    target: "http://nomisma.org/id/t_deidi_rrc"
-    note: "Monetalis 113 BC; name + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3529"
-    target: "http://nomisma.org/id/cn_blasio_cn_f_rrc"
-    note: "Monetalis 112 BC; name + filiation Cn.f. + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3549"
-    target: "http://nomisma.org/id/l_caesi_rrc"
-    note: "Monetalis 112 BC; name + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/1807"
-    target: "http://nomisma.org/id/ap_cl_rrc"
-    note: "Monetalis 111 BC; Ap. Claudius Pulcher + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/1753"
-    target: "http://nomisma.org/id/c_pvlcher_rrc"
-    note: "Monetalis 110 BC; C. Claudius Pulcher + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/1714"
-    target: "http://nomisma.org/id/l_memmi_rrc"
-    note: "Monetalis 109 BC; name + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/1757"
-    target: "http://nomisma.org/id/mn_aqvil_rrc"
-    note: "Monetalis 109 BC; Mn. Aquillius + date exact; not mn_aqvil_mn_f_mn_n_rrc (71 BC)"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/1819"
-    target: "http://nomisma.org/id/m_herenni_rrc"
-    note: "Monetalis 108 BC; name + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/1815"
-    target: "http://nomisma.org/id/l_valeri_flacci_rrc"
-    note: "Monetalis 108 BC; full name + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/1882"
-    target: "http://nomisma.org/id/l_scip_asiag_rrc"
-    note: "Monetalis 106 BC; full name Scipio Asiaticus + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/2034"
-    target: "http://nomisma.org/id/l_thorivs_balbvs_rrc"
-    note: "Monetalis 105 BC; full name + cognomen Balbus + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/1744"
-    target: "http://nomisma.org/id/c_coil_cald_rrc"
-    note: "Monetalis 104 BC; full name Coelius Caldus + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/1766"
-    target: "http://nomisma.org/id/l_satvrn_rrc"
-    note: "Moneyer 104 BC; L. Appuleius Saturninus + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/1901"
-    target: "http://nomisma.org/id/q_therm_mf_rrc"
-    note: "Monetalis 103 BC; Q. Minucius Thermus M.f. + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3604"
-    target: "http://nomisma.org/id/m_lvcili_rvf_rrc"
-    note: "Monetalis 101 BC; full name + cognomen Rufus + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3384"
-    target: "http://nomisma.org/id/l_senti_c_f_rrc"
-    note: "Monetalis 101 BC; name + filiation C.f. + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/1795"
-    target: "http://nomisma.org/id/piso_q_rrc"
-    note: "Moneyer 100 BC; L. Calpurnius Piso Caesoninus + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3526"
-    target: "http://nomisma.org/id/c_vibivs_c_f_pansa_rrc"
-    note: "Monetalis 90 BC; C. Vibius C.f. Pansa + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/1896"
-    target: "http://nomisma.org/id/l_piso_frvgi_rrc"
-    note: "Monetalis 90 BC; L. Calpurnius Piso Frugi + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/2076"
-    target: "http://nomisma.org/id/l_titvri_l_f_sabinvs_rrc"
-    note: "Monetalis 89 BC; L. Titurius L.f. Sabinus + date exact"
-  # --- Batch 7: 103-83 BC (agent-researched) ---
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/1825"
-    target: "http://nomisma.org/id/l_ivli_l_f_caesar_rrc"
-    note: "Monetalis 103 BC; L. Iulius L.f. Caesar + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3550"
-    target: "http://nomisma.org/id/l_cassi_caeician_rrc"
-    note: "Monetalis 102 BC; L. Cassius Caecianus + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3561"
-    target: "http://nomisma.org/id/l_ivli_ii_rrc"
-    note: "Monetalis 101 BC; L. Iulius (30) + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/1796"
-    target: "http://nomisma.org/id/caepio_q_rrc"
-    note: "Moneyer 100 BC; Q. Servilius Caepio + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3608"
-    target: "http://nomisma.org/id/m_serveili_c_f_rrc"
-    note: "Monetalis 100 BC; M. Servilius C.f. + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3645"
-    target: "http://nomisma.org/id/p_servili_m_f_rvlli_rrc"
-    note: "Monetalis 100 BC; P. Servilius M.f. Rullus + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3780"
-    target: "http://nomisma.org/id/lent_mar_f_rrc"
-    note: "Monetalis 100 BC; P. Cornelius Lentulus Marcellinus; not marcellinvs_rrc (50 BC)"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3676"
-    target: "http://nomisma.org/id/t_clovli_q_rrc"
-    note: "Monetalis 98 BC; T. Cloelius Ouf. + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3572"
-    target: "http://nomisma.org/id/l_pompon_molo_rrc"
-    note: "Monetalis 97 BC; L. Pomponius Molo + date match"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3449"
-    target: "http://nomisma.org/id/c_egnatvlei_c_f_q_rrc"
-    note: "Monetalis 97 BC; C. Egnatuleius + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/2150"
-    target: "http://nomisma.org/id/l_metel_rrc"
-    note: "Monetalis 96 BC; L. Caecilius Metellus; Nomisma says late 90s"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3504"
-    target: "http://nomisma.org/id/c_mall_rrc"
-    note: "Monetalis 96 BC; C. Publicius Malleolus; Nomisma says late 90s"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3391"
-    target: "http://nomisma.org/id/a_albinvs_s_f_rrc"
-    note: "Monetalis 96 BC; A. Postumius Sp.f. Albinus; not a_post_a_f_s_n_albin_rrc (81 BC)"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3488"
-    target: "http://nomisma.org/id/c_alli_bala_rrc"
-    note: "Monetalis 92 BC; C. Allius Bala + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3538"
-    target: "http://nomisma.org/id/d_silanvs_l_f_rrc"
-    note: "Monetalis 91 BC; D. Iunius L.f. Silanus + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3663"
-    target: "http://nomisma.org/id/q_titi_rrc"
-    note: "Monetalis 90 BC; Q. Titius + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3599"
-    target: "http://nomisma.org/id/m_cato_rrc"
-    note: "Monetalis 89 BC; M. Porcius Cato + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/1947"
-    target: "http://nomisma.org/id/c_censorin_rrc"
-    note: "Monetalis 88 BC; C. Marcius Censorinus; not c_marcius_censorinus (Augustan era)"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/1892"
-    target: "http://nomisma.org/id/q_oppivs_pr_rrc"
-    note: "Monetalis 88 BC; Q. Oppius Q.f. + date match"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/2064"
-    target: "http://nomisma.org/id/cn_lentvl_rrc"
-    note: "Monetalis 88 BC; Cn. Cornelius Lentulus Clodianus + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/1898"
-    target: "http://nomisma.org/id/l_memies_l_f_gal_rrc"
-    note: "Monetalis 87 BC; L. Memmius L.f. Gal. + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3576"
-    target: "http://nomisma.org/id/l_rvbri_dosseni_rrc"
-    note: "Monetalis 87 BC; L. Rubrius Dossenus + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/2020"
-    target: "http://nomisma.org/id/c_memies_l_f_gal_rrc"
-    note: "Monetalis 87 BC; C. Memmius L.f. Gal. + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/1971"
-    target: "http://nomisma.org/id/l_crit_aed_pl_rrc"
-    note: "Moneyer 86 BC; L. Critonius + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3542"
-    target: "http://nomisma.org/id/gar_rrc"
-    note: "Monetalis 86 BC; C. Gargonius + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/1972"
-    target: "http://nomisma.org/id/m_fan_aed_pl_rrc"
-    note: "Moneyer 86 BC; M. Fannius + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3562"
-    target: "http://nomisma.org/id/l_ivli_bvrsio_rrc"
-    note: "Monetalis 85 BC; L. Iulius Bursio + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3620"
-    target: "http://nomisma.org/id/mn_fontei_c_f_rrc"
-    note: "Monetalis 85 BC; Mn. Fonteius C.f. + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/2018"
-    target: "http://nomisma.org/id/l_salinat_rrc"
-    note: "Monetalis 84 BC; L. Livius Salinator + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/1987"
-    target: "http://nomisma.org/id/p_fovrivs_crassipes_rrc"
-    note: "Monetalis 84 BC; P. Furius Crassipes + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/2050"
-    target: "http://nomisma.org/id/c_cassivs_rrc"
-    note: "Monetalis 84 BC; C. Cassius L.f. Longinus + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/2103"
-    target: "http://nomisma.org/id/c_licinivs_l_f_macer_rrc"
-    note: "Monetalis 84 BC; C. Licinius L.f. Macer + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/1746"
-    target: "http://nomisma.org/id/sulla"
-    note: "Moneyer 84 BC; L. Cornelius Sulla Felix; Nomisma has general entry (life c. 138-78 BC)"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3587"
-    target: "http://nomisma.org/id/laterens_rrc"
-    note: "Monetalis 83 BC; Iuventius Laterensis + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3510"
-    target: "http://nomisma.org/id/c_norbanvs_rrc"
-    note: "Monetalis 83 BC; C. Norbanus + date exact"
-  # --- Batch 8: 79-50 BC (agent-researched) ---
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/2248"
-    target: "http://nomisma.org/id/ti_clavd_ti_f_ap_n_rrc"
-    note: "79 BC; Ti. Claudius Nero + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3569"
-    target: "http://nomisma.org/id/l_papi_rrc"
-    note: "79 BC; L. Papius + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3509"
-    target: "http://nomisma.org/id/c_nae_balb_rrc"
-    note: "79 BC; C. Naevius Balbus + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3551"
-    target: "http://nomisma.org/id/l_cassi_q_f_rrc"
-    note: "78 BC; L. Cassius Q.f. Longinus + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3612"
-    target: "http://nomisma.org/id/m_voltei_m_f_rrc"
-    note: "78 BC; M. Volteius M.f. + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3643"
-    target: "http://nomisma.org/id/p_satrienvs_rrc"
-    note: "77 BC; P. Satrienus + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3256"
-    target: "http://nomisma.org/id/l_rvtili_flac_rrc"
-    note: "77 BC; L. Rutilius Flaccus + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3577"
-    target: "http://nomisma.org/id/l_rvsti_rrc"
-    note: "76 BC; L. Rustius + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3563"
-    target: "http://nomisma.org/id/l_lvcreti_trio_rrc"
-    note: "76 BC; L. Lucretius Trio + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3557"
-    target: "http://nomisma.org/id/l_farsvlei_mensor_rrc"
-    note: "75 BC; L. Farsuleius Mensor + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3176"
-    target: "http://nomisma.org/id/c_egnativs_cn_f_cn_n_maxsvmvs_rrc"
-    note: "75 BC; C. Egnatius Cn.f. Maximus + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/2290"
-    target: "http://nomisma.org/id/p_lent_p_f_l_n_q_rrc"
-    note: "74 BC; P. Cornelius Lentulus Spinther + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3792"
-    target: "http://nomisma.org/id/c_postvmi_at_rrc"
-    note: "74 BC; C. Postumius AT + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3554"
-    target: "http://nomisma.org/id/l_cossvti_c_f_sabvla_rrc"
-    note: "74 BC; L. Cossutius C.f. Sabula + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3661"
-    target: "http://nomisma.org/id/q_pomponi_rvfvs_rrc"
-    note: "73 BC; Q. Pomponius Rufus + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3653"
-    target: "http://nomisma.org/id/q_creperei_rocvs_rrc"
-    note: "72 BC; Q. Crepereius M.f. Rocus + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3618"
-    target: "http://nomisma.org/id/mn_aqvil_mn_f_mn_n_rrc"
-    note: "71 BC; Mn. Aquillius Mn.f. Crassus + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3547"
-    target: "http://nomisma.org/id/l_axsivs_l_f_naso_rrc"
-    note: "71 BC; L. Axius L.f. Naso + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/2344"
-    target: "http://nomisma.org/id/t_vettivs_sabinvs_rrc"
-    note: "70 BC; T. Vettius Sabinus + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/2321"
-    target: "http://nomisma.org/id/kaleni_rrc"
-    note: "70 BC; Q. Fufius Calenus + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/2191"
-    target: "http://nomisma.org/id/cordi_rrc"
-    note: "70 BC; P. Mucius Scaevola Cordus + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/2169"
-    target: "http://nomisma.org/id/m_plaetorivs_cest_rrc"
-    note: "69 BC; M. Plaetorius M.f. Cestianus + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/2179"
-    target: "http://nomisma.org/id/p_galb_aed_cvr_rrc"
-    note: "69 BC; P. Sulpicius Galba + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3501"
-    target: "http://nomisma.org/id/c_hosidi_c_f_geta_iii_vir_rrc"
-    note: "68 BC; C. Hosidius C.f. Geta + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/2366"
-    target: "http://nomisma.org/id/c_piso_l_f_frvgi_rrc"
-    note: "67 BC; C. Calpurnius L.f. Piso Frugi + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3660"
-    target: "http://nomisma.org/id/q_pomponi_mvsa_rrc"
-    note: "66 BC; Q. Pomponius Musa + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/2198"
-    target: "http://nomisma.org/id/l_torqvat_rrc"
-    note: "65 BC; L. Manlius Torquatus (different from Person/1833 at 113 BC)"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/2424"
-    target: "http://nomisma.org/id/l_rosci_fabati_rrc"
-    note: "64 BC; L. Roscius Fabatus + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3558"
-    target: "http://nomisma.org/id/l_fvri_cn_f_brocchi_rrc"
-    note: "63 BC; L. Furius Cn.f. Brocchus + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3080"
-    target: "http://nomisma.org/id/libo_rrc"
-    note: "62 BC; L. Scribonius Libo + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/2350"
-    target: "http://nomisma.org/id/pavllvs_lepidvs_rrc"
-    note: "62 BC; L. Aemilius Lepidus Paullus + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/2661"
-    target: "http://nomisma.org/id/m_piso_m_f_frvgi_rrc"
-    note: "61 BC; M. Pupius Piso Frugi + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/2341"
-    target: "http://nomisma.org/id/m_lepidvs_rrc"
-    note: "61 BC; M. Aemilius Lepidus + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/2265"
-    target: "http://nomisma.org/id/p_ypsae_rrc"
-    note: "60 BC; P. Plautius Hypsaeus + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/2403"
-    target: "http://nomisma.org/id/svfenas_rrc"
-    note: "59 BC; M. Nonius Sufenas + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/2082"
-    target: "http://nomisma.org/id/cn_len_q_rrc"
-    note: "59 BC; Cn. Cornelius Lentulus Marcellinus + date match (also at 76 BC)"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/2262"
-    target: "http://nomisma.org/id/m_scavr_rrc"
-    note: "58 BC; M. Aemilius Scaurus + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3517"
-    target: "http://nomisma.org/id/c_serveil_c_f_rrc"
-    note: "57 BC; C. Servilius C.f. + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3495"
-    target: "http://nomisma.org/id/c_considi_noniani_rrc"
-    note: "57 BC; C. Considius Nonianus + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/2534"
-    target: "http://nomisma.org/id/philippvs_rrc"
-    note: "56 BC; L. Marcius Philippus + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/2300"
-    target: "http://nomisma.org/id/favstvs_rrc"
-    note: "56 BC; Faustus Cornelius Sulla + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/2439"
-    target: "http://nomisma.org/id/c_memmi_c_f_rrc"
-    note: "56 BC; C. Memmius + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/2312"
-    target: "http://nomisma.org/id/cn_plancivs_aed_cvr_rrc"
-    note: "55 BC; Cn. Plancius + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/2372"
-    target: "http://nomisma.org/id/p_crassvs_m_f_rrc"
-    note: "55 BC; P. Licinius M.f. Crassus + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/2481"
-    target: "http://nomisma.org/id/q_cassivs_rrc"
-    note: "55 BC; Q. Cassius Longinus + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/2276"
-    target: "http://nomisma.org/id/a_plavtivs_aed_cvr_rrc"
-    note: "55 BC; A. Plautius + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3636"
-    target: "http://nomisma.org/id/p_fonteivs_p_f_capito_rrc"
-    note: "55 BC; P. Fonteius P.f. Capito + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/2459"
-    target: "http://nomisma.org/id/brvtvs_rrc"
-    note: "54 BC; M. Iunius Brutus (the assassin) + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/2478"
-    target: "http://nomisma.org/id/q_pompei_rvfi_rrc"
-    note: "54 BC; Q. Pompeius Rufus + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3615"
-    target: "http://nomisma.org/id/messal_f_rrc"
-    note: "53 BC; M. Valerius Messalla + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/2496"
-    target: "http://nomisma.org/id/l_vinci_rrc"
-    note: "52 BC; L. Vinicius + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3671"
-    target: "http://nomisma.org/id/ser_svlp_rrc"
-    note: "51 BC; Ser. Sulpicius + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/2524"
-    target: "http://nomisma.org/id/caldvs_iiivir_rrc"
-    note: "51 BC; C. Coelius Caldus (grandson of cos. 94) + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/2572"
-    target: "http://nomisma.org/id/marcellinvs_rrc"
-    note: "50 BC; P. Cornelius Lentulus Marcellinus + date exact"
-  # --- Batch 9: 49-43 BC (agent-researched) ---
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3662"
-    target: "http://nomisma.org/id/q_sicinvs_iii_vir_rrc"
-    note: "49 BC; Q. Sicinius + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/2356"
-    target: "http://nomisma.org/id/l_lentvlvs_rrc"
-    note: "49 BC; L. Cornelius Lentulus Crus + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/2537"
-    target: "http://nomisma.org/id/c_coponivs_pr_rrc"
-    note: "49 BC; C. Coponius + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/2541"
-    target: "http://nomisma.org/id/neri_q_vrb_rrc"
-    note: "49 BC; Cn. Nerius + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3616"
-    target: "http://nomisma.org/id/mn_acilivs_iii_vir_rrc"
-    note: "49 BC; Mn. Acilius + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/2489"
-    target: "http://nomisma.org/id/albinvs_brvti_f_rrc"
-    note: "48 BC; D. Iunius Brutus Albinus + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/2495"
-    target: "http://nomisma.org/id/c_vibivs_c_f_c_n_pansa_rrc"
-    note: "48 BC; C. Vibius Pansa Caetronianus + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/2684"
-    target: "http://nomisma.org/id/l_hostilivs_saserna_rrc"
-    note: "48 BC; L. Hostilius Saserna + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3490"
-    target: "http://nomisma.org/id/c_antivs_c_f_restio_rrc"
-    note: "47 BC; C. Antius C.f. Restio + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/2347"
-    target: "http://nomisma.org/id/q_metel_pivs_scipio_imp_rrc"
-    note: "47-46 BC; Q. Caecilius Metellus Pius Scipio + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3474"
-    target: "http://nomisma.org/id/a_licinivs_nerva_iii_vir_rrc"
-    note: "47 BC; A. Licinius Nerva + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3775"
-    target: "http://nomisma.org/id/l_plavtivs_plancvs_rrc"
-    note: "47 BC; L. Plautius Plancus + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/2241"
-    target: "http://nomisma.org/id/m_cato_pro_pr_rrc"
-    note: "47-46 BC; M. Porcius Cato Uticensis + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/2456"
-    target: "http://nomisma.org/id/p_crassvs_ivn_leg_pro_pr_rrc"
-    note: "47-46 BC; P. Licinius Crassus Iunianus + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/2449"
-    target: "http://nomisma.org/id/a_hirtivs_pr_rrc"
-    note: "46 BC; A. Hirtius + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/2623"
-    target: "http://nomisma.org/id/m_poblici_leg_pro_pr_rrc"
-    note: "46-45 BC; M. Publicius + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/2946"
-    target: "http://nomisma.org/id/mn_cordivs_rvfvs_iiivir_rrc"
-    note: "46 BC; Mn. Cordius Rufus + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3674"
-    target: "http://nomisma.org/id/t_carisivs_iii_vir_rrc"
-    note: "46 BC; T. Carisius + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3496"
-    target: "http://nomisma.org/id/c_considivs_paetvs_rrc"
-    note: "46 BC; C. Considius Paetus + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/2450"
-    target: "http://nomisma.org/id/l_planc_praef_vrb_rrc"
-    note: "45 BC; L. Munatius Plancus + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3584"
-    target: "http://nomisma.org/id/l_valerivs_aciscvlvs_rrc"
-    note: "45 BC; L. Valerius Acisculus + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/2655"
-    target: "http://nomisma.org/id/c_clovi_praef_rrc"
-    note: "45 BC; C. Cluvius/Clovius + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3570"
-    target: "http://nomisma.org/id/l_papivs_celsvs_iii_vir_rrc"
-    note: "45 BC; L. Papius Celsus + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/2890"
-    target: "http://nomisma.org/id/palikanvs_rrc"
-    note: "45 BC; L. Lollius Palicanus + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/2613"
-    target: "http://nomisma.org/id/m_minat_sabin_pr_q_rrc"
-    note: "45 BC; M. Minatius Sabinus + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3543"
-    target: "http://nomisma.org/id/l_aemilivs_bvca_rrc"
-    note: "44 BC; L. Aemilius Buca + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3484"
-    target: "http://nomisma.org/id/c_cossvtivs_maridianvs_rrc"
-    note: "44 BC; C. Cossutius Maridianus + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/2482"
-    target: "http://nomisma.org/id/eppivs_leg_f_c_rrc"
-    note: "44 BC; M. Eppius + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3644"
-    target: "http://nomisma.org/id/p_sepvllivs_macer_rrc"
-    note: "44 BC; P. Sepullius Macer + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/2367"
-    target: "http://nomisma.org/id/m_mettivs_rrc"
-    note: "44 BC; M. Mettius + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/2852"
-    target: "http://nomisma.org/id/q_nasidivs_rrc"
-    note: "44 BC; Q. Nasidius + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/2392"
-    target: "http://nomisma.org/id/mark_antony"
-    note: "43 BC; M. Antonius (Mark Antony); Nomisma has general entry"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3630"
-    target: "http://nomisma.org/id/p_accoleivs_lariscolvs_rrc"
-    note: "43 BC; P. Accoleius Lariscolus + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/2497"
-    target: "http://nomisma.org/id/c_antonivs_m_f_pro_cos_rrc"
-    note: "43 BC; C. Antonius + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/2773"
-    target: "http://nomisma.org/id/l_plaet_cest_rrc"
-    note: "43 BC; L. Plaetorius Cestianus (Brutus-era proquaestor) + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/2458"
-    target: "http://nomisma.org/id/cassius"
-    note: "43 BC; C. Cassius Longinus (the assassin); Nomisma has general entry"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/2597"
-    target: "http://nomisma.org/id/augustus"
-    note: "43 BC; C. Iulius Caesar Octavianus (Augustus); Nomisma has imperial entry"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/2687"
-    target: "http://nomisma.org/id/l_flaminivs_chilo_iiii_vir_rrc"
-    note: "43 BC; L. Flaminius Chilo + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/2751"
-    target: "http://nomisma.org/id/costa_leg_rrc"
-    note: "43 BC; (Pedanius) Costa + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/2710"
-    target: "http://nomisma.org/id/l_cestivs_rrc"
-    note: "43 BC; L. Cestius + date exact"
-  - source: "http://romanrepublic.ac.uk/rdf/entity/Person/3648"
-    target: "http://nomisma.org/id/petillivs_capitolinvs_rrc"
-    note: "43 BC; Petillius Capitolinus + date exact"
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1976
+  target: http://nomisma.org/id/pompey
+  note: RRC moneyer 71, 49 BC; DPRR proconsul Hispania 77-49 BC
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1889
+  target: http://nomisma.org/id/q_c_m_p_i_rrc
+  note: RRC moneyer 81 BC; DPRR proconsul Hispania Ulterior 79-71 BC
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1957
+  target: http://nomisma.org/id/julius_caesar
+  note: RRC 468; DPRR moneyer 49-44 BC
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3502
+  target: http://nomisma.org/id/c_ivni_or_c_ivni_c_f_rrc
+  note: Monetalis 149 BC; name + filiation + date exact match
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3580
+  target: http://nomisma.org/id/l_sempr_pitio_rrc
+  note: Monetalis 148 BC; name + cognomen + date exact match
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3522
+  target: http://nomisma.org/id/c_ter_lvc_rrc
+  note: Monetalis 147 BC; name + cognomen + date exact match
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3489
+  target: http://nomisma.org/id/c_antesti_rrc
+  note: Monetalis 146 BC; name + date exact match
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1534
+  target: http://nomisma.org/id/m_ivni_rrc
+  note: Monetalis 145 BC; praenomen + nomen + date match
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3533
+  target: http://nomisma.org/id/cn_geli_rrc
+  note: Monetalis 138 BC; name + date exact match
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3515
+  target: http://nomisma.org/id/c_reni_rrc
+  note: Monetalis 138 BC; name + date exact match
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3534
+  target: http://nomisma.org/id/cn_lvcr_trio_rrc
+  note: Monetalis 136 BC; name + cognomen + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3545
+  target: http://nomisma.org/id/l_antes_gragv_rrc
+  note: Monetalis 136 BC; name + cognomen + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3519
+  target: http://nomisma.org/id/c_serveili_m_f_rrc
+  note: Monetalis 136 BC; name + filiation M.f. + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3582
+  target: http://nomisma.org/id/l_trebani_rrc
+  note: Monetalis 135 BC; name + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3491
+  target: http://nomisma.org/id/c_avg_rrc
+  note: Monetalis 135 BC; full name + cognomen Augurinus + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1639
+  target: http://nomisma.org/id/l_opeimi_rrc
+  note: Monetalis 131 BC; name + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3126
+  target: http://nomisma.org/id/m_opeimi_rrc
+  note: Monetalis 131 BC; name + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3611
+  target: http://nomisma.org/id/m_vargv_rrc
+  note: Monetalis 130 BC; name + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3675
+  target: http://nomisma.org/id/t_clovli_rrc
+  note: Monetalis 128 BC; name + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1677
+  target: http://nomisma.org/id/m_metellvs_q_f_rrc
+  note: Monetalis 127 BC; name + filiation Q.f. + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3622
+  target: http://nomisma.org/id/n_fabi_pictor_rrc
+  note: Monetalis 126 BC; full name + cognomen Pictor + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1682
+  target: http://nomisma.org/id/c_cato_rrc
+  note: Monetalis 123 BC; full name Porcius Cato + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3602
+  target: http://nomisma.org/id/m_fan_c_f_rrc
+  note: Monetalis 123 BC; name + filiation C.f. + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1696
+  target: http://nomisma.org/id/m_carbo_rrc
+  note: Monetalis 122 BC; full name Papirius Carbo + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1689
+  target: http://nomisma.org/id/carbo_rrc
+  note: Monetalis 121 BC; full name Cn. Papirius Carbo + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1679
+  target: http://nomisma.org/id/l_lic_rrc
+  note: Moneyer 118 BC; L. Licinius Crassus (cos. 95); RRC citation in both
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3531
+  target: http://nomisma.org/id/cn_cornel_l_f_sisena_rrc
+  note: Monetalis 118 BC; name + filiation L.f. + date overlap
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3573
+  target: http://nomisma.org/id/l_pomponi_cnf_rrc
+  note: Monetalis 118 BC; name + filiation Cn.f. + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1763
+  target: http://nomisma.org/id/cn_dom_2_rrc
+  note: Moneyer 118 BC; Cn. Domitius Ahenobarbus; cn_dom_1 is 189 BC (different person)
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3505
+  target: http://nomisma.org/id/c_mall_rrc
+  note: Monetalis 118 BC (DPRR/Broughton); Nomisma says late 90s; unique name, both
+    cite RRC
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3598
+  target: http://nomisma.org/id/m_calid_rrc
+  note: Monetalis 117 BC; name + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1834
+  target: http://nomisma.org/id/m_sergi_silvs_q_rrc
+  note: Monetalis 116 BC; full name + cognomen Silus + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3600
+  target: http://nomisma.org/id/m_cipi_m_f_rrc
+  note: Monetalis 114 BC; name + filiation M.f. + date overlap
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3500
+  target: http://nomisma.org/id/c_font_rrc
+  note: Monetalis 114 BC; name + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3617
+  target: http://nomisma.org/id/mn_aemilio_l_e_p_rrc
+  note: Monetalis 114 BC; praenomen Mn. + nomen Aemilius Lepidus + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1760
+  target: http://nomisma.org/id/p_nerva_rrc
+  note: Monetalis 113 BC; name + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1833
+  target: http://nomisma.org/id/l_torqva_q_rrc
+  note: Monetalis 113-112 BC; disambiguated from l_torqvat_rrc (65 BC) and l_manli_t_proq_rrc
+    (82 BC)
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1776
+  target: http://nomisma.org/id/t_deidi_rrc
+  note: Monetalis 113 BC; name + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3529
+  target: http://nomisma.org/id/cn_blasio_cn_f_rrc
+  note: Monetalis 112 BC; name + filiation Cn.f. + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3549
+  target: http://nomisma.org/id/l_caesi_rrc
+  note: Monetalis 112 BC; name + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1807
+  target: http://nomisma.org/id/ap_cl_rrc
+  note: Monetalis 111 BC; Ap. Claudius Pulcher + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1753
+  target: http://nomisma.org/id/c_pvlcher_rrc
+  note: Monetalis 110 BC; C. Claudius Pulcher + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1714
+  target: http://nomisma.org/id/l_memmi_rrc
+  note: Monetalis 109 BC; name + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1757
+  target: http://nomisma.org/id/mn_aqvil_rrc
+  note: Monetalis 109 BC; Mn. Aquillius + date exact; not mn_aqvil_mn_f_mn_n_rrc (71
+    BC)
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1819
+  target: http://nomisma.org/id/m_herenni_rrc
+  note: Monetalis 108 BC; name + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1815
+  target: http://nomisma.org/id/l_valeri_flacci_rrc
+  note: Monetalis 108 BC; full name + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1882
+  target: http://nomisma.org/id/l_scip_asiag_rrc
+  note: Monetalis 106 BC; full name Scipio Asiaticus + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2034
+  target: http://nomisma.org/id/l_thorivs_balbvs_rrc
+  note: Monetalis 105 BC; full name + cognomen Balbus + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1744
+  target: http://nomisma.org/id/c_coil_cald_rrc
+  note: Monetalis 104 BC; full name Coelius Caldus + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1766
+  target: http://nomisma.org/id/l_satvrn_rrc
+  note: Moneyer 104 BC; L. Appuleius Saturninus + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1901
+  target: http://nomisma.org/id/q_therm_mf_rrc
+  note: Monetalis 103 BC; Q. Minucius Thermus M.f. + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3604
+  target: http://nomisma.org/id/m_lvcili_rvf_rrc
+  note: Monetalis 101 BC; full name + cognomen Rufus + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3384
+  target: http://nomisma.org/id/l_senti_c_f_rrc
+  note: Monetalis 101 BC; name + filiation C.f. + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1795
+  target: http://nomisma.org/id/piso_q_rrc
+  note: Moneyer 100 BC; L. Calpurnius Piso Caesoninus + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3526
+  target: http://nomisma.org/id/c_vibivs_c_f_pansa_rrc
+  note: Monetalis 90 BC; C. Vibius C.f. Pansa + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1896
+  target: http://nomisma.org/id/l_piso_frvgi_rrc
+  note: Monetalis 90 BC; L. Calpurnius Piso Frugi + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2076
+  target: http://nomisma.org/id/l_titvri_l_f_sabinvs_rrc
+  note: Monetalis 89 BC; L. Titurius L.f. Sabinus + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1825
+  target: http://nomisma.org/id/l_ivli_l_f_caesar_rrc
+  note: Monetalis 103 BC; L. Iulius L.f. Caesar + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3550
+  target: http://nomisma.org/id/l_cassi_caeician_rrc
+  note: Monetalis 102 BC; L. Cassius Caecianus + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3561
+  target: http://nomisma.org/id/l_ivli_ii_rrc
+  note: Monetalis 101 BC; L. Iulius (30) + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1796
+  target: http://nomisma.org/id/caepio_q_rrc
+  note: Moneyer 100 BC; Q. Servilius Caepio + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3608
+  target: http://nomisma.org/id/m_serveili_c_f_rrc
+  note: Monetalis 100 BC; M. Servilius C.f. + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3645
+  target: http://nomisma.org/id/p_servili_m_f_rvlli_rrc
+  note: Monetalis 100 BC; P. Servilius M.f. Rullus + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3780
+  target: http://nomisma.org/id/lent_mar_f_rrc
+  note: Monetalis 100 BC; P. Cornelius Lentulus Marcellinus; not marcellinvs_rrc (50
+    BC)
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3676
+  target: http://nomisma.org/id/t_clovli_q_rrc
+  note: Monetalis 98 BC; T. Cloelius Ouf. + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3572
+  target: http://nomisma.org/id/l_pompon_molo_rrc
+  note: Monetalis 97 BC; L. Pomponius Molo + date match
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3449
+  target: http://nomisma.org/id/c_egnatvlei_c_f_q_rrc
+  note: Monetalis 97 BC; C. Egnatuleius + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2150
+  target: http://nomisma.org/id/l_metel_rrc
+  note: Monetalis 96 BC; L. Caecilius Metellus; Nomisma says late 90s
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3504
+  target: http://nomisma.org/id/c_mall_rrc
+  note: Monetalis 96 BC; C. Publicius Malleolus; Nomisma says late 90s
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3391
+  target: http://nomisma.org/id/a_albinvs_s_f_rrc
+  note: Monetalis 96 BC; A. Postumius Sp.f. Albinus; not a_post_a_f_s_n_albin_rrc
+    (81 BC)
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3488
+  target: http://nomisma.org/id/c_alli_bala_rrc
+  note: Monetalis 92 BC; C. Allius Bala + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3538
+  target: http://nomisma.org/id/d_silanvs_l_f_rrc
+  note: Monetalis 91 BC; D. Iunius L.f. Silanus + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3663
+  target: http://nomisma.org/id/q_titi_rrc
+  note: Monetalis 90 BC; Q. Titius + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3599
+  target: http://nomisma.org/id/m_cato_rrc
+  note: Monetalis 89 BC; M. Porcius Cato + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1947
+  target: http://nomisma.org/id/c_censorin_rrc
+  note: Monetalis 88 BC; C. Marcius Censorinus; not c_marcius_censorinus (Augustan
+    era)
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1892
+  target: http://nomisma.org/id/q_oppivs_pr_rrc
+  note: Monetalis 88 BC; Q. Oppius Q.f. + date match
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2064
+  target: http://nomisma.org/id/cn_lentvl_rrc
+  note: Monetalis 88 BC; Cn. Cornelius Lentulus Clodianus + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1898
+  target: http://nomisma.org/id/l_memies_l_f_gal_rrc
+  note: Monetalis 87 BC; L. Memmius L.f. Gal. + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3576
+  target: http://nomisma.org/id/l_rvbri_dosseni_rrc
+  note: Monetalis 87 BC; L. Rubrius Dossenus + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2020
+  target: http://nomisma.org/id/c_memies_l_f_gal_rrc
+  note: Monetalis 87 BC; C. Memmius L.f. Gal. + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1971
+  target: http://nomisma.org/id/l_crit_aed_pl_rrc
+  note: Moneyer 86 BC; L. Critonius + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3542
+  target: http://nomisma.org/id/gar_rrc
+  note: Monetalis 86 BC; C. Gargonius + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1972
+  target: http://nomisma.org/id/m_fan_aed_pl_rrc
+  note: Moneyer 86 BC; M. Fannius + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3562
+  target: http://nomisma.org/id/l_ivli_bvrsio_rrc
+  note: Monetalis 85 BC; L. Iulius Bursio + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3620
+  target: http://nomisma.org/id/mn_fontei_c_f_rrc
+  note: Monetalis 85 BC; Mn. Fonteius C.f. + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2018
+  target: http://nomisma.org/id/l_salinat_rrc
+  note: Monetalis 84 BC; L. Livius Salinator + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1987
+  target: http://nomisma.org/id/p_fovrivs_crassipes_rrc
+  note: Monetalis 84 BC; P. Furius Crassipes + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2050
+  target: http://nomisma.org/id/c_cassivs_rrc
+  note: Monetalis 84 BC; C. Cassius L.f. Longinus + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2103
+  target: http://nomisma.org/id/c_licinivs_l_f_macer_rrc
+  note: Monetalis 84 BC; C. Licinius L.f. Macer + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1746
+  target: http://nomisma.org/id/sulla
+  note: Moneyer 84 BC; L. Cornelius Sulla Felix; Nomisma has general entry (life c.
+    138-78 BC)
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3587
+  target: http://nomisma.org/id/laterens_rrc
+  note: Monetalis 83 BC; Iuventius Laterensis + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3510
+  target: http://nomisma.org/id/c_norbanvs_rrc
+  note: Monetalis 83 BC; C. Norbanus + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2248
+  target: http://nomisma.org/id/ti_clavd_ti_f_ap_n_rrc
+  note: 79 BC; Ti. Claudius Nero + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3569
+  target: http://nomisma.org/id/l_papi_rrc
+  note: 79 BC; L. Papius + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3509
+  target: http://nomisma.org/id/c_nae_balb_rrc
+  note: 79 BC; C. Naevius Balbus + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3551
+  target: http://nomisma.org/id/l_cassi_q_f_rrc
+  note: 78 BC; L. Cassius Q.f. Longinus + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3612
+  target: http://nomisma.org/id/m_voltei_m_f_rrc
+  note: 78 BC; M. Volteius M.f. + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3643
+  target: http://nomisma.org/id/p_satrienvs_rrc
+  note: 77 BC; P. Satrienus + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3256
+  target: http://nomisma.org/id/l_rvtili_flac_rrc
+  note: 77 BC; L. Rutilius Flaccus + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3577
+  target: http://nomisma.org/id/l_rvsti_rrc
+  note: 76 BC; L. Rustius + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3563
+  target: http://nomisma.org/id/l_lvcreti_trio_rrc
+  note: 76 BC; L. Lucretius Trio + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3557
+  target: http://nomisma.org/id/l_farsvlei_mensor_rrc
+  note: 75 BC; L. Farsuleius Mensor + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3176
+  target: http://nomisma.org/id/c_egnativs_cn_f_cn_n_maxsvmvs_rrc
+  note: 75 BC; C. Egnatius Cn.f. Maximus + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2290
+  target: http://nomisma.org/id/p_lent_p_f_l_n_q_rrc
+  note: 74 BC; P. Cornelius Lentulus Spinther + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3792
+  target: http://nomisma.org/id/c_postvmi_at_rrc
+  note: 74 BC; C. Postumius AT + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3554
+  target: http://nomisma.org/id/l_cossvti_c_f_sabvla_rrc
+  note: 74 BC; L. Cossutius C.f. Sabula + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3661
+  target: http://nomisma.org/id/q_pomponi_rvfvs_rrc
+  note: 73 BC; Q. Pomponius Rufus + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3653
+  target: http://nomisma.org/id/q_creperei_rocvs_rrc
+  note: 72 BC; Q. Crepereius M.f. Rocus + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3618
+  target: http://nomisma.org/id/mn_aqvil_mn_f_mn_n_rrc
+  note: 71 BC; Mn. Aquillius Mn.f. Crassus + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3547
+  target: http://nomisma.org/id/l_axsivs_l_f_naso_rrc
+  note: 71 BC; L. Axius L.f. Naso + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2344
+  target: http://nomisma.org/id/t_vettivs_sabinvs_rrc
+  note: 70 BC; T. Vettius Sabinus + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2321
+  target: http://nomisma.org/id/kaleni_rrc
+  note: 70 BC; Q. Fufius Calenus + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2191
+  target: http://nomisma.org/id/cordi_rrc
+  note: 70 BC; P. Mucius Scaevola Cordus + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2169
+  target: http://nomisma.org/id/m_plaetorivs_cest_rrc
+  note: 69 BC; M. Plaetorius M.f. Cestianus + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2179
+  target: http://nomisma.org/id/p_galb_aed_cvr_rrc
+  note: 69 BC; P. Sulpicius Galba + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3501
+  target: http://nomisma.org/id/c_hosidi_c_f_geta_iii_vir_rrc
+  note: 68 BC; C. Hosidius C.f. Geta + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2366
+  target: http://nomisma.org/id/c_piso_l_f_frvgi_rrc
+  note: 67 BC; C. Calpurnius L.f. Piso Frugi + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3660
+  target: http://nomisma.org/id/q_pomponi_mvsa_rrc
+  note: 66 BC; Q. Pomponius Musa + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2198
+  target: http://nomisma.org/id/l_torqvat_rrc
+  note: 65 BC; L. Manlius Torquatus (different from Person/1833 at 113 BC)
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2424
+  target: http://nomisma.org/id/l_rosci_fabati_rrc
+  note: 64 BC; L. Roscius Fabatus + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3558
+  target: http://nomisma.org/id/l_fvri_cn_f_brocchi_rrc
+  note: 63 BC; L. Furius Cn.f. Brocchus + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3080
+  target: http://nomisma.org/id/libo_rrc
+  note: 62 BC; L. Scribonius Libo + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2350
+  target: http://nomisma.org/id/pavllvs_lepidvs_rrc
+  note: 62 BC; L. Aemilius Lepidus Paullus + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2661
+  target: http://nomisma.org/id/m_piso_m_f_frvgi_rrc
+  note: 61 BC; M. Pupius Piso Frugi + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2341
+  target: http://nomisma.org/id/m_lepidvs_rrc
+  note: 61 BC; M. Aemilius Lepidus + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2265
+  target: http://nomisma.org/id/p_ypsae_rrc
+  note: 60 BC; P. Plautius Hypsaeus + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2403
+  target: http://nomisma.org/id/svfenas_rrc
+  note: 59 BC; M. Nonius Sufenas + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2082
+  target: http://nomisma.org/id/cn_len_q_rrc
+  note: 59 BC; Cn. Cornelius Lentulus Marcellinus + date match (also at 76 BC)
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2262
+  target: http://nomisma.org/id/m_scavr_rrc
+  note: 58 BC; M. Aemilius Scaurus + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3517
+  target: http://nomisma.org/id/c_serveil_c_f_rrc
+  note: 57 BC; C. Servilius C.f. + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3495
+  target: http://nomisma.org/id/c_considi_noniani_rrc
+  note: 57 BC; C. Considius Nonianus + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2534
+  target: http://nomisma.org/id/philippvs_rrc
+  note: 56 BC; L. Marcius Philippus + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2300
+  target: http://nomisma.org/id/favstvs_rrc
+  note: 56 BC; Faustus Cornelius Sulla + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2439
+  target: http://nomisma.org/id/c_memmi_c_f_rrc
+  note: 56 BC; C. Memmius + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2312
+  target: http://nomisma.org/id/cn_plancivs_aed_cvr_rrc
+  note: 55 BC; Cn. Plancius + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2372
+  target: http://nomisma.org/id/p_crassvs_m_f_rrc
+  note: 55 BC; P. Licinius M.f. Crassus + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2481
+  target: http://nomisma.org/id/q_cassivs_rrc
+  note: 55 BC; Q. Cassius Longinus + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2276
+  target: http://nomisma.org/id/a_plavtivs_aed_cvr_rrc
+  note: 55 BC; A. Plautius + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3636
+  target: http://nomisma.org/id/p_fonteivs_p_f_capito_rrc
+  note: 55 BC; P. Fonteius P.f. Capito + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2459
+  target: http://nomisma.org/id/brvtvs_rrc
+  note: 54 BC; M. Iunius Brutus (the assassin) + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2478
+  target: http://nomisma.org/id/q_pompei_rvfi_rrc
+  note: 54 BC; Q. Pompeius Rufus + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3615
+  target: http://nomisma.org/id/messal_f_rrc
+  note: 53 BC; M. Valerius Messalla + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2496
+  target: http://nomisma.org/id/l_vinci_rrc
+  note: 52 BC; L. Vinicius + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3671
+  target: http://nomisma.org/id/ser_svlp_rrc
+  note: 51 BC; Ser. Sulpicius + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2524
+  target: http://nomisma.org/id/caldvs_iiivir_rrc
+  note: 51 BC; C. Coelius Caldus (grandson of cos. 94) + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2572
+  target: http://nomisma.org/id/marcellinvs_rrc
+  note: 50 BC; P. Cornelius Lentulus Marcellinus + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3662
+  target: http://nomisma.org/id/q_sicinvs_iii_vir_rrc
+  note: 49 BC; Q. Sicinius + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2356
+  target: http://nomisma.org/id/l_lentvlvs_rrc
+  note: 49 BC; L. Cornelius Lentulus Crus + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2537
+  target: http://nomisma.org/id/c_coponivs_pr_rrc
+  note: 49 BC; C. Coponius + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2541
+  target: http://nomisma.org/id/neri_q_vrb_rrc
+  note: 49 BC; Cn. Nerius + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3616
+  target: http://nomisma.org/id/mn_acilivs_iii_vir_rrc
+  note: 49 BC; Mn. Acilius + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2489
+  target: http://nomisma.org/id/albinvs_brvti_f_rrc
+  note: 48 BC; D. Iunius Brutus Albinus + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2495
+  target: http://nomisma.org/id/c_vibivs_c_f_c_n_pansa_rrc
+  note: 48 BC; C. Vibius Pansa Caetronianus + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2684
+  target: http://nomisma.org/id/l_hostilivs_saserna_rrc
+  note: 48 BC; L. Hostilius Saserna + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3490
+  target: http://nomisma.org/id/c_antivs_c_f_restio_rrc
+  note: 47 BC; C. Antius C.f. Restio + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2347
+  target: http://nomisma.org/id/q_metel_pivs_scipio_imp_rrc
+  note: 47-46 BC; Q. Caecilius Metellus Pius Scipio + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3474
+  target: http://nomisma.org/id/a_licinivs_nerva_iii_vir_rrc
+  note: 47 BC; A. Licinius Nerva + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3775
+  target: http://nomisma.org/id/l_plavtivs_plancvs_rrc
+  note: 47 BC; L. Plautius Plancus + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2241
+  target: http://nomisma.org/id/m_cato_pro_pr_rrc
+  note: 47-46 BC; M. Porcius Cato Uticensis + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2456
+  target: http://nomisma.org/id/p_crassvs_ivn_leg_pro_pr_rrc
+  note: 47-46 BC; P. Licinius Crassus Iunianus + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2449
+  target: http://nomisma.org/id/a_hirtivs_pr_rrc
+  note: 46 BC; A. Hirtius + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2623
+  target: http://nomisma.org/id/m_poblici_leg_pro_pr_rrc
+  note: 46-45 BC; M. Publicius + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2946
+  target: http://nomisma.org/id/mn_cordivs_rvfvs_iiivir_rrc
+  note: 46 BC; Mn. Cordius Rufus + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3674
+  target: http://nomisma.org/id/t_carisivs_iii_vir_rrc
+  note: 46 BC; T. Carisius + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3496
+  target: http://nomisma.org/id/c_considivs_paetvs_rrc
+  note: 46 BC; C. Considius Paetus + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2450
+  target: http://nomisma.org/id/l_planc_praef_vrb_rrc
+  note: 45 BC; L. Munatius Plancus + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3584
+  target: http://nomisma.org/id/l_valerivs_aciscvlvs_rrc
+  note: 45 BC; L. Valerius Acisculus + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2655
+  target: http://nomisma.org/id/c_clovi_praef_rrc
+  note: 45 BC; C. Cluvius/Clovius + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3570
+  target: http://nomisma.org/id/l_papivs_celsvs_iii_vir_rrc
+  note: 45 BC; L. Papius Celsus + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2890
+  target: http://nomisma.org/id/palikanvs_rrc
+  note: 45 BC; L. Lollius Palicanus + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2613
+  target: http://nomisma.org/id/m_minat_sabin_pr_q_rrc
+  note: 45 BC; M. Minatius Sabinus + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3543
+  target: http://nomisma.org/id/l_aemilivs_bvca_rrc
+  note: 44 BC; L. Aemilius Buca + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3484
+  target: http://nomisma.org/id/c_cossvtivs_maridianvs_rrc
+  note: 44 BC; C. Cossutius Maridianus + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2482
+  target: http://nomisma.org/id/eppivs_leg_f_c_rrc
+  note: 44 BC; M. Eppius + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3644
+  target: http://nomisma.org/id/p_sepvllivs_macer_rrc
+  note: 44 BC; P. Sepullius Macer + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2367
+  target: http://nomisma.org/id/m_mettivs_rrc
+  note: 44 BC; M. Mettius + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2852
+  target: http://nomisma.org/id/q_nasidivs_rrc
+  note: 44 BC; Q. Nasidius + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2392
+  target: http://nomisma.org/id/mark_antony
+  note: 43 BC; M. Antonius (Mark Antony); Nomisma has general entry
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3630
+  target: http://nomisma.org/id/p_accoleivs_lariscolvs_rrc
+  note: 43 BC; P. Accoleius Lariscolus + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2497
+  target: http://nomisma.org/id/c_antonivs_m_f_pro_cos_rrc
+  note: 43 BC; C. Antonius + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2773
+  target: http://nomisma.org/id/l_plaet_cest_rrc
+  note: 43 BC; L. Plaetorius Cestianus (Brutus-era proquaestor) + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2458
+  target: http://nomisma.org/id/cassius
+  note: 43 BC; C. Cassius Longinus (the assassin); Nomisma has general entry
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2597
+  target: http://nomisma.org/id/augustus
+  note: 43 BC; C. Iulius Caesar Octavianus (Augustus); Nomisma has imperial entry
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2687
+  target: http://nomisma.org/id/l_flaminivs_chilo_iiii_vir_rrc
+  note: 43 BC; L. Flaminius Chilo + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2751
+  target: http://nomisma.org/id/costa_leg_rrc
+  note: 43 BC; (Pedanius) Costa + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2710
+  target: http://nomisma.org/id/l_cestivs_rrc
+  note: 43 BC; L. Cestius + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3648
+  target: http://nomisma.org/id/petillivs_capitolinvs_rrc
+  note: 43 BC; Petillius Capitolinus + date exact
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1795
+  target: http://nomisma.org/id/l_piso_frvgi_rrc
+  note: 'DPRR: CALP1795 L. Calpurnius (89) Piso (Caesoninus) (-100 BC); Nomisma: L.
+    Calpurnius Piso Frugi'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1744
+  target: http://nomisma.org/id/caldvs_iiivir_rrc
+  note: 'DPRR: COEL1744 C. Coelius (12) C. f. C. n. Caldus (-104 BC); Nomisma: C.
+    Coelius Caldus'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3559
+  target: http://nomisma.org/id/l_h_tvb_rrc
+  note: 'DPRR: HOST3559 L. Hostilius (cf. 26) Tubulus (-105 BC); Nomisma: L. Hostilius
+    Tubulus'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1774
+  target: http://nomisma.org/id/l_cot_rrc
+  note: 'DPRR: AURE1774 L. Aurelius (100) Cotta (-105 BC); Nomisma: L. Aurelius Cotta'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1878
+  target: http://nomisma.org/id/q_lvtati_cerco_q_rrc
+  note: 'DPRR: LUTA1878 Q. Lutatius (14) Cerco (-109 BC); Nomisma: Q. Lutatius Cerco'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2687
+  target: http://nomisma.org/id/l_flamini_cilo_rrc
+  note: 'DPRR: FLAM2687 L. Flaminius (7) Chilo (-109 BC); Nomisma: L. Flaminius Chilo'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3638
+  target: http://nomisma.org/id/p_laeca_rrc
+  note: 'DPRR: PORC3638 P. Porcius (21) Laeca (-110 BC); Nomisma: P. Porcius Laeca'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1745
+  target: http://nomisma.org/id/t_manl_rrc
+  note: 'DPRR: MANL1745 T. Manlius (61, cf. 16) Mancinus (-111 BC); Nomisma: T. Manlius
+    Mancinus'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3574
+  target: http://nomisma.org/id/l_porci_lici_rrc
+  note: 'DPRR: PORC3574 L. Porcius (25) Pap. Licinus (-118 BC); Nomisma: L. Porcius
+    Licinus'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3603
+  target: http://nomisma.org/id/m_fovri_l_f_phili_rrc
+  note: 'DPRR: FURI3603 M. Furius (79) L. f. Philus (-119 BC); Nomisma: M. Furius
+    Philus'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1687
+  target: http://nomisma.org/id/q_minv_rvf_rrc
+  note: 'DPRR: MINU1687 Q. Minucius (56) Rufus (-122 BC); Nomisma: Q. Minucius Rufus'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2959
+  target: http://nomisma.org/id/q_fabi_labeo_rrc
+  note: 'DPRR: FABI2959 Q. Fabius (92) Labeo (-124 BC); Nomisma: Q. Fabius Labeo'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1680
+  target: http://nomisma.org/id/mn_acili_balbvs_rrc
+  note: 'DPRR: ACIL1680 M''. Acilius (26) M''.? f. L. n. Balbus (-125 BC); Nomisma:
+    Mn. Acilius Balbus'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1701
+  target: http://nomisma.org/id/c_metellvs_rrc
+  note: 'DPRR: CAEC1701 C. Caecilius (84) Q. f. Q. n. Metellus Caprarius (-125 BC);
+    Nomisma: C. Caecilius Metellus Caprarius'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3607
+  target: http://nomisma.org/id/m_porc_laeca_rrc
+  note: 'DPRR: PORC3607 M. Porcius (17) Pap. Laeca (-125 BC); Nomisma: M. Porcius
+    Laeca'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3518
+  target: http://nomisma.org/id/c_serveili_rrc
+  note: 'DPRR: SERV3518 C. Servilius (13, 91) Vatia (-127 BC); Nomisma: C. Servilius
+    Vatia'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1615
+  target: http://nomisma.org/id/q_max_rrc
+  note: 'DPRR: FABI1615 Q. Fabius (111) Q. Serviliani f. Q. n. Maximus Ebur (-127
+    BC); Nomisma: Q. Fabius Maximus'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1800
+  target: http://nomisma.org/id/l_post_alb_rrc
+  note: 'DPRR: POST1800 L. Postumius (43) L. f. Sp. n. Albinus (-131 BC); Nomisma:
+    L. Postumius Albinus'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3589
+  target: http://nomisma.org/id/m_abvri_mf_gem_rrc
+  note: 'DPRR: ABUR3589 M. Aburius (cf. 2) M. f. Geminus (-132 BC); Nomisma: M. Aburius
+    Geminus'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3486
+  target: http://nomisma.org/id/c_abvri_gem_rrc
+  note: 'DPRR: ABUR3486 C. Aburius (cf. 1) Geminus (-134 BC); Nomisma: C. Aburius
+    Geminus'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3595
+  target: http://nomisma.org/id/m_avreli_cota_rrc
+  note: 'DPRR: AURE3595 M. Aurelius (105) Cotta (-139 BC); Nomisma: M. Aurelius Cotta'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3594
+  target: http://nomisma.org/id/m_avf_rvs_rrc
+  note: 'DPRR: AUFI3594 M. Aufidius (35) (M.? f.) Rusticus (-140 BC); Nomisma: M.
+    Aufidius Rusticus'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1669
+  target: http://nomisma.org/id/l_atili_nom_rrc
+  note: 'DPRR: ATIL1669 L. Atilius (44, cf. Nomentanus 1) Cor. Nomentanus (-141 BC);
+    Nomisma: L. Atilius Nomentanus'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1616
+  target: http://nomisma.org/id/an_rvf_rrc
+  note: 'DPRR: ANNI1616 T. Annius (78) T. f. T. n. Rufus (-144 BC); Nomisma: T. Annius
+    Rufus'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3593
+  target: http://nomisma.org/id/m_atili_saran_rrc
+  note: 'DPRR: ATIL3593 M. Atilius (67, cf. 22) Saranus (-148 BC); Nomisma: M. Atilius
+    Saranus'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3656
+  target: http://nomisma.org/id/q_marc_libo_rrc
+  note: 'DPRR: MARC3656 Q. Marcius (70) Libo (-148 BC); Nomisma: Q. Marcius Libo'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3629
+  target: http://nomisma.org/id/p_svla_rrc
+  note: 'DPRR: CORN3629 P. Cornelius (cf. 384) Sulla (-151 BC); Nomisma: P. Cornelius
+    Sulla'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1390
+  target: http://nomisma.org/id/p_blas_rrc
+  note: 'DPRR: CORN1390 P. Cornelius (76) P. f. Blasio (-169 BC); Nomisma: P. Cornelius
+    Blasio'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3778
+  target: http://nomisma.org/id/c_sax_rrc
+  note: 'DPRR: CLUV3778 C. Cluvius (cf. 14) (C.? f.) Saxula (-169 BC); Nomisma: C.
+    Cluvius Saxula'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1323
+  target: http://nomisma.org/id/lfp_rrc
+  note: 'DPRR: FURI1323 L. Furius (77) Philus (-189 BC); Nomisma: L. Furius Philus'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/959
+  target: http://nomisma.org/id/ma_rrc
+  note: 'DPRR: MANL0959 P. Manlius (98) Vulso (-210 BC); Nomisma: P. Manlius Vulso'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/980
+  target: http://nomisma.org/id/cn_co_rrc
+  note: 'DPRR: CORN0980 Cn. Cornelius (131) Dolabella (-211 BC); Nomisma: Cn. Cornelius
+    Dolabella'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3670
+  target: http://nomisma.org/id/scarpvs_imp_rrc
+  note: 'DPRR: PINA3670 L. Pinarius (27) Scarpus (-31 BC); Nomisma: L. Pinarius Scarpus'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2638
+  target: http://nomisma.org/id/p_ventidi_pont_imp_rrc
+  note: 'DPRR: VENT2638 P. Ventidius (5) P. f. Fab. Bassus (-39 BC); Nomisma: P. Ventidius
+    Bassus'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2823
+  target: http://nomisma.org/id/l_atratinvs_avgvr_rrc
+  note: 'DPRR: SEMP2823 L. Sempronius (26) L. f. L. n. Fal. Atratinus (-39 BC); Nomisma:
+    L. Sempronius Atratinus'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3061
+  target: http://nomisma.org/id/q_voconivs_vitvlvs_q_design_rrc
+  note: 'DPRR: VOCO3061 Q. Voconius (5) Vitulus (-39 BC); Nomisma: Q. Voconius Vitulus'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2788
+  target: http://nomisma.org/id/q_salvivs_imp_cos_desig_rrc
+  note: 'DPRR: SALV2788 Q. Salvidienus (4) Rufus Salvius (-40 BC); Nomisma: Q. Salvidienus
+    Rufus'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2777
+  target: http://nomisma.org/id/q_labienvs_parthicvs_imp_rrc
+  note: 'DPRR: LABI2777 Q. Labienus (5) T. f. Parthicus (-40 BC); Nomisma: Q. Labienus
+    Parthicus'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3052
+  target: http://nomisma.org/id/ti_sempronivs_graccvs_rrc
+  note: 'DPRR: SEMP3052 Ti. Sempronius (56) Gracchus (-40 BC); Nomisma: Ti. Sempronius
+    Gracchus'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3097
+  target: http://nomisma.org/id/c_clodivs_c_f_vestalis_rrc
+  note: 'DPRR: CLOD3097 C. Clodius (62) C. f. Arn. Vestalis (-41 BC); Nomisma: C.
+    Clodius Vestalis'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3512
+  target: http://nomisma.org/id/c_nvmonivs_vaala_rrc
+  note: 'DPRR: NUMO3512 C. Numonius (1) Vaala (-41 BC); Nomisma: C. Numonius Vaala'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3581
+  target: http://nomisma.org/id/l_servivs_revfvs_rrc
+  note: 'DPRR: SERV3581 L. Servius (6) Pap. Rufus (-41 BC); Nomisma: L. Servius Rufus'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3592
+  target: http://nomisma.org/id/m_arrivs_secvndvs_rrc
+  note: 'DPRR: ARRI3592 M. Arrius (34) Secundus (-41 BC); Nomisma: M. Arrius Secundus'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2819
+  target: http://nomisma.org/id/balbvs_pro_pr_rrc
+  note: 'DPRR: CORN2819 L. Cornelius (69) L. f. Clu. Balbus (-41 BC); Nomisma: L.
+    Cornelius Balbus'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2802
+  target: http://nomisma.org/id/l_gell_q_p_rrc
+  note: 'DPRR: GELL2802 L. Gellius (18) L. f. L. n. Poplicola (-41 BC); Nomisma: L.
+    Gellius Poplicola'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2800
+  target: http://nomisma.org/id/m_barbat_q_p_rrc
+  note: 'DPRR: BARB2800 M. Barbatius (1) Pollio (-41 BC); Nomisma: M. Barbatius Pollio'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2806
+  target: http://nomisma.org/id/m_nerva_proq_p_rrc
+  note: 'DPRR: COCC2806 M. Cocceius (13) Pap. Nerva (-41 BC); Nomisma: M. Cocceius
+    Nerva'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2588
+  target: http://nomisma.org/id/mvrcvs_imp_rrc
+  note: 'DPRR: STAI2588 L. Staius (2) Vol. Murcus (-42 BC); Nomisma: L. Staius Murcus'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2720
+  target: http://nomisma.org/id/casca_longvs_rrc
+  note: 'DPRR: SERV2720 P. Servilius (53) Casca Longus (-43 BC); Nomisma: P. Servilius
+    Casca Longus'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2241
+  target: http://nomisma.org/id/m_cato_rrc
+  note: 'DPRR: PORC2241 M. Porcius (16) M. f. M. n. Pap. Cato (Uticensis) (-47 BC);
+    Nomisma: M. Porcius Cato'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2495
+  target: http://nomisma.org/id/c_vibivs_c_f_pansa_rrc
+  note: 'DPRR: VIBI2495 C. Vibius (16) C. f. C. n. Tro. Pansa Caetronianus (-48 BC);
+    Nomisma: C. Vibius Pansa'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2397
+  target: http://nomisma.org/id/c_marc_cos_rrc
+  note: 'DPRR: CLAU2397 C. Claudius (217) M. f. M. n. Marcellus (-49 BC); Nomisma:
+    C. Claudius Marcellus'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2524
+  target: http://nomisma.org/id/c_coil_cald_rrc
+  note: 'DPRR: COEL2524 C. Coelius (14) Caldus (-51 BC); Nomisma: C. Coelius Caldus'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2372
+  target: http://nomisma.org/id/p_crassvs_ivn_leg_pro_pr_rrc
+  note: 'DPRR: LICI2372 P. Licinius (63) M. f. (P.? n.) Crassus (-55 BC); Nomisma:
+    P. Licinius Crassus Iunianus Damasippus'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2082
+  target: http://nomisma.org/id/cn_lentvl_rrc
+  note: 'DPRR: CORN2082 Cn. Cornelius (228, 24) P. f. Lentulus Marcellinus (-59 BC);
+    Nomisma: Cn. Cornelius Lentulus Clodianus'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2518
+  target: http://nomisma.org/id/libo_rrc
+  note: 'DPRR: SCRI2518 L. Scribonius (20) L. f. Libo (-62 BC); Nomisma: L. Scribonius
+    Libo'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2025
+  target: http://nomisma.org/id/c_mall_rrc
+  note: 'DPRR: PUBL2025 C. Publicius (9) Q. f. Malleolus (-80 BC); Nomisma: C. Publicius
+    Malleolus'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3586
+  target: http://nomisma.org/id/l_vol_l_f_strab_rrc
+  note: 'DPRR: VOLU3586 L. Volumnius (3, 14) L. f. Strabo (-81 BC); Nomisma: L. Volumnius
+    Strabo'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3507
+  target: http://nomisma.org/id/c_mari_c_f_capit_rrc
+  note: 'DPRR: MARI3507 C. Marius (33) Capito (-81 BC); Nomisma: C. Marius Capito'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2013
+  target: http://nomisma.org/id/l_fabi_l_f_hisp_rrc
+  note: 'DPRR: FABI2013 L. Fabius (84) L. f. Hispaniensis (-82 BC); Nomisma: L. Fabius
+    Hispaniensis'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3552
+  target: http://nomisma.org/id/l_censorin_rrc
+  note: 'DPRR: MARC3552 L. Marcius (47) Censorinus (-82 BC); Nomisma: L. Marcius Censorinus'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3506
+  target: http://nomisma.org/id/c_mamil_limetanvs_c_f_rrc
+  note: 'DPRR: MAMI3506 C. Mamilius (8) Q. f. M. n. Pap. Limetanus (-82 BC); Nomisma:
+    C. Mamilius Limetanus'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1984
+  target: http://nomisma.org/id/q_anto_balb_pr_rrc
+  note: 'DPRR: ANTO1984 Q. Antonius (41) Balbus (-83 BC); Nomisma: Q. Antonius Balbus'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2064
+  target: http://nomisma.org/id/cn_len_q_rrc
+  note: 'DPRR: CORN2064 Cn. Cornelius (216) Cn. f. Cn. n. Lentulus Clodianu (-88 BC);
+    Nomisma: Cn. Cornelius Lentulus Marcellinus'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1896
+  target: http://nomisma.org/id/piso_q_rrc
+  note: 'DPRR: CALP1896 L. Calpurnius (98) Piso Frugi (-90 BC); Nomisma: L. Calpurnius
+    Piso (Caesoninus)'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3526
+  target: http://nomisma.org/id/c_vibivs_c_f_c_n_pansa_rrc
+  note: 'DPRR: VIBI3526 C. Vibius (15) C. f. Pansa (-90 BC); Nomisma: C. Vibius Pansa
+    Caetronianus'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3640
+  target: http://nomisma.org/id/p_mae_ant_mf_rrc
+  note: 'DPRR: MAEN3640 P. Maenius (18) Ant[ias] (-132 BC); Nomisma: P. Maenius Ant[ias]'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3544
+  target: http://nomisma.org/id/l_pl_h_rrc
+  note: 'DPRR: PL[A3544 L. Pl[autius] (cf. 19) H[ypsaeus] (-192 BC); Nomisma: L. Pl[autius]
+    H[ypsaeus]'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2458
+  target: http://nomisma.org/id/c_cassivs_rrc
+  note: 'DPRR: CASS2458 C. Cassius (59) Longinus (-43 BC); Nomisma: C. Cassius L.f.Longinus'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2744
+  target: http://nomisma.org/id/c_flav_hemic_leg_pro_pr_rrc
+  note: 'DPRR: FLAV2744 C. Flavius (11) Hemicillus (-43 BC); Nomisma: C. Flavius Hemic'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2456
+  target: http://nomisma.org/id/p_crassvs_m_f_rrc
+  note: 'DPRR: LICI2456 P. Licinius (65, 75) Crassus Iunianus Damasippus =  (-47 BC);
+    Nomisma: P. Licinius Crassus'
