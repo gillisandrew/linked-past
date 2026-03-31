@@ -232,11 +232,14 @@ class PersonDisambiguator:
     """Scores DPRR person candidates against contextual evidence."""
 
     def _compute_weighted_score(self, signals: dict[str, SignalResult]) -> float:
-        """Compute weighted score with redistribution for absent signals.
+        """Compute weighted score with coverage penalty for sparse evidence.
 
-        Absent signals (is_absent=True) have their weight redistributed
-        proportionally to present signals.
+        When most signals are absent, the raw normalized score is discounted
+        by a coverage factor (proportion of total weight that is present).
+        This prevents a candidate with only temporal overlap from tying with
+        one that has filiation + temporal.
         """
+        total_weight = sum(sig.weight for sig in signals.values())
         present_weight = 0.0
         weighted_sum = 0.0
 
@@ -245,9 +248,12 @@ class PersonDisambiguator:
                 present_weight += sig.weight
                 weighted_sum += sig.weight * sig.score
 
-        if present_weight == 0.0:
+        if present_weight == 0.0 or total_weight == 0.0:
             return 0.0
-        return weighted_sum / present_weight
+
+        raw_score = weighted_sum / present_weight
+        coverage = present_weight / total_weight  # 0.0–1.0
+        return raw_score * coverage
 
     @staticmethod
     def _classify_confidence(top_score: float, gap: float) -> str:
@@ -351,6 +357,31 @@ class PersonDisambiguator:
 # ── Context extraction ──────────────────────────────────────────────────────
 
 
+_OFFICE_ABBREV = {
+    "cos.": "consul", "cos": "consul", "consul": "consul",
+    "pr.": "praetor", "pr": "praetor", "praetor": "praetor",
+    "q.": "quaestor", "q": "quaestor", "quaestor": "quaestor",
+    "aed.": "aedilis", "aed": "aedilis", "aedilis": "aedilis",
+    "tr. pl.": "tribunus plebis", "tr.pl.": "tribunus plebis",
+    "tribunus plebis": "tribunus plebis",
+    "procos.": "proconsul", "procos": "proconsul", "proconsul": "proconsul",
+    "propr.": "propraetor", "propr": "propraetor", "propraetor": "propraetor",
+    "leg.": "legatus", "leg": "legatus", "legatus": "legatus",
+}
+
+
+def _normalize_office_input(office: str) -> str | None:
+    """Normalize an office input from the user or inscription text.
+
+    First tries parse_office (regex-based, safe for inscription text).
+    Falls back to direct abbreviation lookup (for user-provided short forms like 'q.').
+    """
+    result = parse_office(office)
+    if result:
+        return result
+    return _OFFICE_ABBREV.get(office.lower().strip())
+
+
 def extract_context_from_fields(
     name: str,
     filiation: str | None = None,
@@ -366,7 +397,7 @@ def extract_context_from_fields(
         normalized = name
 
     parsed = parse_roman_name(normalized)
-    parsed_office = parse_office(office) if office else None
+    parsed_office = _normalize_office_input(office) if office else None
 
     return PersonContext(
         name=name,

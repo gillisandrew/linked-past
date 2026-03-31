@@ -180,20 +180,43 @@ class TestPersonDisambiguator:
         assert score_b < 0.2
         assert score_a > score_b
 
-    def test_weight_redistribution_missing_signals(self):
-        """When a signal has no data, its weight redistributes to others."""
+    def test_coverage_penalty_for_sparse_evidence(self):
+        """When most signals are absent, score is penalized by coverage factor."""
         disambiguator = PersonDisambiguator()
 
         signals = {
-            "filiation": SignalResult(0.0, 0.4, "no filiation", True),  # absent
+            "filiation": SignalResult(0.0, 0.4, "no filiation", True),
             "career": SignalResult(1.0, 0.3, "consul confirmed", False),
-            "geography": SignalResult(0.0, 0.2, "no findspot", True),  # absent
+            "geography": SignalResult(0.0, 0.2, "no findspot", True),
             "temporal": SignalResult(1.0, 0.1, "within era", False),
         }
 
         score = disambiguator._compute_weighted_score(signals)
-        # career (0.3) + temporal (0.1) = 0.4 available → normalized to 1.0
-        assert score == pytest.approx(1.0, abs=0.01)
+        # raw = 1.0, coverage = 0.4/1.0 = 0.4 → final = 0.4
+        assert score == pytest.approx(0.4, abs=0.01)
+
+    def test_full_evidence_no_penalty(self):
+        """With all signals present, coverage = 1.0, no penalty."""
+        disambiguator = PersonDisambiguator()
+        signals = {
+            "filiation": SignalResult(1.0, 0.4, "match", False),
+            "career": SignalResult(1.0, 0.3, "match", False),
+            "geography": SignalResult(1.0, 0.2, "match", False),
+            "temporal": SignalResult(1.0, 0.1, "match", False),
+        }
+        assert disambiguator._compute_weighted_score(signals) == pytest.approx(1.0, abs=0.01)
+
+    def test_single_signal_heavily_penalized(self):
+        """A candidate with only temporal signal should score much lower."""
+        disambiguator = PersonDisambiguator()
+        signals = {
+            "filiation": SignalResult(0.0, 0.4, "absent", True),
+            "career": SignalResult(0.0, 0.3, "absent", True),
+            "geography": SignalResult(0.0, 0.2, "absent", True),
+            "temporal": SignalResult(1.0, 0.1, "within era", False),
+        }
+        # raw = 1.0, coverage = 0.1/1.0 = 0.1 → final = 0.1
+        assert disambiguator._compute_weighted_score(signals) == pytest.approx(0.1, abs=0.01)
 
     def test_all_signals_absent(self):
         """When all signals are absent, score is 0."""
