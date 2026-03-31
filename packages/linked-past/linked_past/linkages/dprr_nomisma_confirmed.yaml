@@ -837,3 +837,35 @@ links:
   target: http://nomisma.org/id/p_crassvs_m_f_rrc
   note: 'DPRR: LICI2456 P. Licinius (65, 75) Crassus Iunianus Damasippus =  (-47 BC);
     Nomisma: P. Licinius Crassus'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1424
+  target: http://nomisma.org/id/q_me_rrc
+  note: 'DPRR: CAEC1424 Q. Caecilius (94) Q. f. L. n. Metellus Macedonicus; Nomisma:
+    Q. Caecilius Metellus Macedonicus; disambiguated by date_proximity (3yr)'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3524
+  target: http://nomisma.org/id/c_val_c_f_flac_rrc
+  note: 'DPRR: VALE3524 C. Valerius (167) C. f. Flaccus; Nomisma: C. Valerius Flaccus;
+    disambiguated by date_proximity (0yr)'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/3532
+  target: http://nomisma.org/id/cn_dom_2_rrc
+  note: 'DPRR: DOMI3532 Cn. Domitius (cf. 20, Supb.3.349) (Calvinus?, Aheno; Nomisma:
+    Cn. Domitius Ahenobarbus; disambiguated by date_proximity (12yr)'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/1821
+  target: http://nomisma.org/id/c_val_fla_imperat_rrc
+  note: 'DPRR: VALE1821 C. Valerius (168) C. f. L. n. Flaccus; Nomisma: C. Valerius
+    Flaccus; disambiguated by date_proximity (0yr)'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2347
+  target: http://nomisma.org/id/q_c_m_p_i_rrc
+  note: 'DPRR: CAEC2347 Q. Caecilius (99) Q. f. Q. n. Fab. Metellus Pius Sc; Nomisma:
+    Q. Caecilius Metellus Pius; disambiguated by date_proximity (34yr)'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2394
+  target: http://nomisma.org/id/marcellinvs_rrc
+  note: 'DPRR: CORN2394 P. Cornelius (239) P. f. Lentulus Spinther; Nomisma: P. Cornelius
+    Lentulus Marcellinus; disambiguated by date_proximity (8yr)'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2699
+  target: http://nomisma.org/id/cn_domitivs_l_f_imp_rrc
+  note: 'DPRR: DOMI2699 Cn. Domitius (23) L. f. Cn. n. Ahenobarbus; Nomisma: Cn. Domitius
+    Ahenobarbus; disambiguated by date_proximity (0yr)'
+- source: http://romanrepublic.ac.uk/rdf/entity/Person/2313
+  target: http://nomisma.org/id/dom_cos_iter_imp_rrc
+  note: 'DPRR: DOMI2313 Cn. Domitius (43) M. f. M. n. Men. Calvinus; Nomisma: Cn.
+    Domitius Calvinus; disambiguated by 1:1 (?)'
