@@ -625,6 +625,21 @@ def create_mcp_server() -> FastMCP:
                     meta = registry.get_metadata(ds_name)
                     lines.append(f"- **Initialized:** {meta.get('triple_count', '?')} triples loaded")
                     lines.append(f"- **Version:** {meta.get('version', 'unknown')}")
+
+                    # Hot-reload: add new dataset to embedding index
+                    if app.embeddings:
+                        app.embeddings.add(ds_name, "dataset", f"{plugin.display_name}: {plugin.description}")
+                        if hasattr(plugin, "_examples"):
+                            for ex in plugin._examples:
+                                app.embeddings.add(ds_name, "example", f"{ex['question']}\n{ex['sparql']}")
+                        if hasattr(plugin, "_tips"):
+                            for tip in plugin._tips:
+                                app.embeddings.add(ds_name, "tip", f"{tip['title']}: {tip['body']}")
+                        if hasattr(plugin, "_schemas"):
+                            for cls_name, cls_data in plugin._schemas.items():
+                                app.embeddings.add(ds_name, "schema", f"{cls_name}: {cls_data.get('comment', '')}")
+                        app.embeddings.build()
+                        lines.append("- **Embeddings:** rebuilt")
                 except Exception as e:
                     lines.append(f"- **Error:** {e}")
                 lines.append("")
