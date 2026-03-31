@@ -655,16 +655,149 @@ def create_mcp_server() -> FastMCP:
     return mcp
 
 
-def main():
-    import argparse
-    parser = argparse.ArgumentParser(description="Linked Past MCP Server")
-    parser.add_argument("--host", default="127.0.0.1", help="Bind host (default: 127.0.0.1)")
-    parser.add_argument("--port", type=int, default=8000, help="Bind port (default: 8000)")
-    args = parser.parse_args()
+def _cmd_serve(args):
+    """Start the MCP server."""
     mcp = create_mcp_server()
     mcp.settings.host = args.host
     mcp.settings.port = args.port
     mcp.run(transport="streamable-http")
+
+
+def _cmd_init(args):
+    """Download and initialize selected datasets."""
+    import sys
+
+    data_dir = get_data_dir()
+    registry = DatasetRegistry(data_dir=data_dir)
+
+    # Register all plugins
+    registry.register(DPRRPlugin())
+    registry.register(PleiadesPlugin())
+    registry.register(PeriodOPlugin())
+    registry.register(NomismaPlugin())
+    registry.register(CRROPlugin())
+    registry.register(OCREPlugin())
+    registry.register(EDHPlugin())
+
+    available = registry.list_datasets()
+
+    if args.datasets:
+        selected = args.datasets
+        invalid = [d for d in selected if d not in available]
+        if invalid:
+            print(f"Unknown datasets: {', '.join(invalid)}")
+            print(f"Available: {', '.join(available)}")
+            sys.exit(1)
+    elif args.all:
+        selected = available
+    else:
+        # Interactive selection
+        print("Available datasets:\n")
+        for i, name in enumerate(available, 1):
+            plugin = registry.get_plugin(name)
+            from linked_past.core.store import is_initialized
+
+            store_path = data_dir / name / "store"
+            status = "installed" if is_initialized(store_path) else "not installed"
+            print(f"  {i}. {name:12s} {plugin.display_name} [{status}]")
+        print(f"\n  Data directory: {data_dir}")
+        print("\nEnter dataset names (space-separated), 'all', or Ctrl+C to cancel:")
+        try:
+            choice = input("> ").strip()
+        except (KeyboardInterrupt, EOFError):
+            print("\nCancelled.")
+            return
+        if choice == "all":
+            selected = available
+        else:
+            selected = choice.split()
+
+    for name in selected:
+        plugin = registry.get_plugin(name)
+        print(f"\n{'=' * 60}")
+        print(f"Initializing {plugin.display_name}...")
+        print(f"{'=' * 60}")
+        try:
+            registry.initialize_dataset(name)
+            meta = registry.get_metadata(name)
+            print(f"  Done: {meta.get('triple_count', '?'):,} triples loaded")
+        except Exception as e:
+            print(f"  Error: {e}")
+
+    print(f"\nDatasets stored in {data_dir}")
+    print("Start the server with: linked-past-server")
+
+
+def _cmd_status(args):
+    """Show status of all datasets."""
+    data_dir = get_data_dir()
+    registry = DatasetRegistry(data_dir=data_dir)
+
+    registry.register(DPRRPlugin())
+    registry.register(PleiadesPlugin())
+    registry.register(PeriodOPlugin())
+    registry.register(NomismaPlugin())
+    registry.register(CRROPlugin())
+    registry.register(OCREPlugin())
+    registry.register(EDHPlugin())
+
+    print(f"Data directory: {data_dir}\n")
+    print(f"{'Dataset':12s} {'Status':14s} {'Triples':>10s}  {'Display Name'}")
+    print("-" * 70)
+
+    for name in registry.list_datasets():
+        plugin = registry.get_plugin(name)
+        from linked_past.core.store import is_initialized
+
+        store_path = data_dir / name / "store"
+        if is_initialized(store_path):
+            # Load metadata
+            registry.initialize_dataset(name)
+            meta = registry.get_metadata(name)
+            triples = f"{meta.get('triple_count', '?'):,}"
+            status = "installed"
+        else:
+            triples = "-"
+            status = "not installed"
+        print(f"{name:12s} {status:14s} {triples:>10s}  {plugin.display_name}")
+
+
+def main():
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        prog="linked-past-server",
+        description="Linked Past — multi-dataset prosopographical SPARQL tools",
+    )
+    sub = parser.add_subparsers(dest="command")
+
+    # Default: serve (no subcommand = start server)
+    serve = sub.add_parser("serve", help="Start the MCP server (default)")
+    serve.add_argument("--host", default="127.0.0.1", help="Bind host (default: 127.0.0.1)")
+    serve.add_argument("--port", type=int, default=8000, help="Bind port (default: 8000)")
+    serve.set_defaults(func=_cmd_serve)
+
+    # init: download datasets
+    init = sub.add_parser("init", help="Download and initialize datasets")
+    init.add_argument("datasets", nargs="*", help="Dataset names to initialize (e.g., dprr pleiades)")
+    init.add_argument("--all", action="store_true", help="Initialize all datasets")
+    init.set_defaults(func=_cmd_init)
+
+    # status: show what's installed
+    status = sub.add_parser("status", help="Show dataset installation status")
+    status.set_defaults(func=_cmd_status)
+
+    # Also support bare --host/--port for backward compat (no subcommand = serve)
+    parser.add_argument("--host", default="127.0.0.1", help=argparse.SUPPRESS)
+    parser.add_argument("--port", type=int, default=8000, help=argparse.SUPPRESS)
+
+    args = parser.parse_args()
+
+    if args.command is None:
+        # No subcommand = start server (backward compat)
+        _cmd_serve(args)
+    else:
+        args.func(args)
 
 
 if __name__ == "__main__":
