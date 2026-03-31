@@ -12,6 +12,8 @@ from linked_past_store.verify import detect_format
 
 logger = logging.getLogger(__name__)
 
+_DATASET_BASE = "https://linked-past.dev/datasets/"
+
 _VOID_PREFIXES = """\
 @prefix void: <http://rdfs.org/ns/void#> .
 @prefix dcterms: <http://purl.org/dc/terms/> .
@@ -75,7 +77,9 @@ class VoidDescription:
 
     def to_turtle(self) -> str:
         """Produce valid VoID Turtle for this description."""
-        lines: list[str] = [_VOID_PREFIXES, f"<{self.dataset_id}> a void:Dataset"]
+        # Expand bare IDs to full URIs under the linked-past namespace
+        uri = self.dataset_id if "://" in self.dataset_id else f"{_DATASET_BASE}{self.dataset_id}"
+        lines: list[str] = [_VOID_PREFIXES, f"<{uri}> a void:Dataset"]
 
         def _prop(pred: str, value: str, is_literal: bool = False) -> None:
             if value:
