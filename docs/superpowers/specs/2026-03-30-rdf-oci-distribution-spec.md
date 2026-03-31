@@ -19,28 +19,103 @@ A convention for distributing RDF datasets as OCI (Open Container Initiative) ar
 
 ## Artifact Structure
 
-Each dataset is an OCI artifact with two layers:
+Each dataset is an OCI artifact with one or more data layers plus metadata layers:
 
 ```
 OCI Artifact
-├── Layer 1: {dataset}.ttl          (application/x-turtle)
-│   The RDF data, serialized as Turtle, sanitized for strict parsers
+├── Data layers: *.ttl              (application/x-turtle)
+│   One or more RDF files, sanitized for strict parsers.
+│   Single-file datasets have one layer. Multi-file datasets
+│   (e.g., EDH with inscriptions, people, geography) preserve
+│   their original file structure — one layer per file.
 │
-├── Layer 2: void.ttl               (application/x-turtle)
+├── Metadata: void.ttl              (application/x-turtle)
 │   VoID description of the dataset
+│
+├── Schema: ontology.ttl            (application/x-turtle, optional)
+│   OWL/RDFS ontology if available
 │
 └── Manifest annotations
     ├── org.opencontainers.image.* (standard OCI)
     └── dev.linked-past.*          (domain-specific)
 ```
 
-### Layer 1: Data
+### Multi-File Datasets
+
+Some datasets are naturally organized as multiple files (vocabularies, partitions by entity type, etc.). Rather than concatenating into a single blob — which loses provenance and makes selective loading impossible — each file is pushed as a separate OCI layer.
+
+**Example: EDH (9 files)**
+```
+OCI Artifact: ghcr.io/gillisandrew/linked-past/edh:2026-03-30
+├── edh_inscriptions.ttl          (66 MB, 70K inscriptions)
+├── edh_people.ttl                (40 MB, 87K persons)
+├── edh_geography_places.ttl      (13 MB, 30K places)
+├── edh_material.ttl              (10 KB, vocabulary)
+├── edh_type_of_inscription.ttl   (9 KB, vocabulary)
+├── edh_type_of_monument.ttl      (8 KB, vocabulary)
+├── edh_social_status.ttl         (2 KB, vocabulary)
+├── edh_workstatus.ttl            (1 KB, vocabulary)
+├── edh_contributor.ttl           (8 KB, vocabulary)
+└── void.ttl                      (metadata)
+```
+
+**Example: Pleiades (11 files)**
+```
+OCI Artifact: ghcr.io/gillisandrew/linked-past/pleiades:2026-03-30
+├── places-1.ttl through places-9.ttl  (data partitions)
+├── place-types.ttl                    (vocabulary)
+├── time-periods.ttl                   (vocabulary)
+├── authors.ttl                        (vocabulary)
+├── errata.ttl                         (corrections)
+└── void.ttl                           (metadata)
+```
+
+**Example: DPRR (single file)**
+```
+OCI Artifact: ghcr.io/gillisandrew/linked-past/dprr:2026-03-30
+├── dprr.ttl                      (35 MB, all data)
+├── ontology.ttl                  (OWL ontology, optional)
+└── void.ttl                      (metadata)
+```
+
+**Pushing multi-file artifacts with ORAS:**
+```bash
+oras push ghcr.io/myorg/edh:v1 \
+  edh_inscriptions.ttl:application/x-turtle \
+  edh_people.ttl:application/x-turtle \
+  edh_geography_places.ttl:application/x-turtle \
+  edh_material.ttl:application/x-turtle \
+  edh_type_of_inscription.ttl:application/x-turtle \
+  edh_type_of_monument.ttl:application/x-turtle \
+  edh_social_status.ttl:application/x-turtle \
+  edh_workstatus.ttl:application/x-turtle \
+  edh_contributor.ttl:application/x-turtle \
+  void.ttl:application/x-turtle \
+  --annotation "org.opencontainers.image.licenses=CC-BY-SA-4.0" \
+  --annotation "dev.linked-past.files=9" \
+  --annotation "dev.linked-past.triples=1613841"
+```
+
+On pull, `oras pull` restores all files with original names. The plugin's `load()` method globs `*.ttl` and loads each file into the store.
+
+**Benefits of keeping files separate:**
+- **Provenance**: each file retains its original name and identity
+- **Selective loading**: a consumer could load only vocabulary files for schema inspection without downloading the 66MB inscriptions file
+- **Debugging**: if one file has parse errors, you know which one
+- **Upstream alignment**: preserves the structure the dataset publisher intended
+- **Layer-level caching**: OCI caches each layer by digest — if only the inscriptions file changes between versions, only that layer is re-downloaded
+
+**Annotation for file count:**
+The manifest annotation `dev.linked-past.files` records the number of data files (excluding void.ttl and ontology.ttl) so consumers know what to expect.
+
+### Data Layer(s)
 
 - Format: Turtle (`.ttl`)
 - Encoding: UTF-8
 - Sanitized: BCP 47 language tags valid, all IRIs have schemes, no invalid Unicode
-- Verified: loads cleanly into pyoxigraph (strictest common parser)
+- Verified: all files load cleanly into pyoxigraph (strictest common parser)
 - Media type: `application/x-turtle`
+- One layer per file for multi-file datasets; single layer for single-file datasets
 
 ### Layer 2: VoID Description
 
