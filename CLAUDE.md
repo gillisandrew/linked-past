@@ -13,6 +13,7 @@ This is a [uv workspace](https://docs.astral.sh/uv/concepts/projects/workspaces/
 - `packages/linked-past-store/` — Standalone OCI distribution library for scholarly RDF datasets
 
 Root `pyproject.toml` is workspace config only. Each package has its own `pyproject.toml`.
+`datasets.yaml` at the root is the single source of truth for all dataset metadata (OCI refs, licenses, citations, validation thresholds).
 
 ## Architecture (linked-past package)
 
@@ -20,7 +21,7 @@ Root `pyproject.toml` is workspace config only. Each package has its own `pyproj
 - Plugin-based: each dataset lives in `packages/linked-past/linked_past/datasets/{name}/` with a `plugin.py` (implements `DatasetPlugin` ABC) and `context/` directory (YAML files: schemas, examples, tips, prefixes).
 - Core modules in `packages/linked-past/linked_past/core/`: server, registry, store, validate, linkage, embeddings, fetch.
 - YAML files in each dataset's `context/` are the ontology source of truth. To change a dataset's schema, edit the YAML files, not Python code.
-- One-off data scripts live in `scripts/`, not in the packages.
+- Ingest scripts (`scripts/ingest_*.py`) push raw data to OCI. `scripts/clean_dataset.py` and `scripts/validate_dataset.py` are generic pipeline stages. One-off analysis scripts also live in `scripts/`.
 
 ## Store
 

@@ -15,6 +15,7 @@ An MCP server that gives AI agents structured access to ancient world linked dat
 | [PeriodO](https://perio.do/) | Gazetteer of period definitions from scholarly sources | 188K | CC0 |
 | [Nomisma](https://nomisma.org/) | Numismatic concept vocabulary — persons, mints, denominations | 466K | CC BY 4.0 |
 | [CRRO](https://numismatics.org/crro/) | Roman Republican coin types (Crawford's RRC) | 54K | ODbL 1.0 |
+| [OCRE](https://numismatics.org/ocre/) | Roman Imperial coin types (RIC) — ~50K types with iconography | 1.2M | ODbL 1.0 |
 | [EDH](https://edh.ub.uni-heidelberg.de/) | 81,000+ Latin inscriptions with transcriptions and findspots | 1.6M | CC BY-SA 4.0 |
 
 Datasets are distributed as OCI artifacts via `ghcr.io/gillisandrew/linked-past/`. Each dataset's license is declared in the OCI manifest annotations. See [LICENSE](#license) for details.
@@ -115,17 +116,26 @@ uv run ruff check .  # lint
 4. Create `scripts/package_{name}.py` to push data to OCI
 5. Add URI namespace to `linked_past/core/registry.py`
 
-### Packaging Data for OCI
+### Data Pipeline
 
+Raw data ingestion (run manually, pushes to `raw/` OCI namespace):
 ```bash
-uv run python scripts/package_dprr.py latest
-uv run python scripts/package_pleiades.py latest
+uv run python scripts/ingest_pleiades.py
+uv run python scripts/ingest_generic.py crro
 # etc.
 ```
 
+Cleaning and publishing (run via CI or locally, pulls from raw, pushes to `datasets/`):
+```bash
+uv run python scripts/clean_dataset.py pleiades
+uv run python scripts/validate_dataset.py pleiades
+```
+
+All dataset metadata (OCI refs, licenses, citations, thresholds) lives in `datasets.yaml` at the repo root.
+
 ## License
 
-This software is released under the [MIT License](LICENSE).
+This software is released under the [GNU Affero General Public License v3.0](../../LICENSE) (AGPL-3.0).
 
 **Dataset licenses vary.** Each dataset is distributed as a separate OCI artifact with its license declared in the manifest annotations (`org.opencontainers.image.licenses`). Check the individual dataset's OCI manifest or the table above for the applicable license. The software does not bundle any dataset data — it pulls datasets from OCI at runtime.
 
