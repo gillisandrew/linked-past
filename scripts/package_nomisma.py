@@ -1,14 +1,11 @@
-"""Download Nomisma concept vocabulary, sanitize, generate VoID, and push to OCI registry.
+"""Download Nomisma RDF/XML, convert to Turtle via rapper, sanitize, and push to OCI registry.
 
-The upstream Nomisma Turtle has syntax issues:
-- Parentheses in local names: nm:foo(bar) → nm:foo%28bar%29
-- Empty local names: nm: ; → removed
-- Other invalid characters in local names
-
-We fix these by regex-replacing known patterns, then verify with pyoxigraph.
+The upstream Nomisma RDF/XML is cleaner than the Turtle export. We convert
+via rapper (fast, C-based), then fix any remaining issues (bad Unicode IRIs).
 """
 
 import re
+import subprocess
 import sys
 import tempfile
 import urllib.request
@@ -17,9 +14,8 @@ from pathlib import Path
 from linked_past_store import push_dataset, verify_turtle
 from linked_past_store.ontology import extract_schema, generate_schemas_yaml
 from linked_past_store.void import generate_void
-from pyoxigraph import RdfFormat, Store
 
-SOURCE_URL = "http://nomisma.org/nomisma.org.ttl"
+SOURCE_URL = "https://nomisma.org/nomisma.org.rdf"
 ARTIFACT_REF = "ghcr.io/gillisandrew/linked-past/datasets/nomisma"
 
 ANNOTATIONS = {
@@ -36,102 +32,35 @@ ANNOTATIONS = {
     "io.github.gillisandrew.linked-past.citation": "Gruber, E. & Meadows, A. (2021). ISAW Papers 20.6",
 }
 
-
-def _percent_encode_local_name(match: re.Match) -> str:
-    """Percent-encode invalid characters in a prefixed local name."""
-    prefix = match.group(1)
-    local = match.group(2)
-    local = local.replace("(", "%28").replace(")", "%29")
-    return f"{prefix}:{local}"
-
-
-def _sanitize_nomisma(raw_text: str) -> tuple[str, int]:
-    """Fix known syntax issues in Nomisma Turtle. Returns (fixed_text, fix_count)."""
-    fixes = 0
-
-    # Fix 1: Percent-encode parentheses in nm: local names
-    pattern = re.compile(r'\b(nm):([a-zA-Z_][^\s;,.\]]*\([^\s;,.]*\))')
-    raw_text, n = pattern.subn(_percent_encode_local_name, raw_text)
-    fixes += n
-
-    # Fix 2: Remove lines with empty local name (nm: followed by whitespace + ; or .)
-    empty_ref = re.compile(r'^\s+\S+\s+nm:\s*[;.]\s*$', re.MULTILINE)
-    raw_text, n = empty_ref.subn('', raw_text)
-    fixes += n
-
-    return raw_text, fixes
+# Unicode replacement character — appears in a few IRIs after rapper conversion
+_BAD_UNICODE = re.compile(r".*\ufffd.*\n?")
 
 
 def main(version="latest"):
     with tempfile.TemporaryDirectory() as tmpdir:
         tmpdir = Path(tmpdir)
         print(f"Downloading {SOURCE_URL}...")
-        raw_path = tmpdir / "nomisma_raw.ttl"
-        urllib.request.urlretrieve(SOURCE_URL, str(raw_path))
-        print(f"Downloaded {raw_path} ({raw_path.stat().st_size:,} bytes)")
+        rdf_path = tmpdir / "nomisma.rdf"
+        urllib.request.urlretrieve(SOURCE_URL, str(rdf_path))
+        print(f"Downloaded {rdf_path} ({rdf_path.stat().st_size:,} bytes)")
 
-        raw_text = raw_path.read_text(errors="replace")
-        print("Sanitizing Turtle (fixing invalid local names)...")
-        fixed_text, fix_count = _sanitize_nomisma(raw_text)
-        print(f"Applied {fix_count} regex fixes")
+        print("Converting RDF/XML to Turtle via rapper...")
+        raw_ttl = tmpdir / "nomisma_raw.ttl"
+        subprocess.run(
+            ["rapper", "-i", "rdfxml", "-o", "turtle", "-q", str(rdf_path)],
+            stdout=open(raw_ttl, "w"),
+            stderr=subprocess.PIPE,
+            check=False,  # rapper returns 1 for warnings (bad xsd:double literals)
+        )
+        print(f"Created {raw_ttl} ({raw_ttl.stat().st_size:,} bytes)")
 
-        # Extract prefix block
-        prefix_lines = []
-        for line in fixed_text.split("\n"):
-            if line.strip().startswith("@prefix") or line.strip().startswith("PREFIX"):
-                prefix_lines.append(line)
-            elif prefix_lines and line.strip() == "":
-                continue
-            elif prefix_lines:
-                break
-        prefix_block = "\n".join(prefix_lines) + "\n"
-
-        remainder = fixed_text[fixed_text.index(prefix_lines[-1]) + len(prefix_lines[-1]):]
-
-        # Split on concept boundaries (lines starting with a prefixed name + ' a ')
-        # NOT on blank lines — concepts often contain internal blank lines
-        import re
-
-        concept_pattern = re.compile(r'^(?=\S+:\S+ a )', re.MULTILINE)
-        blocks = concept_pattern.split(remainder)
-
-        # concept_pattern.split loses the matched line — re-attach from raw lines
-        # Instead, use finditer to get positions
-        starts = [m.start() for m in concept_pattern.finditer(remainder)]
-        if starts:
-            blocks = []
-            for i, start in enumerate(starts):
-                end = starts[i + 1] if i + 1 < len(starts) else len(remainder)
-                blocks.append(remainder[start:end])
-
-        # Concept-by-concept verification — drop concepts that don't parse
+        # Remove lines with invalid Unicode (replacement character in IRIs)
+        text = raw_ttl.read_text(errors="replace")
+        clean_text, fix_count = _BAD_UNICODE.subn("", text)
         clean_path = tmpdir / "nomisma.ttl"
-        kept = 0
-        dropped = 0
-        drop_errors: dict[str, int] = {}
-        with open(clean_path, "w") as out:
-            out.write(prefix_block + "\n")
-            for block in blocks:
-                block = block.strip()
-                if not block:
-                    continue
-                chunk = prefix_block + "\n" + block
-                try:
-                    s = Store()
-                    s.load(chunk.encode("utf-8", errors="replace"), RdfFormat.TURTLE)
-                    if len(s) > 0:
-                        out.write(block + "\n\n")
-                        kept += 1
-                    del s
-                except Exception as e:
-                    dropped += 1
-                    err_key = str(e).split(":")[0][:60]
-                    drop_errors[err_key] = drop_errors.get(err_key, 0) + 1
-
-        print(f"Kept {kept:,} concepts, dropped {dropped:,}")
-        if drop_errors:
-            for err, count in sorted(drop_errors.items(), key=lambda x: -x[1])[:5]:
-                print(f"  {err}: {count}")
+        clean_path.write_text(clean_text)
+        if fix_count:
+            print(f"Removed {fix_count} lines with bad Unicode")
 
         # Verify
         result = verify_turtle(clean_path)
