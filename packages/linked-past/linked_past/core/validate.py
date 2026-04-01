@@ -120,18 +120,35 @@ def parse_and_fix_prefixes(sparql: str, prefix_map: dict[str, str]) -> tuple[str
         return fixed, [str(e)]
 
 
+_XSD_NS = "http://www.w3.org/2001/XMLSchema#"
+
+
 def build_schema_dict(schemas: dict, prefix_map: dict[str, str]) -> dict:
-    """Convert schemas YAML to dict[class_full_uri][predicate_full_uri] = [range_types]."""
-    schema_dict: dict[str, dict[str, list[str]]] = {}
+    """Convert schemas YAML to dict[class_uri][pred_uri] = {ranges, datatype, open_world, ...}.
+
+    Backwards-compatible: callers that check `pred_uri in schema_dict[class]`
+    still work because dict keys are predicate URIs.
+    """
+    schema_dict: dict[str, dict] = {}
     for cls_name, cls_data in schemas.items():
         class_uri = _expand_uri(cls_data["uri"], prefix_map)
-        predicates: dict[str, list[str]] = {}
+        predicates: dict[str, dict] = {}
         for prop in cls_data.get("properties", []):
             pred_uri = _expand_uri(prop["pred"], prefix_map)
-            range_uri = _expand_uri(prop["range"], prefix_map)
-            if pred_uri not in predicates:
-                predicates[pred_uri] = []
-            predicates[pred_uri].append(range_uri)
+            range_uri = _expand_uri(prop.get("range", ""), prefix_map)
+            ranges = predicates.get(pred_uri, {}).get("ranges", [])
+            if range_uri:
+                ranges.append(range_uri)
+            pred_info: dict = {
+                "ranges": ranges,
+                "datatype": range_uri if range_uri.startswith(_XSD_NS) else None,
+                "open_world": prop.get("open_world", False),
+                "comment": prop.get("comment", ""),
+            }
+            predicates[pred_uri] = pred_info
+        predicates["_meta"] = {
+            "count_distinct": cls_data.get("count_distinct", False),
+        }
         schema_dict[class_uri] = predicates
     return schema_dict
 
@@ -250,7 +267,7 @@ def validate_semantics(sparql: str, schema_dict: dict) -> list[str]:
             if pred_uri not in valid_preds:
                 pred_local = _local_name(pred_uri)
                 class_local = _local_name(class_uri)
-                valid_local = sorted(_local_name(uri) for uri in valid_preds)
+                valid_local = sorted(_local_name(uri) for uri in valid_preds if uri != "_meta")
                 suggestion = _suggest(pred_local, valid_local)
                 hints.append(
                     f"Hint: '{pred_local}' not a known predicate for {class_local}. "

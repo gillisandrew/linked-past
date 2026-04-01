@@ -132,6 +132,43 @@ def test_validate_and_execute_parse_error(tmp_path):
     assert len(result.errors) > 0
 
 
+def test_build_schema_dict_rich_metadata():
+    schemas = {
+        "PostAssertion": {
+            "uri": "ex:PostAssertion",
+            "count_distinct": True,
+            "properties": [
+                {"pred": "ex:hasDateStart", "range": "xsd:integer"},
+                {"pred": "ex:isUncertain", "range": "xsd:boolean", "open_world": True},
+                {"pred": "ex:hasOffice", "range": "ex:Office"},
+            ],
+        },
+    }
+    sd = build_schema_dict(schemas, PREFIXES)
+    pa = sd["http://example.org/PostAssertion"]
+
+    # Keys still work for membership checks (backwards compatible)
+    assert "http://example.org/hasDateStart" in pa
+    assert "http://example.org/isUncertain" in pa
+
+    # Rich metadata available
+    date_info = pa["http://example.org/hasDateStart"]
+    assert date_info["ranges"] == ["http://www.w3.org/2001/XMLSchema#integer"]
+    assert date_info["datatype"] == "http://www.w3.org/2001/XMLSchema#integer"
+    assert date_info.get("open_world") is not True
+
+    uncertain_info = pa["http://example.org/isUncertain"]
+    assert uncertain_info["open_world"] is True
+    assert uncertain_info["datatype"] == "http://www.w3.org/2001/XMLSchema#boolean"
+
+    office_info = pa["http://example.org/hasOffice"]
+    assert office_info["ranges"] == ["http://example.org/Office"]
+    assert office_info.get("datatype") is None
+
+    # Class-level metadata
+    assert pa["_meta"]["count_distinct"] is True
+
+
 def test_validate_and_execute_unknown_class_still_executes(tmp_path):
     """Unknown classes produce hints but query still executes (returns empty results)."""
     store_path = tmp_path / "store"
