@@ -776,8 +776,34 @@ def create_mcp_server() -> FastMCP:
 
         datasets_to_search = [dataset] if dataset else registry.list_datasets()
         all_results = []
+        fts_hit_datasets: set[str] = set()
 
+        # FTS5 entity label search (instant, uses cached index)
+        if app.search:
+            fts_hits = app.search.search(query_text, k=50, dataset=dataset)
+            seen_uris: set[str] = set()
+            for hit in fts_hits:
+                if hit["doc_type"] != "entity_label":
+                    continue
+                parts = hit["text"].split("\t", 1)
+                if len(parts) != 2:
+                    continue
+                label_val, uri_val = parts
+                if uri_val in seen_uris:
+                    continue
+                seen_uris.add(uri_val)
+                ds = hit["dataset"]
+                fts_hit_datasets.add(ds)
+                all_results.append({
+                    "dataset": ds,
+                    "uri": uri_val,
+                    "label": label_val,
+                })
+
+        # SPARQL fallback for datasets with no FTS hits
         for ds_name in datasets_to_search:
+            if ds_name in fts_hit_datasets:
+                continue
             try:
                 store = registry.get_store(ds_name)
             except KeyError:
