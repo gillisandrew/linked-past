@@ -55,6 +55,28 @@ def _extract_name(uri: str, properties: list[dict[str, str]], store=None) -> str
             pred_local = prop["pred"].rsplit("/", 1)[-1].rsplit("#", 1)[-1]
             if pred_local == pred:
                 return prop["obj"]
+
+    # Last resort: try ANY language label from the store
+    if store:
+        try:
+            from linked_past.core.store import execute_query
+
+            any_label_sparql = (
+                "SELECT ?label WHERE { "
+                f"  <{uri}> ?pred ?label . "
+                "  VALUES ?pred { "
+                "    <http://www.w3.org/2000/01/rdf-schema#label> "
+                "    <http://www.w3.org/2004/02/skos/core#prefLabel> "
+                "    <http://purl.org/dc/terms/title> "
+                "  } "
+                "} LIMIT 1"
+            )
+            rows = execute_query(store, any_label_sparql)
+            if rows and rows[0].get("label"):
+                return rows[0]["label"]
+        except Exception:
+            pass
+
     return uri.rstrip("/").rsplit("/", 1)[-1].rsplit("#", 1)[-1]
 
 
@@ -106,14 +128,26 @@ async def entity_handler(request: Request) -> JSONResponse | PlainTextResponse:
             store = registry.get_store(ds_name)
             from linked_past.core.store import execute_query
 
-            # Entity properties — filter to English or untagged literals
-            rows = execute_query(
-                store,
-                f"SELECT ?pred ?obj WHERE {{ <{canonical_uri}> ?pred ?obj . "
-                f"FILTER(!isLiteral(?obj) || lang(?obj) = 'en' || lang(?obj) = '') "
-                f"}} LIMIT 50",
-            )
-            properties = [{"pred": r["pred"], "obj": r["obj"] or ""} for r in rows]
+            # Entity properties — prefer English/untagged, fall back to any language
+            def _query_props(query_uri: str) -> list[dict[str, str]]:
+                rows = execute_query(
+                    store,
+                    f"SELECT ?pred ?obj WHERE {{ <{query_uri}> ?pred ?obj . "
+                    f"FILTER(!isLiteral(?obj) || lang(?obj) = 'en' || lang(?obj) = '') "
+                    f"}} LIMIT 50",
+                )
+                return [{"pred": r["pred"], "obj": r["obj"] or ""} for r in rows]
+
+            properties = _query_props(canonical_uri)
+            # If no results, try the opposite scheme (store may use different scheme than registry)
+            if not properties:
+                if canonical_uri.startswith("http://"):
+                    alt_uri = "https://" + canonical_uri[7:]
+                else:
+                    alt_uri = "http://" + canonical_uri[8:]
+                properties = _query_props(alt_uri)
+                if properties:
+                    canonical_uri = alt_uri  # use the scheme that worked
 
             # rdfs:comment on the entity itself (Pleiades places have descriptions)
             rdfs_comment = "http://www.w3.org/2000/01/rdf-schema#comment"
