@@ -362,6 +362,39 @@ body {
   overflow-x: auto;
 }
 
+/* ── Markdown body — styles tables and elements from the markdown lib ── */
+.markdown-body table {
+  width: 100%; border-collapse: collapse; font-size: 13px; margin: 8px 0;
+}
+.markdown-body th {
+  text-align: left; padding: 6px 10px; font-weight: 600;
+  background: color-mix(in srgb, var(--surface) 80%, var(--text) 20%);
+  border-bottom: 2px solid var(--border);
+}
+.markdown-body td {
+  padding: 6px 10px; border-bottom: 1px solid var(--border); word-break: break-word;
+}
+.markdown-body tr:hover td {
+  background: color-mix(in srgb, var(--surface) 93%, var(--text) 7%);
+}
+
+/* ── Markdown report spacing ──────────────────────────────────────────── */
+.feed-body h2, .feed-body h3, .feed-body h4 { margin-top: 16px; margin-bottom: 8px; }
+.feed-body h2:first-child, .feed-body h3:first-child, .feed-body h4:first-child { margin-top: 0; }
+.feed-body p { margin: 8px 0; line-height: 1.5; }
+.feed-body ul, .feed-body ol { margin: 8px 0; padding-left: 24px; }
+.feed-body li { margin: 4px 0; line-height: 1.5; }
+.feed-body pre { margin: 8px 0; }
+.feed-body hr {
+  border: none; border-top: 1px solid var(--border); margin: 16px 0;
+}
+.feed-body table { margin: 8px 0; }
+.feed-body code {
+  background: color-mix(in srgb, var(--surface) 80%, var(--text) 20%);
+  padding: 1px 4px; border-radius: 3px; font-size: 0.9em;
+}
+.feed-body pre code { background: none; padding: 0; }
+
 /* ── Generic result ───────────────────────────────────────────────────── */
 .generic-result {
   background: color-mix(in srgb, var(--surface) 85%, var(--text) 15%);

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import html
-import re
 from datetime import datetime, timezone
 
 # Predicates commonly used as "name" fields — checked in priority order
@@ -190,125 +189,18 @@ def render_feed_item(
 
 # ── Markdown to HTML ──────────────────────────────────────────────────────────
 
-_MD_TABLE_ROW = re.compile(r"^\|(.+)\|$")
-_MD_SEPARATOR = re.compile(r"^\|[\s:|-]+\|$")
-
-
-def _md_table_to_html(lines: list[str]) -> str:
-    """Convert a markdown table (list of | ... | lines) to an HTML table."""
-    if len(lines) < 2:
-        return "\n".join(_e(line) for line in lines)
-
-    header_cells = [c.strip() for c in lines[0].strip("|").split("|")]
-    header = "".join(f"<th>{_e(c)}</th>" for c in header_cells)
-
-    body_rows = []
-    for line in lines[2:]:  # skip header + separator
-        cells = [c.strip() for c in line.strip("|").split("|")]
-        row = "".join(f"<td>{_md_inline(_e(c))}</td>" for c in cells)
-        body_rows.append(f"<tr>{row}</tr>")
-
-    count = len(body_rows)
-    plural = "s" if count != 1 else ""
-    return (
-        f'<table class="query-table">'
-        f"<thead><tr>{header}</tr></thead>"
-        f"<tbody>{''.join(body_rows)}</tbody>"
-        f"</table>"
-        f'<div class="table-footer">{count} row{plural}</div>'
-    )
-
-
-def _md_inline(text: str) -> str:
-    """Apply inline markdown formatting (bold, italic, code, links) to already-escaped text."""
-    # Code spans: `code` → <code>code</code>
-    text = re.sub(r"`([^`]+)`", r"<code>\1</code>", text)
-    # Bold: **text** → <strong>text</strong>
-    text = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", text)
-    # Italic: *text* → <em>text</em>
-    text = re.sub(r"\*(.+?)\*", r"<em>\1</em>", text)
-    # Links: [text](url) → <code>url</code> (safe — no <a href> to avoid XSS)
-    text = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", text)
-    return text
-
 
 def render_markdown(text: str) -> str:
-    """Convert markdown text to styled HTML.
+    """Convert markdown text to styled HTML using the markdown library.
 
-    Handles: headings, bold, italic, code spans, fenced code blocks,
-    unordered/ordered lists, markdown tables (rendered as styled HTML tables),
-    and paragraphs. Designed for LLM-generated markdown — not a full spec parser.
+    Enables tables, fenced code blocks, and smart typography.
+    Wrapped in a `.markdown-body` div — table styling is applied via CSS
+    on the wrapper rather than mutating the generated HTML.
     """
-    lines = text.split("\n")
-    out: list[str] = []
-    i = 0
+    import markdown as md
 
-    while i < len(lines):
-        line = lines[i]
-
-        # Fenced code block
-        if line.startswith("```"):
-            lang = line[3:].strip()
-            code_lines = []
-            i += 1
-            while i < len(lines) and not lines[i].startswith("```"):
-                code_lines.append(lines[i])
-                i += 1
-            i += 1  # skip closing ```
-            code_text = _e("\n".join(code_lines))
-            cls = f' class="language-{_e(lang)}"' if lang else ""
-            out.append(f"<pre><code{cls}>{code_text}</code></pre>")
-            continue
-
-        # Markdown table (sequence of | ... | lines)
-        if _MD_TABLE_ROW.match(line):
-            table_lines = []
-            while i < len(lines) and (_MD_TABLE_ROW.match(lines[i]) or _MD_SEPARATOR.match(lines[i])):
-                table_lines.append(lines[i])
-                i += 1
-            out.append(_md_table_to_html(table_lines))
-            continue
-
-        # Headings
-        if line.startswith("### "):
-            out.append(f"<h4>{_md_inline(_e(line[4:]))}</h4>")
-            i += 1
-            continue
-        if line.startswith("## "):
-            out.append(f"<h3>{_md_inline(_e(line[3:]))}</h3>")
-            i += 1
-            continue
-        if line.startswith("# "):
-            out.append(f"<h2>{_md_inline(_e(line[2:]))}</h2>")
-            i += 1
-            continue
-
-        # Unordered list
-        if re.match(r"^[-*] ", line):
-            items = []
-            while i < len(lines) and re.match(r"^[-*] ", lines[i]):
-                items.append(f"<li>{_md_inline(_e(lines[i][2:]))}</li>")
-                i += 1
-            out.append(f"<ul>{''.join(items)}</ul>")
-            continue
-
-        # Ordered list
-        if re.match(r"^\d+\. ", line):
-            items = []
-            while i < len(lines) and re.match(r"^\d+\. ", lines[i]):
-                content = re.sub(r"^\d+\. ", "", lines[i])
-                items.append(f"<li>{_md_inline(_e(content))}</li>")
-                i += 1
-            out.append(f"<ol>{''.join(items)}</ol>")
-            continue
-
-        # Blank line
-        if not line.strip():
-            i += 1
-            continue
-
-        # Paragraph
-        out.append(f"<p>{_md_inline(_e(line))}</p>")
-        i += 1
-
-    return "\n".join(out)
+    html_str = md.markdown(
+        text,
+        extensions=["tables", "fenced_code", "smarty"],
+    )
+    return f'<div class="markdown-body">{html_str}</div>'

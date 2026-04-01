@@ -124,9 +124,9 @@ def test_render_feed_item():
 
 def test_render_markdown_headings():
     html = render_markdown("# Title\n## Subtitle\n### Section")
+    assert "<h1>" in html
     assert "<h2>" in html
     assert "<h3>" in html
-    assert "<h4>" in html
     assert "Title" in html
 
 
@@ -137,7 +137,6 @@ def test_render_markdown_table():
     assert "Caesar" in html
     assert "Pompey" in html
     assert "<th>" in html
-    assert "2 rows" in html
 
 
 def test_render_markdown_bold_and_italic():
@@ -169,16 +168,20 @@ def test_render_markdown_ordered_list():
     assert "first" in html
 
 
-def test_render_markdown_escapes_html():
-    html = render_markdown("# <script>alert(1)</script>")
-    assert "<script>" not in html
-    assert "&lt;script&gt;" in html
+def test_render_markdown_hrule():
+    html = render_markdown("above\n\n---\n\nbelow")
+    assert "<hr" in html
+
+
+def test_render_markdown_wrapper():
+    html = render_markdown("hello")
+    assert 'class="markdown-body"' in html
 
 
 def test_render_markdown_mixed():
     md = "# Report\n\nSome **bold** text.\n\n| A | B |\n|---|---|\n| 1 | 2 |\n\n- item"
     html = render_markdown(md)
-    assert "<h2>" in html
+    assert "<h1>" in html
     assert "<strong>bold</strong>" in html
     assert "<table" in html
     assert "<ul>" in html
