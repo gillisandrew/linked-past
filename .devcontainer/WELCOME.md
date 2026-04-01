@@ -1,60 +1,62 @@
-# Welcome to linked-past
+# linked-past
 
 Multi-dataset prosopographical SPARQL tools for AI agents.
 
-## Getting Started
+## Quick Start
 
-### 1. Install Claude Code
-
-Open a terminal and run:
-
-```bash
-curl -fsSL https://claude.ai/install.sh | bash
-```
-
-Then authenticate:
-
-```bash
-claude login
-```
-
-### 2. Start the MCP server
-
-```bash
-uv run linked-past-server
-```
-
-The server starts on `http://localhost:8000/mcp`. On first run, it loads any cached datasets. Use the `update_dataset` MCP tool to pull new datasets from OCI.
-
-### 3. Connect Claude Code
-
-The `.mcp.json` in this repo is already configured. Just run:
+The MCP server starts automatically. Just open a terminal and run:
 
 ```bash
 claude
 ```
 
-Claude Code will connect to the server automatically. Try:
+Claude Code connects to the server via the `.mcp.json` in this repo. Try asking:
 
 ```
 Who were the consuls of the Roman Republic in 63 BC?
 ```
 
-## Available Datasets
+If you haven't authenticated yet:
 
-| Dataset | Description | Status |
-|---------|-------------|--------|
-| DPRR | Roman Republic prosopography | Pull via `update_dataset` |
-| Pleiades | Ancient places gazetteer | Pull via `update_dataset` |
-| PeriodO | Period definitions | Pull via `update_dataset` |
-| Nomisma | Numismatic concepts | Pull via `update_dataset` |
-| CRRO | Republican coin types | Pull via `update_dataset` |
-| EDH | Latin inscriptions | Pull via `update_dataset` |
+```bash
+claude login
+```
 
-## Useful Commands
+## Server Management
+
+```bash
+# Check server status
+curl -s http://localhost:8000/mcp | head -1
+
+# View server logs
+tail -f /tmp/linked-past-server.log
+
+# Restart the server
+bash .devcontainer/start.sh
+
+# Pull or update a specific dataset
+uv run linked-past-server init dprr pleiades
+
+# Check which datasets are installed
+uv run linked-past-server status
+```
+
+## Datasets
+
+| Dataset | Period | Description |
+|---------|--------|-------------|
+| DPRR | 509-31 BC | Roman Republic prosopography (persons, offices, families) |
+| Pleiades | Archaic-Late Antiquity | Gazetteer of ~41,000 ancient places |
+| PeriodO | All periods | Scholarly period definitions with temporal bounds |
+| Nomisma | Ancient-modern | Numismatic concepts (people, mints, denominations) |
+| CRRO | 280-27 BC | 2,602 Roman Republican coin types (Crawford RRC) |
+| OCRE | 31 BC-491 AD | ~50,000 Roman Imperial coin types (RIC) |
+| EDH | Antiquity | 81,000+ Latin inscriptions with prosopographic data |
+
+## Development
 
 ```bash
 uv run pytest              # Run tests
 uv run ruff check .        # Lint
-uv run linked-past-server  # Start MCP server
+uv run linked-past-server  # Start server (foreground)
 ```

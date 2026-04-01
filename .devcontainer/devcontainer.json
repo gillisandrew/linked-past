@@ -2,23 +2,35 @@
   "name": "linked-past",
   "image": "mcr.microsoft.com/devcontainers/python:3.13",
   "features": {
-    "ghcr.io/devcontainers/features/github-cli:1": {}
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/devcontainers/features/node:1": {"version": "lts"}
   },
-  "postCreateCommand": "pip install uv && uv sync",
-  "postStartCommand": "cat .devcontainer/WELCOME.md",
+  "postCreateCommand": "bash .devcontainer/setup.sh",
+  "postStartCommand": "bash .devcontainer/start.sh",
   "customizations": {
     "vscode": {
       "extensions": [
         "ms-python.python",
-        "charliermarsh.ruff"
+        "charliermarsh.ruff",
+        "stardog-union.stardog-rdf-grammars"
       ],
       "settings": {
-        "workbench.startupEditor": "readme"
+        "workbench.startupEditor": "readme",
+        "terminal.integrated.defaultProfile.linux": "bash"
       }
+    },
+    "codespaces": {
+      "openFiles": [".devcontainer/WELCOME.md"]
     }
   },
   "forwardPorts": [8000],
+  "portsAttributes": {
+    "8000": {
+      "label": "linked-past MCP",
+      "onAutoForward": "silent"
+    }
+  },
   "remoteEnv": {
-    "LINKED_PAST_DATA_DIR": "/workspaces/linked-past/data"
+    "LINKED_PAST_DATA_DIR": "/workspaces/linked-past-data"
   }
 }
