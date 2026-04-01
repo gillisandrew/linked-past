@@ -1,6 +1,31 @@
+import type { ComponentPropsWithoutRef } from "react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { ReportData } from "../lib/types";
+import { datasetForUri } from "../lib/uri";
+import { EntityUri } from "./entity-uri";
+
+/**
+ * Custom link renderer: if the href points to a known dataset entity,
+ * render an EntityUri with popover. Otherwise render a normal external link.
+ */
+function MarkdownLink({ href, children }: ComponentPropsWithoutRef<"a">) {
+  if (href && datasetForUri(href)) {
+    const display = typeof children === "string" ? children : undefined;
+    return <EntityUri uri={href} display={display} />;
+  }
+
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-primary underline"
+    >
+      {children}
+    </a>
+  );
+}
 
 export function MarkdownReport({ data }: { data: ReportData }) {
   return (
@@ -10,6 +35,7 @@ export function MarkdownReport({ data }: { data: ReportData }) {
         <Markdown
           remarkPlugins={[remarkGfm]}
           components={{
+            a: MarkdownLink,
             table: ({ children }) => (
               <table className="w-full border-collapse text-sm">{children}</table>
             ),
