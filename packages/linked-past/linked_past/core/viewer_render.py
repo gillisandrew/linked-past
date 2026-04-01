@@ -128,9 +128,9 @@ def render_xref_list(links: list[dict]) -> str:
             item_htmls.append(
                 f'<div class="xref-item">'
                 f'<span class="confidence-badge {badge_cls}">{badge_cls}</span>'
-                f'<a href="{_e(target)}" target="_blank" rel="noopener">{_e(target)}</a>'
-                f'<span style="color:var(--muted);font-size:11px">{_e(rel)}</span>'
-                f'<span style="color:var(--muted);font-size:11px">{_e(basis)}</span>'
+                f" <code>{_e(target)}</code>"
+                f' <span style="color:var(--muted);font-size:11px">{_e(rel)}</span>'
+                f' <span style="color:var(--muted);font-size:11px">{_e(basis)}</span>'
                 f"</div>"
             )
         parts.append(

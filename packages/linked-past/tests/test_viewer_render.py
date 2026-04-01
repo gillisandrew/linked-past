@@ -82,6 +82,28 @@ def test_render_generic_escapes_html():
     assert "&lt;script&gt;" in html
 
 
+def test_render_entity_card_escapes_html():
+    properties = [{"pred": "<script>", "obj": "<img src=x onerror=alert(1)>"}]
+    html = render_entity_card(
+        uri="javascript:alert(1)",
+        properties=properties,
+        dataset="test",
+        xrefs=[],
+    )
+    # Angle brackets must be escaped — no raw HTML tags
+    assert "<script>" not in html
+    assert "<img " not in html
+    assert "&lt;script&gt;" in html
+    assert "&lt;img " in html
+
+
+def test_render_feed_item_no_dataset():
+    html = render_feed_item(tool_name="validate_sparql", dataset=None, body_html="<p>ok</p>")
+    assert "feed-item" in html
+    assert "data-ds" not in html
+    assert "<p>ok</p>" in html
+
+
 def test_render_feed_item():
     html = render_feed_item(
         tool_name="query",
