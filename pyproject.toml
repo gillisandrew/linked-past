@@ -6,6 +6,7 @@ requires-python = ">=3.13"
 
 [tool.uv.workspace]
 members = ["packages/*"]
+exclude = ["packages/linked-past-viewer"]
 
 [dependency-groups]
 dev = [

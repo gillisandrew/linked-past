@@ -3,6 +3,7 @@ export type QueryData = {
   columns: string[];
   sparql: string;
   row_count: number;
+  prefix_map?: Record<string, string>;
 };
 
 export type EntityData = {

@@ -1,4 +1,5 @@
 import Markdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import type { ReportData } from "../lib/types";
 
 export function MarkdownReport({ data }: { data: ReportData }) {
@@ -7,6 +8,7 @@ export function MarkdownReport({ data }: { data: ReportData }) {
       {data.title && <h2 className="text-lg font-semibold mb-2">{data.title}</h2>}
       <div className="prose prose-sm dark:prose-invert max-w-none">
         <Markdown
+          remarkPlugins={[remarkGfm]}
           components={{
             table: ({ children }) => (
               <table className="w-full border-collapse text-sm">{children}</table>

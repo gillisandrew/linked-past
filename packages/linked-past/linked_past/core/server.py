@@ -660,6 +660,7 @@ def create_mcp_server() -> FastMCP:
                 "columns": list(result.rows[0].keys()) if result.rows else [],
                 "sparql": result.sparql,
                 "row_count": len(result.rows),
+                "prefix_map": prefix_map,
             })
         return output
 

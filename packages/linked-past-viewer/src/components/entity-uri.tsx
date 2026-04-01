@@ -9,7 +9,7 @@ import { datasetForUri, shortUri } from "../lib/uri";
 import { DatasetBadge } from "./dataset-badge";
 import { EntityPopoverContent } from "./entity-popover";
 
-export function EntityUri({ uri }: { uri: string }) {
+export function EntityUri({ uri, display }: { uri: string; display?: string }) {
   const dataset = datasetForUri(uri);
   const [open, setOpen] = useState(false);
   const { data, isLoading } = useEntityQuery(uri, open);
@@ -21,7 +21,7 @@ export function EntityUri({ uri }: { uri: string }) {
         onMouseEnter={() => setOpen(true)}
         onMouseLeave={() => setOpen(false)}
       >
-        <code className="text-xs text-primary underline">{shortUri(uri)}</code>
+        <code className="text-xs text-primary underline">{display ?? shortUri(uri)}</code>
         {dataset && <DatasetBadge dataset={dataset} />}
       </PopoverTrigger>
       <PopoverContent
