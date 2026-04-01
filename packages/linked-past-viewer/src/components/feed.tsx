@@ -24,7 +24,22 @@ function MessageBody({ message }: { message: ViewerMessage }) {
 
 function getSubtitle(msg: ViewerMessage): string | undefined {
   if (msg.type === "report") return msg.data.title ?? undefined;
-  if (msg.type === "query") return msg.data.title ?? undefined;
+  if (msg.type === "query") {
+    const title = msg.data.title ?? undefined;
+    const count = `${msg.data.row_count} row${msg.data.row_count !== 1 ? "s" : ""}`;
+    return title ? `${title} (${count})` : count;
+  }
+  if (msg.type === "search") {
+    const n = msg.data.results.length;
+    return `"${msg.data.query_text}" (${n} result${n !== 1 ? "s" : ""})`;
+  }
+  if (msg.type === "links") {
+    const n = msg.data.links.length;
+    return `${n} link${n !== 1 ? "s" : ""}`;
+  }
+  if (msg.type === "entity") {
+    return msg.data.name;
+  }
   return undefined;
 }
 

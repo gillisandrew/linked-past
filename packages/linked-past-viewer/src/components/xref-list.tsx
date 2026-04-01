@@ -1,4 +1,5 @@
 import { Badge } from "@/components/ui/badge";
+import { shortenPredicate } from "../lib/predicates";
 import type { XrefLink } from "../lib/types";
 import { EntityUri } from "./entity-uri";
 
@@ -35,7 +36,7 @@ export function XrefList({ links }: { links: XrefLink[] }) {
             <div className="space-y-1 pl-2 border-l-2">
               {items.map((link, i) => (
                 <div key={i} className="text-sm">
-                  <span className="text-muted-foreground">{link.relationship}</span>
+                  <span className="text-muted-foreground">{shortenPredicate(link.relationship)}</span>
                   {" → "}
                   <EntityUri uri={link.target} />
                   {link.basis && (
