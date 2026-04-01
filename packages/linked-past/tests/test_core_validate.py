@@ -185,3 +185,297 @@ def test_validate_and_execute_unknown_class_still_executes(tmp_path):
     assert result.rows == []  # No Gadgets exist, but query ran
     assert len(result.errors) == 1  # Contains a hint about unknown class
     assert "Hint:" in result.errors[0]
+
+
+def test_validate_infers_type_from_range():
+    schemas = {
+        "PostAssertion": {
+            "uri": "ex:PostAssertion",
+            "properties": [
+                {"pred": "ex:hasOffice", "range": "ex:Office"},
+                {"pred": "ex:isAboutPerson", "range": "ex:Person"},
+            ],
+        },
+        "Office": {
+            "uri": "ex:Office",
+            "properties": [
+                {"pred": "rdfs:label", "range": "xsd:string"},
+                {"pred": "ex:hasAbbreviation", "range": "xsd:string"},
+            ],
+        },
+        "Person": {
+            "uri": "ex:Person",
+            "properties": [
+                {"pred": "ex:hasName", "range": "xsd:string"},
+            ],
+        },
+    }
+    sd = build_schema_dict(schemas, PREFIXES)
+    sparql = (
+        "PREFIX ex: <http://example.org/>\n"
+        "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n"
+        "SELECT ?name WHERE {\n"
+        "  ?pa a ex:PostAssertion ; ex:hasOffice ?office .\n"
+        "  ?office ex:hasAbbreviation ?abbr .\n"
+        "}"
+    )
+    hints = validate_semantics(sparql, sd)
+    assert not any("hasAbbreviation" in h for h in hints)
+
+
+def test_validate_wrong_predicate_on_inferred_type():
+    schemas = {
+        "PostAssertion": {
+            "uri": "ex:PostAssertion",
+            "properties": [
+                {"pred": "ex:hasOffice", "range": "ex:Office"},
+            ],
+        },
+        "Office": {
+            "uri": "ex:Office",
+            "properties": [
+                {"pred": "rdfs:label", "range": "xsd:string"},
+            ],
+        },
+    }
+    sd = build_schema_dict(schemas, PREFIXES)
+    sparql = (
+        "PREFIX ex: <http://example.org/>\n"
+        "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n"
+        "SELECT ?name WHERE {\n"
+        "  ?pa a ex:PostAssertion ; ex:hasOffice ?office .\n"
+        "  ?office ex:hasName ?name .\n"
+        "}"
+    )
+    hints = validate_semantics(sparql, sd)
+    assert any("hasName" in h for h in hints)
+
+
+def test_validate_predicate_on_wrong_class():
+    schemas = {
+        "Person": {
+            "uri": "ex:Person",
+            "properties": [
+                {"pred": "ex:hasName", "range": "xsd:string"},
+            ],
+        },
+        "PostAssertion": {
+            "uri": "ex:PostAssertion",
+            "properties": [
+                {"pred": "ex:hasOffice", "range": "ex:Office"},
+            ],
+        },
+    }
+    sd = build_schema_dict(schemas, PREFIXES)
+    sparql = (
+        "PREFIX ex: <http://example.org/>\n"
+        "SELECT ?o WHERE { ?p a ex:Person ; ex:hasOffice ?o }"
+    )
+    hints = validate_semantics(sparql, sd)
+    assert any("hasOffice" in h and "Person" in h for h in hints)
+
+
+def test_join_hint_shows_owner_class():
+    schemas = {
+        "Person": {
+            "uri": "ex:Person",
+            "properties": [
+                {"pred": "ex:hasName", "range": "xsd:string"},
+            ],
+        },
+        "PostAssertion": {
+            "uri": "ex:PostAssertion",
+            "properties": [
+                {"pred": "ex:hasOffice", "range": "ex:Office"},
+            ],
+        },
+    }
+    sd = build_schema_dict(schemas, PREFIXES)
+    sparql = (
+        "PREFIX ex: <http://example.org/>\n"
+        "SELECT ?o WHERE { ?p a ex:Person ; ex:hasOffice ?o }"
+    )
+    hints = validate_semantics(sparql, sd)
+    assert any("PostAssertion" in h for h in hints)
+
+
+def test_literal_datatype_mismatch():
+    schemas = {
+        "PostAssertion": {
+            "uri": "ex:PostAssertion",
+            "properties": [
+                {"pred": "ex:hasDateStart", "range": "xsd:integer"},
+            ],
+        },
+    }
+    sd = build_schema_dict(schemas, PREFIXES)
+    sparql = (
+        "PREFIX ex: <http://example.org/>\n"
+        'SELECT ?pa WHERE { ?pa a ex:PostAssertion ; ex:hasDateStart "63 BC" }'
+    )
+    hints = validate_semantics(sparql, sd)
+    assert any("integer" in h.lower() for h in hints)
+
+
+def test_literal_datatype_correct():
+    schemas = {
+        "PostAssertion": {
+            "uri": "ex:PostAssertion",
+            "properties": [
+                {"pred": "ex:hasDateStart", "range": "xsd:integer"},
+            ],
+        },
+    }
+    sd = build_schema_dict(schemas, PREFIXES)
+    sparql = (
+        "PREFIX ex: <http://example.org/>\n"
+        "SELECT ?pa WHERE { ?pa a ex:PostAssertion ; ex:hasDateStart -63 }"
+    )
+    hints = validate_semantics(sparql, sd)
+    assert not any("integer" in h.lower() for h in hints)
+
+
+def test_open_world_boolean_hint():
+    schemas = {
+        "Person": {
+            "uri": "ex:Person",
+            "properties": [
+                {"pred": "ex:isPatrician", "range": "xsd:boolean", "open_world": True},
+            ],
+        },
+    }
+    sd = build_schema_dict(schemas, PREFIXES)
+    sparql = (
+        "PREFIX ex: <http://example.org/>\n"
+        "SELECT ?p WHERE { ?p a ex:Person ; ex:isPatrician ?v . FILTER(?v = false) }"
+    )
+    hints = validate_semantics(sparql, sd)
+    assert any("open-world" in h and "FILTER NOT EXISTS" in h for h in hints)
+
+
+def test_open_world_no_false_positive():
+    schemas = {
+        "Person": {
+            "uri": "ex:Person",
+            "properties": [
+                {"pred": "ex:isPatrician", "range": "xsd:boolean", "open_world": True},
+            ],
+        },
+    }
+    sd = build_schema_dict(schemas, PREFIXES)
+    sparql = (
+        "PREFIX ex: <http://example.org/>\n"
+        "SELECT ?p WHERE { ?p a ex:Person ; ex:isPatrician true }"
+    )
+    hints = validate_semantics(sparql, sd)
+    assert not any("open-world" in h for h in hints)
+
+
+def test_count_distinct_hint():
+    schemas = {
+        "PostAssertion": {
+            "uri": "ex:PostAssertion",
+            "count_distinct": True,
+            "properties": [
+                {"pred": "ex:isAboutPerson", "range": "ex:Person"},
+            ],
+        },
+    }
+    sd = build_schema_dict(schemas, PREFIXES)
+    sparql = (
+        "PREFIX ex: <http://example.org/>\n"
+        "SELECT (COUNT(?pa) AS ?n) WHERE { ?pa a ex:PostAssertion }"
+    )
+    hints = validate_semantics(sparql, sd)
+    assert any("COUNT(DISTINCT" in h for h in hints)
+
+
+def test_count_distinct_no_false_positive():
+    schemas = {
+        "PostAssertion": {
+            "uri": "ex:PostAssertion",
+            "count_distinct": True,
+            "properties": [],
+        },
+    }
+    sd = build_schema_dict(schemas, PREFIXES)
+    sparql = (
+        "PREFIX ex: <http://example.org/>\n"
+        "SELECT (COUNT(DISTINCT ?pa) AS ?n) WHERE { ?pa a ex:PostAssertion }"
+    )
+    hints = validate_semantics(sparql, sd)
+    assert not any("COUNT(DISTINCT" in h for h in hints)
+
+
+def test_limit_warning():
+    schemas = {
+        "Person": {
+            "uri": "ex:Person",
+            "properties": [],
+        },
+    }
+    sd = build_schema_dict(schemas, PREFIXES)
+    class_counts = {"http://example.org/Person": 5000}
+    sparql = (
+        "PREFIX ex: <http://example.org/>\n"
+        "SELECT ?p WHERE { ?p a ex:Person }"
+    )
+    hints = validate_semantics(sparql, sd, class_counts=class_counts)
+    assert any("LIMIT" in h and "5,000" in h for h in hints)
+
+
+def test_limit_no_warning_when_present():
+    schemas = {
+        "Person": {
+            "uri": "ex:Person",
+            "properties": [],
+        },
+    }
+    sd = build_schema_dict(schemas, PREFIXES)
+    class_counts = {"http://example.org/Person": 5000}
+    sparql = (
+        "PREFIX ex: <http://example.org/>\n"
+        "SELECT ?p WHERE { ?p a ex:Person } LIMIT 100"
+    )
+    hints = validate_semantics(sparql, sd, class_counts=class_counts)
+    assert not any("LIMIT" in h for h in hints)
+
+
+def test_uncertainty_flags_hint():
+    schemas = {
+        "PostAssertion": {
+            "uri": "ex:PostAssertion",
+            "properties": [
+                {"pred": "ex:hasOffice", "range": "ex:Office"},
+                {"pred": "ex:isUncertain", "range": "xsd:boolean", "open_world": True},
+                {"pred": "ex:isDateUncertain", "range": "xsd:boolean", "open_world": True},
+            ],
+        },
+    }
+    sd = build_schema_dict(schemas, PREFIXES)
+    sparql = (
+        "PREFIX ex: <http://example.org/>\n"
+        "SELECT ?pa WHERE { ?pa a ex:PostAssertion ; ex:hasOffice ?o }"
+    )
+    hints = validate_semantics(sparql, sd)
+    assert any("uncertainty" in h.lower() and "isUncertain" in h for h in hints)
+
+
+def test_uncertainty_flags_no_hint_when_used():
+    schemas = {
+        "PostAssertion": {
+            "uri": "ex:PostAssertion",
+            "properties": [
+                {"pred": "ex:hasOffice", "range": "ex:Office"},
+                {"pred": "ex:isUncertain", "range": "xsd:boolean", "open_world": True},
+            ],
+        },
+    }
+    sd = build_schema_dict(schemas, PREFIXES)
+    sparql = (
+        "PREFIX ex: <http://example.org/>\n"
+        "SELECT ?pa WHERE { ?pa a ex:PostAssertion ; ex:hasOffice ?o . "
+        "FILTER NOT EXISTS { ?pa ex:isUncertain true } }"
+    )
+    hints = validate_semantics(sparql, sd)
+    assert not any("uncertainty" in h.lower() for h in hints)

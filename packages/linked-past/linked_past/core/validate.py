@@ -12,7 +12,7 @@ from rdflib.plugins.sparql import prepareQuery
 from rdflib.plugins.sparql.algebra import translateQuery, traverse
 from rdflib.plugins.sparql.parser import parseQuery
 from rdflib.plugins.sparql.parserutils import CompValue
-from rdflib.term import URIRef, Variable
+from rdflib.term import Literal, URIRef, Variable
 
 logger = logging.getLogger(__name__)
 
@@ -216,14 +216,18 @@ def extract_query_classes(sparql: str, schema_dict: dict) -> set[str]:
     return classes
 
 
-def validate_semantics(sparql: str, schema_dict: dict) -> list[str]:
+def validate_semantics(
+    sparql: str,
+    schema_dict: dict,
+    class_counts: dict[str, int] | None = None,
+) -> list[str]:
     """Validate a SPARQL query against the schema dictionary.
 
-    Returns a list of strings. No blocking errors — all issues are
-    constructive hints that help the LLM self-correct.
-
-    Hints include available alternatives so the LLM knows what vocabulary
-    to use (e.g., "Class 'City' not in schema. Available: Place, Location, Name").
+    Returns constructive hints. Performs:
+    1. Unknown class/predicate detection (with suggestions)
+    2. Recursive type inference through property ranges
+    3. Literal datatype checking
+    4. Domain-specific pattern checks (LIMIT, COUNT(DISTINCT), open-world booleans, uncertainty flags)
     """
     hints = []
     try:
@@ -231,26 +235,51 @@ def validate_semantics(sparql: str, schema_dict: dict) -> list[str]:
     except Exception:
         return hints
 
+    all_class_uris = set(k for k in schema_dict.keys())
     var_types: dict[str, list[str]] = {}
-    all_class_uris = set(schema_dict.keys())
 
+    # Pass 1: Explicit types from rdf:type
     for s, p, o in triples:
         if p == RDF_TYPE and isinstance(o, URIRef):
             class_uri = str(o)
             if class_uri not in all_class_uris:
                 local_name = _local_name(class_uri)
-                valid_classes = sorted(_local_name(uri) for uri in all_class_uris)
+                valid_classes = sorted(_local_name(uri) for uri in all_class_uris if uri != "_meta")
                 suggestion = _suggest(local_name, valid_classes)
                 hints.append(
                     f"Hint: Class '{local_name}' not in this dataset's schema. "
                     f"Available classes: {', '.join(valid_classes[:15])}.{suggestion}"
                 )
             if isinstance(s, Variable):
-                var_name = str(s)
-                if var_name not in var_types:
-                    var_types[var_name] = []
-                var_types[var_name].append(class_uri)
+                var_types.setdefault(str(s), []).append(class_uri)
 
+    # Pass 2: Infer types from property ranges (fixed-point iteration)
+    for _ in range(10):
+        new_inferences = False
+        for s, p, o in triples:
+            if p == RDF_TYPE or not isinstance(p, URIRef) or not isinstance(o, Variable):
+                continue
+            if not isinstance(s, Variable):
+                continue
+            pred_uri = str(p)
+            if pred_uri in _UNIVERSAL_PREDS:
+                continue
+            s_name = str(s)
+            o_name = str(o)
+            for class_uri in var_types.get(s_name, []):
+                if class_uri not in schema_dict:
+                    continue
+                pred_info = schema_dict[class_uri].get(pred_uri)
+                if pred_info is None or not isinstance(pred_info, dict):
+                    continue
+                for range_uri in pred_info.get("ranges", []):
+                    if range_uri in all_class_uris and range_uri not in var_types.get(o_name, []):
+                        var_types.setdefault(o_name, []).append(range_uri)
+                        new_inferences = True
+        if not new_inferences:
+            break
+
+    # Pass 3: Validate predicates against typed variables
     for s, p, o in triples:
         if p == RDF_TYPE or not isinstance(p, URIRef) or not isinstance(s, Variable):
             continue
@@ -263,15 +292,206 @@ def validate_semantics(sparql: str, schema_dict: dict) -> list[str]:
         for class_uri in var_types[var_name]:
             if class_uri not in schema_dict:
                 continue
-            valid_preds = schema_dict[class_uri]
+            valid_preds = {k: v for k, v in schema_dict[class_uri].items() if k != "_meta"}
             if pred_uri not in valid_preds:
                 pred_local = _local_name(pred_uri)
                 class_local = _local_name(class_uri)
-                valid_local = sorted(_local_name(uri) for uri in valid_preds if uri != "_meta")
+                valid_local = sorted(_local_name(uri) for uri in valid_preds)
                 suggestion = _suggest(pred_local, valid_local)
+                owner_classes = []
+                for other_class, other_preds in schema_dict.items():
+                    if pred_uri in other_preds and other_class != class_uri:
+                        owner_classes.append(_local_name(other_class))
+                join_hint = ""
+                if owner_classes:
+                    join_hint = f" This predicate belongs to: {', '.join(owner_classes)}."
                 hints.append(
                     f"Hint: '{pred_local}' not a known predicate for {class_local}. "
-                    f"Available: {', '.join(valid_local[:15])}.{suggestion}"
+                    f"Available: {', '.join(valid_local[:15])}.{suggestion}{join_hint}"
+                )
+
+    # Pass 4: Literal datatype checking
+    hints.extend(_check_literal_datatypes(triples, var_types, schema_dict))
+
+    # Pass 5: Domain-specific checks
+    hints.extend(_check_open_world_booleans(sparql, triples, var_types, schema_dict))
+    hints.extend(_check_count_distinct(sparql, var_types, schema_dict))
+    hints.extend(_check_limit(sparql, var_types, schema_dict, class_counts))
+    hints.extend(_check_uncertainty_flags(sparql, triples, var_types, schema_dict))
+
+    return hints
+
+
+def _check_literal_datatypes(
+    triples: list[tuple],
+    var_types: dict[str, list[str]],
+    schema_dict: dict,
+) -> list[str]:
+    """Detect literal type mismatches in triple patterns."""
+    hints = []
+    for s, p, o in triples:
+        if not isinstance(p, URIRef) or not isinstance(s, Variable):
+            continue
+        if not isinstance(o, Literal):
+            continue
+        pred_uri = str(p)
+        s_name = str(s)
+        for class_uri in var_types.get(s_name, []):
+            if class_uri not in schema_dict:
+                continue
+            pred_info = schema_dict[class_uri].get(pred_uri)
+            if not isinstance(pred_info, dict):
+                continue
+            expected_dt = pred_info.get("datatype")
+            if not expected_dt:
+                continue
+            actual_dt = str(o.datatype) if o.datatype else None
+            if actual_dt and actual_dt != expected_dt:
+                pred_local = _local_name(pred_uri)
+                expected_local = _local_name(expected_dt)
+                actual_local = _local_name(actual_dt)
+                hints.append(
+                    f"Hint: '{pred_local}' expects {expected_local} but got {actual_local}. "
+                    f"Example: use -63 (integer) instead of \"63 BC\" (string)."
+                )
+            elif not actual_dt and expected_dt.endswith("integer"):
+                try:
+                    int(str(o))
+                except ValueError:
+                    pred_local = _local_name(pred_uri)
+                    hints.append(
+                        f"Hint: '{pred_local}' expects xsd:integer but got string \"{o}\". "
+                        f"Use an integer value (negative for BC, e.g., -63)."
+                    )
+    return hints
+
+
+def _check_open_world_booleans(
+    sparql: str,
+    triples: list[tuple],
+    var_types: dict[str, list[str]],
+    schema_dict: dict,
+) -> list[str]:
+    """Detect FILTER(?var = false) on open-world boolean properties."""
+    hints = []
+    false_pattern = re.compile(
+        r"FILTER\s*\(\s*\?(\w+)\s*=\s*(?:false|\"false\")", re.IGNORECASE
+    )
+    for match in false_pattern.finditer(sparql):
+        var_name = match.group(1)
+        for s, p, o in triples:
+            if isinstance(o, Variable) and str(o) == var_name and isinstance(s, Variable) and isinstance(p, URIRef):
+                pred_uri = str(p)
+                s_name = str(s)
+                for class_uri in var_types.get(s_name, []):
+                    if class_uri not in schema_dict:
+                        continue
+                    pred_info = schema_dict[class_uri].get(pred_uri)
+                    if isinstance(pred_info, dict) and pred_info.get("open_world"):
+                        pred_local = _local_name(pred_uri)
+                        hints.append(
+                            f"Hint: '{pred_local}' only stores true values (open-world boolean). "
+                            f"FILTER(?{var_name} = false) returns 0 rows. "
+                            f"Use: FILTER NOT EXISTS {{ ?{s_name} <{pred_uri}> true }}"
+                        )
+    return hints
+
+
+def _check_count_distinct(
+    sparql: str,
+    var_types: dict[str, list[str]],
+    schema_dict: dict,
+) -> list[str]:
+    """Detect COUNT(?var) without DISTINCT on classes marked count_distinct."""
+    hints = []
+    count_pattern = re.compile(r"COUNT\s*\(\s*(?!DISTINCT\b)\?(\w+)\s*\)", re.IGNORECASE)
+    for match in count_pattern.finditer(sparql):
+        var_name = match.group(1)
+        for class_uri in var_types.get(var_name, []):
+            if class_uri not in schema_dict:
+                continue
+            meta = schema_dict[class_uri].get("_meta", {})
+            if meta.get("count_distinct"):
+                class_local = _local_name(class_uri)
+                hints.append(
+                    f"Hint: {class_local} can have multiple rows per entity (e.g. one per source). "
+                    f"Use COUNT(DISTINCT ?{var_name}) instead of COUNT(?{var_name})."
+                )
+    return hints
+
+
+def _check_limit(
+    sparql: str,
+    var_types: dict[str, list[str]],
+    schema_dict: dict,
+    class_counts: dict[str, int] | None,
+) -> list[str]:
+    """Warn when SELECT has no LIMIT and target class has many instances."""
+    hints = []
+    if class_counts is None:
+        return hints
+    sparql_upper = sparql.upper()
+    if "LIMIT" in sparql_upper or "COUNT" in sparql_upper or "ASK" in sparql_upper:
+        return hints
+    max_count = 0
+    max_class = ""
+    for var_name, types in var_types.items():
+        for class_uri in types:
+            count = class_counts.get(class_uri, 0)
+            if count > max_count:
+                max_count = count
+                max_class = _local_name(class_uri)
+    if max_count > 1000:
+        hints.append(
+            f"Hint: Query targets {max_class} (~{max_count:,} instances) with no LIMIT. "
+            f"Consider adding LIMIT 100 for exploration, or use COUNT/GROUP BY for aggregation."
+        )
+    return hints
+
+
+def _check_uncertainty_flags(
+    sparql: str,
+    triples: list[tuple],
+    var_types: dict[str, list[str]],
+    schema_dict: dict,
+) -> list[str]:
+    """Suggest surfacing uncertainty flags when querying assertion classes."""
+    hints = []
+    used_preds: set[str] = set()
+    for s, p, o in triples:
+        if isinstance(p, URIRef):
+            used_preds.add(str(p))
+    # Also capture URIs used inside FILTER NOT EXISTS / FILTER EXISTS blocks,
+    # which are not returned by _collect_triples.
+    for uri_match in re.finditer(r"<([^>]+)>", sparql):
+        used_preds.add(uri_match.group(1))
+    # Expand prefixed names from PREFIX declarations in the query.
+    inline_prefixes: dict[str, str] = {}
+    for pm in re.finditer(r"PREFIX\s+(\w+)\s*:\s*<([^>]+)>", sparql, re.IGNORECASE):
+        inline_prefixes[pm.group(1)] = pm.group(2)
+    for pm in re.finditer(r"\b(\w+):(\w+)\b", sparql):
+        prefix, local = pm.group(1), pm.group(2)
+        if prefix in inline_prefixes:
+            used_preds.add(inline_prefixes[prefix] + local)
+
+    seen_classes: set[str] = set()
+    for var_name, types in var_types.items():
+        for class_uri in types:
+            if class_uri in seen_classes or class_uri not in schema_dict:
+                continue
+            seen_classes.add(class_uri)
+            flags = []
+            for pred_uri, pred_info in schema_dict[class_uri].items():
+                if pred_uri == "_meta":
+                    continue
+                if isinstance(pred_info, dict) and pred_info.get("open_world") and pred_uri not in used_preds:
+                    flags.append(_local_name(pred_uri))
+            if flags:
+                class_local = _local_name(class_uri)
+                hints.append(
+                    f"Hint: {class_local} has uncertainty flags not in your query: "
+                    f"{', '.join(flags)}. Consider OPTIONAL {{ ?{var_name} ... }} to surface them, "
+                    f"or FILTER NOT EXISTS {{ ... true }} to exclude uncertain data."
                 )
     return hints
 
