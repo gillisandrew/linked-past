@@ -22,46 +22,24 @@ _NAME_PREDICATES = (
 
 
 def _extract_name(uri: str, properties: list[dict[str, str]], store=None) -> str:
-    """Extract a display name, preferring English labels.
+    """Extract a display name from properties (already language-filtered).
 
-    Uses a dedicated SPARQL query to pick English or untagged labels first,
-    then falls back to the property list, then to the URI fragment.
+    Falls back to a dedicated label query, then URI fragment.
     """
-    if store:
-        try:
-            from linked_past.core.store import execute_query
-
-            # Prefer English or untagged labels from common name predicates
-            label_sparql = (
-                "SELECT ?label WHERE { "
-                f"  <{uri}> ?pred ?label . "
-                "  VALUES ?pred { "
-                "    <http://www.w3.org/2000/01/rdf-schema#label> "
-                "    <http://www.w3.org/2004/02/skos/core#prefLabel> "
-                "    <http://purl.org/dc/terms/title> "
-                "  } "
-                "  FILTER(lang(?label) = 'en' || lang(?label) = '') "
-                "} LIMIT 1"
-            )
-            rows = execute_query(store, label_sparql)
-            if rows and rows[0].get("label"):
-                return rows[0]["label"]
-        except Exception:
-            pass
-
-    # Fallback: first matching predicate from properties (may be non-English)
+    # Try well-known name predicates from the (already filtered) properties
     for pred in _NAME_PREDICATES:
         for prop in properties:
             pred_local = prop["pred"].rsplit("/", 1)[-1].rsplit("#", 1)[-1]
             if pred_local == pred:
                 return prop["obj"]
 
-    # Last resort: try ANY language label from the store
+    # Dedicated label query with language preference
     if store:
         try:
-            from linked_past.core.store import execute_query
+            from linked_past.core.store import DEFAULT_LANG_PREFS, execute_query
 
-            any_label_sparql = (
+            rows = execute_query(
+                store,
                 "SELECT ?label WHERE { "
                 f"  <{uri}> ?pred ?label . "
                 "  VALUES ?pred { "
@@ -69,9 +47,9 @@ def _extract_name(uri: str, properties: list[dict[str, str]], store=None) -> str
                 "    <http://www.w3.org/2004/02/skos/core#prefLabel> "
                 "    <http://purl.org/dc/terms/title> "
                 "  } "
-                "} LIMIT 1"
+                "} LIMIT 5",
+                lang_prefs=DEFAULT_LANG_PREFS,
             )
-            rows = execute_query(store, any_label_sparql)
             if rows and rows[0].get("label"):
                 return rows[0]["label"]
         except Exception:
@@ -126,15 +104,14 @@ async def entity_handler(request: Request) -> JSONResponse | PlainTextResponse:
     if ds_name:
         try:
             store = registry.get_store(ds_name)
-            from linked_past.core.store import execute_query
+            from linked_past.core.store import DEFAULT_LANG_PREFS, execute_query
 
-            # Entity properties — prefer English/untagged, fall back to any language
+            # Entity properties with English language preference
             def _query_props(query_uri: str) -> list[dict[str, str]]:
                 rows = execute_query(
                     store,
-                    f"SELECT ?pred ?obj WHERE {{ <{query_uri}> ?pred ?obj . "
-                    f"FILTER(!isLiteral(?obj) || lang(?obj) = 'en' || lang(?obj) = '') "
-                    f"}} LIMIT 50",
+                    f"SELECT ?pred ?obj WHERE {{ <{query_uri}> ?pred ?obj . }} LIMIT 50",
+                    lang_prefs=DEFAULT_LANG_PREFS,
                 )
                 return [{"pred": r["pred"], "obj": r["obj"] or ""} for r in rows]
 
