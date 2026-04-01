@@ -49,12 +49,15 @@ classes:
       - pred: "vocab:isPatrician"
         range: "xsd:boolean"
         comment: "Only `true` values are stored. To find non-patricians: FILTER NOT EXISTS { ?person vocab:isPatrician true }."
+        open_world: true
       - pred: "vocab:isNobilis"
         range: "xsd:boolean"
         comment: "Only `true` values are stored. To find non-nobiles: FILTER NOT EXISTS { ?person vocab:isNobilis true }."
+        open_world: true
       - pred: "vocab:isNovus"
         range: "xsd:boolean"
         comment: "Only `true` values are stored. To find non-novi homines: FILTER NOT EXISTS { ?person vocab:isNovus true }."
+        open_world: true
       - pred: "vocab:hasReNumber"
         range: "xsd:string"
         comment: "Reference number in RE (e.g. \"46a, Supb. 5.356ff.\")."
@@ -64,21 +67,27 @@ classes:
       - pred: "vocab:isPraenomenUncertain"
         range: "xsd:boolean"
         comment: "Only `true` stored; absence = not uncertain."
+        open_world: true
       - pred: "vocab:isNomenUncertain"
         range: "xsd:boolean"
         comment: "Only `true` stored; absence = not uncertain."
+        open_world: true
       - pred: "vocab:isCognomenUncertain"
         range: "xsd:boolean"
         comment: "Only `true` stored; absence = not uncertain."
+        open_world: true
       - pred: "vocab:isFiliationUncertain"
         range: "xsd:boolean"
         comment: "Only `true` stored; absence = not uncertain."
+        open_world: true
       - pred: "vocab:isOtherNamesUncertain"
         range: "xsd:boolean"
         comment: "Only `true` stored; absence = not uncertain."
+        open_world: true
       - pred: "vocab:isPatricianUncertain"
         range: "xsd:boolean"
         comment: "Only `true` stored; absence = not uncertain."
+        open_world: true
       - pred: "vocab:hasNobilisNotes"
         range: "xsd:string"
         comment: "Notes on the person's nobilis classification."
@@ -96,6 +105,7 @@ classes:
     label: "Post Assertion"
     comment: "An assertion that a person held a particular office or post. Multiple sources create separate assertions; always use COUNT(DISTINCT ?person) when counting holders."
     uri: "vocab:PostAssertion"
+    count_distinct: true
     properties:
       - pred: "vocab:isAboutPerson"
         range: "vocab:Person"
@@ -118,12 +128,15 @@ classes:
       - pred: "vocab:isUncertain"
         range: "xsd:boolean"
         comment: "Whether this assertion is uncertain."
+        open_world: true
       - pred: "vocab:isDateStartUncertain"
         range: "xsd:boolean"
         comment: "Whether the start date is uncertain."
+        open_world: true
       - pred: "vocab:isDateEndUncertain"
         range: "xsd:boolean"
         comment: "Whether the end date is uncertain."
+        open_world: true
       - pred: "vocab:hasPostAssertionNote"
         range: "vocab:PostAssertionNote"
         comment: "Links to PostAssertionNote entity — dereference with vocab:hasNoteText."
@@ -154,11 +167,13 @@ classes:
       - pred: "vocab:isProvinceUncertain"
         range: "xsd:boolean"
         comment: "Whether the province assignment is uncertain."
+        open_world: true
 
   RelationshipAssertion:
     label: "Relationship Assertion"
     comment: "An assertion of a family or social relationship between two persons. 6,928 instances exist covering 36 relationship types."
     uri: "vocab:RelationshipAssertion"
+    count_distinct: true
     properties:
       - pred: "vocab:isAboutPerson"
         range: "vocab:Person"
@@ -180,6 +195,7 @@ classes:
     label: "Status Assertion"
     comment: "An assertion about a person's social or political status (senator or eques Romanus)."
     uri: "vocab:StatusAssertion"
+    count_distinct: true
     properties:
       - pred: "vocab:isAboutPerson"
         range: "vocab:Person"
@@ -199,12 +215,15 @@ classes:
       - pred: "vocab:isUncertain"
         range: "xsd:boolean"
         comment: "Whether this status assertion is uncertain."
+        open_world: true
       - pred: "vocab:isDateStartUncertain"
         range: "xsd:boolean"
         comment: "Whether the start date is uncertain."
+        open_world: true
       - pred: "vocab:isDateEndUncertain"
         range: "xsd:boolean"
         comment: "Whether the end date is uncertain."
+        open_world: true
       - pred: "vocab:hasStatusAssertionNote"
         range: "vocab:StatusAssertionNote"
         comment: "Links to StatusAssertionNote entity — dereference with vocab:hasNoteText."
@@ -219,6 +238,7 @@ classes:
     label: "Date Information"
     comment: "Dated biographical information about a person (birth, death, floruit, etc.)."
     uri: "vocab:DateInformation"
+    count_distinct: true
     properties:
       - pred: "vocab:isAboutPerson"
         range: "vocab:Person"
@@ -238,6 +258,7 @@ classes:
       - pred: "vocab:isUncertain"
         range: "xsd:boolean"
         comment: "Whether this date information is uncertain."
+        open_world: true
       - pred: "vocab:hasNotes"
         range: "xsd:string"
         comment: "Notes about this date information."
@@ -246,6 +267,7 @@ classes:
     label: "Tribe Assertion"
     comment: "An assertion that a person belonged to a particular Roman tribe."
     uri: "vocab:TribeAssertion"
+    count_distinct: true
     properties:
       - pred: "vocab:isAboutPerson"
         range: "vocab:Person"
@@ -259,6 +281,7 @@ classes:
       - pred: "vocab:isUncertain"
         range: "xsd:boolean"
         comment: "Whether this tribe assertion is uncertain."
+        open_world: true
 
   Office:
     label: "Office"
