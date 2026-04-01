@@ -58,6 +58,15 @@ class SearchIndex:
         self._conn.commit()
         return cursor.lastrowid
 
+    def add_batch(self, rows: list[tuple[str, str, str]]) -> int:
+        """Insert multiple (dataset, doc_type, text) rows in a single transaction."""
+        self._conn.executemany(
+            "INSERT INTO documents (dataset, doc_type, text) VALUES (?, ?, ?)",
+            rows,
+        )
+        self._conn.commit()
+        return len(rows)
+
     def build(self) -> int:
         """No-op for API compatibility. FTS5 indexes on insert."""
         return 0

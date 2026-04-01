@@ -77,9 +77,56 @@ def _index_dataset(search: SearchIndex, name: str, plugin: object, store=None) -
         for cls_name, shape_text in shapes.items():
             search.add(name, "shex_shape", shape_text)
 
-    # Index SKOS vocabulary terms if store is available
+    # Index entity labels if store is available
     if store is None:
         return
+
+    # Bulk-index rdfs:label, skos:prefLabel, dcterms:title as entity labels
+    label_predicates = [
+        "http://www.w3.org/2000/01/rdf-schema#label",
+        "http://www.w3.org/2004/02/skos/core#prefLabel",
+        "http://purl.org/dc/terms/title",
+    ]
+    # Add dataset-specific name predicates
+    if hasattr(plugin, "_prefixes") and hasattr(plugin, "_schemas"):
+        prefix_map = plugin._prefixes
+        for cls_data in plugin._schemas.values():
+            for prop in cls_data.get("properties", []):
+                pred = prop["pred"]
+                if any(kw in pred.lower() for kw in ("name", "label", "title")):
+                    # Expand prefixed form to full URI
+                    if ":" in pred and not pred.startswith("http"):
+                        prefix, local = pred.split(":", 1)
+                        ns = prefix_map.get(prefix)
+                        if ns:
+                            full_uri = ns + local
+                            if full_uri not in label_predicates:
+                                label_predicates.append(full_uri)
+                    elif pred.startswith("http") and pred not in label_predicates:
+                        label_predicates.append(pred)
+
+    union = " UNION ".join(f"{{ ?uri <{p}> ?label }}" for p in label_predicates)
+    try:
+        entity_labels = list(store.query(
+            f"SELECT DISTINCT ?uri ?label WHERE {{ {union} }} LIMIT 50000"
+        ))
+        seen = set()
+        batch = []
+        for row in entity_labels:
+            uri_val = row[0].value if hasattr(row[0], "value") else str(row[0])
+            label_val = row[1].value if hasattr(row[1], "value") else str(row[1])
+            key = (uri_val, label_val)
+            if key in seen:
+                continue
+            seen.add(key)
+            batch.append((name, "entity_label", f"{label_val}\t{uri_val}"))
+        if batch:
+            search.add_batch(batch)
+        logger.info("Indexed %d entity labels for %s", len(batch), name)
+    except Exception as e:
+        logger.warning("Failed to index entity labels for %s: %s", name, e)
+
+    # Index SKOS vocabulary terms
     schemes = list(store.query(
         "PREFIX skos: <http://www.w3.org/2004/02/skos/core#> "
         "SELECT ?scheme (SAMPLE(?sl) AS ?schemeLabel) (COUNT(?c) AS ?n) WHERE { "
