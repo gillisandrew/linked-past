@@ -28,6 +28,18 @@ const PREDICATE_LABELS: Record<string, string> = {
   hasRelationshipAssertion: "Relationship",
   hasStatusAssertion: "Status",
   hasTribalAssertion: "Tribe",
+  hasPersonNote: "Note",
+  hasExtraInfo: "Extra Info",
+  hasOtherNames: "Other Names",
+  hasOrigin: "Origin",
+  isSex: "Sex",
+  isNobilis: "Nobilis",
+  isPatrician: "Patrician",
+  isNovus: "Novus Homo",
+  isCognomenUncertain: "Cognomen Uncertain",
+  isNomenUncertain: "Nomen Uncertain",
+  isPraenomenUncertain: "Praenomen Uncertain",
+  isFiliationUncertain: "Filiation Uncertain",
 
   // Common RDF/RDFS/SKOS
   label: "Label",
@@ -85,9 +97,10 @@ export function humanizePredicate(pred: string): string {
   // Check known labels
   if (PREDICATE_LABELS[local]) return PREDICATE_LABELS[local];
 
-  // camelCase → "Camel Case"
+  // Strip common prefixes, then camelCase → "Camel Case"
   return local
     .replace(/^has/, "")
+    .replace(/^is([A-Z])/, "$1")  // isSex → Sex, isNobilis → Nobilis
     .replace(/([A-Z])/g, " $1")
     .replace(/^[\s]/, "")
     .trim() || local;

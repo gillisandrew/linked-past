@@ -12,16 +12,50 @@ const HIDDEN_PREDICATES = new Set([
   "versionInfo", "isDefinedBy", "first", "rest",
   "hasID", "hasDprrID",
   "label", "prefLabel", "comment", "seeAlso",
+  "hasName", // duplicates the entity name shown in the header
 ]);
 
 function localName(pred: string): string {
   return pred.split("/").pop()?.split("#").pop() ?? pred;
 }
 
+/**
+ * Deduplicate and group properties:
+ * - If a predicate appears multiple times with URI values, collapse to "N items"
+ * - Otherwise keep first occurrence
+ */
+function deduplicateProps(
+  props: { pred: string; obj: string }[],
+): { pred: string; obj: string; count?: number }[] {
+  const groups = new Map<string, { pred: string; objs: string[] }>();
+  for (const p of props) {
+    const local = localName(p.pred);
+    if (!groups.has(local)) {
+      groups.set(local, { pred: p.pred, objs: [] });
+    }
+    groups.get(local)!.objs.push(p.obj);
+  }
+
+  const result: { pred: string; obj: string; count?: number }[] = [];
+  for (const [, group] of groups) {
+    if (group.objs.length <= 2) {
+      // Show all values for small groups
+      for (const obj of group.objs) {
+        result.push({ pred: group.pred, obj });
+      }
+    } else {
+      // Show first value + count for large groups
+      result.push({ pred: group.pred, obj: group.objs[0], count: group.objs.length });
+    }
+  }
+  return result;
+}
+
 export function EntityCard({ data }: { data: EntityData }) {
-  const visibleProps = data.properties.filter(
+  const filtered = data.properties.filter(
     (p) => !HIDDEN_PREDICATES.has(localName(p.pred)),
   );
+  const visibleProps = deduplicateProps(filtered);
   const meta = data.predicate_meta ?? {};
 
   return (
@@ -53,6 +87,11 @@ export function EntityCard({ data }: { data: EntityData }) {
                 </dt>
                 <dd className="break-words">
                   <PropertyValue value={p.obj} showBadge={false} />
+                  {p.count && p.count > 1 && (
+                    <span className="text-xs text-muted-foreground ml-1">
+                      (+{p.count - 1} more)
+                    </span>
+                  )}
                 </dd>
               </div>
             ))}
