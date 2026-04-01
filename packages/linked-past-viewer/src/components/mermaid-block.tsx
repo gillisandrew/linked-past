@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from "react";
+import { TransformComponent, TransformWrapper } from "react-zoom-pan-pinch";
 
 let mermaidPromise: Promise<typeof import("mermaid")["default"]> | null = null;
 
@@ -20,6 +21,7 @@ export function MermaidBlock({ chart }: { chart: string }) {
   const id = useId().replace(/:/g, "_");
   const containerRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
+  const [svgHtml, setSvgHtml] = useState<string | null>(null);
   const [lightbox, setLightbox] = useState(false);
 
   useEffect(() => {
@@ -28,8 +30,11 @@ export function MermaidBlock({ chart }: { chart: string }) {
       if (cancelled || !containerRef.current) return;
       try {
         const { svg } = await mermaid.render(`mermaid-${id}`, chart);
-        if (!cancelled && containerRef.current) {
-          containerRef.current.innerHTML = svg;
+        if (!cancelled) {
+          setSvgHtml(svg);
+          if (containerRef.current) {
+            containerRef.current.innerHTML = svg;
+          }
         }
       } catch (e) {
         if (!cancelled) setError(String(e));
@@ -56,22 +61,41 @@ export function MermaidBlock({ chart }: { chart: string }) {
         onClick={() => setLightbox(true)}
         title="Click to enlarge"
       />
-      {lightbox && (
+      {lightbox && svgHtml && (
         <div
-          className="fixed inset-0 z-[200] bg-black/70 flex items-center justify-center cursor-zoom-out"
+          className="fixed inset-0 z-[200] bg-black/80 flex flex-col"
           onClick={() => setLightbox(false)}
         >
+          <div className="flex items-center justify-between px-4 py-2 text-white text-sm">
+            <span className="text-white/60">Scroll to zoom, drag to pan</span>
+            <button
+              onClick={() => setLightbox(false)}
+              className="text-white text-xl cursor-pointer hover:opacity-80 px-2"
+            >
+              ✕
+            </button>
+          </div>
           <div
-            className="bg-background rounded-lg p-6 max-w-[90vw] max-h-[90vh] overflow-auto shadow-2xl"
+            className="flex-1 flex items-center justify-center overflow-hidden"
             onClick={(e) => e.stopPropagation()}
-            dangerouslySetInnerHTML={{ __html: containerRef.current?.innerHTML ?? "" }}
-          />
-          <button
-            onClick={() => setLightbox(false)}
-            className="absolute top-4 right-4 text-white text-2xl cursor-pointer hover:opacity-80"
           >
-            ✕
-          </button>
+            <TransformWrapper
+              initialScale={1}
+              minScale={0.5}
+              maxScale={5}
+              centerOnInit
+            >
+              <TransformComponent
+                wrapperStyle={{ width: "100%", height: "100%" }}
+                contentStyle={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}
+              >
+                <div
+                  className="bg-white rounded-lg p-8 [&_svg]:max-w-none [&_svg]:w-auto [&_svg]:h-auto"
+                  dangerouslySetInnerHTML={{ __html: svgHtml }}
+                />
+              </TransformComponent>
+            </TransformWrapper>
+          </div>
         </div>
       )}
     </>
