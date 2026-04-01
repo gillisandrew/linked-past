@@ -42,7 +42,7 @@ export function SessionPicker({
     onLoadSession(messages, id);
   }
 
-  if (!sessions || sessions.length <= 1) return null;
+  if (!sessions || sessions.length === 0) return null;
 
   return (
     <div className="flex items-center gap-2 text-xs">
