@@ -1,7 +1,6 @@
 """Tests for ViewerManager."""
 
 import pytest
-
 from linked_past.core.viewer import ViewerManager
 
 
