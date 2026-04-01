@@ -164,6 +164,8 @@ And all `isUncertain`, `isPraenomenUncertain`, `isNomenUncertain`, `isCognomenUn
 
 And `isUncertain`, `isDateStartUncertain`, `isDateEndUncertain` on PostAssertion, StatusAssertion, TribeAssertion.
 
+And `isUncertain` on DateInformation.
+
 And `isProvinceUncertain` on PostAssertionProvince.
 
 - [ ] **Step 2: Commit**
@@ -339,8 +341,7 @@ def validate_semantics(
                 continue
             s_name = str(s)
             o_name = str(o)
-            if o_name in var_types:
-                continue  # already typed
+            # Don't skip entirely — variable may have multiple types from different predicates
             for class_uri in var_types.get(s_name, []):
                 if class_uri not in schema_dict:
                     continue
@@ -387,7 +388,10 @@ def validate_semantics(
                     f"Available: {', '.join(valid_local[:15])}.{suggestion}{join_hint}"
                 )
 
-    # Pass 4: Domain-specific checks
+    # Pass 4: Literal datatype checking in triple patterns
+    hints.extend(_check_literal_datatypes(triples, var_types, schema_dict))
+
+    # Pass 5: Domain-specific checks
     hints.extend(_check_open_world_booleans(sparql, triples, var_types, schema_dict))
     hints.extend(_check_count_distinct(sparql, var_types, schema_dict))
     hints.extend(_check_limit(sparql, var_types, schema_dict, class_counts))
@@ -395,9 +399,62 @@ def validate_semantics(
     return hints
 ```
 
-- [ ] **Step 3: Implement domain-specific check helpers**
+- [ ] **Step 3: Implement literal datatype and domain-specific check helpers**
 
 Add to `packages/linked-past/linked_past/core/validate.py`:
+
+```python
+from rdflib.term import Literal
+
+
+def _check_literal_datatypes(
+    triples: list[tuple],
+    var_types: dict[str, list[str]],
+    schema_dict: dict,
+) -> list[str]:
+    """Detect literal type mismatches in triple patterns."""
+    hints = []
+    for s, p, o in triples:
+        if not isinstance(p, URIRef) or not isinstance(s, Variable):
+            continue
+        if not isinstance(o, Literal):
+            continue
+        pred_uri = str(p)
+        s_name = str(s)
+        for class_uri in var_types.get(s_name, []):
+            if class_uri not in schema_dict:
+                continue
+            pred_info = schema_dict[class_uri].get(pred_uri)
+            if not isinstance(pred_info, dict):
+                continue
+            expected_dt = pred_info.get("datatype")
+            if not expected_dt:
+                continue
+            actual_dt = str(o.datatype) if o.datatype else None
+            if actual_dt and actual_dt != expected_dt:
+                pred_local = _local_name(pred_uri)
+                expected_local = _local_name(expected_dt)
+                actual_local = _local_name(actual_dt) if actual_dt else "untyped"
+                hints.append(
+                    f"Hint: '{pred_local}' expects {expected_local} but got {actual_local}. "
+                    f"Example: use -63 (integer) instead of \"63 BC\" (string)."
+                )
+            elif not actual_dt and expected_dt.endswith("integer"):
+                # Untyped literal where integer is expected (e.g., "63 BC" without ^^xsd:string)
+                try:
+                    int(str(o))
+                except ValueError:
+                    pred_local = _local_name(pred_uri)
+                    hints.append(
+                        f"Hint: '{pred_local}' expects xsd:integer but got string \"{o}\". "
+                        f"Use an integer value (negative for BC, e.g., -63)."
+                    )
+    return hints
+
+
+```
+
+Also add:
 
 ```python
 def _check_open_world_booleans(
@@ -487,11 +544,49 @@ def _check_limit(
     return hints
 ```
 
-- [ ] **Step 4: Write tests for domain-specific checks**
+- [ ] **Step 4: Write tests for literal datatype and domain-specific checks**
 
 Add to `packages/linked-past/tests/test_core_validate.py`:
 
 ```python
+def test_literal_datatype_mismatch():
+    schemas = {
+        "PostAssertion": {
+            "uri": "ex:PostAssertion",
+            "properties": [
+                {"pred": "ex:hasDateStart", "range": "xsd:integer"},
+            ],
+        },
+    }
+    sd = build_schema_dict(schemas, PREFIXES)
+    # String literal where integer is expected
+    sparql = (
+        "PREFIX ex: <http://example.org/>\n"
+        'SELECT ?pa WHERE { ?pa a ex:PostAssertion ; ex:hasDateStart "63 BC" }'
+    )
+    hints = validate_semantics(sparql, sd)
+    assert any("integer" in h.lower() for h in hints)
+
+
+def test_literal_datatype_correct():
+    schemas = {
+        "PostAssertion": {
+            "uri": "ex:PostAssertion",
+            "properties": [
+                {"pred": "ex:hasDateStart", "range": "xsd:integer"},
+            ],
+        },
+    }
+    sd = build_schema_dict(schemas, PREFIXES)
+    # Integer literal — correct
+    sparql = (
+        "PREFIX ex: <http://example.org/>\n"
+        "SELECT ?pa WHERE { ?pa a ex:PostAssertion ; ex:hasDateStart -63 }"
+    )
+    hints = validate_semantics(sparql, sd)
+    assert not any("integer" in h.lower() for h in hints)
+
+
 def test_open_world_boolean_hint():
     schemas = {
         "Person": {
