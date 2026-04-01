@@ -3,7 +3,7 @@
 import os
 from pathlib import Path
 
-from pyoxigraph import RdfFormat, Store
+from pyoxigraph import QueryBoolean, RdfFormat, Store
 
 
 def get_data_dir() -> Path:
@@ -75,6 +75,17 @@ def execute_query(
                 row[var_name] = val_str
         rows.append(row)
     return rows
+
+
+def execute_ask(store: Store, sparql: str) -> bool:
+    """Execute a SPARQL ASK query and return True/False."""
+    result = store.query(sparql)
+    if not isinstance(result, QueryBoolean):
+        raise ValueError(
+            "Expected ASK query but got a non-boolean result. "
+            "Use execute_query() for SELECT queries."
+        )
+    return bool(result)
 
 
 def is_initialized(store_path: Path) -> bool:
