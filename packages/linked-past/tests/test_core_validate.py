@@ -1,8 +1,10 @@
 # tests/test_core_validate.py
 from linked_past.core.store import create_store, load_rdf
 from linked_past.core.validate import (
+    DiagnosticResult,
     QueryResult,
     build_schema_dict,
+    diagnose_empty_result,
     extract_query_classes,
     parse_and_fix_prefixes,
     validate_and_execute,
@@ -459,6 +461,20 @@ def test_uncertainty_flags_hint():
     )
     hints = validate_semantics(sparql, sd)
     assert any("uncertainty" in h.lower() and "isUncertain" in h for h in hints)
+
+
+def test_diagnose_empty_result_returns_dataclass(tmp_path):
+    store_path = tmp_path / "store"
+    store = create_store(store_path)
+    ttl = tmp_path / "data.ttl"
+    ttl.write_text(SAMPLE_TURTLE)
+    load_rdf(store, ttl)
+    sd = build_schema_dict(SCHEMAS, PREFIXES)
+    sparql = "PREFIX ex: <http://example.org/>\nSELECT ?w WHERE { ?w a ex:Gadget }"
+    result = diagnose_empty_result(sparql, store, sd, PREFIXES)
+    assert isinstance(result, DiagnosticResult)
+    assert isinstance(result.hints, list)
+    assert isinstance(result.probe_results, dict)
 
 
 def test_uncertainty_flags_no_hint_when_used():

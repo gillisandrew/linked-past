@@ -38,6 +38,51 @@ class QueryResult:
     errors: list[str] = field(default_factory=list)
 
 
+@dataclass
+class DiagnosticResult:
+    """Result of diagnosing why a query returned 0 rows."""
+    hints: list[str] = field(default_factory=list)
+    probe_results: dict[str, bool] = field(default_factory=dict)
+
+
+def diagnose_empty_result(
+    sparql: str,
+    store,
+    schema_dict: dict,
+    prefix_map: dict[str, str],
+    dataset: str | None = None,
+    semantic_hints: list[str] | None = None,
+    budget_ms: int = 500,
+) -> DiagnosticResult:
+    """Diagnose why a valid SPARQL query returned 0 rows."""
+    result = DiagnosticResult()
+    result.hints.extend(_run_heuristics(sparql, schema_dict, prefix_map, dataset, semantic_hints))
+    probe_hints, probe_results = _run_probes(sparql, store, budget_ms)
+    result.hints.extend(probe_hints)
+    result.probe_results = probe_results
+    return result
+
+
+def _run_heuristics(
+    sparql: str,
+    schema_dict: dict,
+    prefix_map: dict[str, str],
+    dataset: str | None,
+    semantic_hints: list[str] | None,
+) -> list[str]:
+    """Zero-cost heuristic checks on the SPARQL AST."""
+    return []
+
+
+def _run_probes(
+    sparql: str,
+    store,
+    budget_ms: int,
+) -> tuple[list[str], dict[str, bool]]:
+    """Budget-capped diagnostic ASK queries."""
+    return [], {}
+
+
 def _expand_uri(prefixed: str, prefix_map: dict[str, str]) -> str:
     if ":" not in prefixed:
         return prefixed
