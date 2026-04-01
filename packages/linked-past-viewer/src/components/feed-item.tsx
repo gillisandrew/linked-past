@@ -8,10 +8,12 @@ import { DatasetBadge } from "./dataset-badge";
 export function FeedItem({
   message,
   defaultOpen = true,
+  subtitle,
   children,
 }: {
   message: ViewerMessage;
   defaultOpen?: boolean;
+  subtitle?: string;
   children: React.ReactNode;
 }) {
   const [open, setOpen] = useState(defaultOpen);
@@ -26,6 +28,9 @@ export function FeedItem({
             {message.type}
           </span>
           {message.dataset && <DatasetBadge dataset={message.dataset} />}
+          {subtitle && (
+            <span className="font-semibold text-xs truncate max-w-[200px]">{subtitle}</span>
+          )}
           <span className="ml-auto text-muted-foreground tabular-nums text-xs">{time}</span>
           <span className="text-muted-foreground text-[11px]">{open ? "collapse" : "expand"}</span>
         </CollapsibleTrigger>

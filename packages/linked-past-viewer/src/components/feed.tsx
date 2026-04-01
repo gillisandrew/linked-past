@@ -44,6 +44,7 @@ export function Feed({ messages }: { messages: ViewerMessage[] }) {
           key={`${msg.timestamp}-${i}`}
           message={msg}
           defaultOpen={i === messages.length - 1}
+          subtitle={msg.type === "report" ? (msg.data.title ?? undefined) : undefined}
         >
           <MessageBody message={msg} />
         </FeedItem>

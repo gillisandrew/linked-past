@@ -30,32 +30,36 @@ function MarkdownLink({ href, children }: ComponentPropsWithoutRef<"a">) {
 }
 
 /**
- * Custom code block renderer: mermaid fenced blocks get rendered as diagrams,
- * everything else renders as a normal pre/code block.
+ * Custom code renderer: mermaid fenced blocks become diagrams,
+ * other fenced blocks get themed pre/code, inline code is left alone.
  */
 function CodeBlock({
   className,
   children,
-}: ComponentPropsWithoutRef<"code"> & { inline?: boolean }) {
+  node,
+}: ComponentPropsWithoutRef<"code"> & { node?: { position?: unknown } }) {
   const lang = className?.replace("language-", "");
+  const isBlock = !!lang || (typeof children === "string" && children.includes("\n"));
+
+  if (!isBlock) {
+    // Inline code — let prose styles handle it
+    return <code className="bg-muted px-1 py-0.5 rounded text-[0.85em]">{children}</code>;
+  }
+
   const code = String(children).replace(/\n$/, "");
 
   if (lang === "mermaid") {
     return <MermaidBlock chart={code} />;
   }
 
-  return (
-    <pre className="p-2 rounded bg-muted text-xs overflow-x-auto">
-      <code className={className}>{children}</code>
-    </pre>
-  );
+  // Block code — explicit light-mode-friendly styling
+  return <code className={className}>{children}</code>;
 }
 
 export function MarkdownReport({ data }: { data: ReportData }) {
   return (
     <div className="space-y-4">
-      {data.title && <h2 className="text-lg font-semibold">{data.title}</h2>}
-      <div className="prose prose-sm dark:prose-invert max-w-none prose-headings:mt-4 prose-headings:mb-2 prose-p:my-2 prose-ul:my-2 prose-ol:my-2 prose-li:my-0.5 prose-pre:my-2 prose-hr:my-4 prose-table:my-2">
+      <div className="prose prose-sm dark:prose-invert max-w-none prose-headings:mt-4 prose-headings:mb-2 prose-p:my-2 prose-ul:my-2 prose-ol:my-2 prose-li:my-0.5 prose-pre:my-2 prose-pre:bg-muted prose-pre:text-foreground prose-pre:rounded prose-pre:p-3 prose-pre:text-xs prose-hr:my-4 prose-table:my-2">
         <Markdown
           remarkPlugins={[remarkGfm, remarkBreaks]}
           components={{
