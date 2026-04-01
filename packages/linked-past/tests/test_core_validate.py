@@ -703,6 +703,44 @@ def test_heuristic_xsd_date_properly_formatted():
     assert not any("padded" in h.lower() for h in result.hints)
 
 
+def test_heuristic_xsd_datetime_bare_year():
+    """Detect bare year comparison on xsd:dateTime predicate."""
+    schemas = {
+        "Event": {
+            "uri": "ex:Event",
+            "properties": [
+                {"pred": "ex:hasTimestamp", "range": "xsd:dateTime", "comment": "Event timestamp"},
+            ],
+        },
+    }
+    sd = build_schema_dict(schemas, PREFIXES)
+    sparql = (
+        "PREFIX ex: <http://example.org/>\n"
+        'SELECT ?e WHERE { ?e a ex:Event ; ex:hasTimestamp ?d . FILTER(?d < "-44") }'
+    )
+    result = diagnose_empty_result(sparql, None, sd, PREFIXES)
+    assert any("padded" in h.lower() or "dateTime" in h for h in result.hints)
+
+
+def test_heuristic_xsd_datetime_properly_formatted():
+    """No warning when xsd:dateTime is full ISO 8601."""
+    schemas = {
+        "Event": {
+            "uri": "ex:Event",
+            "properties": [
+                {"pred": "ex:hasTimestamp", "range": "xsd:dateTime", "comment": "Event timestamp"},
+            ],
+        },
+    }
+    sd = build_schema_dict(schemas, PREFIXES)
+    sparql = (
+        "PREFIX ex: <http://example.org/>\n"
+        'SELECT ?e WHERE { ?e a ex:Event ; ex:hasTimestamp ?d . FILTER(?d < "-0044-03-15T00:00:00"^^xsd:dateTime) }'
+    )
+    result = diagnose_empty_result(sparql, None, sd, PREFIXES)
+    assert not any("padded" in h.lower() for h in result.hints)
+
+
 # Task 13 tests
 def test_heuristic_string_vs_uri_mismatch():
     """Detect FILTER comparing a URI-range variable to a string literal."""
