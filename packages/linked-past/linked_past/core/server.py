@@ -891,6 +891,7 @@ def create_mcp_server() -> FastMCP:
             await _push_to_viewer(app, "entity", ds_name, {
                 "uri": uri,
                 "name": name,
+                "dataset": ds_name,
                 "properties": [{"pred": r["pred"], "obj": r["obj"] or ""} for r in rows],
                 "xrefs": xrefs,
             })
