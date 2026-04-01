@@ -886,8 +886,7 @@ def create_mcp_server() -> FastMCP:
             plugin = registry.get_plugin(ds_name)
             lines.append(f"## {plugin.display_name}\n")
             for r in results[:10]:
-                type_str = f" ({r['type'].rsplit('/', 1)[-1].rsplit('#', 1)[-1]})" if r["type"] else ""
-                lines.append(f"- **{r['label']}**{type_str}\n  `{r['uri']}`")
+                lines.append(f"- **{r['label']}**\n  `{r['uri']}`")
             if len(results) > 10:
                 lines.append(f"  ... and {len(results) - 10} more")
             lines.append("")
