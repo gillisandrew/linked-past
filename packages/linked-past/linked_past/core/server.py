@@ -1428,13 +1428,35 @@ def create_mcp_server() -> FastMCP:
         """Push markdown content to the browser viewer as a styled report.
 
 Renders headings, tables, lists, code blocks, bold, italic, and links.
-Entity URIs in markdown links get interactive popovers automatically.
 
-Supports mermaid diagrams — use a fenced code block with language 'mermaid':
+## Entity Links
+When referring to named entities, ALWAYS use markdown links with their full URI.
+These automatically get interactive popovers in the viewer showing properties
+and cross-references on hover. Examples:
+  - [Gaius Julius Caesar](http://romanrepublic.ac.uk/rdf/entity/Person/1957)
+  - [Roma](https://pleiades.stoa.org/places/423025)
+  - [denarius](http://nomisma.org/id/denarius)
+
+## Mermaid Diagrams
+Use fenced code blocks with language 'mermaid' for diagrams. Supported types:
+  - `graph` / `flowchart` — directed graphs showing relationships, workflows
+  - `sequenceDiagram` — interactions between entities over time
+  - `classDiagram` — entity types and their properties/relationships
+  - `stateDiagram-v2` — state transitions (e.g., career progression)
+  - `timeline` — chronological events
+  - `gantt` — date ranges (e.g., office-holding periods)
+  - `pie` — proportional breakdowns
+  - `mindmap` — hierarchical concept maps
+  - `erDiagram` — entity-relationship models
+
+Example:
   ```mermaid
-  graph LR
-    A[DPRR Person] -->|skos:closeMatch| B[Nomisma Person]
-    A -->|dcterms:spatial| C[Pleiades Place]
+  timeline
+    title Career of Caesar
+    -59 : Consul
+    -58 to -50 : Proconsul of Gaul
+    -49 : Crosses the Rubicon
+    -48 to -44 : Dictator
   ```
 
 Use this to send formatted analysis, summaries, comparisons, or visualizations to the viewer."""
