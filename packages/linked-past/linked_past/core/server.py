@@ -493,6 +493,7 @@ def create_mcp_server() -> FastMCP:
 
     viewer_manager = ViewerManager(app_context=_shared_ctx)
     set_manager(viewer_manager)
+    viewer_manager.activate()
     _shared_ctx.viewer = viewer_manager
 
     # Find React app dist directory
