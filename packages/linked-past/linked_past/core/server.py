@@ -951,7 +951,7 @@ def create_mcp_server() -> FastMCP:
                 "links": [
                     {"target": lnk["target"], "relationship": lnk.get("relationship", ""),
                      "confidence": lnk.get("confidence", ""), "basis": lnk.get("basis", "")}
-                    for lnk in linkage_links + store_links
+                    for lnk in all_links
                 ],
             })
         return output
