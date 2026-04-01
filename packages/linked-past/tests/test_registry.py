@@ -121,6 +121,16 @@ def test_registry_stores_actual_triple_count(tmp_path):
     assert meta["triple_count"] > 0
 
 
+def test_dataset_for_uri_standard(tmp_path):
+    reg = DatasetRegistry(data_dir=tmp_path)
+    assert reg.dataset_for_uri("http://romanrepublic.ac.uk/rdf/entity/Person/1") == "dprr"
+    assert reg.dataset_for_uri("https://pleiades.stoa.org/places/423025") == "pleiades"
+    assert reg.dataset_for_uri("http://edh-www.adw.uni-heidelberg.de/edh/inschrift/HD000001") == "edh"
+    assert reg.dataset_for_uri("https://edh-www.adw.uni-heidelberg.de/edh/inschrift/HD000001") == "edh"
+    assert reg.dataset_for_uri("http://www.wikidata.org/entity/Q1234") == "wikidata"
+    assert reg.dataset_for_uri("http://example.org/unknown") is None
+
+
 def test_discover_plugins_finds_all():
     from linked_past.core.registry import discover_plugins
 

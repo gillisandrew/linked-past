@@ -37,17 +37,6 @@ def dprr_store(tmp_path):
 
 def test_dataset_for_uri():
     reg = DatasetRegistry(data_dir=Path("/tmp"))
-    # Plugins must be registered for dataset_for_uri to return matches
-    from linked_past.datasets.dprr.plugin import DPRRPlugin
-    from linked_past.datasets.nomisma.plugin import NomismaPlugin
-    from linked_past.datasets.periodo.plugin import PeriodOPlugin
-    from linked_past.datasets.pleiades.plugin import PleiadesPlugin
-
-    reg.register(DPRRPlugin())
-    reg.register(PleiadesPlugin())
-    reg.register(PeriodOPlugin())
-    reg.register(NomismaPlugin())
-
     assert reg.dataset_for_uri("http://romanrepublic.ac.uk/rdf/entity/Person/1") == "dprr"
     assert reg.dataset_for_uri("https://pleiades.stoa.org/places/423025") == "pleiades"
     assert reg.dataset_for_uri("http://nomisma.org/id/augustus") == "nomisma"
@@ -56,9 +45,9 @@ def test_dataset_for_uri():
 
 
 def test_dataset_for_uri_unregistered():
-    """URI matches namespace but plugin is not registered."""
+    """URI matches namespace even when plugin is not registered (pure namespace lookup)."""
     reg = DatasetRegistry(data_dir=Path("/tmp"))
-    assert reg.dataset_for_uri("http://romanrepublic.ac.uk/rdf/entity/Person/1") is None
+    assert reg.dataset_for_uri("http://romanrepublic.ac.uk/rdf/entity/Person/1") == "dprr"
 
 
 def test_search_entities_query(dprr_store):

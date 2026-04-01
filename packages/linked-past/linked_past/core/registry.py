@@ -38,6 +38,8 @@ class DatasetRegistry:
         "http://numismatics.org/ocre/id/": "ocre",
         "http://edh-www.adw.uni-heidelberg.de/edh/": "edh",
         "https://edh-www.adw.uni-heidelberg.de/edh/": "edh",
+        "http://www.wikidata.org/entity/": "wikidata",
+        "https://www.wikidata.org/wiki/": "wikidata",
     }
 
     def __init__(self, data_dir: Path):
@@ -68,7 +70,7 @@ class DatasetRegistry:
     def dataset_for_uri(self, uri: str) -> str | None:
         """Determine which dataset a URI belongs to based on namespace."""
         for ns, name in self._URI_NAMESPACES.items():
-            if uri.startswith(ns) and name in self._plugins:
+            if uri.startswith(ns):
                 return name
         return None
 

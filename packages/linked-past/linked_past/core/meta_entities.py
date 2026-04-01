@@ -371,19 +371,9 @@ class MetaEntityIndex:
     @staticmethod
     def _uri_to_dataset(uri: str) -> str | None:
         """Determine dataset from URI namespace."""
-        namespaces = {
-            "http://romanrepublic.ac.uk/rdf/": "dprr",
-            "https://pleiades.stoa.org/places/": "pleiades",
-            "http://n2t.net/ark:/99152/": "periodo",
-            "http://nomisma.org/id/": "nomisma",
-            "http://numismatics.org/crro/id/": "crro",
-            "http://numismatics.org/ocre/id/": "ocre",
-            "http://edh-www.adw.uni-heidelberg.de/edh/": "edh",
-            "https://edh-www.adw.uni-heidelberg.de/edh/": "edh",
-            "http://www.wikidata.org/entity/": "wikidata",
-            "https://www.wikidata.org/wiki/": "wikidata",
-        }
-        for ns, ds in namespaces.items():
+        from linked_past.core.registry import DatasetRegistry
+
+        for ns, name in DatasetRegistry._URI_NAMESPACES.items():
             if uri.startswith(ns):
-                return ds
+                return name
         return None
