@@ -8,17 +8,7 @@ export function useViewerSocket() {
   const wsRef = useRef<WebSocket | null>(null);
   const backoffRef = useRef(1000);
   const seenSeqs = useRef(new Set<number>());
-
-  // Restore from IndexedDB on mount
-  useEffect(() => {
-    getAllMessages().then((stored) => {
-      if (stored.length > 0) {
-        stored.sort((a, b) => a.seq - b.seq);
-        for (const msg of stored) seenSeqs.current.add(msg.seq);
-        setMessages(stored);
-      }
-    });
-  }, []);
+  const restoredRef = useRef(false);
 
   const connect = useCallback(() => {
     const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
@@ -33,7 +23,6 @@ export function useViewerSocket() {
     ws.onmessage = (e) => {
       try {
         const msg = JSON.parse(e.data) as ViewerMessage;
-        // Deduplicate: server replays history on reconnect, IndexedDB has prior messages
         if (seenSeqs.current.has(msg.seq)) return;
         seenSeqs.current.add(msg.seq);
         setMessages((prev) => [...prev, msg]);
@@ -52,12 +41,24 @@ export function useViewerSocket() {
     };
   }, []);
 
+  // Restore from IndexedDB first, THEN connect WebSocket
   useEffect(() => {
-    connect();
+    getAllMessages().then((stored) => {
+      if (stored.length > 0) {
+        stored.sort((a, b) => a.seq - b.seq);
+        for (const msg of stored) seenSeqs.current.add(msg.seq);
+        setMessages(stored);
+      }
+      restoredRef.current = true;
+      // Now safe to connect — seenSeqs is populated, so server replay will be deduplicated
+      connect();
+    });
+
     return () => {
       wsRef.current?.close();
     };
-  }, [connect]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return { messages, isConnected };
 }
