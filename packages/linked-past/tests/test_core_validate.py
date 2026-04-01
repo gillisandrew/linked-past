@@ -778,3 +778,114 @@ def test_heuristic_no_mismatch_string_range():
     )
     result = diagnose_empty_result(sparql, None, sd, PREFIXES)
     assert not any("uri" in h.lower() and "string" in h.lower() for h in result.hints)
+
+
+# Task 7 tests — base pattern ASK probe
+def test_probe_base_pattern_matches(tmp_path):
+    """When base pattern matches but filters exclude all, report filter problem."""
+    store_path = tmp_path / "store"
+    store = create_store(store_path)
+    ttl = tmp_path / "data.ttl"
+    ttl.write_text(SAMPLE_TURTLE)
+    load_rdf(store, ttl)
+    sd = build_schema_dict(SCHEMAS, PREFIXES)
+    sparql = (
+        "PREFIX ex: <http://example.org/>\n"
+        "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n"
+        'SELECT ?w WHERE { ?w a ex:Widget ; rdfs:label ?l . FILTER(?l = "Nonexistent") }'
+    )
+    result = diagnose_empty_result(sparql, store, sd, PREFIXES)
+    assert result.probe_results.get("base_pattern_matches") is True
+    assert any("filter" in h.lower() for h in result.hints)
+
+
+def test_probe_base_pattern_no_match(tmp_path):
+    """When base pattern itself doesn't match, report pattern problem."""
+    store_path = tmp_path / "store"
+    store = create_store(store_path)
+    ttl = tmp_path / "data.ttl"
+    ttl.write_text(SAMPLE_TURTLE)
+    load_rdf(store, ttl)
+    sd = build_schema_dict(SCHEMAS, PREFIXES)
+    sparql = (
+        "PREFIX ex: <http://example.org/>\n"
+        "SELECT ?w WHERE { ?w a ex:Gadget }"
+    )
+    result = diagnose_empty_result(sparql, store, sd, PREFIXES)
+    assert result.probe_results.get("base_pattern_matches") is False
+    assert any("base graph pattern" in h.lower() or "no entities match" in h.lower() for h in result.hints)
+
+
+def test_strip_filters_nested_parens(tmp_path):
+    """_strip_filters_algebra handles nested parentheses in FILTER."""
+    store_path = tmp_path / "store"
+    store = create_store(store_path)
+    ttl = tmp_path / "data.ttl"
+    ttl.write_text(SAMPLE_TURTLE)
+    load_rdf(store, ttl)
+    sd = build_schema_dict(SCHEMAS, PREFIXES)
+    sparql = (
+        "PREFIX ex: <http://example.org/>\n"
+        "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n"
+        "SELECT ?w WHERE { ?w a ex:Widget ; rdfs:label ?l . "
+        'FILTER(?l = "X" && (?l != "Y" || ?l != "Z")) }'
+    )
+    result = diagnose_empty_result(sparql, store, sd, PREFIXES)
+    assert result.probe_results.get("base_pattern_matches") is True
+
+
+def test_strip_filters_with_optional(tmp_path):
+    """Base pattern ASK should not require OPTIONAL patterns."""
+    store_path = tmp_path / "store"
+    store = create_store(store_path)
+    ttl = tmp_path / "data.ttl"
+    ttl.write_text(SAMPLE_TURTLE)
+    load_rdf(store, ttl)
+    sd = build_schema_dict(SCHEMAS, PREFIXES)
+    sparql = (
+        "PREFIX ex: <http://example.org/>\n"
+        "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n"
+        "SELECT ?w ?c WHERE { ?w a ex:Widget . "
+        "OPTIONAL { ?w ex:hasColor ?c } "
+        'FILTER(?c = "red") }'
+    )
+    result = diagnose_empty_result(sparql, store, sd, PREFIXES)
+    assert result.probe_results.get("base_pattern_matches") is True
+    assert any("filter" in h.lower() for h in result.hints)
+
+
+# Task 8 test — filter isolation
+def test_probe_identifies_restrictive_filter(tmp_path):
+    """When stripping a specific filter produces results, identify it."""
+    store_path = tmp_path / "store"
+    store = create_store(store_path)
+    ttl = tmp_path / "data.ttl"
+    ttl.write_text(SAMPLE_TURTLE)
+    load_rdf(store, ttl)
+    sd = build_schema_dict(SCHEMAS, PREFIXES)
+    sparql = (
+        "PREFIX ex: <http://example.org/>\n"
+        "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n"
+        'SELECT ?w WHERE { ?w a ex:Widget ; rdfs:label ?l . FILTER(?l = "Nonexistent") }'
+    )
+    result = diagnose_empty_result(sparql, store, sd, PREFIXES)
+    assert any("Nonexistent" in h or "filter" in h.lower() for h in result.hints)
+    assert any(k.startswith("filter_") for k in result.probe_results)
+
+
+# Task 9 test — join decomposition
+def test_probe_join_decomposition(tmp_path):
+    """When base pattern fails, identify which triple pattern has no matches."""
+    store_path = tmp_path / "store"
+    store = create_store(store_path)
+    ttl = tmp_path / "data.ttl"
+    ttl.write_text(SAMPLE_TURTLE)
+    load_rdf(store, ttl)
+    sd = build_schema_dict(SCHEMAS, PREFIXES)
+    sparql = (
+        "PREFIX ex: <http://example.org/>\n"
+        "SELECT ?w ?c WHERE { ?w a ex:Widget ; ex:hasColor ?c }"
+    )
+    result = diagnose_empty_result(sparql, store, sd, PREFIXES)
+    assert result.probe_results.get("base_pattern_matches") is False
+    assert any("hasColor" in h for h in result.hints)

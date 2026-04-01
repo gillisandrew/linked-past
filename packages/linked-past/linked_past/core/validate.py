@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import re
+import time
 from dataclasses import dataclass, field
 from difflib import get_close_matches
 from typing import TYPE_CHECKING
@@ -219,13 +220,257 @@ def _run_heuristics(
     return hints
 
 
+def _term_to_sparql(term, bnode_counter: dict) -> str:
+    """Convert an rdflib term to a SPARQL string representation."""
+    from rdflib.term import BNode
+
+    if isinstance(term, Variable):
+        return f"?{term}"
+    elif isinstance(term, URIRef):
+        return f"<{term}>"
+    elif isinstance(term, BNode):
+        key = str(term)
+        if key not in bnode_counter:
+            bnode_counter[key] = f"?_bnode_{len(bnode_counter)}"
+        return bnode_counter[key]
+    elif isinstance(term, Literal):
+        if term.datatype:
+            return f'"{term}"^^<{term.datatype}>'
+        elif term.language:
+            return f'"{term}"@{term.language}'
+        else:
+            return f'"{term}"'
+    else:
+        return f'"{term}"'
+
+
+def _collect_bgp_triples(algebra, skip_optional: bool = True) -> list[tuple]:
+    """Collect triple patterns from BGP nodes, skipping OPTIONAL (LeftJoin.p2) by default."""
+    triples = []
+
+    def _walk(node, in_optional: bool = False):
+        if isinstance(node, CompValue):
+            if node.name == "BGP" and not in_optional:
+                for t in node.get("triples", []):
+                    triples.append(t)
+            elif node.name == "LeftJoin" and skip_optional:
+                _walk(node.get("p1"), in_optional=False)
+                _walk(node.get("p2"), in_optional=True)
+                return
+            for key in node:
+                _walk(node[key], in_optional)
+        elif isinstance(node, list):
+            for item in node:
+                _walk(item, in_optional)
+
+    _walk(algebra)
+    return triples
+
+
+def _build_ask_from_triples(triples: list[tuple], prefix_decls: str) -> str:
+    """Build an ASK query from raw triple patterns and prefix declarations."""
+    bnode_counter: dict = {}
+    patterns = []
+    for s, p, o in triples:
+        s_str = _term_to_sparql(s, bnode_counter)
+        p_str = _term_to_sparql(p, bnode_counter)
+        o_str = _term_to_sparql(o, bnode_counter)
+        patterns.append(f"  {s_str} {p_str} {o_str} .")
+    body = "\n".join(patterns)
+    return f"{prefix_decls}\nASK {{\n{body}\n}}"
+
+
+def _strip_filters_algebra(sparql: str) -> str | None:
+    """Use rdflib's algebra to extract base graph pattern without filters.
+
+    Parses the SPARQL, collects required BGP triples (skipping OPTIONAL),
+    and rebuilds as an ASK query. Returns None if parsing fails.
+    """
+    try:
+        parsed = parseQuery(sparql)
+        q = translateQuery(parsed)
+        triples = _collect_bgp_triples(q.algebra)
+        if not triples:
+            return None
+
+        prefix_decls = []
+        for match in re.finditer(r"PREFIX\s+\w+:\s*<[^>]+>", sparql, re.IGNORECASE):
+            prefix_decls.append(match.group(0))
+        prefix_str = "\n".join(prefix_decls)
+
+        return _build_ask_from_triples(triples, prefix_str)
+    except Exception:
+        return None
+
+
+def _extract_filter_clauses(sparql: str) -> list[tuple[int, int, str]]:
+    """Extract FILTER clause positions and text using brace/paren counting."""
+    filters: list[tuple[int, int, str]] = []
+    upper = sparql.upper()
+    i = 0
+    while i < len(upper):
+        idx = upper.find("FILTER", i)
+        if idx == -1:
+            break
+        if idx > 0 and upper[idx - 1].isalnum():
+            i = idx + 6
+            continue
+
+        j = idx + 6
+        while j < len(sparql) and sparql[j] in " \t\n\r":
+            j += 1
+
+        if j >= len(sparql):
+            break
+
+        if sparql[j] == "(":
+            open_char, close_char = "(", ")"
+        elif upper[j:].startswith("NOT") or upper[j:].startswith("EXISTS"):
+            brace_start = sparql.find("{", j)
+            if brace_start == -1:
+                i = j
+                continue
+            j = brace_start
+            open_char, close_char = "{", "}"
+        else:
+            i = j
+            continue
+
+        depth = 0
+        k = j
+        while k < len(sparql):
+            if sparql[k] == open_char:
+                depth += 1
+            elif sparql[k] == close_char:
+                depth -= 1
+                if depth == 0:
+                    filters.append((idx, k + 1, sparql[idx:k + 1]))
+                    break
+            k += 1
+
+        i = k + 1 if k < len(sparql) else len(sparql)
+    return filters
+
+
+def _select_to_ask(sparql: str) -> str | None:
+    """Convert a SELECT query to ASK, preserving all WHERE-clause content."""
+    try:
+        result = re.sub(
+            r"SELECT\s+.*?(?=WHERE)",
+            "ASK ",
+            sparql,
+            count=1,
+            flags=re.IGNORECASE | re.DOTALL,
+        )
+        last_brace = result.rfind("}")
+        if last_brace == -1:
+            return None
+        result = result[:last_brace + 1]
+        return result
+    except Exception:
+        return None
+
+
 def _run_probes(
     sparql: str,
     store: Store,
     budget_ms: int,
 ) -> tuple[list[str], dict[str, bool]]:
     """Budget-capped diagnostic ASK queries."""
-    return [], {}
+    if store is None:
+        return [], {}
+
+    from linked_past.core.store import execute_ask
+
+    hints: list[str] = []
+    probe_results: dict[str, bool] = {}
+    t0 = time.monotonic()
+
+    def budget_remaining() -> int:
+        elapsed = (time.monotonic() - t0) * 1000
+        return int(budget_ms - elapsed)
+
+    # Probe 1: ASK on base pattern (no filters) using algebra-based stripping
+    ask_sparql = _strip_filters_algebra(sparql)
+    if ask_sparql and budget_remaining() > 0:
+        try:
+            base_matches = execute_ask(store, ask_sparql)
+            probe_results["base_pattern_matches"] = base_matches
+            if base_matches:
+                hints.append(
+                    "Diagnostic: The base graph pattern matches data, but filters "
+                    "exclude all results. Check your FILTER conditions."
+                )
+
+                # Probe 2: Strip individual filters to find the culprit
+                if budget_remaining() > 0:
+                    filters = _extract_filter_clauses(sparql)
+                    for i, (start, end, filter_text) in enumerate(filters):
+                        if budget_remaining() <= 0:
+                            hints.append(
+                                f"Diagnostic: Budget exhausted after checking {i}/{len(filters)} filters."
+                            )
+                            break
+                        stripped = sparql[:start] + sparql[end:]
+                        stripped_ask = _select_to_ask(stripped)
+                        if not stripped_ask:
+                            continue
+                        try:
+                            matches = execute_ask(store, stripped_ask)
+                            probe_results[f"filter_{i}_stripped_matches"] = matches
+                            if matches:
+                                display = filter_text.strip()
+                                if len(display) > 100:
+                                    display = display[:100] + "..."
+                                hints.append(
+                                    f"Diagnostic: Removing `{display}` produces results. "
+                                    f"This filter is likely too restrictive."
+                                )
+                        except Exception as e:
+                            logger.debug("Filter isolation probe %d failed: %s", i, e)
+            else:
+                hints.append(
+                    "Diagnostic: No entities match the base graph pattern (before "
+                    "any filters). The triple patterns themselves have no matches — "
+                    "check class names, predicates, and join paths."
+                )
+
+                # Probe 3: Join decomposition — check individual triple patterns
+                if budget_remaining() > 0:
+                    try:
+                        parsed = parseQuery(sparql)
+                        q = translateQuery(parsed)
+                        probe_triples = _collect_bgp_triples(q.algebra)
+                    except Exception:
+                        probe_triples = []
+
+                    prefix_decls = []
+                    for match in re.finditer(r"PREFIX\s+\w+:\s*<[^>]+>", sparql, re.IGNORECASE):
+                        prefix_decls.append(match.group(0))
+                    prefix_str = "\n".join(prefix_decls)
+
+                    for i, triple in enumerate(probe_triples):
+                        if budget_remaining() <= 0:
+                            break
+                        single_ask = _build_ask_from_triples([triple], prefix_str)
+                        s, p, o = triple
+                        s_str = _term_to_sparql(s, {})
+                        p_str = _term_to_sparql(p, {})
+                        o_str = _term_to_sparql(o, {})
+                        try:
+                            matches = execute_ask(store, single_ask)
+                            probe_results[f"triple_{i}_matches"] = matches
+                            if not matches:
+                                hints.append(
+                                    f"Diagnostic: The pattern `{s_str} {p_str} {o_str}` has no "
+                                    f"matches in the store. This is where the join breaks."
+                                )
+                        except Exception as e:
+                            logger.debug("Join decomposition probe %d failed: %s", i, e)
+        except Exception as e:
+            logger.debug("Base pattern probe failed: %s", e)
+
+    return hints, probe_results
 
 
 def _expand_uri(prefixed: str, prefix_map: dict[str, str]) -> str:
