@@ -61,12 +61,12 @@ class DatasetRegistry:
                 return name
         return None
 
-    def initialize_dataset(self, name: str) -> None:
+    def initialize_dataset(self, name: str, force: bool = False) -> None:
         plugin = self.get_plugin(name)
         dataset_dir = self._data_dir / name
         store_path = dataset_dir / "store"
 
-        if is_initialized(store_path):
+        if is_initialized(store_path) and not force:
             logger.info("Dataset %s already initialized, opening read-only", name)
             self._stores[name] = get_read_only_store(store_path)
             # Load cached metadata from registry.json
@@ -80,7 +80,7 @@ class DatasetRegistry:
             return
 
         dataset_dir.mkdir(parents=True, exist_ok=True)
-        rdf_path = plugin.fetch(dataset_dir)
+        rdf_path = plugin.fetch(dataset_dir, force=force)
 
         store = create_store(store_path)
         try:

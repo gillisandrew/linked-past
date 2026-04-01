@@ -51,13 +51,13 @@ class DatasetPlugin(ABC):
     oci_dataset: str = ""
     oci_version: str = "latest"
 
-    def fetch(self, data_dir: Path) -> Path:
+    def fetch(self, data_dir: Path, force: bool = False) -> Path:
         """Download data via ORAS from OCI registry. Override for custom fetch logic."""
         from linked_past.core.fetch import pull_artifact
 
         if not self.oci_dataset:
             raise NotImplementedError(f"{self.__class__.__name__} must set oci_dataset or override fetch()")
-        return pull_artifact(self.oci_dataset, data_dir, self.oci_version)
+        return pull_artifact(self.oci_dataset, data_dir, self.oci_version, force=force)
 
     def load(self, store: Store, rdf_path: Path) -> int:
         """Bulk-load all data files into Oxigraph store, return triple count.
