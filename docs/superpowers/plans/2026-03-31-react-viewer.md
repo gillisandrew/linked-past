@@ -167,6 +167,8 @@ async def entity_handler(request: Request) -> JSONResponse | PlainTextResponse:
     uri = request.query_params.get("uri")
     if not uri:
         return JSONResponse({"error": "Missing 'uri' query parameter"}, status_code=400)
+    if not uri.startswith(("http://", "https://")):
+        return JSONResponse({"error": "Invalid URI scheme"}, status_code=400)
 
     # Access registry and linkage from the app state stored on the manager
     registry = mgr.app_context.registry
@@ -403,7 +405,9 @@ In `server.py`, in the route registration block (line ~481), add the entity API 
         from starlette.responses import FileResponse, PlainTextResponse
 
         path = request.path_params.get("path", "")
-        file_path = _viewer_dist / path
+        file_path = (_viewer_dist / path).resolve()
+        if not str(file_path).startswith(str(_viewer_dist.resolve())):
+            return PlainTextResponse("Forbidden", status_code=403)
         if not file_path.exists() or not file_path.is_file():
             # SPA fallback — return index.html for unmatched routes
             index = _viewer_dist / "index.html"
@@ -432,15 +436,20 @@ In `server.py`, in the route registration block (line ~481), add the entity API 
     ])
 ```
 
-- [ ] **Step 12: Delete old HTML renderer files**
+- [ ] **Step 12: Clean up `viewer.py` — remove stale imports and `viewer_page_handler`**
+
+In `packages/linked-past/linked_past/core/viewer.py`:
+- Remove the import: `from linked_past.core.viewer_page import VIEWER_HTML`
+- Remove the `viewer_page_handler` function entirely (the React app replaces it)
+- Update the `broadcast()` docstring from "HTML fragment" to "message"
+
+- [ ] **Step 13: Delete old HTML renderer files**
 
 ```bash
 git rm packages/linked-past/linked_past/core/viewer_render.py
-git rm packages/linked-past/linked_last/core/viewer_page.py
+git rm packages/linked-past/linked_past/core/viewer_page.py
 git rm packages/linked-past/tests/test_viewer_render.py
 ```
-
-Note: use the correct path `linked_past` not `linked_last`.
 
 - [ ] **Step 13: Run lint and tests**
 
@@ -475,11 +484,22 @@ cd packages/linked-past-viewer
 npm init -y
 ```
 
+Then edit `package.json` to add scripts:
+```json
+{
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview"
+  }
+}
+```
+
 - [ ] **Step 2: Install dependencies**
 
 ```bash
 npm install react react-dom @tanstack/react-router @tanstack/react-query react-markdown
-npm install -D vite @vitejs/plugin-react typescript @types/react @types/react-dom tailwindcss @tailwindcss/vite
+npm install -D vite @vitejs/plugin-react typescript @types/react @types/react-dom tailwindcss @tailwindcss/vite @tailwindcss/typography
 ```
 
 - [ ] **Step 3: Write `vite.config.ts`**
@@ -488,10 +508,16 @@ npm install -D vite @vitejs/plugin-react typescript @types/react @types/react-do
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "vite";
+import path from "path";
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   base: "/viewer/",
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
+    },
+  },
   server: {
     proxy: {
       "/viewer/ws": {
@@ -687,6 +713,7 @@ export type QueryData = {
 export type EntityData = {
   uri: string;
   name: string;
+  dataset: string | null;
   properties: { pred: string; obj: string }[];
   xrefs: XrefLink[];
 };
@@ -1178,6 +1205,8 @@ const CONFIDENCE_COLORS: Record<string, string> = {
   confirmed: "bg-green-500 hover:bg-green-500",
   probable: "bg-yellow-500 hover:bg-yellow-500 text-black",
   candidate: "bg-gray-400 hover:bg-gray-400",
+  concordance: "bg-blue-400 hover:bg-blue-400",
+  "in-data": "bg-cyan-400 hover:bg-cyan-400",
 };
 
 export function XrefList({ links }: { links: XrefLink[] }) {
@@ -1195,7 +1224,7 @@ export function XrefList({ links }: { links: XrefLink[] }) {
 
   return (
     <div className="space-y-3">
-      {["confirmed", "probable", "candidate", "unknown"].map((conf) => {
+      {["confirmed", "probable", "candidate", "concordance", "in-data", "unknown"].map((conf) => {
         const items = groups.get(conf);
         if (!items) return null;
         const color = CONFIDENCE_COLORS[conf] ?? "bg-gray-400 hover:bg-gray-400";
@@ -1446,6 +1475,7 @@ export function EntityUri({ uri }: { uri: string }) {
         onMouseLeave={() => setOpen(false)}
         side="bottom"
         align="start"
+        sideOffset={2}
       >
         {isLoading ? (
           <div className="p-4 text-sm text-muted-foreground">Loading…</div>
