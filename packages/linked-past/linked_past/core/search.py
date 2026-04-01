@@ -76,44 +76,45 @@ class SearchIndex:
         query: str,
         k: int = 5,
         dataset: str | None = None,
+        doc_type: str | None = None,
+        operator: str = "OR",
     ) -> list[dict[str, Any]]:
         """Full-text search with BM25 ranking. Returns top-k results.
 
         Uses porter stemming and unicode tokenization.
         Each query term gets prefix matching (e.g. "consul" matches "consular").
+
+        Args:
+            operator: "OR" for broad recall, "AND" for precision (all terms must match).
+            doc_type: Filter by document type (e.g., "entity_label").
         """
         if not query or not query.strip():
             return []
 
-        # Tokenize query for FTS5: prefix matching + OR for recall
-        # OR ensures documents matching any term are returned; BM25 ranks
-        # documents matching more terms higher.
         terms = query.strip().split()
-        fts_query = " OR ".join(f'"{t}"*' for t in terms if t)
+        fts_query = f" {operator} ".join(f'"{t}"*' for t in terms if t)
 
         try:
+            where = ["documents_fts MATCH ?"]
+            params: list = [fts_query]
             if dataset:
-                rows = self._conn.execute(
-                    "SELECT d.dataset, d.doc_type, d.text, "
-                    "       bm25(documents_fts) AS score "
-                    "FROM documents_fts f "
-                    "JOIN documents d ON d.id = f.rowid "
-                    "WHERE documents_fts MATCH ? AND d.dataset = ? "
-                    "ORDER BY score "
-                    "LIMIT ?",
-                    (fts_query, dataset, k),
-                ).fetchall()
-            else:
-                rows = self._conn.execute(
-                    "SELECT d.dataset, d.doc_type, d.text, "
-                    "       bm25(documents_fts) AS score "
-                    "FROM documents_fts f "
-                    "JOIN documents d ON d.id = f.rowid "
-                    "WHERE documents_fts MATCH ? "
-                    "ORDER BY score "
-                    "LIMIT ?",
-                    (fts_query, k),
-                ).fetchall()
+                where.append("d.dataset = ?")
+                params.append(dataset)
+            if doc_type:
+                where.append("d.doc_type = ?")
+                params.append(doc_type)
+            params.append(k)
+            where_clause = " AND ".join(where)
+            rows = self._conn.execute(
+                "SELECT d.dataset, d.doc_type, d.text, "
+                "       bm25(documents_fts) AS score "
+                "FROM documents_fts f "
+                "JOIN documents d ON d.id = f.rowid "
+                f"WHERE {where_clause} "
+                "ORDER BY score "
+                "LIMIT ?",
+                params,
+            ).fetchall()
         except sqlite3.OperationalError:
             # Malformed FTS query — fall back to empty results
             return []

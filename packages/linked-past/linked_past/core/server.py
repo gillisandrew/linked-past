@@ -85,7 +85,11 @@ def _index_dataset(search: SearchIndex, name: str, plugin: object, store=None) -
     label_predicates = [
         "http://www.w3.org/2000/01/rdf-schema#label",
         "http://www.w3.org/2004/02/skos/core#prefLabel",
+        "http://www.w3.org/2004/02/skos/core#altLabel",
         "http://purl.org/dc/terms/title",
+        # Pleiades alternative name forms
+        "https://pleiades.stoa.org/places/vocab#nameAttested",
+        "https://pleiades.stoa.org/places/vocab#nameRomanized",
     ]
     # Add dataset-specific name predicates
     if hasattr(plugin, "_prefixes") and hasattr(plugin, "_schemas"):
@@ -780,7 +784,10 @@ def create_mcp_server() -> FastMCP:
 
         # FTS5 entity label search (instant, uses cached index)
         if app.search:
-            fts_hits = app.search.search(query_text, k=50, dataset=dataset)
+            # Use AND for multi-word queries (precision), OR for single words (recall)
+            terms = query_text.strip().split()
+            op = "AND" if len(terms) > 1 else "OR"
+            fts_hits = app.search.search(query_text, k=50, dataset=dataset, doc_type="entity_label", operator=op)
             seen_uris: set[str] = set()
             for hit in fts_hits:
                 if hit["doc_type"] != "entity_label":
