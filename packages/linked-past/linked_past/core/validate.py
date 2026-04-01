@@ -75,7 +75,148 @@ def _run_heuristics(
     semantic_hints: list[str] | None,
 ) -> list[str]:
     """Zero-cost heuristic checks on the SPARQL AST."""
-    return []
+    hints: list[str] = []
+
+    # Parse triples and variable types once for all heuristics
+    triples: list[tuple] = []
+    var_types: dict[str, list[str]] = {}
+    try:
+        triples = _collect_triples(sparql)
+        for s, p, o in triples:
+            if p == RDF_TYPE and isinstance(s, Variable) and isinstance(o, URIRef):
+                var_types.setdefault(str(s), []).append(str(o))
+    except Exception:
+        pass
+
+    # Also build var_preds map (variable -> predicates that produce it)
+    var_preds: dict[str, list[str]] = {}
+    for s, p, o in triples:
+        if isinstance(p, URIRef) and isinstance(o, Variable):
+            var_preds.setdefault(str(o), []).append(str(p))
+
+    # 1. Escalate open-world boolean warnings from pre-execution
+    if semantic_hints:
+        for hint in semantic_hints:
+            if "open-world boolean" in hint.lower():
+                hints.append(
+                    "Diagnostic: This query returned 0 rows. The open-world boolean "
+                    "warning above is likely the cause — the property only stores "
+                    "true values, so filtering for false always yields nothing."
+                )
+                break
+
+    # 2. Contradictory type constraints
+    for var_name, types in var_types.items():
+        if len(types) > 1:
+            known = [t for t in types if t in schema_dict]
+            if len(known) > 1:
+                names = [_local_name(t) for t in known]
+                hints.append(
+                    f"Diagnostic: ?{var_name} is typed as both {' and '.join(names)}. "
+                    f"No entity is likely to satisfy both types simultaneously. "
+                    f"Use separate variables for each type."
+                )
+
+    # 3. Date range sanity — positive integers on BC date fields
+    bc_preds: set[str] = set()
+    for class_uri, preds in schema_dict.items():
+        for pred_uri, pred_info in preds.items():
+            if pred_uri == "_meta" or not isinstance(pred_info, dict):
+                continue
+            comment = pred_info.get("comment", "").lower()
+            if "negative" in comment and "bc" in comment:
+                bc_preds.add(pred_uri)
+
+    if bc_preds:
+        filter_pattern = re.compile(
+            r"FILTER\s*\(.*?\?\s*(\w+)\s*(?:>|>=|=)\s*(\d+)",
+            re.IGNORECASE,
+        )
+        for match in filter_pattern.finditer(sparql):
+            var_name = match.group(1)
+            value = int(match.group(2))
+            if value > 0:
+                for pred_uri in var_preds.get(var_name, []):
+                    if pred_uri in bc_preds:
+                        pred_local = _local_name(pred_uri)
+                        hints.append(
+                            f"Diagnostic: '{pred_local}' uses negative integers for BC dates. "
+                            f"Your filter compares ?{var_name} against {value} (a positive "
+                            f"number, meaning AD). For BC dates, use negative values "
+                            f"(e.g., -100 for 100 BC)."
+                        )
+                        break
+
+    # 4. Date literal padding — detect unpadded year in gYear, date, dateTime literals
+    _DATE_SUFFIXES = ("gYear", "date", "dateTime")
+    date_preds: dict[str, str] = {}  # pred_uri -> datatype suffix
+    for class_uri, preds in schema_dict.items():
+        for pred_uri, pred_info in preds.items():
+            if pred_uri == "_meta" or not isinstance(pred_info, dict):
+                continue
+            dt = pred_info.get("datatype", "")
+            if dt:
+                for suffix in _DATE_SUFFIXES:
+                    if dt.endswith(suffix):
+                        date_preds[pred_uri] = suffix
+                        break
+
+    if date_preds:
+        date_filter = re.compile(
+            r"""FILTER\s*\(.*?\?(\w+)\s*(?:[<>=!]+)\s*"(-?\d{1,3})(?:["-])""",
+            re.IGNORECASE,
+        )
+        for match in date_filter.finditer(sparql):
+            var_name = match.group(1)
+            year_val = match.group(2)
+            for pred_uri in var_preds.get(var_name, []):
+                if pred_uri in date_preds:
+                    pred_local = _local_name(pred_uri)
+                    dtype = date_preds[pred_uri]
+                    padded = year_val.zfill(4) if not year_val.startswith("-") else "-" + year_val[1:].zfill(4)
+                    if dtype == "gYear":
+                        example = f'"{padded}"^^xsd:gYear'
+                    else:
+                        example = f'"{padded}-01-01"^^xsd:{dtype}'
+                    hints.append(
+                        f"Diagnostic: '{pred_local}' uses xsd:{dtype} with zero-padded 4-digit years. "
+                        f'Your value "{year_val}" needs padding: use {example} '
+                        f'(e.g., "-0044-03-15"^^xsd:date for 44 BC).'
+                    )
+                    break
+
+    # 5. String literal vs URI mismatch in FILTER
+    var_range_types: dict[str, list[str]] = {}
+    for s, p, o in triples:
+        if isinstance(p, URIRef) and isinstance(o, Variable) and isinstance(s, Variable):
+            pred_uri = str(p)
+            s_name = str(s)
+            for class_uri in var_types.get(s_name, []):
+                if class_uri not in schema_dict:
+                    continue
+                pred_info = schema_dict[class_uri].get(pred_uri)
+                if isinstance(pred_info, dict):
+                    for range_uri in pred_info.get("ranges", []):
+                        var_range_types.setdefault(str(o), []).append(range_uri)
+
+    string_filter = re.compile(
+        r"""FILTER\s*\(.*?\?(\w+)\s*=\s*"([^"]*)"(?:\^\^[^ )]*)?""",
+        re.IGNORECASE,
+    )
+    for match in string_filter.finditer(sparql):
+        var_name = match.group(1)
+        ranges = var_range_types.get(var_name, [])
+        for range_uri in ranges:
+            if not range_uri.startswith(_XSD_NS):
+                range_local = _local_name(range_uri)
+                hints.append(
+                    f"Diagnostic: ?{var_name} has range {range_local} (a URI/entity), "
+                    f"but you're comparing it to a string literal. Use the entity URI "
+                    f"or match via rdfs:label on the linked entity."
+                )
+                break
+
+    return hints
 
 
 def _run_probes(

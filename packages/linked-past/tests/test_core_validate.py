@@ -495,3 +495,248 @@ def test_uncertainty_flags_no_hint_when_used():
     )
     hints = validate_semantics(sparql, sd)
     assert not any("uncertainty" in h.lower() for h in hints)
+
+
+# Task 3 tests
+def test_heuristic_escalates_open_world_boolean():
+    """When pre-execution warned about open-world boolean and result is empty, escalate."""
+    schemas = {
+        "Person": {
+            "uri": "ex:Person",
+            "properties": [
+                {"pred": "ex:isPatrician", "range": "xsd:boolean", "open_world": True},
+            ],
+        },
+    }
+    sd = build_schema_dict(schemas, PREFIXES)
+    sparql = (
+        "PREFIX ex: <http://example.org/>\n"
+        "SELECT ?p WHERE { ?p a ex:Person ; ex:isPatrician ?v . FILTER(?v = false) }"
+    )
+    semantic_hints = [
+        "Hint: 'isPatrician' only stores true values (open-world boolean). "
+        "FILTER(?v = false) returns 0 rows. "
+        "Use: FILTER NOT EXISTS { ?p <http://example.org/isPatrician> true }"
+    ]
+    result = diagnose_empty_result(sparql, None, sd, PREFIXES, semantic_hints=semantic_hints)
+    assert any("open-world" in h.lower() and "likely the cause" in h.lower() for h in result.hints)
+
+
+def test_heuristic_no_escalation_without_prior_warning():
+    """No escalation if pre-execution didn't warn about open-world."""
+    schemas = {
+        "Person": {
+            "uri": "ex:Person",
+            "properties": [
+                {"pred": "ex:hasName", "range": "xsd:string"},
+            ],
+        },
+    }
+    sd = build_schema_dict(schemas, PREFIXES)
+    sparql = (
+        "PREFIX ex: <http://example.org/>\n"
+        "SELECT ?p WHERE { ?p a ex:Person ; ex:hasName ?n . FILTER(?n = \"Nobody\") }"
+    )
+    result = diagnose_empty_result(sparql, None, sd, PREFIXES, semantic_hints=[])
+    assert not any("open-world" in h.lower() for h in result.hints)
+
+
+# Task 4 tests
+def test_heuristic_contradictory_types():
+    """Detect when a variable is bound to two incompatible rdf:type classes."""
+    schemas = {
+        "Person": {
+            "uri": "ex:Person",
+            "properties": [{"pred": "ex:hasName", "range": "xsd:string"}],
+        },
+        "PostAssertion": {
+            "uri": "ex:PostAssertion",
+            "properties": [{"pred": "ex:hasOffice", "range": "xsd:string"}],
+        },
+    }
+    sd = build_schema_dict(schemas, PREFIXES)
+    sparql = (
+        "PREFIX ex: <http://example.org/>\n"
+        "SELECT ?x WHERE { ?x a ex:Person . ?x a ex:PostAssertion }"
+    )
+    result = diagnose_empty_result(sparql, None, sd, PREFIXES)
+    assert any("contradictory" in h.lower() or "both" in h.lower() for h in result.hints)
+
+
+def test_heuristic_no_contradiction_single_type():
+    schemas = {
+        "Person": {
+            "uri": "ex:Person",
+            "properties": [{"pred": "ex:hasName", "range": "xsd:string"}],
+        },
+    }
+    sd = build_schema_dict(schemas, PREFIXES)
+    sparql = (
+        "PREFIX ex: <http://example.org/>\n"
+        "SELECT ?x WHERE { ?x a ex:Person ; ex:hasName ?n }"
+    )
+    result = diagnose_empty_result(sparql, None, sd, PREFIXES)
+    assert not any("contradictory" in h.lower() or "both" in h.lower() for h in result.hints)
+
+
+# Task 5 tests
+def test_heuristic_date_range_positive_on_bc_field():
+    """Detect FILTER with positive integer on a field documented as 'Negative = BC'."""
+    schemas = {
+        "Person": {
+            "uri": "ex:Person",
+            "properties": [
+                {
+                    "pred": "ex:hasEraFrom",
+                    "range": "xsd:integer",
+                    "comment": "Era start. Negative = BC.",
+                },
+            ],
+        },
+    }
+    sd = build_schema_dict(schemas, PREFIXES)
+    sparql = (
+        "PREFIX ex: <http://example.org/>\n"
+        "SELECT ?p WHERE { ?p a ex:Person ; ex:hasEraFrom ?era . FILTER(?era > 100) }"
+    )
+    result = diagnose_empty_result(sparql, None, sd, PREFIXES)
+    assert any("negative" in h.lower() and "bc" in h.lower() for h in result.hints)
+
+
+def test_heuristic_date_range_negative_no_warning():
+    """No warning when using negative integers on a BC date field."""
+    schemas = {
+        "Person": {
+            "uri": "ex:Person",
+            "properties": [
+                {
+                    "pred": "ex:hasEraFrom",
+                    "range": "xsd:integer",
+                    "comment": "Era start. Negative = BC.",
+                },
+            ],
+        },
+    }
+    sd = build_schema_dict(schemas, PREFIXES)
+    sparql = (
+        "PREFIX ex: <http://example.org/>\n"
+        "SELECT ?p WHERE { ?p a ex:Person ; ex:hasEraFrom ?era . FILTER(?era < -100) }"
+    )
+    result = diagnose_empty_result(sparql, None, sd, PREFIXES)
+    assert not any("negative" in h.lower() and "bc" in h.lower() for h in result.hints)
+
+
+# Task 6 tests
+def test_heuristic_gyear_unpadded():
+    """Detect unpadded year in FILTER on xsd:gYear predicate."""
+    schemas = {
+        "TypeSeries": {
+            "uri": "ex:TypeSeries",
+            "properties": [
+                {"pred": "ex:hasStartDate", "range": "xsd:gYear", "comment": "Earliest date"},
+            ],
+        },
+    }
+    sd = build_schema_dict(schemas, PREFIXES)
+    sparql = (
+        "PREFIX ex: <http://example.org/>\n"
+        'SELECT ?t WHERE { ?t a ex:TypeSeries ; ex:hasStartDate ?d . FILTER(?d < "-44") }'
+    )
+    result = diagnose_empty_result(sparql, None, sd, PREFIXES)
+    assert any("padded" in h.lower() or "gYear" in h.lower() for h in result.hints)
+
+
+def test_heuristic_gyear_properly_padded():
+    """No warning when year is properly padded."""
+    schemas = {
+        "TypeSeries": {
+            "uri": "ex:TypeSeries",
+            "properties": [
+                {"pred": "ex:hasStartDate", "range": "xsd:gYear", "comment": "Earliest date"},
+            ],
+        },
+    }
+    sd = build_schema_dict(schemas, PREFIXES)
+    sparql = (
+        "PREFIX ex: <http://example.org/>\n"
+        'SELECT ?t WHERE { ?t a ex:TypeSeries ; ex:hasStartDate ?d . FILTER(?d < "-0044"^^xsd:gYear) }'
+    )
+    result = diagnose_empty_result(sparql, None, sd, PREFIXES)
+    assert not any("padded" in h.lower() for h in result.hints)
+
+
+def test_heuristic_xsd_date_bare_year():
+    """Detect bare year comparison on xsd:date predicate (needs full ISO 8601)."""
+    schemas = {
+        "Event": {
+            "uri": "ex:Event",
+            "properties": [
+                {"pred": "ex:hasDate", "range": "xsd:date", "comment": "Event date"},
+            ],
+        },
+    }
+    sd = build_schema_dict(schemas, PREFIXES)
+    sparql = (
+        "PREFIX ex: <http://example.org/>\n"
+        'SELECT ?e WHERE { ?e a ex:Event ; ex:hasDate ?d . FILTER(?d < "-44") }'
+    )
+    result = diagnose_empty_result(sparql, None, sd, PREFIXES)
+    assert any("padded" in h.lower() or "date" in h.lower() for h in result.hints)
+
+
+def test_heuristic_xsd_date_properly_formatted():
+    """No warning when xsd:date is full ISO 8601."""
+    schemas = {
+        "Event": {
+            "uri": "ex:Event",
+            "properties": [
+                {"pred": "ex:hasDate", "range": "xsd:date", "comment": "Event date"},
+            ],
+        },
+    }
+    sd = build_schema_dict(schemas, PREFIXES)
+    sparql = (
+        "PREFIX ex: <http://example.org/>\n"
+        'SELECT ?e WHERE { ?e a ex:Event ; ex:hasDate ?d . FILTER(?d < "-0044-03-15"^^xsd:date) }'
+    )
+    result = diagnose_empty_result(sparql, None, sd, PREFIXES)
+    assert not any("padded" in h.lower() for h in result.hints)
+
+
+# Task 13 tests
+def test_heuristic_string_vs_uri_mismatch():
+    """Detect FILTER comparing a URI-range variable to a string literal."""
+    schemas = {
+        "PostAssertion": {
+            "uri": "ex:PostAssertion",
+            "properties": [
+                {"pred": "ex:hasOffice", "range": "ex:Office"},
+            ],
+        },
+    }
+    sd = build_schema_dict(schemas, PREFIXES)
+    sparql = (
+        "PREFIX ex: <http://example.org/>\n"
+        'SELECT ?pa WHERE { ?pa a ex:PostAssertion ; ex:hasOffice ?o . FILTER(?o = "consul") }'
+    )
+    result = diagnose_empty_result(sparql, None, sd, PREFIXES)
+    assert any("uri" in h.lower() and "string" in h.lower() for h in result.hints)
+
+
+def test_heuristic_no_mismatch_string_range():
+    """No warning when comparing string-range variable to string literal."""
+    schemas = {
+        "Person": {
+            "uri": "ex:Person",
+            "properties": [
+                {"pred": "ex:hasName", "range": "xsd:string"},
+            ],
+        },
+    }
+    sd = build_schema_dict(schemas, PREFIXES)
+    sparql = (
+        "PREFIX ex: <http://example.org/>\n"
+        'SELECT ?p WHERE { ?p a ex:Person ; ex:hasName ?n . FILTER(?n = "Cicero") }'
+    )
+    result = diagnose_empty_result(sparql, None, sd, PREFIXES)
+    assert not any("uri" in h.lower() and "string" in h.lower() for h in result.hints)
