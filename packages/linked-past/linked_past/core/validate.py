@@ -105,19 +105,11 @@ def log_zero_result(
         logger.warning("Failed to log zero-result query: %s", e)
 
 
-def _run_heuristics(
-    sparql: str,
-    schema_dict: dict,
-    prefix_map: dict[str, str],
-    dataset: str | None,
-    semantic_hints: list[str] | None,
-) -> list[str]:
-    """Zero-cost heuristic checks on the SPARQL AST."""
-    hints: list[str] = []
-
-    # Parse triples and variable types once for all heuristics
+def _parse_triples_and_types(sparql: str) -> tuple[list[tuple], dict[str, list[str]], dict[str, list[str]]]:
+    """Parse SPARQL to extract triples, variable types, and variable predicates."""
     triples: list[tuple] = []
     var_types: dict[str, list[str]] = {}
+    var_preds: dict[str, list[str]] = {}
     try:
         triples = _collect_triples(sparql)
         for s, p, o in triples:
@@ -125,14 +117,15 @@ def _run_heuristics(
                 var_types.setdefault(str(s), []).append(str(o))
     except Exception:
         pass
-
-    # Also build var_preds map (variable -> predicates that produce it)
-    var_preds: dict[str, list[str]] = {}
     for s, p, o in triples:
         if isinstance(p, URIRef) and isinstance(o, Variable):
             var_preds.setdefault(str(o), []).append(str(p))
+    return triples, var_types, var_preds
 
-    # 1. Escalate open-world boolean warnings from pre-execution
+
+def _check_boolean_escalation(semantic_hints: list[str] | None) -> list[str]:
+    """Escalate open-world boolean warnings from pre-execution."""
+    hints: list[str] = []
     if semantic_hints:
         for hint in semantic_hints:
             if "open-world boolean" in hint.lower():
@@ -142,8 +135,12 @@ def _run_heuristics(
                     "true values, so filtering for false always yields nothing."
                 )
                 break
+    return hints
 
-    # 2. Contradictory type constraints
+
+def _check_contradictory_types(var_types: dict[str, list[str]], schema_dict: dict) -> list[str]:
+    """Detect variables typed as multiple classes."""
+    hints: list[str] = []
     for var_name, types in var_types.items():
         if len(types) > 1:
             known = [t for t in types if t in schema_dict]
@@ -154,8 +151,12 @@ def _run_heuristics(
                     f"No entity is likely to satisfy both types simultaneously. "
                     f"Use separate variables for each type."
                 )
+    return hints
 
-    # 3. Date range sanity — positive integers on BC date fields
+
+def _check_bc_date_sign(sparql: str, var_preds: dict[str, list[str]], schema_dict: dict) -> list[str]:
+    """Detect positive integers on BC date fields."""
+    hints: list[str] = []
     bc_preds: set[str] = set()
     for class_uri, preds in schema_dict.items():
         for pred_uri, pred_info in preds.items():
@@ -184,8 +185,12 @@ def _run_heuristics(
                             f"(e.g., -100 for 100 BC)."
                         )
                         break
+    return hints
 
-    # 4. Date literal padding — detect unpadded year in gYear, date, dateTime literals
+
+def _check_date_padding(sparql: str, var_preds: dict[str, list[str]], schema_dict: dict) -> list[str]:
+    """Detect unpadded years and string date comparisons."""
+    hints: list[str] = []
     date_preds: dict[str, str] = {}  # pred_uri -> datatype suffix
     for class_uri, preds in schema_dict.items():
         for pred_uri, pred_info in preds.items():
@@ -222,7 +227,7 @@ def _run_heuristics(
                     )
                     break
 
-    # 4b. Date string comparison without type cast — catches "-0100" compared as string
+    # Date string comparison without type cast — catches "-0100" compared as string
     if date_preds:
         untyped_date = re.compile(
             r"""FILTER\s*\(.*?\?(\w+)\s*[<>=!]+\s*"(-?\d{4})"(?!\s*\^\^)""",
@@ -241,8 +246,17 @@ def _run_heuristics(
                         f'or typed literal: FILTER(?{var_name} >= "{year_val}"^^xsd:gYear).'
                     )
                     break
+    return hints
 
-    # 5. String literal vs URI mismatch in FILTER
+
+def _check_string_uri_mismatch(
+    sparql: str,
+    triples: list[tuple],
+    var_types: dict[str, list[str]],
+    schema_dict: dict,
+) -> list[str]:
+    """Detect string vs URI range mismatches."""
+    hints: list[str] = []
     var_range_types: dict[str, list[str]] = {}
     for s, p, o in triples:
         if isinstance(p, URIRef) and isinstance(o, Variable) and isinstance(s, Variable):
@@ -272,7 +286,24 @@ def _run_heuristics(
                     f"or match via rdfs:label on the linked entity."
                 )
                 break
+    return hints
 
+
+def _run_heuristics(
+    sparql: str,
+    schema_dict: dict,
+    prefix_map: dict[str, str],
+    dataset: str | None,
+    semantic_hints: list[str] | None,
+) -> list[str]:
+    """Zero-cost heuristic checks on the SPARQL AST."""
+    triples, var_types, var_preds = _parse_triples_and_types(sparql)
+    hints: list[str] = []
+    hints.extend(_check_boolean_escalation(semantic_hints))
+    hints.extend(_check_contradictory_types(var_types, schema_dict))
+    hints.extend(_check_bc_date_sign(sparql, var_preds, schema_dict))
+    hints.extend(_check_date_padding(sparql, var_preds, schema_dict))
+    hints.extend(_check_string_uri_mismatch(sparql, triples, var_types, schema_dict))
     return hints
 
 

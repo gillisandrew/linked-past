@@ -5,6 +5,10 @@ from linked_past.core.store import create_store, load_rdf
 from linked_past.core.validate import (
     DiagnosticResult,
     QueryResult,
+    _check_bc_date_sign,
+    _check_boolean_escalation,
+    _check_contradictory_types,
+    _parse_triples_and_types,
     build_schema_dict,
     diagnose_empty_result,
     extract_query_classes,
@@ -1004,3 +1008,49 @@ def test_validate_and_execute_no_log_when_results(tmp_path, monkeypatch):
     assert len(result.rows) > 0
     log_file = data_dir / "diagnostics" / "zero_results.jsonl"
     assert not log_file.exists()
+
+
+# --- Composable checker unit tests ---
+
+
+def test_check_contradictory_types():
+    schema_dict = {
+        "http://example.org/Person": {"_meta": {}},
+        "http://example.org/Office": {"_meta": {}},
+    }
+    sparql = (
+        "PREFIX ex: <http://example.org/>\n"
+        "SELECT ?x WHERE { ?x a ex:Person . ?x a ex:Office }"
+    )
+    _, var_types, _ = _parse_triples_and_types(sparql)
+    hints = _check_contradictory_types(var_types, schema_dict)
+    assert any("typed as both" in h for h in hints)
+
+
+def test_check_bc_date_sign():
+    schema_dict = {
+        "http://example.org/Person": {
+            "http://example.org/hasEra": {
+                "comment": "Negative integers for BC dates",
+                "ranges": [],
+            },
+        },
+    }
+    sparql = (
+        "PREFIX ex: <http://example.org/>\n"
+        "SELECT ?p WHERE { ?p a ex:Person ; ex:hasEra ?e . FILTER(?e > 100) }"
+    )
+    _, _, var_preds = _parse_triples_and_types(sparql)
+    hints = _check_bc_date_sign(sparql, var_preds, schema_dict)
+    assert any("negative" in h.lower() or "BC" in h for h in hints)
+
+
+def test_check_boolean_escalation():
+    hints = _check_boolean_escalation(["open-world boolean warning: ..."])
+    assert any("open-world boolean" in h.lower() for h in hints)
+
+    hints = _check_boolean_escalation([])
+    assert hints == []
+
+    hints = _check_boolean_escalation(None)
+    assert hints == []
