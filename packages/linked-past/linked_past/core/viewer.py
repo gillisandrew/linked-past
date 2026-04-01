@@ -89,10 +89,13 @@ class ViewerManager:
         Failed sends are silently removed from the client set.
         """
         dead: list[WebSocket] = []
+        logger.info("Broadcasting to %d client(s), fragment_len=%d", len(self._clients), len(html_fragment))
         for ws in list(self._clients):
             try:
                 await ws.send_text(html_fragment)
+                logger.info("Sent to client successfully")
             except Exception:
+                logger.exception("Failed to send to viewer client")
                 dead.append(ws)
         for ws in dead:
             self._clients.discard(ws)
