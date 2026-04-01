@@ -90,6 +90,8 @@ def _index_dataset(search: SearchIndex, name: str, plugin: object, store=None) -
         # Pleiades alternative name forms
         "https://pleiades.stoa.org/places/vocab#nameAttested",
         "https://pleiades.stoa.org/places/vocab#nameRomanized",
+        # EDH inscription text (for person name search)
+        "http://edh-www.adw.uni-heidelberg.de/lod/ontology#editionText",
     ]
     # Add dataset-specific name predicates
     if hasattr(plugin, "_prefixes") and hasattr(plugin, "_schemas"):
@@ -877,6 +879,32 @@ def create_mcp_server() -> FastMCP:
                         "uri": uri_val,
                         "label": row.get("label", ""),
                     })
+
+                # EDH: also search inscription edition text for person names
+                if ds_name == "edh":
+                    text_pred = "<http://edh-www.adw.uni-heidelberg.de/lod/ontology#editionText>"
+                    text_sparql = f"""
+                    {prefix_block}
+                    SELECT DISTINCT ?uri ?text WHERE {{
+                        ?uri {text_pred} ?text .
+                        FILTER(CONTAINS(?text, "{query_text}"))
+                    }}
+                    LIMIT 20
+                    """
+                    text_rows = eq(store, text_sparql)
+                    for row in text_rows:
+                        uri_val = row.get("uri", "")
+                        if uri_val in seen_uris:
+                            continue
+                        seen_uris.add(uri_val)
+                        # Use a snippet of the text as the label
+                        text = row.get("text", "")
+                        snippet = text[:120] + "..." if len(text) > 120 else text
+                        all_results.append({
+                            "dataset": ds_name,
+                            "uri": uri_val,
+                            "label": f"[inscription] {snippet}",
+                        })
             except Exception as e:
                 logger.warning("Search failed for %s: %s", ds_name, e, exc_info=True)
 
@@ -1113,19 +1141,16 @@ def create_mcp_server() -> FastMCP:
             lines.append(f"- **Citation:** {plugin.citation}")
             lines.append(f"- **URL:** {plugin.url}")
 
-            # Include VoID stats if available
+            # Include summary VoID stats (not class partitions — those are dataset-level, not entity-level)
             void_meta = meta.get("void", {})
             if void_meta:
-                lines.append(f"- **Triples:** {int(void_meta['triples']):,}" if "triples" in void_meta else "")
-                lines.append(f"- **Entities:** {int(void_meta['entities']):,}" if "entities" in void_meta else "")
-                lines.append(f"- **Classes:** {void_meta['classes']}" if "classes" in void_meta else "")
-                lines.append(f"- **Properties:** {void_meta['properties']}" if "properties" in void_meta else "")
-                lines = [line for line in lines if line]  # remove empty strings
-                if "classPartitions" in void_meta:
-                    lines.append("\n### Class Partitions\n")
-                    for cp in void_meta["classPartitions"]:
-                        cls_name = cp["class"].rsplit("#", 1)[-1].rsplit("/", 1)[-1]
-                        lines.append(f"- **{cls_name}:** {int(cp['entities']):,} instances")
+                stats = []
+                if "triples" in void_meta:
+                    stats.append(f"{int(void_meta['triples']):,} triples")
+                if "entities" in void_meta:
+                    stats.append(f"{int(void_meta['entities']):,} entities")
+                if stats:
+                    lines.append(f"- **Dataset size:** {', '.join(stats)}")
 
             lines.append("")
 
