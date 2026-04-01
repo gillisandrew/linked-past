@@ -48,6 +48,17 @@ def load_rdf(store: Store, file_path: Path, rdf_format: RdfFormat = RdfFormat.TU
 DEFAULT_LANG_PREFS = ("en", "")
 
 
+def execute_ask(store: Store, sparql: str) -> bool:
+    """Execute a SPARQL ASK query and return True/False."""
+    import re
+
+    # Strip PREFIX declarations to find the query form
+    body = re.sub(r"PREFIX\s+\S+\s*<[^>]*>\s*", "", sparql, flags=re.IGNORECASE).strip()
+    if not body.upper().startswith("ASK"):
+        raise ValueError("Expected ASK query, got: " + sparql[:40])
+    return bool(store.query(sparql))
+
+
 def execute_query(
     store: Store,
     sparql: str,
