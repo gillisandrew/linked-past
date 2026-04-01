@@ -980,11 +980,13 @@ def validate_and_execute(
     if parse_errors:
         return QueryResult(success=False, sparql=fixed_sparql, errors=parse_errors)
 
+    # Semantic hints are non-blocking — unknown classes/predicates are warnings, not errors
     semantic_hints = validate_semantics(fixed_sparql, schema_dict)
 
     try:
         from linked_past.core.store import execute_query
 
+        # Compress result URIs: dataset prefixes + query-declared prefixes (query wins on conflict)
         result_prefixes = dict(prefix_map)
         for match in re.finditer(r"PREFIX\s+(\w+):\s*<([^>]+)>", fixed_sparql, re.IGNORECASE):
             result_prefixes[match.group(1)] = match.group(2)
@@ -999,7 +1001,6 @@ def validate_and_execute(
             dataset=dataset,
             semantic_hints=semantic_hints,
         )
-        semantic_hints.extend(diagnostics.hints)
         log_zero_result(
             dataset=dataset,
             sparql=fixed_sparql,
@@ -1007,5 +1008,6 @@ def validate_and_execute(
             semantic_hints=semantic_hints,
             duration_ms=int((time.monotonic() - t0) * 1000),
         )
+        semantic_hints.extend(diagnostics.hints)
 
     return QueryResult(success=True, sparql=fixed_sparql, rows=rows, errors=semantic_hints)
