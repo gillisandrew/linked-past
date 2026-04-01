@@ -38,8 +38,8 @@ export function Feed({
   messages: ViewerMessage[];
   bookmarks: Set<number>;
   notes: Map<number, string>;
-  onToggleBookmark: (seq: number) => void;
-  onUpdateNote: (seq: number, text: string) => void;
+  onToggleBookmark?: (seq: number) => void;
+  onUpdateNote?: (seq: number, text: string) => void;
 }) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -65,8 +65,8 @@ export function Feed({
           subtitle={getSubtitle(msg)}
           bookmarked={bookmarks.has(msg.seq)}
           note={notes.get(msg.seq)}
-          onToggleBookmark={() => onToggleBookmark(msg.seq)}
-          onUpdateNote={(text) => onUpdateNote(msg.seq, text)}
+          onToggleBookmark={onToggleBookmark ? () => onToggleBookmark(msg.seq) : undefined}
+          onUpdateNote={onUpdateNote ? (text) => onUpdateNote(msg.seq, text) : undefined}
         >
           <MessageBody message={msg} />
         </FeedItem>

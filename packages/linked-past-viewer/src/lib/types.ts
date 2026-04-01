@@ -38,9 +38,18 @@ export type ReportData = {
 };
 
 type BaseMessage = {
+  session_id: string;
   seq: number;
   dataset: string | null;
   timestamp: string;
+};
+
+export type SessionInfo = {
+  id: string;
+  message_count: number;
+  started: string;
+  last_activity: string;
+  is_current: boolean;
 };
 
 export type ViewerMessage =

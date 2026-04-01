@@ -35,6 +35,8 @@ class ViewerManager:
         self._active: bool = False
         self._history: list[str] = []
         self._seq: int = 0
+        self._session_id: str | None = None
+        self._session_file = None
         self.app_context = app_context
 
     # ── Properties ────────────────────────────────────────────────────────────
@@ -54,6 +56,11 @@ class ViewerManager:
         """All messages broadcast since activation."""
         return list(self._history)
 
+    @property
+    def session_id(self) -> str | None:
+        """Current session ID, or None if inactive."""
+        return self._session_id
+
     def next_seq(self) -> int:
         """Return the next sequence number."""
         self._seq += 1
@@ -62,12 +69,25 @@ class ViewerManager:
     # ── Lifecycle ─────────────────────────────────────────────────────────────
 
     def activate(self) -> None:
-        """Mark the viewer as active (start accepting connections)."""
+        """Mark the viewer as active, create a new session JSONL file."""
+        from datetime import datetime, timezone
+        from pathlib import Path
+
+        from linked_past.core.store import get_data_dir
+
         self._active = True
-        logger.debug("ViewerManager activated")
+        self._session_id = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+        sessions_dir = Path(get_data_dir()) / "viewer" / "sessions"
+        sessions_dir.mkdir(parents=True, exist_ok=True)
+        self._session_file = open(sessions_dir / f"{self._session_id}.jsonl", "a")  # noqa: SIM115
+        logger.info("ViewerManager activated, session %s", self._session_id)
 
     async def deactivate(self) -> None:
-        """Send close frames to all clients, clear the client set, go inactive."""
+        """Close session file, send close frames to all clients, go inactive."""
+        if self._session_file:
+            self._session_file.close()
+            self._session_file = None
+        self._session_id = None
         self._history.clear()
         self._seq = 0
         for ws in list(self._clients):
@@ -102,6 +122,9 @@ class ViewerManager:
         Failed sends are silently removed from the client set.
         """
         self._history.append(message)
+        if self._session_file:
+            self._session_file.write(message + "\n")
+            self._session_file.flush()
         dead: list[WebSocket] = []
         logger.info("Broadcasting to %d client(s), message_len=%d", len(self._clients), len(message))
         for ws in list(self._clients):

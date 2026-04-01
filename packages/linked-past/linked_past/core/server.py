@@ -322,6 +322,7 @@ async def _push_to_viewer(app: AppContext, tool_name: str, dataset: str | None, 
     from datetime import datetime, timezone
 
     message = json.dumps({
+        "session_id": app.viewer.session_id,
         "seq": app.viewer.next_seq(),
         "type": tool_name,
         "dataset": dataset,
@@ -488,7 +489,7 @@ def create_mcp_server() -> FastMCP:
     from starlette.routing import Route, WebSocketRoute
 
     from linked_past.core.viewer import ViewerManager, set_manager, viewer_ws_handler
-    from linked_past.core.viewer_api import entity_handler
+    from linked_past.core.viewer_api import entity_handler, session_detail_handler, sessions_list_handler
 
     viewer_manager = ViewerManager(app_context=_shared_ctx)
     set_manager(viewer_manager)
@@ -527,6 +528,8 @@ def create_mcp_server() -> FastMCP:
 
     mcp._custom_starlette_routes.extend([
         Route("/viewer/api/entity", entity_handler, methods=["GET"]),
+        Route("/viewer/api/sessions", sessions_list_handler, methods=["GET"]),
+        Route("/viewer/api/sessions/{session_id}", session_detail_handler, methods=["GET"]),
         WebSocketRoute("/viewer/ws", viewer_ws_handler),
         Route("/viewer", _viewer_page, methods=["GET"]),
         Route("/viewer/{path:path}", _viewer_static, methods=["GET"]),

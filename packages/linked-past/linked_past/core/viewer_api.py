@@ -1,12 +1,15 @@
-"""REST endpoint for entity lookups — used by the viewer's EntityPopover component."""
+"""REST endpoints for the viewer — entity lookups and session history."""
 
 from __future__ import annotations
 
+import json
 import logging
+from pathlib import Path
 
 from starlette.requests import Request
 from starlette.responses import JSONResponse, PlainTextResponse
 
+from linked_past.core.store import get_data_dir
 from linked_past.core.viewer import get_manager
 
 logger = logging.getLogger(__name__)
@@ -79,3 +82,56 @@ async def entity_handler(request: Request) -> JSONResponse | PlainTextResponse:
         "properties": properties,
         "xrefs": xrefs,
     })
+
+
+# ── Session history ──────────────────────────────────────────────────────────
+
+
+def _sessions_dir() -> Path:
+    return Path(get_data_dir()) / "viewer" / "sessions"
+
+
+async def sessions_list_handler(request: Request) -> JSONResponse:  # noqa: ARG001
+    """GET /viewer/api/sessions — list available session files."""
+    sessions_path = _sessions_dir()
+    if not sessions_path.exists():
+        return JSONResponse([])
+
+    sessions = []
+    for f in sorted(sessions_path.glob("*.jsonl"), reverse=True):
+        # Count lines and read first/last timestamps
+        lines = f.read_text().strip().splitlines()
+        if not lines:
+            continue
+        first = json.loads(lines[0])
+        last = json.loads(lines[-1])
+        mgr = get_manager()
+        is_current = mgr is not None and mgr.session_id == f.stem
+
+        sessions.append({
+            "id": f.stem,
+            "message_count": len(lines),
+            "started": first.get("timestamp"),
+            "last_activity": last.get("timestamp"),
+            "is_current": is_current,
+        })
+
+    return JSONResponse(sessions)
+
+
+async def session_detail_handler(request: Request) -> JSONResponse | PlainTextResponse:
+    """GET /viewer/api/sessions/{session_id} — return all messages for a session."""
+    session_id = request.path_params.get("session_id", "")
+    session_file = _sessions_dir() / f"{session_id}.jsonl"
+
+    if not session_file.exists():
+        return PlainTextResponse("Session not found", status_code=404)
+
+    # Resolve to prevent path traversal
+    if not str(session_file.resolve()).startswith(str(_sessions_dir().resolve())):
+        return PlainTextResponse("Forbidden", status_code=403)
+
+    lines = session_file.read_text().strip().splitlines()
+    messages = [json.loads(line) for line in lines if line.strip()]
+
+    return JSONResponse(messages)
