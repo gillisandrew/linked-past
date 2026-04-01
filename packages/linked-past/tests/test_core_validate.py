@@ -889,3 +889,19 @@ def test_probe_join_decomposition(tmp_path):
     result = diagnose_empty_result(sparql, store, sd, PREFIXES)
     assert result.probe_results.get("base_pattern_matches") is False
     assert any("hasColor" in h for h in result.hints)
+
+
+def test_probe_budget_exhaustion(tmp_path):
+    """With budget_ms=0, no probes should run."""
+    store_path = tmp_path / "store"
+    store = create_store(store_path)
+    ttl = tmp_path / "data.ttl"
+    ttl.write_text(SAMPLE_TURTLE)
+    load_rdf(store, ttl)
+    sd = build_schema_dict(SCHEMAS, PREFIXES)
+    sparql = (
+        "PREFIX ex: <http://example.org/>\n"
+        "SELECT ?w WHERE { ?w a ex:Gadget }"
+    )
+    result = diagnose_empty_result(sparql, store, sd, PREFIXES, budget_ms=0)
+    assert result.probe_results == {}

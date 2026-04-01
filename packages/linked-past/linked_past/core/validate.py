@@ -293,14 +293,17 @@ def _strip_filters_algebra(sparql: str) -> str | None:
         if not triples:
             return None
 
-        prefix_decls = []
-        for match in re.finditer(r"PREFIX\s+\w+:\s*<[^>]+>", sparql, re.IGNORECASE):
-            prefix_decls.append(match.group(0))
-        prefix_str = "\n".join(prefix_decls)
-
-        return _build_ask_from_triples(triples, prefix_str)
+        return _build_ask_from_triples(triples, _extract_prefix_decls(sparql))
     except Exception:
         return None
+
+
+def _extract_prefix_decls(sparql: str) -> str:
+    """Extract PREFIX declarations from a SPARQL query as a single string."""
+    decls = []
+    for match in re.finditer(r"PREFIX\s+\w+:\s*<[^>]+>", sparql, re.IGNORECASE):
+        decls.append(match.group(0))
+    return "\n".join(decls)
 
 
 def _extract_filter_clauses(sparql: str) -> list[tuple[int, int, str]]:
@@ -444,10 +447,7 @@ def _run_probes(
                     except Exception:
                         probe_triples = []
 
-                    prefix_decls = []
-                    for match in re.finditer(r"PREFIX\s+\w+:\s*<[^>]+>", sparql, re.IGNORECASE):
-                        prefix_decls.append(match.group(0))
-                    prefix_str = "\n".join(prefix_decls)
+                    prefix_str = _extract_prefix_decls(sparql)
 
                     for i, triple in enumerate(probe_triples):
                         if budget_remaining() <= 0:
