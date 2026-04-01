@@ -40,6 +40,7 @@ class AppContext:
     search: SearchIndex | None = None
     meta: object = None  # MetaEntityIndex
     session_log: list = None
+    viewer: object = None  # ViewerManager | None
 
     def __post_init__(self):
         if self.session_log is None:
@@ -128,8 +129,11 @@ def _build_search_index(registry: DatasetRegistry, data_dir: Path) -> SearchInde
     """
     try:
         search_path = data_dir / "search.db"
-        if search_path.exists():
-            search_path.unlink()
+        # Remove stale DB + WAL/SHM lock files from previous runs
+        for suffix in ("", "-wal", "-shm"):
+            p = search_path.parent / (search_path.name + suffix)
+            if p.exists():
+                p.unlink()
         search = SearchIndex(search_path)
 
         logger.info("Building search index...")
@@ -310,6 +314,15 @@ def _log_tool_call(app: AppContext, tool_name: str, inputs: dict, result: str, d
     app.session_log.append(entry)
 
 
+async def _push_to_viewer(app: AppContext, tool_name: str, dataset: str | None, body_html: str):
+    """Push an HTML fragment to the viewer if active."""
+    if app.viewer is None or not app.viewer.is_active:
+        return
+    from linked_past.core.viewer_render import render_feed_item
+
+    fragment = render_feed_item(tool_name, dataset, body_html)
+    await app.viewer.broadcast(fragment)
+
 
 def _render_provenance_table(log: list, registry: DatasetRegistry) -> str:
     """Render a provenance table from the session log."""
@@ -463,6 +476,17 @@ def create_mcp_server() -> FastMCP:
         lifespan=lifespan,
     )
 
+    # Register viewer routes statically — they return 404 when viewer is inactive.
+    from starlette.routing import Route, WebSocketRoute
+
+    from linked_past.core.viewer import ViewerManager, set_manager, viewer_page_handler, viewer_ws_handler
+
+    viewer_manager = ViewerManager()
+    set_manager(viewer_manager)
+    _shared_ctx.viewer = viewer_manager
+    mcp._custom_starlette_routes.append(Route("/viewer", viewer_page_handler, methods=["GET"]))
+    mcp._custom_starlette_routes.append(WebSocketRoute("/viewer/ws", viewer_ws_handler))
+
     @mcp.tool()
     def discover_datasets(ctx: Context, topic: str | None = None) -> str:
         """Discover available datasets. Without arguments, lists all loaded datasets with metadata. With a topic, uses semantic search to find relevant datasets."""
@@ -481,9 +505,11 @@ def create_mcp_server() -> FastMCP:
                 continue
             plugin = registry.get_plugin(name)
             if topic and relevant_datasets is None:
-                searchable = [plugin.description, plugin.display_name,
-                              plugin.spatial_coverage, plugin.time_coverage]
-                if not any(topic.lower() in field.lower() for field in searchable):
+                # Fallback when search index unavailable: match any topic word
+                searchable = " ".join([plugin.description, plugin.display_name,
+                                       plugin.spatial_coverage, plugin.time_coverage]).lower()
+                topic_words = topic.lower().split()
+                if not any(word in searchable for word in topic_words):
                     continue
             meta = registry.get_metadata(name)
             version = meta.get("version", "unknown")
@@ -584,10 +610,15 @@ def create_mcp_server() -> FastMCP:
         )
         output = table + see_also + footer
         _log_tool_call(app, "query", {"sparql": sparql, "dataset": dataset}, output, int((time.monotonic() - t0) * 1000))
+        if app.viewer and app.viewer.is_active:
+            from linked_past.core.viewer_render import render_query_table
+
+            table_html = render_query_table(result.rows, dataset)
+            await _push_to_viewer(app, "query", dataset, table_html)
         return output
 
     @mcp.tool()
-    def search_entities(ctx: Context, query_text: str, dataset: str | None = None) -> str:
+    async def search_entities(ctx: Context, query_text: str, dataset: str | None = None) -> str:
         """Search entity labels across datasets. Checks meta-entities first (unified cross-dataset), then SPARQL label search per dataset."""
         t0 = time.monotonic()
         app: AppContext = ctx.request_context.lifespan_context
@@ -668,6 +699,10 @@ def create_mcp_server() -> FastMCP:
         if not all_results and not meta_results:
             output = f"No entities found matching '{query_text}'."
             _log_tool_call(app, "search_entities", {"query_text": query_text, "dataset": dataset}, output, int((time.monotonic() - t0) * 1000))
+            if app.viewer and app.viewer.is_active:
+                from linked_past.core.viewer_render import render_generic
+
+                await _push_to_viewer(app, "search_entities", dataset, render_generic(output))
             return output
 
         lines = [f"# Search Results for '{query_text}'\n"]
@@ -711,10 +746,14 @@ def create_mcp_server() -> FastMCP:
 
         output = "\n".join(lines)
         _log_tool_call(app, "search_entities", {"query_text": query_text, "dataset": dataset}, output, int((time.monotonic() - t0) * 1000))
+        if app.viewer and app.viewer.is_active:
+            from linked_past.core.viewer_render import render_generic
+
+            await _push_to_viewer(app, "search_entities", dataset, render_generic(output))
         return output
 
     @mcp.tool()
-    def explore_entity(ctx: Context, uri: str) -> str:
+    async def explore_entity(ctx: Context, uri: str) -> str:
         """Explore an entity across datasets. Returns properties from its home dataset, cross-links from the linkage graph, and suggested next steps."""
         t0 = time.monotonic()
         app: AppContext = ctx.request_context.lifespan_context
@@ -736,6 +775,7 @@ def create_mcp_server() -> FastMCP:
                     lines.append(f"**Wikidata:** {meta_entity.wikidata_qid.split('/')[-1]}")
                 lines.append("")
 
+        rows = []
         if ds_name:
             plugin = registry.get_plugin(ds_name)
             lines.append(f"**Dataset:** {plugin.display_name}\n")
@@ -791,13 +831,19 @@ def create_mcp_server() -> FastMCP:
 
         output = "\n".join(lines)
         _log_tool_call(app, "explore_entity", {"uri": uri}, output, int((time.monotonic() - t0) * 1000))
+        if app.viewer and app.viewer.is_active:
+            from linked_past.core.viewer_render import render_entity_card
+
+            card_html = render_entity_card(uri, rows, ds_name or "unknown", xrefs)
+            await _push_to_viewer(app, "explore_entity", ds_name, card_html)
         return output
 
     @mcp.tool()
-    def find_links(ctx: Context, uri: str) -> str:
+    async def find_links(ctx: Context, uri: str) -> str:
         """Find all cross-dataset links for an entity. Checks both the curated linkage graph AND the dataset stores for SKOS/OWL cross-reference predicates (closeMatch, exactMatch, sameAs)."""
         t0 = time.monotonic()
         app: AppContext = ctx.request_context.lifespan_context
+        ds_name = app.registry.dataset_for_uri(uri)
 
         # Collect from curated linkage graph
         linkage_links = app.linkage.find_links(uri) if app.linkage else []
@@ -814,7 +860,6 @@ def create_mcp_server() -> FastMCP:
                 all_links.append(link)
 
         if not all_links:
-            ds_name = app.registry.dataset_for_uri(uri)
             other_datasets = [n for n in app.registry.list_datasets() if n != ds_name]
             return (
                 f"No links found for `{uri}`.\n\n"
@@ -842,6 +887,11 @@ def create_mcp_server() -> FastMCP:
 
         output = "\n".join(lines)
         _log_tool_call(app, "find_links", {"uri": uri}, output, int((time.monotonic() - t0) * 1000))
+        if app.viewer and app.viewer.is_active:
+            from linked_past.core.viewer_render import render_xref_list
+
+            xref_html = render_xref_list(linkage_links + store_links)
+            await _push_to_viewer(app, "find_links", ds_name, xref_html)
         return output
 
     @mcp.tool()
@@ -1273,6 +1323,32 @@ def create_mcp_server() -> FastMCP:
                 pass
 
         return "\n".join(lines)
+
+    @mcp.tool()
+    async def start_viewer(ctx: Context) -> str:
+        """Start the browser-based result viewer. Opens a live feed of query results, entity cards, and cross-references at a URL you can open in your browser."""
+        app: AppContext = ctx.request_context.lifespan_context
+
+        if app.viewer is not None and app.viewer.is_active:
+            port = mcp.settings.port or 8000
+            url = app.viewer.viewer_url("localhost", port)
+            return f"Viewer already running at {url}"
+
+        app.viewer.activate()
+        port = mcp.settings.port or 8000
+        url = app.viewer.viewer_url("localhost", port)
+        return f"Viewer started at {url}"
+
+    @mcp.tool()
+    async def stop_viewer(ctx: Context) -> str:
+        """Stop the browser-based result viewer."""
+        app: AppContext = ctx.request_context.lifespan_context
+
+        if app.viewer is None or not app.viewer.is_active:
+            return "Viewer is not running."
+
+        await app.viewer.deactivate()
+        return "Viewer stopped."
 
     return mcp
 
