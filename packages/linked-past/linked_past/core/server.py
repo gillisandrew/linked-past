@@ -168,14 +168,41 @@ def _index_dataset(search: SearchIndex, name: str, plugin: object, store=None) -
             search.add(name, "skos_concept", f"{dr[0].value}: {dr[1].value}")
 
 
-def _build_search_index(registry: DatasetRegistry, data_dir: Path) -> SearchIndex | None:
-    """Build full-text search index from plugin context and SKOS vocabularies.
+def _dataset_fingerprint(registry: DatasetRegistry) -> str:
+    """Compute a fingerprint of initialized datasets + their versions.
 
-    Always rebuilds fresh — FTS5 indexing is fast (no ML model) and avoids
-    stale cache issues when datasets are updated between restarts.
+    Changes when datasets are added, removed, or updated.
+    """
+    import hashlib
+
+    parts = []
+    for name in sorted(registry.list_datasets()):
+        meta = registry.get_metadata(name)
+        version = meta.get("version", "unknown") if meta else "uninitialized"
+        triples = meta.get("triples", 0) if meta else 0
+        parts.append(f"{name}:{version}:{triples}")
+    return hashlib.md5("|".join(parts).encode()).hexdigest()
+
+
+def _build_search_index(registry: DatasetRegistry, data_dir: Path) -> SearchIndex | None:
+    """Build or reuse cached full-text search index.
+
+    Computes a fingerprint of initialized datasets. If the cached index
+    matches, reuses it (instant startup). Otherwise rebuilds from scratch.
     """
     try:
         search_path = data_dir / "search.db"
+        fingerprint_path = data_dir / "search.fingerprint"
+        current_fp = _dataset_fingerprint(registry)
+
+        # Check if cached index is still valid
+        if search_path.exists() and fingerprint_path.exists():
+            cached_fp = fingerprint_path.read_text().strip()
+            if cached_fp == current_fp:
+                logger.info("Search index cache valid (fingerprint %s), reusing", current_fp[:8])
+                return SearchIndex(search_path)
+            logger.info("Search index stale (cached %s, current %s), rebuilding", cached_fp[:8], current_fp[:8])
+
         # Remove stale DB + WAL/SHM lock files from previous runs
         for suffix in ("", "-wal", "-shm"):
             p = search_path.parent / (search_path.name + suffix)
@@ -192,7 +219,9 @@ def _build_search_index(registry: DatasetRegistry, data_dir: Path) -> SearchInde
                 store = None
             _index_dataset(search, name, plugin, store)
 
-        logger.info("Search index built and cached")
+        # Save fingerprint for next startup
+        fingerprint_path.write_text(current_fp)
+        logger.info("Search index built and cached (fingerprint %s)", current_fp[:8])
         return search
     except Exception as e:
         logger.warning("Failed to build search index: %s", e)
