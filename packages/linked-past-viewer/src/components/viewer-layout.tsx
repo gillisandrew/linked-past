@@ -77,7 +77,7 @@ export function ViewerLayout() {
           )}
         </div>
       </header>
-      <main className="max-w-4xl mx-auto p-4">
+      <main className="max-w-6xl mx-auto px-8 py-6">
         <Feed
           messages={filtered}
           bookmarks={bookmarks}

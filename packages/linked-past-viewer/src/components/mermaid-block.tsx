@@ -20,6 +20,7 @@ export function MermaidBlock({ chart }: { chart: string }) {
   const id = useId().replace(/:/g, "_");
   const containerRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
+  const [lightbox, setLightbox] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -47,5 +48,32 @@ export function MermaidBlock({ chart }: { chart: string }) {
     );
   }
 
-  return <div ref={containerRef} className="my-2 overflow-x-auto" />;
+  return (
+    <>
+      <div
+        ref={containerRef}
+        className="my-2 overflow-x-auto cursor-zoom-in"
+        onClick={() => setLightbox(true)}
+        title="Click to enlarge"
+      />
+      {lightbox && (
+        <div
+          className="fixed inset-0 z-[200] bg-black/70 flex items-center justify-center cursor-zoom-out"
+          onClick={() => setLightbox(false)}
+        >
+          <div
+            className="bg-background rounded-lg p-6 max-w-[90vw] max-h-[90vh] overflow-auto shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+            dangerouslySetInnerHTML={{ __html: containerRef.current?.innerHTML ?? "" }}
+          />
+          <button
+            onClick={() => setLightbox(false)}
+            className="absolute top-4 right-4 text-white text-2xl cursor-pointer hover:opacity-80"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+    </>
+  );
 }
