@@ -21,6 +21,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 RDF_TYPE = URIRef("http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
+_DATE_SUFFIXES = ("gYear", "date", "dateTime")
 
 
 def _suggest(name: str, valid_names: list[str]) -> str:
@@ -148,7 +149,6 @@ def _run_heuristics(
                         break
 
     # 4. Date literal padding — detect unpadded year in gYear, date, dateTime literals
-    _DATE_SUFFIXES = ("gYear", "date", "dateTime")
     date_preds: dict[str, str] = {}  # pred_uri -> datatype suffix
     for class_uri, preds in schema_dict.items():
         for pred_uri, pred_info in preds.items():
