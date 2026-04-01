@@ -4,7 +4,7 @@
 
 **Goal:** Add a browser-based live results viewer to the MCP server — a scrollable feed of styled query tables, entity cards, and cross-reference lists, pushed over WebSocket as tools execute.
 
-**Architecture:** `start_viewer` tool mounts `/viewer` (HTML page) and `/viewer/ws` (WebSocket) on the existing Starlette app. Tool functions push structured data to a `ViewerManager` which renders entity-type-aware HTML fragments and broadcasts them to connected browsers. `stop_viewer` tears it down.
+**Architecture:** `/viewer` and `/viewer/ws` routes are registered statically at server build time via `FastMCP._custom_starlette_routes`. They return 404 / reject connections when the viewer is inactive. `start_viewer` activates the `ViewerManager`, `stop_viewer` deactivates it. Tool functions push structured data to the manager which renders HTML fragments and broadcasts them over WebSocket.
 
 **Tech Stack:** Python 3.13, Starlette (WebSocket + Route), asyncio, HTML/CSS/JS (inline, no build step)
 
@@ -95,7 +95,10 @@ VIEWER_HTML = """\
   .dataset-badge[data-ds="crro"] { background: var(--badge-crro); }
   .dataset-badge[data-ds="ocre"] { background: var(--badge-ocre); }
   .dataset-badge[data-ds="edh"] { background: var(--badge-edh); }
-  .timestamp { color: var(--fg-muted); margin-left: auto; font-variant-numeric: tabular-nums; }
+  .timestamp { color: var(--fg-muted); font-variant-numeric: tabular-nums; }
+  .collapse-toggle { margin-left: auto; color: var(--fg-muted); font-size: 11px; cursor: pointer; }
+  .feed-item.collapsed .collapse-toggle::after { content: 'expand'; }
+  .feed-item:not(.collapsed) .collapse-toggle::after { content: 'collapse'; }
   /* Entity cards */
   .entity-card { }
   .entity-card h3 { font-size: 18px; margin-bottom: 8px; }
@@ -114,7 +117,7 @@ VIEWER_HTML = """\
                     max-width: 300px; overflow: hidden; text-overflow: ellipsis;
                     white-space: nowrap; }
   .query-table tr:hover td { background: var(--bg-alt); }
-  .query-table .footer { color: var(--fg-muted); font-size: 12px; padding: 8px 0; }
+  .table-footer { color: var(--fg-muted); font-size: 12px; padding: 8px 0; }
   /* Cross-references */
   .xref-group { margin-bottom: 12px; }
   .xref-group h4 { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
@@ -348,7 +351,7 @@ def render_query_table(rows: list[dict[str, str]], dataset: str) -> str:
         f"<thead><tr>{header}</tr></thead>"
         f'<tbody>{"".join(body_rows)}</tbody>'
         f"</table>"
-        f'<div class="query-table footer">{len(rows)} result{"s" if len(rows) != 1 else ""}</div>'
+        f'<div class="table-footer">{len(rows)} result{"s" if len(rows) != 1 else ""}</div>'
     )
 
 
@@ -446,6 +449,7 @@ def render_feed_item(tool_name: str, dataset: str | None, body_html: str) -> str
         f'<span class="tool-badge">{escape(tool_name)}</span>'
         f"{ds_badge}"
         f'<span class="timestamp">{ts}</span>'
+        f'<span class="collapse-toggle"></span>'
         f"</div>"
         f'<div class="feed-body">{body_html}</div>'
         f"</div>"
@@ -485,8 +489,6 @@ WebSocket manager, route handlers, and dynamic route mounting.
 # packages/linked-past/tests/test_viewer.py
 """Tests for ViewerManager."""
 
-import asyncio
-
 import pytest
 
 from linked_past.core.viewer import ViewerManager
@@ -502,10 +504,11 @@ def test_manager_starts_inactive(manager):
     assert manager.client_count == 0
 
 
-def test_manager_activate_deactivate(manager):
+@pytest.mark.asyncio
+async def test_manager_activate_deactivate(manager):
     manager.activate()
     assert manager.is_active
-    manager.deactivate()
+    await manager.deactivate()
     assert not manager.is_active
 
 
@@ -529,20 +532,36 @@ Expected: FAIL — `ModuleNotFoundError`
 
 ```python
 # packages/linked-past/linked_past/core/viewer.py
-"""Viewer lifecycle: WebSocket manager, route handlers, dynamic route mounting."""
+"""Viewer lifecycle: WebSocket manager and route handlers.
+
+Routes are registered statically at server build time. They return 404 or
+reject connections when the viewer is inactive. start_viewer/stop_viewer
+toggle the manager's active state.
+"""
 
 from __future__ import annotations
 
 import logging
 
 from starlette.requests import Request
-from starlette.responses import HTMLResponse
-from starlette.routing import Route, WebSocketRoute
+from starlette.responses import HTMLResponse, PlainTextResponse
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
 from linked_past.core.viewer_page import VIEWER_HTML
 
 logger = logging.getLogger(__name__)
+
+# Module-level singleton — set by server.py at startup.
+_manager: ViewerManager | None = None
+
+
+def get_manager() -> ViewerManager | None:
+    return _manager
+
+
+def set_manager(m: ViewerManager) -> None:
+    global _manager
+    _manager = m
 
 
 class ViewerManager:
@@ -563,8 +582,14 @@ class ViewerManager:
     def activate(self):
         self._active = True
 
-    def deactivate(self):
+    async def deactivate(self):
+        """Deactivate and gracefully close all WebSocket connections."""
         self._active = False
+        for ws in list(self._clients):
+            try:
+                await ws.close()
+            except Exception:
+                pass
         self._clients.clear()
 
     async def connect(self, ws: WebSocket):
@@ -592,40 +617,26 @@ class ViewerManager:
         return f"http://{host}:{port}/viewer"
 
 
-async def _viewer_page(request: Request) -> HTMLResponse:
-    """Serve the viewer HTML page."""
+async def viewer_page_handler(request: Request) -> HTMLResponse:
+    """Serve the viewer HTML page, or 404 if viewer is inactive."""
+    mgr = get_manager()
+    if mgr is None or not mgr.is_active:
+        return PlainTextResponse("Viewer is not active. Call start_viewer() first.", status_code=404)
     return HTMLResponse(VIEWER_HTML)
 
 
-async def _viewer_ws(websocket: WebSocket):
-    """Handle a viewer WebSocket connection."""
-    manager: ViewerManager = websocket.app.state.viewer_manager
-    await manager.connect(websocket)
+async def viewer_ws_handler(websocket: WebSocket):
+    """Handle a viewer WebSocket connection. Rejects if viewer is inactive."""
+    mgr = get_manager()
+    if mgr is None or not mgr.is_active:
+        await websocket.close(code=1008, reason="Viewer is not active")
+        return
+    await mgr.connect(websocket)
     try:
         while True:
-            # Keep connection alive; ignore incoming messages (viewer is write-only)
             await websocket.receive_text()
     except WebSocketDisconnect:
-        await manager.disconnect(websocket)
-
-
-def mount_viewer(app, manager: ViewerManager) -> None:
-    """Add /viewer and /viewer/ws routes to the Starlette app."""
-    app.state.viewer_manager = manager
-    app.routes.append(Route("/viewer", _viewer_page, methods=["GET"]))
-    app.routes.append(WebSocketRoute("/viewer/ws", _viewer_ws))
-    manager.activate()
-    logger.info("Viewer mounted at /viewer")
-
-
-def unmount_viewer(app, manager: ViewerManager) -> None:
-    """Remove viewer routes from the Starlette app."""
-    app.routes[:] = [
-        r for r in app.routes
-        if not (hasattr(r, "path") and r.path in ("/viewer", "/viewer/ws"))
-    ]
-    manager.deactivate()
-    logger.info("Viewer unmounted")
+        await mgr.disconnect(websocket)
 ```
 
 - [ ] **Step 4: Run tests to verify they pass**
@@ -648,17 +659,16 @@ git commit -m "feat: add ViewerManager — WebSocket manager with route mount/un
 
 ### Task 4: Integrate viewer into server.py
 
-Add the `viewer` field to `AppContext`, the `start_viewer`/`stop_viewer` tools, and push hooks in tool functions.
+Add the `viewer` field to `AppContext`, register static viewer routes, add `start_viewer`/`stop_viewer` tools, and push hooks in tool functions.
+
+**Key design decisions from review:**
+- Routes are registered statically at build time (no dynamic mount/unmount) — the viewer routes return 404 when inactive
+- `explore_entity`, `find_links`, and `search_entities` must be converted to `async def` to use `await`
+- `rows` initialized before try block in `explore_entity` to avoid unbound variable
+- `ds_name` moved to top of `find_links` for same reason
 
 **Files:**
 - Modify: `packages/linked-past/linked_past/core/server.py`
-
-This is the largest task. The changes are:
-
-1. Add `viewer` field to `AppContext`
-2. Add a `_push_to_viewer()` helper
-3. Add `start_viewer` and `stop_viewer` tools
-4. Add viewer push calls after `_log_tool_call` in `query`, `explore_entity`, `search_entities`, `find_links`
 
 - [ ] **Step 1: Add `viewer` field to `AppContext`**
 
@@ -694,9 +704,37 @@ async def _push_to_viewer(app: AppContext, tool_name: str, dataset: str | None, 
     await app.viewer.broadcast(fragment)
 ```
 
-- [ ] **Step 3: Add `start_viewer` and `stop_viewer` tools**
+- [ ] **Step 3: Register static viewer routes in `create_mcp_server()`**
 
-Add inside `create_mcp_server()`, after the existing tool definitions (before the `return mcp` line):
+After creating the `mcp` FastMCP instance (around line 453), add:
+
+```python
+    # Register viewer routes statically — they return 404 when viewer is inactive.
+    from starlette.routing import Route, WebSocketRoute
+    from linked_past.core.viewer import viewer_page_handler, viewer_ws_handler
+
+    mcp._custom_starlette_routes.append(Route("/viewer", viewer_page_handler, methods=["GET"]))
+    mcp._custom_starlette_routes.append(WebSocketRoute("/viewer/ws", viewer_ws_handler))
+```
+
+- [ ] **Step 4: Initialize ViewerManager in `build_app_context()` or lifespan**
+
+In the `lifespan` function inside `create_mcp_server()`, before `yield`, add:
+
+```python
+    @asynccontextmanager
+    async def lifespan(server: FastMCP):
+        from linked_past.core.viewer import ViewerManager, set_manager
+
+        manager = ViewerManager()
+        set_manager(manager)
+        _shared_ctx.viewer = manager
+        yield _shared_ctx
+```
+
+- [ ] **Step 5: Add `start_viewer` and `stop_viewer` tools**
+
+Add inside `create_mcp_server()`, after the existing tool definitions (before `return mcp`):
 
 ```python
     @mcp.tool()
@@ -705,21 +743,13 @@ Add inside `create_mcp_server()`, after the existing tool definitions (before th
         app: AppContext = ctx.request_context.lifespan_context
 
         if app.viewer is not None and app.viewer.is_active:
-            host = mcp.settings.host or "localhost"
             port = mcp.settings.port or 8000
             url = app.viewer.viewer_url("localhost", port)
             return f"Viewer already running at {url}"
 
-        from linked_past.core.viewer import ViewerManager, mount_viewer
-
-        manager = ViewerManager()
-        # Get the ASGI app from the server internals
-        starlette_app = ctx.request_context.session._app
-        mount_viewer(starlette_app, manager)
-        app.viewer = manager
-
+        app.viewer.activate()
         port = mcp.settings.port or 8000
-        url = manager.viewer_url("localhost", port)
+        url = app.viewer.viewer_url("localhost", port)
         return f"Viewer started at {url}"
 
     @mcp.tool()
@@ -730,17 +760,13 @@ Add inside `create_mcp_server()`, after the existing tool definitions (before th
         if app.viewer is None or not app.viewer.is_active:
             return "Viewer is not running."
 
-        from linked_past.core.viewer import unmount_viewer
-
-        starlette_app = ctx.request_context.session._app
-        unmount_viewer(starlette_app, app.viewer)
-        app.viewer = None
+        await app.viewer.deactivate()
         return "Viewer stopped."
 ```
 
-- [ ] **Step 4: Add viewer push to `query` tool**
+- [ ] **Step 6: Add viewer push to `query` tool**
 
-In the `query` tool function, after the `_log_tool_call` line (around line 586), add:
+The `query` tool is already `async def`. After the `_log_tool_call` line (around line 586), add:
 
 ```python
         # Push to viewer
@@ -751,26 +777,41 @@ In the `query` tool function, after the `_log_tool_call` line (around line 586),
             await _push_to_viewer(app, "query", dataset, table_html)
 ```
 
-- [ ] **Step 5: Add viewer push to `explore_entity` tool**
+- [ ] **Step 7: Convert `explore_entity` to async and add viewer push**
 
-In the `explore_entity` tool function, after the `_log_tool_call` line (around line 793), add:
+Change `def explore_entity(...)` to `async def explore_entity(...)`.
+
+Initialize `rows = []` before the try block (around line 743) to avoid unbound variable:
+
+```python
+        rows = []
+        if ds_name:
+            plugin = registry.get_plugin(ds_name)
+            lines.append(f"**Dataset:** {plugin.display_name}\n")
+
+            try:
+                store = registry.get_store(ds_name)
+                ...
+```
+
+After the `_log_tool_call` line (around line 793), add:
 
 ```python
         # Push to viewer
         if app.viewer and app.viewer.is_active:
             from linked_past.core.viewer_render import render_entity_card
 
-            # rows may be undefined if the SPARQL query in the try block failed
-            entity_props = rows if "rows" in dir() and rows else []
-            card_html = render_entity_card(uri, entity_props, ds_name or "unknown", xrefs)
+            card_html = render_entity_card(uri, rows, ds_name or "unknown", xrefs)
             await _push_to_viewer(app, "explore_entity", ds_name, card_html)
 ```
 
-Note: `rows` is the list of `{"pred": ..., "obj": ...}` dicts from the SPARQL query at line 748 (inside a try block — may be undefined on error). `xrefs` is built at line 768 and is always defined.
+- [ ] **Step 8: Convert `find_links` to async and add viewer push**
 
-- [ ] **Step 6: Add viewer push to `find_links` tool**
+Change `def find_links(...)` to `async def find_links(...)`.
 
-In the `find_links` tool function, after the `_log_tool_call` line (around line 844), add:
+Move `ds_name = app.registry.dataset_for_uri(uri)` to the top of the function (before the link-collection logic) so it's always in scope.
+
+After the `_log_tool_call` line (around line 844), add:
 
 ```python
         # Push to viewer
@@ -781,11 +822,11 @@ In the `find_links` tool function, after the `_log_tool_call` line (around line 
             await _push_to_viewer(app, "find_links", ds_name, xref_html)
 ```
 
-Note: `linkage_links`, `store_links`, and `ds_name` are already in scope.
+- [ ] **Step 9: Convert `search_entities` to async and add viewer push**
 
-- [ ] **Step 7: Add viewer push to `search_entities` tool**
+Change `def search_entities(...)` to `async def search_entities(...)`.
 
-In the `search_entities` tool function, after the `_log_tool_call` calls (there are two — at lines 670 and 713), add the same pattern:
+After both `_log_tool_call` calls (lines 670 and 713), add:
 
 ```python
         # Push to viewer
@@ -795,31 +836,18 @@ In the `search_entities` tool function, after the `_log_tool_call` calls (there 
             await _push_to_viewer(app, "search_entities", dataset, render_generic(output))
 ```
 
-Search results use `render_generic` for now — the structured data isn't easily accessible at the point where `_log_tool_call` is called (it's already been joined into markdown). A dedicated search renderer can be added later.
+Search results use `render_generic` for now. A dedicated `render_search_results` can be added later when the structured search data is more accessible.
 
-- [ ] **Step 8: Add generic viewer push as fallback in `_log_tool_call`**
-
-For all other tools that don't have explicit viewer pushes, add a generic fallback. Modify `_log_tool_call()` to accept the app's viewer:
-
-At the end of `_log_tool_call()`, after `app.session_log.append(entry)`:
-
-```python
-    # Async viewer push happens in tool functions for structured data.
-    # This is only for tools that don't have explicit viewer integration.
-```
-
-Actually, no — the explicit pushes in each tool function are sufficient. Tools without viewer pushes simply don't appear in the viewer, which is fine for `validate_sparql`, `get_schema`, `discover_datasets`, `get_provenance`, and `update_dataset`. These are informational tools where the text output Claude shows is sufficient.
-
-- [ ] **Step 9: Run lint**
+- [ ] **Step 10: Run lint**
 
 Run: `uv run ruff check packages/linked-past/linked_past/core/server.py`
 
-- [ ] **Step 10: Run full test suite**
+- [ ] **Step 11: Run full test suite**
 
-Run: `uv run pytest -q --ignore=packages/linked-past/tests/test_embeddings.py --ignore=packages/linked-past/tests/test_embeddings_multi.py`
+Run: `uv run pytest -q`
 Expected: All tests pass (existing + new viewer tests)
 
-- [ ] **Step 11: Commit**
+- [ ] **Step 12: Commit**
 
 ```bash
 git add packages/linked-past/linked_past/core/server.py
