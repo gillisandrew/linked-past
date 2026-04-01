@@ -118,6 +118,44 @@ examples:
         ?person a vocab:Person .
       }
 
+  - question: "What offices did a specific person hold? (e.g., find by nomen Tullius and cognomen Cicero)"
+    sparql: |
+      PREFIX vocab: <http://romanrepublic.ac.uk/rdf/ontology#>
+      PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+      SELECT DISTINCT ?name ?officeName ?dateStart ?dateEnd
+      WHERE {
+        ?person a vocab:Person ;
+                vocab:hasPersonName ?name ;
+                vocab:hasNomen "Tullius" ;
+                vocab:hasCognomen "Cicero" .
+        ?assertion a vocab:PostAssertion ;
+                   vocab:isAboutPerson ?person ;
+                   vocab:hasOffice ?office .
+        ?office rdfs:label ?officeName .
+        OPTIONAL { ?assertion vocab:hasDateStart ?dateStart }
+        OPTIONAL { ?assertion vocab:hasDateEnd ?dateEnd }
+      }
+      ORDER BY ?dateStart
+      LIMIT 100
+
+  - question: "Find the top moneyers (tresviri monetales) by number of post assertions"
+    sparql: |
+      PREFIX vocab: <http://romanrepublic.ac.uk/rdf/ontology#>
+      PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+      SELECT ?person ?name (COUNT(DISTINCT ?assertion) AS ?assertions) ?dateStart
+      WHERE {
+        ?assertion a vocab:PostAssertion ;
+                   vocab:isAboutPerson ?person ;
+                   vocab:hasOffice ?office .
+        ?office rdfs:label ?officeName .
+        FILTER(CONTAINS(?officeName, "monetalis"))
+        ?person vocab:hasPersonName ?name .
+        OPTIONAL { ?assertion vocab:hasDateStart ?dateStart }
+      }
+      GROUP BY ?person ?name ?dateStart
+      ORDER BY DESC(?assertions)
+      LIMIT 20
+
   - question: "Find persons with the nomen Cornelius"
     sparql: |
       PREFIX vocab: <http://romanrepublic.ac.uk/rdf/ontology#>

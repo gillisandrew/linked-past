@@ -1,4 +1,18 @@
 tips:
+  - id: assertion_to_person_direction
+    classes: [Person, PostAssertion, StatusAssertion, RelationshipAssertion, DateInformation, TribeAssertion]
+    title: "CRITICAL: Always join from assertion TO person, never person to assertion"
+    body: |
+      Person entities have NO link to their assertions. There is no vocab:hasPerson,
+      vocab:hasPostAssertion, or similar predicate on Person.
+      The ONLY way to connect Person to PostAssertion, StatusAssertion,
+      RelationshipAssertion, DateInformation, or TribeAssertion is:
+        ?assertion vocab:isAboutPerson ?person .
+      WRONG: ?person vocab:hasPerson ?assertion .
+      WRONG: ?person vocab:hasPostAssertion ?assertion .
+      RIGHT: ?assertion a vocab:PostAssertion ; vocab:isAboutPerson ?person .
+      All assertion classes use vocab:isAboutPerson for this link.
+
   - id: boolean_open_world
     classes: []
     title: "Boolean properties use open-world semantics"
