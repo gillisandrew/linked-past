@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { getAllMessages, putMessage } from "../lib/store";
+import { clearMessages, getAllMessages, putMessage } from "../lib/store";
 import type { ViewerMessage } from "../lib/types";
 
 export function useViewerSocket() {
@@ -8,7 +8,8 @@ export function useViewerSocket() {
   const wsRef = useRef<WebSocket | null>(null);
   const backoffRef = useRef(1000);
   const seenSeqs = useRef(new Set<number>());
-  const restoredRef = useRef(false);
+  const maxSeq = useRef(0);
+  const isFirstMessage = useRef(true);
 
   const connect = useCallback(() => {
     const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
@@ -18,13 +19,29 @@ export function useViewerSocket() {
     ws.onopen = () => {
       setIsConnected(true);
       backoffRef.current = 1000;
+      isFirstMessage.current = true;
     };
 
     ws.onmessage = (e) => {
       try {
         const msg = JSON.parse(e.data) as ViewerMessage;
+
+        // Detect new session: first message after connect has seq <= our maxSeq
+        // This means the server restarted or stop_viewer/start_viewer was called
+        if (isFirstMessage.current) {
+          isFirstMessage.current = false;
+          if (msg.seq <= maxSeq.current && maxSeq.current > 0) {
+            // New session — clear everything and start fresh
+            seenSeqs.current.clear();
+            maxSeq.current = 0;
+            setMessages([]);
+            clearMessages();
+          }
+        }
+
         if (seenSeqs.current.has(msg.seq)) return;
         seenSeqs.current.add(msg.seq);
+        if (msg.seq > maxSeq.current) maxSeq.current = msg.seq;
         setMessages((prev) => [...prev, msg]);
         putMessage(msg);
       } catch {
@@ -46,11 +63,12 @@ export function useViewerSocket() {
     getAllMessages().then((stored) => {
       if (stored.length > 0) {
         stored.sort((a, b) => a.seq - b.seq);
-        for (const msg of stored) seenSeqs.current.add(msg.seq);
+        for (const msg of stored) {
+          seenSeqs.current.add(msg.seq);
+          if (msg.seq > maxSeq.current) maxSeq.current = msg.seq;
+        }
         setMessages(stored);
       }
-      restoredRef.current = true;
-      // Now safe to connect — seenSeqs is populated, so server replay will be deduplicated
       connect();
     });
 
