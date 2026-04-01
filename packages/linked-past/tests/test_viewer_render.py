@@ -4,6 +4,7 @@ from linked_past.core.viewer_render import (
     render_entity_card,
     render_feed_item,
     render_generic,
+    render_markdown,
     render_query_table,
     render_xref_list,
 )
@@ -116,3 +117,68 @@ def test_render_feed_item():
     assert 'data-ds="dprr"' in html
     assert "<p>test</p>" in html
     assert "collapse-toggle" in html
+
+
+# ── render_markdown tests ────────────────────────────────────────────────────
+
+
+def test_render_markdown_headings():
+    html = render_markdown("# Title\n## Subtitle\n### Section")
+    assert "<h2>" in html
+    assert "<h3>" in html
+    assert "<h4>" in html
+    assert "Title" in html
+
+
+def test_render_markdown_table():
+    md = "| Name | Office |\n|---|---|\n| Caesar | consul |\n| Pompey | consul |"
+    html = render_markdown(md)
+    assert "<table" in html
+    assert "Caesar" in html
+    assert "Pompey" in html
+    assert "<th>" in html
+    assert "2 rows" in html
+
+
+def test_render_markdown_bold_and_italic():
+    html = render_markdown("**bold** and *italic*")
+    assert "<strong>bold</strong>" in html
+    assert "<em>italic</em>" in html
+
+
+def test_render_markdown_code_block():
+    md = "```sparql\nSELECT ?s WHERE { ?s a ?o }\n```"
+    html = render_markdown(md)
+    assert "<pre>" in html
+    assert "<code" in html
+    assert "SELECT" in html
+
+
+def test_render_markdown_unordered_list():
+    md = "- item one\n- item two\n- item three"
+    html = render_markdown(md)
+    assert "<ul>" in html
+    assert "<li>" in html
+    assert "item one" in html
+
+
+def test_render_markdown_ordered_list():
+    md = "1. first\n2. second"
+    html = render_markdown(md)
+    assert "<ol>" in html
+    assert "first" in html
+
+
+def test_render_markdown_escapes_html():
+    html = render_markdown("# <script>alert(1)</script>")
+    assert "<script>" not in html
+    assert "&lt;script&gt;" in html
+
+
+def test_render_markdown_mixed():
+    md = "# Report\n\nSome **bold** text.\n\n| A | B |\n|---|---|\n| 1 | 2 |\n\n- item"
+    html = render_markdown(md)
+    assert "<h2>" in html
+    assert "<strong>bold</strong>" in html
+    assert "<table" in html
+    assert "<ul>" in html

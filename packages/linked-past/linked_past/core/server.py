@@ -1339,7 +1339,11 @@ def create_mcp_server() -> FastMCP:
         app.viewer.activate()
         port = mcp.settings.port or 8000
         url = app.viewer.viewer_url("localhost", port)
-        return f"Viewer started at {url}"
+        return (
+            f"Viewer started at {url}\n\n"
+            "Query results, entity cards, and cross-references will now appear in the viewer automatically. "
+            "You can also use `push_to_viewer(content)` to send markdown reports, summaries, or analysis directly to the viewer."
+        )
 
     @mcp.tool()
     async def stop_viewer(ctx: Context) -> str:
@@ -1351,6 +1355,20 @@ def create_mcp_server() -> FastMCP:
 
         await app.viewer.deactivate()
         return "Viewer stopped."
+
+    @mcp.tool()
+    async def push_to_viewer(ctx: Context, content: str, title: str | None = None) -> str:
+        """Push markdown content to the browser viewer as a styled report. Renders headings, tables, lists, code blocks, bold, and italic. Use this to send formatted analysis, summaries, or comparisons to the viewer for the user to read alongside the conversation."""
+        app: AppContext = ctx.request_context.lifespan_context
+
+        if app.viewer is None or not app.viewer.is_active:
+            return "Viewer is not running. Call start_viewer() first."
+
+        from linked_past.core.viewer_render import render_markdown
+
+        body_html = render_markdown(content)
+        await _push_to_viewer(app, "report", None, body_html)
+        return f"Pushed to viewer{f': {title}' if title else ''}."
 
     return mcp
 
