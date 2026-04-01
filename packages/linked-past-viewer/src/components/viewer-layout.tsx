@@ -15,6 +15,7 @@ export function ViewerLayout() {
 
   // Expand/collapse all: rev counter ensures repeated clicks re-trigger the effect
   const [forceOpen, setForceOpen] = useState<{ value: boolean; rev: number } | null>(null);
+  const [autoScroll, setAutoScroll] = useState(false);
 
   // Past session viewing
   const [pastSession, setPastSession] = useState<{
@@ -53,6 +54,13 @@ export function ViewerLayout() {
                 onCollapseAll={() => setForceOpen((prev) => ({ value: false, rev: (prev?.rev ?? 0) + 1 }))}
               />
             )}
+            <button
+              onClick={() => setAutoScroll((prev) => !prev)}
+              className={`text-[11px] cursor-pointer ${autoScroll ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}
+              title={autoScroll ? "Auto-scroll ON — click to disable" : "Auto-scroll OFF — click to enable"}
+            >
+              {autoScroll ? "⤓ auto-scroll" : "⤓ scroll"}
+            </button>
             <ExportButton messages={filtered} notes={notes} />
             <DarkModeToggle />
             <span className="text-muted-foreground text-xs tabular-nums">
@@ -82,6 +90,7 @@ export function ViewerLayout() {
           messages={filtered}
           bookmarks={bookmarks}
           notes={notes}
+          autoScroll={autoScroll}
           forceOpen={forceOpen}
           onToggleBookmark={isViewingPast ? undefined : toggleBookmark}
           onUpdateNote={isViewingPast ? undefined : updateNote}

@@ -47,6 +47,7 @@ export function Feed({
   messages,
   bookmarks,
   notes,
+  autoScroll = false,
   forceOpen,
   onToggleBookmark,
   onUpdateNote,
@@ -54,6 +55,7 @@ export function Feed({
   messages: ViewerMessage[];
   bookmarks: Set<number>;
   notes: Map<number, string>;
+  autoScroll?: boolean;
   forceOpen?: { value: boolean; rev: number } | null;
   onToggleBookmark?: (seq: number) => void;
   onUpdateNote?: (seq: number, text: string) => void;
@@ -61,8 +63,10 @@ export function Feed({
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages.length]);
+    if (autoScroll) {
+      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages.length, autoScroll]);
 
   if (messages.length === 0) {
     return (
