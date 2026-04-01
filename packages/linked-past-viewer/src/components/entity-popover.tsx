@@ -21,11 +21,12 @@ export function EntityPopoverContent({ data }: { data: EntityData }) {
   const humanProps = data.properties.filter(
     (p) => !HIDDEN_PREDICATES.has(localName(p.pred)),
   );
+  // Deduplicate by display label + value (catches hasName + hasPersonName both mapping to "Name")
   const seen = new Set<string>();
   const deduped = humanProps.filter((p) => {
-    const local = localName(p.pred);
-    if (seen.has(local)) return false;
-    seen.add(local);
+    const key = `${humanizePredicate(p.pred)}::${p.obj}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
     return true;
   });
   const topProps = deduped.slice(0, 6);

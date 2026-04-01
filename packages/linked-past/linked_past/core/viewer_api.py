@@ -43,10 +43,9 @@ async def entity_handler(request: Request) -> JSONResponse | PlainTextResponse:
     if not uri.startswith(("http://", "https://")):
         return JSONResponse({"error": "Invalid URI scheme"}, status_code=400)
 
-    # Normalize URI: strip www., prefer http://, map known domain aliases
+    # Normalize URI to match canonical forms in the store.
+    # Strip www., map known domain aliases, then try both http/https.
     canonical_uri = uri.replace("://www.", "://")
-    if canonical_uri.startswith("https://"):
-        canonical_uri = "http://" + canonical_uri[8:]
     # EDH public domain → canonical RDF domain
     canonical_uri = canonical_uri.replace(
         "://edh.ub.uni-heidelberg.de/edh/",
@@ -57,7 +56,17 @@ async def entity_handler(request: Request) -> JSONResponse | PlainTextResponse:
     registry = mgr.app_context.registry
     linkage = mgr.app_context.linkage
 
+    # Try canonical URI, then with swapped scheme (some datasets use http, others https)
     ds_name = registry.dataset_for_uri(canonical_uri)
+    if not ds_name:
+        if canonical_uri.startswith("https://"):
+            ds_name = registry.dataset_for_uri("http://" + canonical_uri[8:])
+            if ds_name:
+                canonical_uri = "http://" + canonical_uri[8:]
+        elif canonical_uri.startswith("http://"):
+            ds_name = registry.dataset_for_uri("https://" + canonical_uri[7:])
+            if ds_name:
+                canonical_uri = "https://" + canonical_uri[7:]
     properties: list[dict[str, str]] = []
 
     description = ""

@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { humanizePredicate } from "../lib/predicates";
 import type { EntityData } from "../lib/types";
 import { DatasetBadge } from "./dataset-badge";
 import { PredicateLabel } from "./predicate-label";
@@ -27,13 +28,18 @@ function localName(pred: string): string {
 function deduplicateProps(
   props: { pred: string; obj: string }[],
 ): { pred: string; obj: string; count?: number }[] {
+  // Group by humanized label (catches hasName + hasPersonName both → "Name")
   const groups = new Map<string, { pred: string; objs: string[] }>();
   for (const p of props) {
-    const local = localName(p.pred);
-    if (!groups.has(local)) {
-      groups.set(local, { pred: p.pred, objs: [] });
+    const label = humanizePredicate(p.pred);
+    if (!groups.has(label)) {
+      groups.set(label, { pred: p.pred, objs: [] });
     }
-    groups.get(local)!.objs.push(p.obj);
+    // Skip exact duplicate values within the same label group
+    const existing = groups.get(label)!;
+    if (!existing.objs.includes(p.obj)) {
+      existing.objs.push(p.obj);
+    }
   }
 
   const result: { pred: string; obj: string; count?: number }[] = [];
