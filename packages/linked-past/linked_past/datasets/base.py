@@ -22,13 +22,6 @@ class VersionInfo:
 
 
 @dataclass
-class UpdateInfo:
-    current: str
-    available: str
-    changelog_url: str | None = None
-
-
-@dataclass
 class ValidationResult:
     valid: bool
     sparql: str
@@ -196,8 +189,8 @@ class DatasetPlugin:
             rdf_format="turtle",
         )
 
-    def check_for_updates(self) -> UpdateInfo | None:
-        """Compare local vs upstream. Returns None if up to date."""
+    def check_for_updates(self) -> None:
+        """Compare local vs upstream. Returns None (not yet implemented)."""
         return None
 
     # ------------------------------------------------------------------

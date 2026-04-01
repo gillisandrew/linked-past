@@ -1272,20 +1272,11 @@ def create_mcp_server() -> FastMCP:
             version = meta.get("version", "unknown")
             triple_count = meta.get("triple_count", "unknown")
 
-            update_info = plugin.check_for_updates()
-
             lines.append(f"## {plugin.display_name}\n")
             lines.append(f"- **Current version:** {version}")
             lines.append(f"- **Triples:** {triple_count}")
             lines.append(f"- **OCI artifact:** {plugin.oci_dataset}:{plugin.oci_version}")
-
-            if update_info:
-                lines.append(f"- **Available:** {update_info.available}")
-                if update_info.changelog_url:
-                    lines.append(f"- **Changelog:** {update_info.changelog_url}")
-                lines.append("\nTo update, re-initialize with a fresh data directory.")
-            else:
-                lines.append("- **Status:** Up to date (or no update check available)")
+            lines.append("- **Status:** Up to date (or no update check available)")
             lines.append("")
 
         return "\n".join(lines)
