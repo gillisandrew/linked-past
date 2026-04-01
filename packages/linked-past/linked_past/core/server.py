@@ -742,25 +742,27 @@ def create_mcp_server() -> FastMCP:
             union_clauses = " UNION ".join(f"{{ ?uri {p} ?label }}" for p in unique_preds)
             sparql = f"""
             {prefix_block}
-            SELECT DISTINCT ?uri ?label ?type WHERE {{
+            SELECT DISTINCT ?uri ?label WHERE {{
                 {union_clauses}
                 FILTER(CONTAINS(LCASE(STR(?label)), LCASE("{query_text}")))
-                OPTIONAL {{ ?uri a ?type }}
             }}
-            LIMIT 20
+            LIMIT 50
             """
             try:
                 from linked_past.core.store import execute_query as eq
 
-                logger.info("Search SPARQL for %s:\n%s", ds_name, sparql)
                 rows = eq(store, sparql)
-                logger.info("Search returned %d rows for %s", len(rows), ds_name)
+                # Deduplicate by URI (keep first label seen)
+                seen_uris: set[str] = set()
                 for row in rows:
+                    uri_val = row.get("uri", "")
+                    if uri_val in seen_uris:
+                        continue
+                    seen_uris.add(uri_val)
                     all_results.append({
                         "dataset": ds_name,
-                        "uri": row.get("uri", ""),
+                        "uri": uri_val,
                         "label": row.get("label", ""),
-                        "type": row.get("type", ""),
                     })
             except Exception as e:
                 logger.warning("Search failed for %s: %s", ds_name, e, exc_info=True)
