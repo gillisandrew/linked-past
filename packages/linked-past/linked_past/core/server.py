@@ -16,17 +16,10 @@ import toons
 from mcp.server.fastmcp import Context, FastMCP
 
 from linked_past.core.linkage import LinkageGraph
-from linked_past.core.registry import DatasetRegistry
+from linked_past.core.registry import DatasetRegistry, discover_plugins
 from linked_past.core.search import SearchIndex
 from linked_past.core.store import get_data_dir
 from linked_past.core.validate import parse_and_fix_prefixes, validate_and_execute
-from linked_past.datasets.crro.plugin import CRROPlugin
-from linked_past.datasets.dprr.plugin import DPRRPlugin
-from linked_past.datasets.edh.plugin import EDHPlugin
-from linked_past.datasets.nomisma.plugin import NomismaPlugin
-from linked_past.datasets.ocre.plugin import OCREPlugin
-from linked_past.datasets.periodo.plugin import PeriodOPlugin
-from linked_past.datasets.pleiades.plugin import PleiadesPlugin
 
 logger = logging.getLogger(__name__)
 
@@ -245,13 +238,8 @@ def build_app_context(*, eager: bool = False, skip_search: bool = True) -> AppCo
     """
     data_dir = get_data_dir()
     registry = DatasetRegistry(data_dir=data_dir)
-    registry.register(DPRRPlugin())
-    registry.register(PleiadesPlugin())
-    registry.register(PeriodOPlugin())
-    registry.register(NomismaPlugin())
-    registry.register(CRROPlugin())
-    registry.register(OCREPlugin())
-    registry.register(EDHPlugin())
+    for plugin in discover_plugins():
+        registry.register(plugin)
 
     if eager:
         registry.initialize_all()
@@ -1644,15 +1632,8 @@ def _cmd_init(args):
 
     data_dir = get_data_dir()
     registry = DatasetRegistry(data_dir=data_dir)
-
-    # Register all plugins
-    registry.register(DPRRPlugin())
-    registry.register(PleiadesPlugin())
-    registry.register(PeriodOPlugin())
-    registry.register(NomismaPlugin())
-    registry.register(CRROPlugin())
-    registry.register(OCREPlugin())
-    registry.register(EDHPlugin())
+    for plugin in discover_plugins():
+        registry.register(plugin)
 
     available = registry.list_datasets()
 
@@ -1707,14 +1688,8 @@ def _cmd_status(args):
     """Show status of all datasets."""
     data_dir = get_data_dir()
     registry = DatasetRegistry(data_dir=data_dir)
-
-    registry.register(DPRRPlugin())
-    registry.register(PleiadesPlugin())
-    registry.register(PeriodOPlugin())
-    registry.register(NomismaPlugin())
-    registry.register(CRROPlugin())
-    registry.register(OCREPlugin())
-    registry.register(EDHPlugin())
+    for plugin in discover_plugins():
+        registry.register(plugin)
 
     print(f"Data directory: {data_dir}\n")
     print(f"{'Dataset':12s} {'Status':14s} {'Triples':>10s}  {'Display Name'}")

@@ -19,7 +19,7 @@ class FakePlugin(DatasetPlugin):
     def __init__(self, context_dir=None):
         self._context_dir = context_dir
 
-    def fetch(self, data_dir):
+    def fetch(self, data_dir, force=False):
         ttl = data_dir / "fake.ttl"
         ttl.write_text(
             '@prefix ex: <http://example.org/> .\n'
@@ -119,3 +119,20 @@ def test_registry_stores_actual_triple_count(tmp_path):
     reg.initialize_dataset("fake")
     meta = reg.get_metadata("fake")
     assert meta["triple_count"] > 0
+
+
+def test_discover_plugins_finds_all():
+    from linked_past.core.registry import discover_plugins
+
+    plugins = discover_plugins()
+    names = {p.name for p in plugins}
+    assert names == {"dprr", "pleiades", "periodo", "nomisma", "crro", "ocre", "edh"}
+
+
+def test_discover_plugins_returns_instances():
+    from linked_past.core.registry import discover_plugins
+
+    plugins = discover_plugins()
+    for p in plugins:
+        assert hasattr(p, "get_prefixes")
+        assert hasattr(p, "get_schema")

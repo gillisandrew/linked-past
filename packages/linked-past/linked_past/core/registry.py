@@ -15,6 +15,17 @@ from linked_past.datasets.base import DatasetPlugin
 logger = logging.getLogger(__name__)
 
 
+def discover_plugins() -> list[DatasetPlugin]:
+    """Discover and instantiate all dataset plugins."""
+    import linked_past.datasets  # noqa: F401 — triggers subclass registration
+
+    return [
+        cls()
+        for cls in DatasetPlugin.__subclasses__()
+        if cls.__module__.startswith("linked_past.datasets.")
+    ]
+
+
 class DatasetRegistry:
     """Manages dataset plugins and their Oxigraph stores."""
 
