@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { Highlighter } from "shiki";
+import { CopyButton } from "./copy-button";
 
 let highlighterPromise: Promise<Highlighter> | null = null;
 
@@ -38,16 +39,19 @@ export function SparqlBlock({ sparql }: { sparql: string }) {
       <summary className="text-xs text-muted-foreground font-semibold cursor-pointer">
         SPARQL
       </summary>
-      {html ? (
-        <div
-          className="mt-1 rounded text-xs overflow-x-auto [&_pre]:p-2 [&_pre]:rounded [&_pre]:bg-muted"
-          dangerouslySetInnerHTML={{ __html: html }}
-        />
-      ) : (
-        <pre className="mt-1 p-2 rounded bg-muted text-xs overflow-x-auto whitespace-pre-wrap">
-          {sparql}
-        </pre>
-      )}
+      <div className="relative mt-1">
+        <CopyButton text={sparql} label="Copy SPARQL" className="absolute top-1 right-1 z-10" />
+        {html ? (
+          <div
+            className="rounded text-xs overflow-x-auto [&_pre]:p-2 [&_pre]:pr-20 [&_pre]:rounded [&_pre]:bg-muted"
+            dangerouslySetInnerHTML={{ __html: html }}
+          />
+        ) : (
+          <pre className="p-2 pr-20 rounded bg-muted text-xs overflow-x-auto whitespace-pre-wrap">
+            {sparql}
+          </pre>
+        )}
+      </div>
     </details>
   );
 }

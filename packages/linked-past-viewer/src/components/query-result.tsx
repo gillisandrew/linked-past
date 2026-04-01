@@ -1,5 +1,7 @@
+import { rowsToMarkdown } from "../lib/markdown";
 import type { QueryData } from "../lib/types";
 import { expandPrefixedUri, isEntityUri } from "../lib/uri";
+import { CopyButton } from "./copy-button";
 import { EntityUri } from "./entity-uri";
 import { SparqlBlock } from "./sparql-block";
 import {
@@ -52,9 +54,15 @@ export function QueryResult({ data }: { data: QueryData }) {
               ))}
             </TableBody>
           </Table>
-          <p className="text-xs text-muted-foreground mt-1">
-            {data.row_count} row{data.row_count !== 1 ? "s" : ""}
-          </p>
+          <div className="flex items-center gap-3 mt-1">
+            <p className="text-xs text-muted-foreground">
+              {data.row_count} row{data.row_count !== 1 ? "s" : ""}
+            </p>
+            <CopyButton
+              text={rowsToMarkdown(data.columns, data.rows)}
+              label="Copy as Markdown"
+            />
+          </div>
         </>
       )}
     </div>
