@@ -4,11 +4,7 @@ from __future__ import annotations
 
 import logging
 
-from starlette.requests import Request
-from starlette.responses import HTMLResponse, PlainTextResponse
 from starlette.websockets import WebSocket, WebSocketDisconnect
-
-from linked_past.core.viewer_page import VIEWER_HTML
 
 logger = logging.getLogger(__name__)
 
@@ -34,9 +30,11 @@ def set_manager(m: ViewerManager) -> None:
 class ViewerManager:
     """Manages WebSocket clients for the live result feed."""
 
-    def __init__(self) -> None:
+    def __init__(self, app_context=None) -> None:
         self._clients: set[WebSocket] = set()
         self._active: bool = False
+        self._history: list[str] = []
+        self.app_context = app_context
 
     # ── Properties ────────────────────────────────────────────────────────────
 
@@ -50,6 +48,11 @@ class ViewerManager:
         """Number of currently connected WebSocket clients."""
         return len(self._clients)
 
+    @property
+    def history(self) -> list[str]:
+        """All messages broadcast since activation."""
+        return list(self._history)
+
     # ── Lifecycle ─────────────────────────────────────────────────────────────
 
     def activate(self) -> None:
@@ -59,6 +62,7 @@ class ViewerManager:
 
     async def deactivate(self) -> None:
         """Send close frames to all clients, clear the client set, go inactive."""
+        self._history.clear()
         for ws in list(self._clients):
             try:
                 await ws.close()
@@ -73,6 +77,8 @@ class ViewerManager:
     async def connect(self, ws: WebSocket) -> None:
         """Accept a WebSocket connection and register the client."""
         await ws.accept()
+        for msg in self._history:
+            await ws.send_text(msg)
         self._clients.add(ws)
         logger.debug("Viewer client connected (total=%d)", self.client_count)
 
@@ -83,16 +89,17 @@ class ViewerManager:
 
     # ── Broadcasting ──────────────────────────────────────────────────────────
 
-    async def broadcast(self, html_fragment: str) -> None:
-        """Send an HTML fragment to all connected clients.
+    async def broadcast(self, message: str) -> None:
+        """Send a message to all connected clients.
 
         Failed sends are silently removed from the client set.
         """
+        self._history.append(message)
         dead: list[WebSocket] = []
-        logger.info("Broadcasting to %d client(s), fragment_len=%d", len(self._clients), len(html_fragment))
+        logger.info("Broadcasting to %d client(s), message_len=%d", len(self._clients), len(message))
         for ws in list(self._clients):
             try:
-                await ws.send_text(html_fragment)
+                await ws.send_text(message)
                 logger.info("Sent to client successfully")
             except Exception:
                 logger.exception("Failed to send to viewer client")
@@ -108,14 +115,6 @@ class ViewerManager:
 
 
 # ── Route handlers ─────────────────────────────────────────────────────────────
-
-
-async def viewer_page_handler(request: Request) -> HTMLResponse | PlainTextResponse:  # noqa: ARG001
-    """Serve the viewer HTML page, or 404 if the viewer is not active."""
-    mgr = get_manager()
-    if mgr is None or not mgr.is_active:
-        return PlainTextResponse("Viewer not active", status_code=404)
-    return HTMLResponse(VIEWER_HTML)
 
 
 async def viewer_ws_handler(websocket: WebSocket) -> None:
