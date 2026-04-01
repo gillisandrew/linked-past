@@ -512,7 +512,12 @@ def validate_and_execute(
 
     try:
         from linked_past.core.store import execute_query
-        rows = execute_query(store, fixed_sparql)
+
+        # Compress result URIs: dataset prefixes + query-declared prefixes (query wins on conflict)
+        result_prefixes = dict(prefix_map)
+        for match in re.finditer(r"PREFIX\s+(\w+):\s*<([^>]+)>", fixed_sparql, re.IGNORECASE):
+            result_prefixes[match.group(1)] = match.group(2)
+        rows = execute_query(store, fixed_sparql, prefix_map=result_prefixes)
     except Exception as e:
         return QueryResult(success=False, sparql=fixed_sparql, errors=[f"Query execution error: {e}"])
 

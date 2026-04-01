@@ -31,21 +31,48 @@ def load_rdf(store: Store, file_path: Path, rdf_format: RdfFormat = RdfFormat.TU
     return len(store)
 
 
-def execute_query(store: Store, sparql: str) -> list[dict[str, str]]:
-    """Execute a SPARQL SELECT query and return results as a list of dicts."""
+def execute_query(
+    store: Store,
+    sparql: str,
+    prefix_map: dict[str, str] | None = None,
+) -> list[dict[str, str]]:
+    """Execute a SPARQL SELECT query and return results as a list of dicts.
+
+    If prefix_map is provided, URIs in results are compressed to prefixed form
+    (e.g., http://nomisma.org/id/denarius → nm:denarius).
+    """
     results = store.query(sparql)
     if not hasattr(results, "variables"):
         raise ValueError(
             "Only SELECT queries are supported. "
             "CONSTRUCT, ASK, and DESCRIBE queries are not implemented."
         )
+    # Build reverse prefix map for compression: namespace → prefix
+    compress = None
+    if prefix_map:
+        # Sort by namespace length descending so longer prefixes match first
+        compress = sorted(
+            ((ns, prefix) for prefix, ns in prefix_map.items()),
+            key=lambda x: len(x[0]),
+            reverse=True,
+        )
+
     variables = [v.value for v in results.variables]
     rows = []
     for solution in results:
         row = {}
         for var_name in variables:
             value = solution[var_name]
-            row[var_name] = value.value if value is not None else None
+            if value is None:
+                row[var_name] = None
+            else:
+                val_str = value.value
+                if compress and val_str.startswith("http"):
+                    for ns, prefix in compress:
+                        if val_str.startswith(ns):
+                            val_str = f"{prefix}:{val_str[len(ns):]}"
+                            break
+                row[var_name] = val_str
         rows.append(row)
     return rows
 
