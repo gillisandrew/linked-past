@@ -32,12 +32,14 @@ export function Feed({
   messages,
   bookmarks,
   notes,
+  forceOpen,
   onToggleBookmark,
   onUpdateNote,
 }: {
   messages: ViewerMessage[];
   bookmarks: Set<number>;
   notes: Map<number, string>;
+  forceOpen?: { value: boolean; rev: number } | null;
   onToggleBookmark?: (seq: number) => void;
   onUpdateNote?: (seq: number, text: string) => void;
 }) {
@@ -62,6 +64,7 @@ export function Feed({
           key={msg.seq}
           message={msg}
           defaultOpen={i === messages.length - 1 || bookmarks.has(msg.seq)}
+          forceOpen={forceOpen}
           subtitle={getSubtitle(msg)}
           bookmarked={bookmarks.has(msg.seq)}
           note={notes.get(msg.seq)}

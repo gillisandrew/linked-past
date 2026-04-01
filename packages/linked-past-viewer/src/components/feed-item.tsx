@@ -1,5 +1,5 @@
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { messageToMarkdown } from "../lib/markdown";
 import type { ViewerMessage } from "../lib/types";
 import { CopyButton } from "./copy-button";
@@ -8,6 +8,7 @@ import { DatasetBadge } from "./dataset-badge";
 export function FeedItem({
   message,
   defaultOpen = true,
+  forceOpen,
   subtitle,
   bookmarked = false,
   note,
@@ -17,6 +18,7 @@ export function FeedItem({
 }: {
   message: ViewerMessage;
   defaultOpen?: boolean;
+  forceOpen?: { value: boolean; rev: number } | null;
   subtitle?: string;
   bookmarked?: boolean;
   note?: string;
@@ -25,6 +27,13 @@ export function FeedItem({
   children: React.ReactNode;
 }) {
   const [open, setOpen] = useState(defaultOpen);
+
+  // Respond to expand all / collapse all
+  useEffect(() => {
+    if (forceOpen) {
+      setOpen(forceOpen.value);
+    }
+  }, [forceOpen?.rev]); // eslint-disable-line react-hooks/exhaustive-deps
   const [editingNote, setEditingNote] = useState(false);
   const [noteText, setNoteText] = useState(note ?? "");
   const time = new Date(message.timestamp).toLocaleTimeString();
