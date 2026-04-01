@@ -314,16 +314,21 @@ def _log_tool_call(app: AppContext, tool_name: str, inputs: dict, result: str, d
     app.session_log.append(entry)
 
 
-async def _push_to_viewer(app: AppContext, tool_name: str, dataset: str | None, body_html: str):
-    """Push an HTML fragment to the viewer if active."""
+async def _push_to_viewer(app: AppContext, tool_name: str, dataset: str | None, data: dict):
+    """Push a typed JSON message to the viewer if active."""
     if app.viewer is None or not app.viewer.is_active:
-        logger.debug("Viewer push skipped: viewer=%s active=%s", app.viewer, app.viewer.is_active if app.viewer else "N/A")
         return
-    from linked_past.core.viewer_render import render_feed_item
+    import json
+    from datetime import datetime, timezone
 
-    fragment = render_feed_item(tool_name, dataset, body_html)
-    logger.info("Viewer push: tool=%s dataset=%s clients=%d fragment_len=%d", tool_name, dataset, app.viewer.client_count, len(fragment))
-    await app.viewer.broadcast(fragment)
+    message = json.dumps({
+        "type": tool_name,
+        "dataset": dataset,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "data": data,
+    })
+    logger.info("Viewer push: tool=%s dataset=%s clients=%d", tool_name, dataset, app.viewer.client_count)
+    await app.viewer.broadcast(message)
 
 
 def _render_provenance_table(log: list, registry: DatasetRegistry) -> str:
@@ -481,13 +486,50 @@ def create_mcp_server() -> FastMCP:
     # Register viewer routes statically — they return 404 when viewer is inactive.
     from starlette.routing import Route, WebSocketRoute
 
-    from linked_past.core.viewer import ViewerManager, set_manager, viewer_page_handler, viewer_ws_handler
+    from linked_past.core.viewer import ViewerManager, set_manager, viewer_ws_handler
+    from linked_past.core.viewer_api import entity_handler
 
-    viewer_manager = ViewerManager()
+    viewer_manager = ViewerManager(app_context=_shared_ctx)
     set_manager(viewer_manager)
     _shared_ctx.viewer = viewer_manager
-    mcp._custom_starlette_routes.append(Route("/viewer", viewer_page_handler, methods=["GET"]))
-    mcp._custom_starlette_routes.append(WebSocketRoute("/viewer/ws", viewer_ws_handler))
+
+    # Find React app dist directory
+    _viewer_dist = Path(__file__).resolve().parent.parent.parent.parent / "linked-past-viewer" / "dist"
+
+    async def _viewer_page(request):
+        """Serve the React app's index.html, or error if not built."""
+        from starlette.responses import HTMLResponse, PlainTextResponse
+
+        index = _viewer_dist / "index.html"
+        if not index.exists():
+            return PlainTextResponse(
+                "Viewer not built. Run: cd packages/linked-past-viewer && npm install && npm run build",
+                status_code=404,
+            )
+        return HTMLResponse(index.read_text())
+
+    async def _viewer_static(request):
+        """Serve static assets from the React app's dist directory."""
+        from starlette.responses import FileResponse, HTMLResponse, PlainTextResponse
+
+        path = request.path_params.get("path", "")
+        file_path = (_viewer_dist / path).resolve()
+        if not str(file_path).startswith(str(_viewer_dist.resolve())):
+            return PlainTextResponse("Forbidden", status_code=403)
+        if not file_path.exists() or not file_path.is_file():
+            # SPA fallback — return index.html for unmatched routes
+            index = _viewer_dist / "index.html"
+            if index.exists():
+                return HTMLResponse(index.read_text())
+            return PlainTextResponse("Not found", status_code=404)
+        return FileResponse(file_path)
+
+    mcp._custom_starlette_routes.extend([
+        Route("/viewer/api/entity", entity_handler, methods=["GET"]),
+        WebSocketRoute("/viewer/ws", viewer_ws_handler),
+        Route("/viewer", _viewer_page, methods=["GET"]),
+        Route("/viewer/{path:path}", _viewer_static, methods=["GET"]),
+    ])
 
     @mcp.tool()
     def discover_datasets(ctx: Context, topic: str | None = None) -> str:
@@ -613,10 +655,12 @@ def create_mcp_server() -> FastMCP:
         output = table + see_also + footer
         _log_tool_call(app, "query", {"sparql": sparql, "dataset": dataset}, output, int((time.monotonic() - t0) * 1000))
         if app.viewer and app.viewer.is_active:
-            from linked_past.core.viewer_render import render_query_table
-
-            table_html = render_query_table(result.rows, dataset, sparql=result.sparql)
-            await _push_to_viewer(app, "query", dataset, table_html)
+            await _push_to_viewer(app, "query", dataset, {
+                "rows": result.rows,
+                "columns": list(result.rows[0].keys()) if result.rows else [],
+                "sparql": result.sparql,
+                "row_count": len(result.rows),
+            })
         return output
 
     @mcp.tool()
@@ -702,9 +746,10 @@ def create_mcp_server() -> FastMCP:
             output = f"No entities found matching '{query_text}'."
             _log_tool_call(app, "search_entities", {"query_text": query_text, "dataset": dataset}, output, int((time.monotonic() - t0) * 1000))
             if app.viewer and app.viewer.is_active:
-                from linked_past.core.viewer_render import render_generic
-
-                await _push_to_viewer(app, "search_entities", dataset, render_generic(output))
+                await _push_to_viewer(app, "search", dataset, {
+                    "query_text": query_text,
+                    "results": [],
+                })
             return output
 
         lines = [f"# Search Results for '{query_text}'\n"]
@@ -749,9 +794,10 @@ def create_mcp_server() -> FastMCP:
         output = "\n".join(lines)
         _log_tool_call(app, "search_entities", {"query_text": query_text, "dataset": dataset}, output, int((time.monotonic() - t0) * 1000))
         if app.viewer and app.viewer.is_active:
-            from linked_past.core.viewer_render import render_generic
-
-            await _push_to_viewer(app, "search_entities", dataset, render_generic(output))
+            await _push_to_viewer(app, "search", dataset, {
+                "query_text": query_text,
+                "results": all_results,
+            })
         return output
 
     @mcp.tool()
@@ -834,10 +880,20 @@ def create_mcp_server() -> FastMCP:
         output = "\n".join(lines)
         _log_tool_call(app, "explore_entity", {"uri": uri}, output, int((time.monotonic() - t0) * 1000))
         if app.viewer and app.viewer.is_active:
-            from linked_past.core.viewer_render import render_entity_card
-
-            card_html = render_entity_card(uri, rows, ds_name or "unknown", xrefs)
-            await _push_to_viewer(app, "explore_entity", ds_name, card_html)
+            name = uri.rsplit("/", 1)[-1]
+            for pred in ("hasPersonName", "label", "prefLabel", "rdfs:label", "title", "name"):
+                for row in rows:
+                    if row["pred"].rsplit("/", 1)[-1].rsplit("#", 1)[-1] == pred:
+                        name = row["obj"]
+                        break
+                if name != uri.rsplit("/", 1)[-1]:
+                    break
+            await _push_to_viewer(app, "entity", ds_name, {
+                "uri": uri,
+                "name": name,
+                "properties": [{"pred": r["pred"], "obj": r["obj"] or ""} for r in rows],
+                "xrefs": xrefs,
+            })
         return output
 
     @mcp.tool()
@@ -890,10 +946,14 @@ def create_mcp_server() -> FastMCP:
         output = "\n".join(lines)
         _log_tool_call(app, "find_links", {"uri": uri}, output, int((time.monotonic() - t0) * 1000))
         if app.viewer and app.viewer.is_active:
-            from linked_past.core.viewer_render import render_xref_list
-
-            xref_html = render_xref_list(linkage_links + store_links)
-            await _push_to_viewer(app, "find_links", ds_name, xref_html)
+            await _push_to_viewer(app, "links", ds_name, {
+                "uri": uri,
+                "links": [
+                    {"target": lnk["target"], "relationship": lnk.get("relationship", ""),
+                     "confidence": lnk.get("confidence", ""), "basis": lnk.get("basis", "")}
+                    for lnk in linkage_links + store_links
+                ],
+            })
         return output
 
     @mcp.tool()
@@ -1364,10 +1424,10 @@ def create_mcp_server() -> FastMCP:
         if app.viewer is None or not app.viewer.is_active:
             return "Viewer is not running. Call start_viewer() first."
 
-        from linked_past.core.viewer_render import render_markdown
-
-        body_html = render_markdown(content)
-        await _push_to_viewer(app, "report", None, body_html)
+        await _push_to_viewer(app, "report", None, {
+            "title": title,
+            "markdown": content,
+        })
         return f"Pushed to viewer{f': {title}' if title else ''}."
 
     return mcp
