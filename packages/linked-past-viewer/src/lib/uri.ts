@@ -15,6 +15,8 @@ const URI_NAMESPACES: Record<string, string> = {
   "https://numismatics.org/ocre/id/": "ocre",
   "http://edh-www.adw.uni-heidelberg.de/edh/": "edh",
   "https://edh-www.adw.uni-heidelberg.de/edh/": "edh",
+  "http://edh.ub.uni-heidelberg.de/edh/": "edh",
+  "https://edh.ub.uni-heidelberg.de/edh/": "edh",
 };
 
 export function datasetForUri(uri: string): string | null {

@@ -43,10 +43,15 @@ async def entity_handler(request: Request) -> JSONResponse | PlainTextResponse:
     if not uri.startswith(("http://", "https://")):
         return JSONResponse({"error": "Invalid URI scheme"}, status_code=400)
 
-    # Normalize URI: strip www., prefer http:// to match canonical forms in the store
+    # Normalize URI: strip www., prefer http://, map known domain aliases
     canonical_uri = uri.replace("://www.", "://")
     if canonical_uri.startswith("https://"):
         canonical_uri = "http://" + canonical_uri[8:]
+    # EDH public domain → canonical RDF domain
+    canonical_uri = canonical_uri.replace(
+        "://edh.ub.uni-heidelberg.de/edh/",
+        "://edh-www.adw.uni-heidelberg.de/edh/",
+    )
 
     # Access registry and linkage from the app state stored on the manager
     registry = mgr.app_context.registry
