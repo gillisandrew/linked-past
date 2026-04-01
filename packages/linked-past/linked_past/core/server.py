@@ -708,7 +708,11 @@ def create_mcp_server() -> FastMCP:
                 continue
 
             plugin = registry.get_plugin(ds_name)
-            prefix_block = "\n".join(f"PREFIX {k}: <{v}>" for k, v in plugin.get_prefixes().items())
+            prefixes = dict(plugin.get_prefixes())
+            # Ensure rdfs and skos are always available
+            prefixes.setdefault("rdfs", "http://www.w3.org/2000/01/rdf-schema#")
+            prefixes.setdefault("skos", "http://www.w3.org/2004/02/skos/core#")
+            prefix_block = "\n".join(f"PREFIX {k}: <{v}>" for k, v in prefixes.items())
 
             # Build UNION branches for all label predicates (standard + dataset-specific)
             label_preds = [
@@ -726,8 +730,6 @@ def create_mcp_server() -> FastMCP:
             union_clauses = " UNION ".join(f"{{ ?uri {p} ?label }}" for p in label_preds)
             sparql = f"""
             {prefix_block}
-            PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-            PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
             SELECT DISTINCT ?uri ?label ?type WHERE {{
                 {union_clauses}
                 FILTER(CONTAINS(LCASE(STR(?label)), LCASE("{query_text}")))
@@ -738,7 +740,9 @@ def create_mcp_server() -> FastMCP:
             try:
                 from linked_past.core.store import execute_query as eq
 
+                logger.info("Search SPARQL for %s:\n%s", ds_name, sparql)
                 rows = eq(store, sparql)
+                logger.info("Search returned %d rows for %s", len(rows), ds_name)
                 for row in rows:
                     all_results.append({
                         "dataset": ds_name,
@@ -747,7 +751,7 @@ def create_mcp_server() -> FastMCP:
                         "type": row.get("type", ""),
                     })
             except Exception as e:
-                logger.warning("Search failed for %s: %s", ds_name, e)
+                logger.warning("Search failed for %s: %s", ds_name, e, exc_info=True)
 
         if not all_results and not meta_results:
             output = f"No entities found matching '{query_text}'."
