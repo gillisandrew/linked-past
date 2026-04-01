@@ -727,7 +727,19 @@ def create_mcp_server() -> FastMCP:
                         if pred not in label_preds:
                             label_preds.append(pred)
 
-            union_clauses = " UNION ".join(f"{{ ?uri {p} ?label }}" for p in label_preds)
+            # Deduplicate and ensure full URIs are wrapped in angle brackets
+            seen_preds = set()
+            unique_preds = []
+            for p in label_preds:
+                # Normalize: if it's a full URI, wrap in <...>
+                if p.startswith("http://") or p.startswith("https://"):
+                    sparql_pred = f"<{p}>"
+                else:
+                    sparql_pred = p
+                if sparql_pred not in seen_preds:
+                    seen_preds.add(sparql_pred)
+                    unique_preds.append(sparql_pred)
+            union_clauses = " UNION ".join(f"{{ ?uri {p} ?label }}" for p in unique_preds)
             sparql = f"""
             {prefix_block}
             SELECT DISTINCT ?uri ?label ?type WHERE {{
