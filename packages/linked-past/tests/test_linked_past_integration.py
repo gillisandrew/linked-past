@@ -3,96 +3,24 @@
 
 import json
 
-import pytest
-from linked_past.core.server import build_app_context
 from linked_past.core.validate import parse_and_fix_prefixes, validate_and_execute
 
-SAMPLE_TURTLE = """\
-@prefix vocab: <http://romanrepublic.ac.uk/rdf/ontology#> .
-@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
-@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
-<http://romanrepublic.ac.uk/rdf/entity/Person/1> a vocab:Person ;
-    vocab:hasPersonName "IUNI0001 L. Iunius Brutus" ;
-    vocab:hasDprrID "IUNI0001" ;
-    vocab:hasNomen "Iunius" ;
-    vocab:hasCognomen "Brutus" ;
-    vocab:isSex <http://romanrepublic.ac.uk/rdf/entity/Sex/Male> ;
-    vocab:hasEraFrom "-509"^^xsd:integer .
-
-<http://romanrepublic.ac.uk/rdf/entity/PostAssertion/1> a vocab:PostAssertion ;
-    vocab:isAboutPerson <http://romanrepublic.ac.uk/rdf/entity/Person/1> ;
-    vocab:hasOffice <http://romanrepublic.ac.uk/rdf/entity/Office/3> ;
-    vocab:hasDateStart "-509"^^xsd:integer .
-
-<http://romanrepublic.ac.uk/rdf/entity/Office/3> a vocab:Office ;
-    rdfs:label "Office: consul" .
-
-<http://romanrepublic.ac.uk/rdf/entity/Sex/Male> a vocab:Sex ;
-    rdfs:label "Sex: Male" .
-"""
-
-
-@pytest.fixture
-def integration_ctx(tmp_path, monkeypatch):
-    monkeypatch.setenv("LINKED_PAST_DATA_DIR", str(tmp_path))
-    dprr_dir = tmp_path / "dprr"
-    dprr_dir.mkdir()
-    ttl_path = dprr_dir / "dprr.ttl"
-    ttl_path.write_text(SAMPLE_TURTLE)
-    # Patch fetch so it returns the local file instead of downloading
-    monkeypatch.setattr(
-        "linked_past.datasets.dprr.plugin.DPRRPlugin.fetch",
-        lambda self, data_dir: data_dir / "dprr.ttl",
-    )
-    # Create minimal TTL files and patch fetch for other plugins
-    for dataset in ("pleiades", "periodo", "nomisma", "crro", "ocre", "edh"):
-        ds_dir = tmp_path / dataset
-        ds_dir.mkdir()
-        ttl_path = ds_dir / f"{dataset}.ttl"
-        ttl_path.write_text("@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n")
-    monkeypatch.setattr(
-        "linked_past.datasets.pleiades.plugin.PleiadesPlugin.fetch",
-        lambda self, data_dir: data_dir / "pleiades.ttl",
-    )
-    monkeypatch.setattr(
-        "linked_past.datasets.periodo.plugin.PeriodOPlugin.fetch",
-        lambda self, data_dir: data_dir / "periodo.ttl",
-    )
-    monkeypatch.setattr(
-        "linked_past.datasets.nomisma.plugin.NomismaPlugin.fetch",
-        lambda self, data_dir: data_dir / "nomisma.ttl",
-    )
-    monkeypatch.setattr(
-        "linked_past.datasets.crro.plugin.CRROPlugin.fetch",
-        lambda self, data_dir: data_dir / "crro.ttl",
-    )
-    monkeypatch.setattr(
-        "linked_past.datasets.ocre.plugin.OCREPlugin.fetch",
-        lambda self, data_dir: data_dir / "ocre.ttl",
-    )
-    monkeypatch.setattr(
-        "linked_past.datasets.edh.plugin.EDHPlugin.fetch",
-        lambda self, data_dir: data_dir / "edh.ttl",
-    )
-    return build_app_context(eager=True, skip_search=True)
-
-
-def test_discover_lists_dprr(integration_ctx):
-    datasets = integration_ctx.registry.list_datasets()
+def test_discover_lists_dprr(patched_app_context):
+    datasets = patched_app_context.registry.list_datasets()
     assert "dprr" in datasets
 
 
-def test_get_schema_has_classes(integration_ctx):
-    plugin = integration_ctx.registry.get_plugin("dprr")
+def test_get_schema_has_classes(patched_app_context):
+    plugin = patched_app_context.registry.get_plugin("dprr")
     schema = plugin.get_schema()
     assert "Person" in schema
     assert "PostAssertion" in schema
     assert "PREFIX vocab:" in schema
 
 
-def test_validate_valid_query(integration_ctx):
-    plugin = integration_ctx.registry.get_plugin("dprr")
+def test_validate_valid_query(patched_app_context):
+    plugin = patched_app_context.registry.get_plugin("dprr")
     prefix_map = plugin.get_prefixes()
     sparql = (
         "PREFIX vocab: <http://romanrepublic.ac.uk/rdf/ontology#>\n"
@@ -104,9 +32,9 @@ def test_validate_valid_query(integration_ctx):
     assert result.valid is True
 
 
-def test_validate_unknown_class_is_warning(integration_ctx):
-    """Unknown classes are non-blocking warnings — query still validates."""
-    plugin = integration_ctx.registry.get_plugin("dprr")
+def test_validate_unknown_class_is_warning(patched_app_context):
+    """Unknown classes are non-blocking warnings --- query still validates."""
+    plugin = patched_app_context.registry.get_plugin("dprr")
     sparql = (
         "PREFIX vocab: <http://romanrepublic.ac.uk/rdf/ontology#>\n"
         "SELECT ?p WHERE { ?p a vocab:FakeClass }"
@@ -115,9 +43,9 @@ def test_validate_unknown_class_is_warning(integration_ctx):
     assert result.valid is True  # Warning only, not an error
 
 
-def test_execute_query_returns_results(integration_ctx):
-    store = integration_ctx.registry.get_store("dprr")
-    plugin = integration_ctx.registry.get_plugin("dprr")
+def test_execute_query_returns_results(patched_app_context):
+    store = patched_app_context.registry.get_store("dprr")
+    plugin = patched_app_context.registry.get_plugin("dprr")
     sparql = (
         "PREFIX vocab: <http://romanrepublic.ac.uk/rdf/ontology#>\n"
         "SELECT ?name WHERE { ?p a vocab:Person ; vocab:hasPersonName ?name }"
@@ -128,16 +56,16 @@ def test_execute_query_returns_results(integration_ctx):
     assert "Brutus" in result.rows[0]["name"]
 
 
-def test_execute_with_prefix_repair(integration_ctx):
-    store = integration_ctx.registry.get_store("dprr")
-    plugin = integration_ctx.registry.get_plugin("dprr")
+def test_execute_with_prefix_repair(patched_app_context):
+    store = patched_app_context.registry.get_store("dprr")
+    plugin = patched_app_context.registry.get_plugin("dprr")
     sparql = "SELECT ?name WHERE { ?p a vocab:Person ; vocab:hasPersonName ?name }"
     result = validate_and_execute(sparql, store, plugin.build_schema_dict(), plugin.get_prefixes())
     assert result.success is True
     assert len(result.rows) == 1
 
 
-def test_registry_json_written(integration_ctx, tmp_path, monkeypatch):
+def test_registry_json_written(patched_app_context, tmp_path, monkeypatch):
     monkeypatch.setenv("LINKED_PAST_DATA_DIR", str(tmp_path))
     registry_path = tmp_path / "registry.json"
     assert registry_path.exists()
@@ -147,23 +75,23 @@ def test_registry_json_written(integration_ctx, tmp_path, monkeypatch):
     assert data["dprr"]["triple_count"] > 0
 
 
-def test_discover_datasets_topic_filter(integration_ctx):
-    plugin = integration_ctx.registry.get_plugin("dprr")
+def test_discover_datasets_topic_filter(patched_app_context):
+    plugin = patched_app_context.registry.get_plugin("dprr")
     searchable = [plugin.description, plugin.display_name,
                   plugin.spatial_coverage, plugin.time_coverage]
     assert any("roman" in f.lower() for f in searchable)
     assert not any("medieval" in f.lower() for f in searchable)
 
 
-def test_query_result_includes_citation(integration_ctx):
-    store = integration_ctx.registry.get_store("dprr")
-    plugin = integration_ctx.registry.get_plugin("dprr")
+def test_query_result_includes_citation(patched_app_context):
+    store = patched_app_context.registry.get_store("dprr")
+    plugin = patched_app_context.registry.get_plugin("dprr")
     result = validate_and_execute(
         "PREFIX vocab: <http://romanrepublic.ac.uk/rdf/ontology#>\n"
         "SELECT ?name WHERE { ?p a vocab:Person ; vocab:hasPersonName ?name }",
         store, plugin.build_schema_dict(), plugin.get_prefixes(),
     )
     assert result.success is True
-    meta = integration_ctx.registry.get_metadata("dprr")
+    meta = patched_app_context.registry.get_metadata("dprr")
     assert "version" in meta
     assert plugin.citation != ""
