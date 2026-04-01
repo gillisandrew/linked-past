@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
+import inspect
+import logging
 from dataclasses import dataclass, field
 from pathlib import Path
 
 from pyoxigraph import RdfFormat, Store
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -33,10 +36,13 @@ class ValidationResult:
     suggestions: list[str] = field(default_factory=list)
 
 
-class DatasetPlugin(ABC):
-    """Abstract base class for dataset plugins.
+class DatasetPlugin:
+    """Base class for dataset plugins.
 
-    Subclasses must set class attributes and implement all abstract methods.
+    Subclasses set class attributes (name, display_name, etc.) and inherit
+    concrete implementations for context loading, schema rendering, and
+    validation.  Only plugins with non-default version info need to override
+    ``get_version_info``.
     """
 
     name: str
@@ -50,6 +56,43 @@ class DatasetPlugin(ABC):
     rdf_format: RdfFormat = RdfFormat.TURTLE
     oci_dataset: str = ""
     oci_version: str = "latest"
+
+    # ------------------------------------------------------------------
+    # Context directory resolution
+    # ------------------------------------------------------------------
+
+    @classmethod
+    def _context_dir(cls) -> Path:
+        """Return the ``context/`` directory next to the subclass's module."""
+        return Path(inspect.getfile(cls)).parent / "context"
+
+    # ------------------------------------------------------------------
+    # Initialisation  (loads all YAML context)
+    # ------------------------------------------------------------------
+
+    def __init__(self) -> None:
+        from linked_past.core.context import load_examples, load_prefixes, load_schemas, load_tips
+        from linked_past.core.validate import build_schema_dict, extract_query_classes
+
+        context_dir = self._context_dir()
+        if not context_dir.is_dir():
+            raise FileNotFoundError(
+                f"Context directory not found: {context_dir}. "
+                f"Subclasses must live next to a context/ directory."
+            )
+
+        self._prefixes = load_prefixes(context_dir)
+        self._schemas = load_schemas(context_dir)
+        self._hand_written_class_names = set(self._schemas.keys())
+        self._examples = load_examples(context_dir)
+        self._tips = load_tips(context_dir)
+        self._schema_dict = build_schema_dict(self._schemas, self._prefixes)
+        for ex in self._examples:
+            ex["classes"] = extract_query_classes(ex["sparql"], self._schema_dict)
+
+    # ------------------------------------------------------------------
+    # Fetch / load
+    # ------------------------------------------------------------------
 
     def fetch(self, data_dir: Path, force: bool = False) -> Path:
         """Download data via ORAS from OCI registry. Override for custom fetch logic."""
@@ -72,33 +115,94 @@ class DatasetPlugin(ABC):
             store.bulk_load(path=str(ttl), format=self.rdf_format)
         return len(store)
 
-    @abstractmethod
+    # ------------------------------------------------------------------
+    # Prefixes / schema / validation
+    # ------------------------------------------------------------------
+
     def get_prefixes(self) -> dict[str, str]:
         """Return namespace prefix map."""
+        return self._prefixes
 
-    @abstractmethod
-    def get_schema(self) -> str:
-        """Return rendered ontology overview."""
-
-    @abstractmethod
     def build_schema_dict(self) -> dict:
         """Return dict[class_full_uri][predicate_full_uri] = [range_types]."""
+        return self._schema_dict
 
-    @abstractmethod
+    def get_schema(self) -> str:
+        """Return rendered ontology overview."""
+        from linked_past.core.context import (
+            get_cross_cutting_tips,
+            render_auto_detected_summary,
+            render_class_summary,
+            render_tips,
+        )
+
+        prefix_lines = "\n".join(f"PREFIX {k}: <{v}>" for k, v in self._prefixes.items())
+        class_summary = render_class_summary(self._schemas)
+        cross_tips = get_cross_cutting_tips(self._tips)
+        tips_md = render_tips(cross_tips)
+        result = (
+            f"## Prefixes\n\n```sparql\n{prefix_lines}\n```\n\n"
+            f"## Classes\n\n{class_summary}\n\n"
+            f"## General Tips\n\n{tips_md}"
+        )
+        auto_section = render_auto_detected_summary(self._schemas, self._hand_written_class_names)
+        if auto_section:
+            result += f"\n\n{auto_section}"
+        return result
+
     def validate(self, sparql: str) -> ValidationResult:
         """Dataset-specific semantic validation (plugin owns its schema dict)."""
+        from linked_past.core.validate import validate_semantics
+
+        class_counts = getattr(self, "_class_counts", None)
+        hints = validate_semantics(sparql, self._schema_dict, class_counts=class_counts)
+        return ValidationResult(valid=True, sparql=sparql, suggestions=hints)
 
     def get_relevant_context(self, sparql: str) -> str:
-        """Return contextual tips/examples for a SPARQL query. Default: empty."""
-        return ""
+        """Return contextual tips/examples for a SPARQL query."""
+        from linked_past.core.context import (
+            get_relevant_examples,
+            get_relevant_tips,
+            render_examples,
+            render_tips,
+        )
+        from linked_past.core.validate import extract_query_classes
 
-    @abstractmethod
+        classes = extract_query_classes(sparql, self._schema_dict)
+        if not classes:
+            return ""
+        parts: list[str] = []
+        tips = get_relevant_tips(self._tips, classes)
+        if tips:
+            parts.append(f"## Relevant Tips\n\n{render_tips(tips)}")
+        examples = get_relevant_examples(self._examples, classes)
+        if examples:
+            parts.append(f"## Relevant Examples\n\n{render_examples(examples)}")
+        if not parts:
+            return ""
+        return "\n\n---\n\n" + "\n\n".join(parts)
+
+    # ------------------------------------------------------------------
+    # Version / update
+    # ------------------------------------------------------------------
+
     def get_version_info(self, data_dir: Path) -> VersionInfo | None:
         """Return current snapshot metadata, or None if not initialized."""
+        return VersionInfo(
+            version=self.oci_version,
+            source_url=self.url,
+            fetched_at="",
+            triple_count=0,
+            rdf_format="turtle",
+        )
 
     def check_for_updates(self) -> UpdateInfo | None:
         """Compare local vs upstream. Returns None if up to date."""
         return None
+
+    # ------------------------------------------------------------------
+    # Runtime schema enrichment
+    # ------------------------------------------------------------------
 
     def set_void_class_counts(self, class_counts: dict[str, int]) -> None:
         """Store VoID class counts for validation hints."""
