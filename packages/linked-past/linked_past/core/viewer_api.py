@@ -191,11 +191,14 @@ async def sessions_list_handler(request: Request) -> JSONResponse:  # noqa: ARG0
     sessions = []
     for f in sorted(sessions_path.glob("*.jsonl"), reverse=True):
         # Count lines and read first/last timestamps
-        lines = f.read_text().strip().splitlines()
+        lines = [ln for ln in f.read_text().strip().splitlines() if ln.strip()]
         if not lines:
             continue
-        first = json.loads(lines[0])
-        last = json.loads(lines[-1])
+        try:
+            first = json.loads(lines[0])
+            last = json.loads(lines[-1])
+        except json.JSONDecodeError:
+            continue
         mgr = get_manager()
         is_current = mgr is not None and mgr.session_id == f.stem
 
