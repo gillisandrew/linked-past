@@ -5,14 +5,20 @@ const TYPE_OPTIONS = ["query", "entity", "links", "search", "report"] as const;
 export type Filters = {
   types: Set<string>;
   datasets: Set<string>;
+  bookmarkedOnly: boolean;
 };
 
 export function emptyFilters(): Filters {
-  return { types: new Set(), datasets: new Set() };
+  return { types: new Set(), datasets: new Set(), bookmarkedOnly: false };
 }
 
-export function applyFilters(messages: ViewerMessage[], filters: Filters): ViewerMessage[] {
+export function applyFilters(
+  messages: ViewerMessage[],
+  filters: Filters,
+  bookmarks: Set<number>,
+): ViewerMessage[] {
   return messages.filter((msg) => {
+    if (filters.bookmarkedOnly && !bookmarks.has(msg.seq)) return false;
     if (filters.types.size > 0 && !filters.types.has(msg.type)) return false;
     if (filters.datasets.size > 0 && msg.dataset && !filters.datasets.has(msg.dataset)) return false;
     return true;
@@ -45,13 +51,14 @@ function ToggleChip({
 export function FeedFilters({
   messages,
   filters,
+  bookmarkCount,
   onChange,
 }: {
   messages: ViewerMessage[];
   filters: Filters;
+  bookmarkCount: number;
   onChange: (f: Filters) => void;
 }) {
-  // Collect unique datasets from actual messages
   const datasets = [...new Set(messages.map((m) => m.dataset).filter(Boolean) as string[])].sort();
   const activeTypes = [...new Set(messages.map((m) => m.type))];
 
@@ -69,15 +76,29 @@ export function FeedFilters({
     onChange({ ...filters, datasets: next });
   }
 
+  function toggleBookmarked() {
+    onChange({ ...filters, bookmarkedOnly: !filters.bookmarkedOnly });
+  }
+
   function clearAll() {
     onChange(emptyFilters());
   }
 
-  const hasFilters = filters.types.size > 0 || filters.datasets.size > 0;
+  const hasFilters = filters.types.size > 0 || filters.datasets.size > 0 || filters.bookmarkedOnly;
 
   return (
     <div className="flex items-center gap-2 flex-wrap text-xs">
       <span className="text-muted-foreground font-medium">Filter:</span>
+      {bookmarkCount > 0 && (
+        <>
+          <ToggleChip
+            label={`★ ${bookmarkCount}`}
+            active={filters.bookmarkedOnly}
+            onClick={toggleBookmarked}
+          />
+          <span className="text-muted-foreground">|</span>
+        </>
+      )}
       {TYPE_OPTIONS.filter((t) => activeTypes.includes(t)).map((t) => (
         <ToggleChip key={t} label={t} active={filters.types.has(t)} onClick={() => toggleType(t)} />
       ))}

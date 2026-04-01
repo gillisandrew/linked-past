@@ -22,7 +22,25 @@ function MessageBody({ message }: { message: ViewerMessage }) {
   }
 }
 
-export function Feed({ messages }: { messages: ViewerMessage[] }) {
+function getSubtitle(msg: ViewerMessage): string | undefined {
+  if (msg.type === "report") return msg.data.title ?? undefined;
+  if (msg.type === "query") return msg.data.title ?? undefined;
+  return undefined;
+}
+
+export function Feed({
+  messages,
+  bookmarks,
+  notes,
+  onToggleBookmark,
+  onUpdateNote,
+}: {
+  messages: ViewerMessage[];
+  bookmarks: Set<number>;
+  notes: Map<number, string>;
+  onToggleBookmark: (seq: number) => void;
+  onUpdateNote: (seq: number, text: string) => void;
+}) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -41,14 +59,14 @@ export function Feed({ messages }: { messages: ViewerMessage[] }) {
     <div>
       {messages.map((msg, i) => (
         <FeedItem
-          key={`${msg.timestamp}-${i}`}
+          key={msg.seq}
           message={msg}
-          defaultOpen={i === messages.length - 1}
-          subtitle={
-            msg.type === "report" ? (msg.data.title ?? undefined) :
-            msg.type === "query" ? (msg.data.title ?? undefined) :
-            undefined
-          }
+          defaultOpen={i === messages.length - 1 || bookmarks.has(msg.seq)}
+          subtitle={getSubtitle(msg)}
+          bookmarked={bookmarks.has(msg.seq)}
+          note={notes.get(msg.seq)}
+          onToggleBookmark={() => onToggleBookmark(msg.seq)}
+          onUpdateNote={(text) => onUpdateNote(msg.seq, text)}
         >
           <MessageBody message={msg} />
         </FeedItem>
