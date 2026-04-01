@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { EntityData } from "../lib/types";
 import { DatasetBadge } from "./dataset-badge";
-import { EntityUri } from "./entity-uri";
+import { PropertyValue } from "./property-value";
 import { XrefList } from "./xref-list";
 
 export function EntityCard({ data }: { data: EntityData }) {
@@ -21,7 +21,7 @@ export function EntityCard({ data }: { data: EntityData }) {
                 <div key={i} className="contents">
                   <dt className="font-semibold text-muted-foreground">{pred}</dt>
                   <dd className="break-words">
-                    {p.obj.startsWith("http") ? <EntityUri uri={p.obj} /> : p.obj}
+                    <PropertyValue value={p.obj} />
                   </dd>
                 </div>
               );

@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { EntityData } from "../lib/types";
 import { DatasetBadge } from "./dataset-badge";
+import { PropertyValue } from "./property-value";
 
 /**
  * OWL/RDF/RDFS meta-predicates to hide from popovers.
@@ -69,7 +70,7 @@ export function EntityPopoverContent({ data }: { data: EntityData }) {
             {topProps.map((p, i) => (
               <div key={i} className="contents">
                 <dt className="font-semibold text-muted-foreground">{localName(p.pred)}</dt>
-                <dd className="truncate">{p.obj}</dd>
+                <dd className="truncate"><PropertyValue value={p.obj} /></dd>
               </div>
             ))}
           </dl>
