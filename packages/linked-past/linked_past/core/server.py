@@ -737,6 +737,10 @@ def create_mcp_server() -> FastMCP:
             f"      Cite as: {plugin.citation}\n"
             f"Tool: linked-past, https://github.com/gillisandrew/linked-past"
         )
+        # Append semantic hints and diagnostics (non-blocking warnings)
+        if result.errors:
+            hint_list = "\n".join(f"- {h}" for h in result.errors)
+            table += f"\n\n⚠️ Hints:\n{hint_list}"
         output = table + see_also + footer
         _log_tool_call(app, "query", {"sparql": sparql, "dataset": dataset}, output, int((time.monotonic() - t0) * 1000))
         if app.viewer and app.viewer.is_active:
