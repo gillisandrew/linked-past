@@ -76,9 +76,11 @@ class SearchIndex:
         if not query or not query.strip():
             return []
 
-        # Tokenize query for FTS5: add prefix matching to each term
+        # Tokenize query for FTS5: prefix matching + OR for recall
+        # OR ensures documents matching any term are returned; BM25 ranks
+        # documents matching more terms higher.
         terms = query.strip().split()
-        fts_query = " ".join(f'"{t}"*' for t in terms if t)
+        fts_query = " OR ".join(f'"{t}"*' for t in terms if t)
 
         try:
             if dataset:
