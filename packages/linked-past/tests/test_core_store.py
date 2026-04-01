@@ -4,6 +4,7 @@ from pathlib import Path
 import pytest
 from linked_past.core.store import (
     create_store,
+    execute_ask,
     execute_query,
     get_data_dir,
     get_read_only_store,
@@ -110,7 +111,6 @@ def test_execute_ask_true(tmp_path):
     ttl = tmp_path / "data.ttl"
     ttl.write_text(SAMPLE_TURTLE)
     load_rdf(store, ttl)
-    from linked_past.core.store import execute_ask
     result = execute_ask(store, "ASK { ?s a <http://example.org/Widget> }")
     assert result is True
 
@@ -121,7 +121,6 @@ def test_execute_ask_false(tmp_path):
     ttl = tmp_path / "data.ttl"
     ttl.write_text(SAMPLE_TURTLE)
     load_rdf(store, ttl)
-    from linked_past.core.store import execute_ask
     result = execute_ask(store, "ASK { ?s a <http://example.org/Nonexistent> }")
     assert result is False
 
@@ -132,6 +131,5 @@ def test_execute_ask_rejects_select(tmp_path):
     ttl = tmp_path / "data.ttl"
     ttl.write_text(SAMPLE_TURTLE)
     load_rdf(store, ttl)
-    from linked_past.core.store import execute_ask
     with pytest.raises(ValueError, match="Expected ASK"):
         execute_ask(store, "SELECT ?s WHERE { ?s ?p ?o }")

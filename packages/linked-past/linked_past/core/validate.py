@@ -6,6 +6,7 @@ import logging
 import re
 from dataclasses import dataclass, field
 from difflib import get_close_matches
+from typing import TYPE_CHECKING
 
 from pyparsing import ParseException
 from rdflib.plugins.sparql import prepareQuery
@@ -13,6 +14,9 @@ from rdflib.plugins.sparql.algebra import translateQuery, traverse
 from rdflib.plugins.sparql.parser import parseQuery
 from rdflib.plugins.sparql.parserutils import CompValue
 from rdflib.term import Literal, URIRef, Variable
+
+if TYPE_CHECKING:
+    from pyoxigraph import Store
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +51,7 @@ class DiagnosticResult:
 
 def diagnose_empty_result(
     sparql: str,
-    store,
+    store: Store,
     schema_dict: dict,
     prefix_map: dict[str, str],
     dataset: str | None = None,
@@ -76,7 +80,7 @@ def _run_heuristics(
 
 def _run_probes(
     sparql: str,
-    store,
+    store: Store,
     budget_ms: int,
 ) -> tuple[list[str], dict[str, bool]]:
     """Budget-capped diagnostic ASK queries."""
