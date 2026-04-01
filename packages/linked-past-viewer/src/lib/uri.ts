@@ -1,10 +1,18 @@
 const URI_NAMESPACES: Record<string, string> = {
   "http://romanrepublic.ac.uk/rdf/": "dprr",
+  "http://www.romanrepublic.ac.uk/rdf/": "dprr",
+  "https://romanrepublic.ac.uk/rdf/": "dprr",
+  "https://www.romanrepublic.ac.uk/rdf/": "dprr",
   "https://pleiades.stoa.org/places/": "pleiades",
+  "http://pleiades.stoa.org/places/": "pleiades",
   "http://n2t.net/ark:/99152/": "periodo",
+  "https://n2t.net/ark:/99152/": "periodo",
   "http://nomisma.org/id/": "nomisma",
+  "https://nomisma.org/id/": "nomisma",
   "http://numismatics.org/crro/id/": "crro",
+  "https://numismatics.org/crro/id/": "crro",
   "http://numismatics.org/ocre/id/": "ocre",
+  "https://numismatics.org/ocre/id/": "ocre",
   "http://edh-www.adw.uni-heidelberg.de/edh/": "edh",
   "https://edh-www.adw.uni-heidelberg.de/edh/": "edh",
 };
