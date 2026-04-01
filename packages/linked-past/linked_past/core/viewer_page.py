@@ -348,6 +348,20 @@ body {
   word-break: break-all;
 }
 
+/* ── SPARQL query block ──────────────────────────────────────────────── */
+.sparql-details { margin-bottom: 8px; }
+.sparql-details summary {
+  cursor: pointer; font-size: 12px; color: var(--muted);
+  font-weight: 600; user-select: none;
+}
+.sparql-query {
+  background: color-mix(in srgb, var(--surface) 85%, var(--text) 15%);
+  border-radius: 4px; padding: 8px 12px; margin-top: 4px;
+  font-family: ui-monospace, "SFMono-Regular", monospace;
+  font-size: 12px; white-space: pre-wrap; word-break: break-word;
+  overflow-x: auto;
+}
+
 /* ── Generic result ───────────────────────────────────────────────────── */
 .generic-result {
   background: color-mix(in srgb, var(--surface) 85%, var(--text) 15%);

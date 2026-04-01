@@ -23,10 +23,18 @@ def _e(text: str) -> str:
     return html.escape(str(text))
 
 
-def render_query_table(rows: list[dict[str, str]], dataset: str) -> str:  # noqa: ARG001
-    """Render a list of SPARQL result rows as an HTML table."""
+def render_query_table(rows: list[dict[str, str]], dataset: str, sparql: str | None = None) -> str:  # noqa: ARG001
+    """Render a list of SPARQL result rows as an HTML table, optionally with the query."""
+    sparql_block = ""
+    if sparql:
+        sparql_block = (
+            f'<details class="sparql-details"><summary>SPARQL</summary>'
+            f'<pre class="sparql-query">{_e(sparql)}</pre>'
+            f"</details>"
+        )
+
     if not rows:
-        return '<p class="table-footer">No results</p>'
+        return sparql_block + '<p class="table-footer">No results</p>'
 
     columns = list(rows[0].keys())
 
@@ -40,6 +48,7 @@ def render_query_table(rows: list[dict[str, str]], dataset: str) -> str:  # noqa
     plural = "s" if count != 1 else ""
 
     return (
+        f"{sparql_block}"
         f'<table class="query-table">'
         f"<thead><tr>{headers}</tr></thead>"
         f"<tbody>{''.join(body_rows)}</tbody>"

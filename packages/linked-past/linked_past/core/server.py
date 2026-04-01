@@ -317,10 +317,12 @@ def _log_tool_call(app: AppContext, tool_name: str, inputs: dict, result: str, d
 async def _push_to_viewer(app: AppContext, tool_name: str, dataset: str | None, body_html: str):
     """Push an HTML fragment to the viewer if active."""
     if app.viewer is None or not app.viewer.is_active:
+        logger.debug("Viewer push skipped: viewer=%s active=%s", app.viewer, app.viewer.is_active if app.viewer else "N/A")
         return
     from linked_past.core.viewer_render import render_feed_item
 
     fragment = render_feed_item(tool_name, dataset, body_html)
+    logger.info("Viewer push: tool=%s dataset=%s clients=%d fragment_len=%d", tool_name, dataset, app.viewer.client_count, len(fragment))
     await app.viewer.broadcast(fragment)
 
 
@@ -613,7 +615,7 @@ def create_mcp_server() -> FastMCP:
         if app.viewer and app.viewer.is_active:
             from linked_past.core.viewer_render import render_query_table
 
-            table_html = render_query_table(result.rows, dataset)
+            table_html = render_query_table(result.rows, dataset, sparql=result.sparql)
             await _push_to_viewer(app, "query", dataset, table_html)
         return output
 
