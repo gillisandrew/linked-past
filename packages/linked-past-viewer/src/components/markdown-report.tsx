@@ -1,9 +1,11 @@
 import type { ComponentPropsWithoutRef } from "react";
 import Markdown from "react-markdown";
+import remarkBreaks from "remark-breaks";
 import remarkGfm from "remark-gfm";
 import type { ReportData } from "../lib/types";
 import { datasetForUri } from "../lib/uri";
 import { EntityUri } from "./entity-uri";
+import { MermaidBlock } from "./mermaid-block";
 
 /**
  * Custom link renderer: if the href points to a known dataset entity,
@@ -27,15 +29,38 @@ function MarkdownLink({ href, children }: ComponentPropsWithoutRef<"a">) {
   );
 }
 
+/**
+ * Custom code block renderer: mermaid fenced blocks get rendered as diagrams,
+ * everything else renders as a normal pre/code block.
+ */
+function CodeBlock({
+  className,
+  children,
+}: ComponentPropsWithoutRef<"code"> & { inline?: boolean }) {
+  const lang = className?.replace("language-", "");
+  const code = String(children).replace(/\n$/, "");
+
+  if (lang === "mermaid") {
+    return <MermaidBlock chart={code} />;
+  }
+
+  return (
+    <pre className="p-2 rounded bg-muted text-xs overflow-x-auto">
+      <code className={className}>{children}</code>
+    </pre>
+  );
+}
+
 export function MarkdownReport({ data }: { data: ReportData }) {
   return (
-    <div>
-      {data.title && <h2 className="text-lg font-semibold mb-2">{data.title}</h2>}
-      <div className="prose prose-sm dark:prose-invert max-w-none">
+    <div className="space-y-4">
+      {data.title && <h2 className="text-lg font-semibold">{data.title}</h2>}
+      <div className="prose prose-sm dark:prose-invert max-w-none prose-headings:mt-4 prose-headings:mb-2 prose-p:my-2 prose-ul:my-2 prose-ol:my-2 prose-li:my-0.5 prose-pre:my-2 prose-hr:my-4 prose-table:my-2">
         <Markdown
-          remarkPlugins={[remarkGfm]}
+          remarkPlugins={[remarkGfm, remarkBreaks]}
           components={{
             a: MarkdownLink,
+            code: CodeBlock,
             table: ({ children }) => (
               <table className="w-full border-collapse text-sm">{children}</table>
             ),

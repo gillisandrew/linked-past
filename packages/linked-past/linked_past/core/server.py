@@ -1420,7 +1420,19 @@ def create_mcp_server() -> FastMCP:
 
     @mcp.tool()
     async def push_to_viewer(ctx: Context, content: str, title: str | None = None) -> str:
-        """Push markdown content to the browser viewer as a styled report. Renders headings, tables, lists, code blocks, bold, and italic. Use this to send formatted analysis, summaries, or comparisons to the viewer for the user to read alongside the conversation."""
+        """Push markdown content to the browser viewer as a styled report.
+
+Renders headings, tables, lists, code blocks, bold, italic, and links.
+Entity URIs in markdown links get interactive popovers automatically.
+
+Supports mermaid diagrams — use a fenced code block with language 'mermaid':
+  ```mermaid
+  graph LR
+    A[DPRR Person] -->|skos:closeMatch| B[Nomisma Person]
+    A -->|dcterms:spatial| C[Pleiades Place]
+  ```
+
+Use this to send formatted analysis, summaries, comparisons, or visualizations to the viewer."""
         app: AppContext = ctx.request_context.lifespan_context
 
         if app.viewer is None or not app.viewer.is_active:
