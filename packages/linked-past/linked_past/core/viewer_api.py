@@ -50,13 +50,80 @@ async def entity_handler(request: Request) -> JSONResponse | PlainTextResponse:
     ds_name = registry.dataset_for_uri(uri)
     properties: list[dict[str, str]] = []
 
+    description = ""
+    see_also: list[str] = []
+    type_hierarchy: list[str] = []
+    predicate_meta: dict[str, dict] = {}  # pred URI → {label, comment, domain, range}
+
     if ds_name:
         try:
             store = registry.get_store(ds_name)
             from linked_past.core.store import execute_query
 
+            # Entity properties
             rows = execute_query(store, f"SELECT ?pred ?obj WHERE {{ <{uri}> ?pred ?obj . }} LIMIT 50")
             properties = [{"pred": r["pred"], "obj": r["obj"] or ""} for r in rows]
+
+            # rdfs:comment on the entity itself (Pleiades places have descriptions)
+            rdfs_comment = "http://www.w3.org/2000/01/rdf-schema#comment"
+            comment_rows = execute_query(
+                store,
+                f"SELECT ?comment WHERE {{ <{uri}> <{rdfs_comment}> ?comment . }} LIMIT 1",
+            )
+            if comment_rows:
+                description = comment_rows[0].get("comment", "")
+
+            # rdfs:seeAlso on the entity (Pleiades has ~30K external links)
+            see_also_rows = execute_query(
+                store,
+                f"SELECT ?target WHERE {{ <{uri}> <http://www.w3.org/2000/01/rdf-schema#seeAlso> ?target . }} LIMIT 10",
+            )
+            see_also = [r["target"] for r in see_also_rows if r.get("target")]
+
+            # Type hierarchy: rdf:type → rdfs:subClassOf chain
+            rdfs_sub = "http://www.w3.org/2000/01/rdf-schema#subClassOf"
+            type_sparql = (
+                f"SELECT ?type ?parent WHERE {{ <{uri}> a ?type . "
+                f"OPTIONAL {{ ?type <{rdfs_sub}> ?parent }} }} LIMIT 20"
+            )
+            type_rows = execute_query(store, type_sparql)
+            for r in type_rows:
+                t = r.get("type", "")
+                if t and not t.startswith("http://www.w3.org/"):
+                    local = t.rsplit("/", 1)[-1].rsplit("#", 1)[-1]
+                    if local not in type_hierarchy:
+                        type_hierarchy.append(local)
+
+            # Predicate metadata: rdfs:label, rdfs:comment, rdfs:domain, rdfs:range
+            pred_uris = {p["pred"] for p in properties}
+            if pred_uris:
+                # Build VALUES clause for the predicates we actually have
+                values = " ".join(f"<{p}>" for p in pred_uris if p.startswith("http"))
+                if values:
+                    meta_rows = execute_query(
+                        store,
+                        f"""SELECT ?pred ?label ?comment ?domain ?range WHERE {{
+                            VALUES ?pred {{ {values} }}
+                            OPTIONAL {{ ?pred <http://www.w3.org/2000/01/rdf-schema#label> ?label }}
+                            OPTIONAL {{ ?pred <http://www.w3.org/2000/01/rdf-schema#comment> ?comment }}
+                            OPTIONAL {{ ?pred <http://www.w3.org/2000/01/rdf-schema#domain> ?domain }}
+                            OPTIONAL {{ ?pred <http://www.w3.org/2000/01/rdf-schema#range> ?range }}
+                        }} LIMIT 200""",
+                    )
+                    for r in meta_rows:
+                        pred_uri = r.get("pred", "")
+                        if pred_uri not in predicate_meta:
+                            predicate_meta[pred_uri] = {}
+                        m = predicate_meta[pred_uri]
+                        if r.get("label") and "label" not in m:
+                            m["label"] = r["label"]
+                        if r.get("comment") and "comment" not in m:
+                            m["comment"] = r["comment"]
+                        if r.get("domain") and "domain" not in m:
+                            m["domain"] = r["domain"].rsplit("/", 1)[-1].rsplit("#", 1)[-1]
+                        if r.get("range") and "range" not in m:
+                            m["range"] = r["range"].rsplit("/", 1)[-1].rsplit("#", 1)[-1]
+
         except Exception as e:
             logger.warning("Entity query failed for %s: %s", uri, e)
 
@@ -79,7 +146,11 @@ async def entity_handler(request: Request) -> JSONResponse | PlainTextResponse:
         "uri": uri,
         "name": name,
         "dataset": ds_name,
+        "description": description,
+        "type_hierarchy": type_hierarchy,
+        "see_also": see_also,
         "properties": properties,
+        "predicate_meta": predicate_meta,
         "xrefs": xrefs,
     })
 

@@ -4,23 +4,13 @@ import type { EntityData } from "../lib/types";
 import { DatasetBadge } from "./dataset-badge";
 import { PropertyValue } from "./property-value";
 
-/**
- * Predicates to hide from popovers — structural/meta, not human-readable.
- */
 const HIDDEN_PREDICATES = new Set([
   "type", "rdf:type", "Class", "subClassOf", "subPropertyOf",
   "domain", "range", "equivalentClass", "equivalentProperty",
   "sameAs", "differentFrom", "disjointWith", "imports",
   "versionInfo", "isDefinedBy", "first", "rest",
-  // DPRR internal IDs
-  "hasID", "hasDprrID",
-]);
-
-/**
- * Predicates to hide object values for (just show predicate exists).
- */
-const HIDE_VALUES = new Set([
-  "hasAssociatedWebpage",
+  "hasID", "hasDprrID", "hasAssociatedWebpage",
+  "label", "prefLabel", "comment", "seeAlso",
 ]);
 
 function localName(pred: string): string {
@@ -31,7 +21,6 @@ export function EntityPopoverContent({ data }: { data: EntityData }) {
   const humanProps = data.properties.filter(
     (p) => !HIDDEN_PREDICATES.has(localName(p.pred)),
   );
-  // Deduplicate by predicate (show first value only)
   const seen = new Set<string>();
   const deduped = humanProps.filter((p) => {
     const local = localName(p.pred);
@@ -46,35 +35,40 @@ export function EntityPopoverContent({ data }: { data: EntityData }) {
       <CardHeader className="p-3 pb-1">
         <div className="flex items-center gap-1.5">
           {data.dataset && <DatasetBadge dataset={data.dataset} />}
-          <span className="text-xs text-muted-foreground font-mono truncate">
-            {data.uri.split("/").pop()}
-          </span>
+          {data.type_hierarchy && data.type_hierarchy.length > 0 && (
+            <span className="text-[10px] text-muted-foreground">
+              {data.type_hierarchy.join(" › ")}
+            </span>
+          )}
         </div>
         <CardTitle className="text-base">{data.name}</CardTitle>
+        {data.description && (
+          <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
+            {data.description}
+          </p>
+        )}
       </CardHeader>
       <CardContent className="p-3 pt-0">
         {topProps.length > 0 && (
           <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
-            {topProps.map((p, i) => {
-              const local = localName(p.pred);
-              return (
-                <div key={i} className="contents">
-                  <dt className="font-semibold text-muted-foreground">{humanizePredicate(p.pred)}</dt>
-                  <dd className="truncate">
-                    {HIDE_VALUES.has(local) ? (
-                      <span className="text-muted-foreground italic">link</span>
-                    ) : (
-                      <PropertyValue value={p.obj} />
-                    )}
-                  </dd>
-                </div>
-              );
-            })}
+            {topProps.map((p, i) => (
+              <div key={i} className="contents">
+                <dt className="font-semibold text-muted-foreground">{humanizePredicate(p.pred)}</dt>
+                <dd className="truncate">
+                  <PropertyValue value={p.obj} showBadge={false} />
+                </dd>
+              </div>
+            ))}
           </dl>
         )}
-        {data.xrefs.length > 0 && (
-          <div className="mt-2 pt-2 border-t text-xs text-muted-foreground">
-            {data.xrefs.length} cross-reference{data.xrefs.length !== 1 ? "s" : ""}
+        {(data.xrefs.length > 0 || (data.see_also && data.see_also.length > 0)) && (
+          <div className="mt-2 pt-2 border-t text-xs text-muted-foreground flex gap-3">
+            {data.xrefs.length > 0 && (
+              <span>{data.xrefs.length} cross-reference{data.xrefs.length !== 1 ? "s" : ""}</span>
+            )}
+            {data.see_also && data.see_also.length > 0 && (
+              <span>{data.see_also.length} external link{data.see_also.length !== 1 ? "s" : ""}</span>
+            )}
           </div>
         )}
       </CardContent>

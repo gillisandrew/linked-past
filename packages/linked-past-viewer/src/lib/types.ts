@@ -7,11 +7,22 @@ export type QueryData = {
   title?: string | null;
 };
 
+export type PredicateMeta = {
+  label?: string;
+  comment?: string;
+  domain?: string;
+  range?: string;
+};
+
 export type EntityData = {
   uri: string;
   name: string;
   dataset: string | null;
+  description?: string;
+  type_hierarchy?: string[];
+  see_also?: string[];
   properties: { pred: string; obj: string }[];
+  predicate_meta?: Record<string, PredicateMeta>;
   xrefs: XrefLink[];
 };
 
