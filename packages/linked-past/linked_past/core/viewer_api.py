@@ -43,11 +43,16 @@ async def entity_handler(request: Request) -> JSONResponse | PlainTextResponse:
     if not uri.startswith(("http://", "https://")):
         return JSONResponse({"error": "Invalid URI scheme"}, status_code=400)
 
+    # Normalize URI: strip www., prefer http:// to match canonical forms in the store
+    canonical_uri = uri.replace("://www.", "://")
+    if canonical_uri.startswith("https://"):
+        canonical_uri = "http://" + canonical_uri[8:]
+
     # Access registry and linkage from the app state stored on the manager
     registry = mgr.app_context.registry
     linkage = mgr.app_context.linkage
 
-    ds_name = registry.dataset_for_uri(uri)
+    ds_name = registry.dataset_for_uri(canonical_uri)
     properties: list[dict[str, str]] = []
 
     description = ""
@@ -61,29 +66,30 @@ async def entity_handler(request: Request) -> JSONResponse | PlainTextResponse:
             from linked_past.core.store import execute_query
 
             # Entity properties
-            rows = execute_query(store, f"SELECT ?pred ?obj WHERE {{ <{uri}> ?pred ?obj . }} LIMIT 50")
+            rows = execute_query(store, f"SELECT ?pred ?obj WHERE {{ <{canonical_uri}> ?pred ?obj . }} LIMIT 50")
             properties = [{"pred": r["pred"], "obj": r["obj"] or ""} for r in rows]
 
             # rdfs:comment on the entity itself (Pleiades places have descriptions)
             rdfs_comment = "http://www.w3.org/2000/01/rdf-schema#comment"
             comment_rows = execute_query(
                 store,
-                f"SELECT ?comment WHERE {{ <{uri}> <{rdfs_comment}> ?comment . }} LIMIT 1",
+                f"SELECT ?comment WHERE {{ <{canonical_uri}> <{rdfs_comment}> ?comment . }} LIMIT 1",
             )
             if comment_rows:
                 description = comment_rows[0].get("comment", "")
 
             # rdfs:seeAlso on the entity (Pleiades has ~30K external links)
+            rdfs_see_also = "http://www.w3.org/2000/01/rdf-schema#seeAlso"
             see_also_rows = execute_query(
                 store,
-                f"SELECT ?target WHERE {{ <{uri}> <http://www.w3.org/2000/01/rdf-schema#seeAlso> ?target . }} LIMIT 10",
+                f"SELECT ?target WHERE {{ <{canonical_uri}> <{rdfs_see_also}> ?target . }} LIMIT 10",
             )
             see_also = [r["target"] for r in see_also_rows if r.get("target")]
 
             # Type hierarchy: rdf:type → rdfs:subClassOf chain
             rdfs_sub = "http://www.w3.org/2000/01/rdf-schema#subClassOf"
             type_sparql = (
-                f"SELECT ?type ?parent WHERE {{ <{uri}> a ?type . "
+                f"SELECT ?type ?parent WHERE {{ <{canonical_uri}> a ?type . "
                 f"OPTIONAL {{ ?type <{rdfs_sub}> ?parent }} }} LIMIT 20"
             )
             type_rows = execute_query(store, type_sparql)
@@ -132,15 +138,15 @@ async def entity_handler(request: Request) -> JSONResponse | PlainTextResponse:
     if linkage:
         from linked_past.core.server import _find_store_xrefs
 
-        linkage_links = linkage.find_links(uri)
-        store_links = _find_store_xrefs(uri, registry)
+        linkage_links = linkage.find_links(canonical_uri)
+        store_links = _find_store_xrefs(canonical_uri, registry)
         seen = set()
         for link in linkage_links + store_links:
             if link["target"] not in seen:
                 seen.add(link["target"])
                 xrefs.append(link)
 
-    name = _extract_name(uri, properties)
+    name = _extract_name(canonical_uri, properties)
 
     return JSONResponse({
         "uri": uri,
