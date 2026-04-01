@@ -395,6 +395,7 @@ def validate_semantics(
     hints.extend(_check_open_world_booleans(sparql, triples, var_types, schema_dict))
     hints.extend(_check_count_distinct(sparql, var_types, schema_dict))
     hints.extend(_check_limit(sparql, var_types, schema_dict, class_counts))
+    hints.extend(_check_uncertainty_flags(triples, var_types, schema_dict))
 
     return hints
 ```
@@ -541,6 +542,42 @@ def _check_limit(
             f"Hint: Query targets {max_class} (~{max_count:,} instances) with no LIMIT. "
             f"Consider adding LIMIT 100 for exploration, or use COUNT/GROUP BY for aggregation."
         )
+    return hints
+
+
+def _check_uncertainty_flags(
+    triples: list[tuple],
+    var_types: dict[str, list[str]],
+    schema_dict: dict,
+) -> list[str]:
+    """Suggest surfacing uncertainty flags when querying assertion classes."""
+    hints = []
+    # Collect which open_world predicates are already referenced in the query
+    used_preds: set[str] = set()
+    for s, p, o in triples:
+        if isinstance(p, URIRef):
+            used_preds.add(str(p))
+
+    # For each typed variable, check if its class has open_world flags not in the query
+    seen_classes: set[str] = set()
+    for var_name, types in var_types.items():
+        for class_uri in types:
+            if class_uri in seen_classes or class_uri not in schema_dict:
+                continue
+            seen_classes.add(class_uri)
+            flags = []
+            for pred_uri, pred_info in schema_dict[class_uri].items():
+                if pred_uri == "_meta":
+                    continue
+                if isinstance(pred_info, dict) and pred_info.get("open_world") and pred_uri not in used_preds:
+                    flags.append(_local_name(pred_uri))
+            if flags:
+                class_local = _local_name(class_uri)
+                hints.append(
+                    f"Hint: {class_local} has uncertainty flags not in your query: "
+                    f"{', '.join(flags)}. Consider OPTIONAL {{ ?{var_name} ... }} to surface them, "
+                    f"or FILTER NOT EXISTS {{ ... true }} to exclude uncertain data."
+                )
     return hints
 ```
 
@@ -692,6 +729,47 @@ def test_limit_no_warning_when_present():
     )
     hints = validate_semantics(sparql, sd, class_counts=class_counts)
     assert not any("LIMIT" in h for h in hints)
+
+
+def test_uncertainty_flags_hint():
+    schemas = {
+        "PostAssertion": {
+            "uri": "ex:PostAssertion",
+            "properties": [
+                {"pred": "ex:hasOffice", "range": "ex:Office"},
+                {"pred": "ex:isUncertain", "range": "xsd:boolean", "open_world": True},
+                {"pred": "ex:isDateUncertain", "range": "xsd:boolean", "open_world": True},
+            ],
+        },
+    }
+    sd = build_schema_dict(schemas, PREFIXES)
+    # Query uses PostAssertion but does NOT reference any uncertainty flags
+    sparql = (
+        "PREFIX ex: <http://example.org/>\n"
+        "SELECT ?pa WHERE { ?pa a ex:PostAssertion ; ex:hasOffice ?o }"
+    )
+    hints = validate_semantics(sparql, sd)
+    assert any("uncertainty" in h.lower() and "isUncertain" in h for h in hints)
+
+
+def test_uncertainty_flags_no_hint_when_used():
+    schemas = {
+        "PostAssertion": {
+            "uri": "ex:PostAssertion",
+            "properties": [
+                {"pred": "ex:hasOffice", "range": "ex:Office"},
+                {"pred": "ex:isUncertain", "range": "xsd:boolean", "open_world": True},
+            ],
+        },
+    }
+    sd = build_schema_dict(schemas, PREFIXES)
+    # Query already references isUncertain — no hint needed
+    sparql = (
+        "PREFIX ex: <http://example.org/>\n"
+        "SELECT ?pa WHERE { ?pa a ex:PostAssertion ; ex:hasOffice ?o . FILTER NOT EXISTS { ?pa ex:isUncertain true } }"
+    )
+    hints = validate_semantics(sparql, sd)
+    assert not any("uncertainty" in h.lower() for h in hints)
 ```
 
 - [ ] **Step 5: Run all tests**
