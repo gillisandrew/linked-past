@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import json
 import logging
 import re
 import time
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from difflib import get_close_matches
 from typing import TYPE_CHECKING
 
@@ -67,6 +69,40 @@ def diagnose_empty_result(
     result.hints.extend(probe_hints)
     result.probe_results = probe_results
     return result
+
+
+def log_zero_result(
+    dataset: str | None,
+    sparql: str,
+    diagnostics: DiagnosticResult,
+    semantic_hints: list[str],
+    duration_ms: int,
+) -> None:
+    """Append a zero-result query entry to the diagnostics JSONL log.
+
+    Fire-and-forget: logs a warning on failure, never raises.
+    """
+    try:
+        from linked_past.core.store import get_data_dir
+
+        log_dir = get_data_dir() / "diagnostics"
+        log_dir.mkdir(parents=True, exist_ok=True)
+        log_file = log_dir / "zero_results.jsonl"
+
+        entry = {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "dataset": dataset,
+            "sparql": sparql,
+            "diagnostics": diagnostics.hints,
+            "probe_results": diagnostics.probe_results,
+            "semantic_hints": semantic_hints,
+            "duration_ms": duration_ms,
+        }
+
+        with open(log_file, "a") as f:
+            f.write(json.dumps(entry) + "\n")
+    except Exception as e:
+        logger.warning("Failed to log zero-result query: %s", e)
 
 
 def _run_heuristics(
@@ -936,24 +972,40 @@ def validate_and_execute(
     store,
     schema_dict: dict,
     prefix_map: dict[str, str],
+    dataset: str | None = None,
 ) -> QueryResult:
     """Validate and execute a SPARQL query through all three tiers."""
+    t0 = time.monotonic()
     fixed_sparql, parse_errors = parse_and_fix_prefixes(sparql, prefix_map)
     if parse_errors:
         return QueryResult(success=False, sparql=fixed_sparql, errors=parse_errors)
 
-    # Semantic hints are non-blocking — unknown classes/predicates are warnings, not errors
     semantic_hints = validate_semantics(fixed_sparql, schema_dict)
 
     try:
         from linked_past.core.store import execute_query
 
-        # Compress result URIs: dataset prefixes + query-declared prefixes (query wins on conflict)
         result_prefixes = dict(prefix_map)
         for match in re.finditer(r"PREFIX\s+(\w+):\s*<([^>]+)>", fixed_sparql, re.IGNORECASE):
             result_prefixes[match.group(1)] = match.group(2)
         rows = execute_query(store, fixed_sparql, prefix_map=result_prefixes)
     except Exception as e:
         return QueryResult(success=False, sparql=fixed_sparql, errors=[f"Query execution error: {e}"])
+
+    # Empty-result diagnostics
+    if not rows:
+        diagnostics = diagnose_empty_result(
+            fixed_sparql, store, schema_dict, prefix_map,
+            dataset=dataset,
+            semantic_hints=semantic_hints,
+        )
+        semantic_hints.extend(diagnostics.hints)
+        log_zero_result(
+            dataset=dataset,
+            sparql=fixed_sparql,
+            diagnostics=diagnostics,
+            semantic_hints=semantic_hints,
+            duration_ms=int((time.monotonic() - t0) * 1000),
+        )
 
     return QueryResult(success=True, sparql=fixed_sparql, rows=rows, errors=semantic_hints)

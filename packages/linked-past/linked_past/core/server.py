@@ -633,7 +633,7 @@ def create_mcp_server() -> FastMCP:
 
         try:
             result = await asyncio.wait_for(
-                asyncio.to_thread(validate_and_execute, sparql, store, schema_dict, prefix_map),
+                asyncio.to_thread(validate_and_execute, sparql, store, schema_dict, prefix_map, dataset),
                 timeout=effective_timeout,
             )
         except asyncio.TimeoutError:

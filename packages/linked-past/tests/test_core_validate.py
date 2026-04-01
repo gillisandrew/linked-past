@@ -1,4 +1,6 @@
 # tests/test_core_validate.py
+import json
+
 from linked_past.core.store import create_store, load_rdf
 from linked_past.core.validate import (
     DiagnosticResult,
@@ -185,7 +187,7 @@ def test_validate_and_execute_unknown_class_still_executes(tmp_path):
     )
     assert result.success is True  # Hints are non-blocking
     assert result.rows == []  # No Gadgets exist, but query ran
-    assert len(result.errors) == 1  # Contains a hint about unknown class
+    assert any("Gadget" in e for e in result.errors)  # Contains a hint about unknown class
     assert "Hint:" in result.errors[0]
 
 
@@ -905,3 +907,100 @@ def test_probe_budget_exhaustion(tmp_path):
     )
     result = diagnose_empty_result(sparql, store, sd, PREFIXES, budget_ms=0)
     assert result.probe_results == {}
+
+
+def test_validate_and_execute_empty_result_diagnostics(tmp_path):
+    """validate_and_execute should include diagnostics when result is empty."""
+    store_path = tmp_path / "store"
+    store = create_store(store_path)
+    ttl = tmp_path / "data.ttl"
+    ttl.write_text(SAMPLE_TURTLE)
+    load_rdf(store, ttl)
+    sd = build_schema_dict(SCHEMAS, PREFIXES)
+    result = validate_and_execute(
+        "PREFIX ex: <http://example.org/>\n"
+        "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n"
+        'SELECT ?w WHERE { ?w a ex:Widget ; rdfs:label ?l . FILTER(?l = "Nonexistent") }',
+        store, sd, PREFIXES,
+    )
+    assert result.success is True
+    assert result.rows == []
+    assert any("Diagnostic:" in e for e in result.errors)
+
+
+def test_log_zero_result_writes_jsonl(tmp_path, monkeypatch):
+    """log_zero_result should append a JSON line to the diagnostics file."""
+    monkeypatch.setenv("LINKED_PAST_DATA_DIR", str(tmp_path))
+    from linked_past.core.validate import log_zero_result
+    log_zero_result(
+        dataset="dprr",
+        sparql="SELECT ?x WHERE { ?x a <http://example.org/Nothing> }",
+        diagnostics=DiagnosticResult(
+            hints=["Diagnostic: no matches"],
+            probe_results={"base_pattern_matches": False},
+        ),
+        semantic_hints=["Hint: unknown class"],
+        duration_ms=42,
+    )
+    log_file = tmp_path / "diagnostics" / "zero_results.jsonl"
+    assert log_file.exists()
+    lines = log_file.read_text().strip().split("\n")
+    assert len(lines) == 1
+    entry = json.loads(lines[0])
+    assert entry["dataset"] == "dprr"
+    assert entry["duration_ms"] == 42
+    assert "timestamp" in entry
+    assert entry["diagnostics"] == ["Diagnostic: no matches"]
+    assert entry["probe_results"] == {"base_pattern_matches": False}
+
+
+def test_log_zero_result_appends(tmp_path, monkeypatch):
+    """Multiple calls should append, not overwrite."""
+    monkeypatch.setenv("LINKED_PAST_DATA_DIR", str(tmp_path))
+    from linked_past.core.validate import log_zero_result
+    diag = DiagnosticResult(hints=[], probe_results={})
+    log_zero_result("dprr", "SELECT 1", diag, [], 10)
+    log_zero_result("dprr", "SELECT 2", diag, [], 20)
+    log_file = tmp_path / "diagnostics" / "zero_results.jsonl"
+    lines = log_file.read_text().strip().split("\n")
+    assert len(lines) == 2
+
+
+def test_validate_and_execute_logs_zero_result(tmp_path, monkeypatch):
+    """validate_and_execute should log to JSONL when result is empty."""
+    data_dir = tmp_path / "data"
+    monkeypatch.setenv("LINKED_PAST_DATA_DIR", str(data_dir))
+    store_path = tmp_path / "store"
+    store = create_store(store_path)
+    ttl = tmp_path / "data.ttl"
+    ttl.write_text(SAMPLE_TURTLE)
+    load_rdf(store, ttl)
+    sd = build_schema_dict(SCHEMAS, PREFIXES)
+    result = validate_and_execute(
+        "PREFIX ex: <http://example.org/>\nSELECT ?w WHERE { ?w a ex:Gadget }",
+        store, sd, PREFIXES, dataset="test",
+    )
+    assert result.rows == []
+    log_file = data_dir / "diagnostics" / "zero_results.jsonl"
+    assert log_file.exists()
+    entry = json.loads(log_file.read_text().strip())
+    assert entry["dataset"] == "test"
+
+
+def test_validate_and_execute_no_log_when_results(tmp_path, monkeypatch):
+    """validate_and_execute should NOT log when results are returned."""
+    data_dir = tmp_path / "data"
+    monkeypatch.setenv("LINKED_PAST_DATA_DIR", str(data_dir))
+    store_path = tmp_path / "store"
+    store = create_store(store_path)
+    ttl = tmp_path / "data.ttl"
+    ttl.write_text(SAMPLE_TURTLE)
+    load_rdf(store, ttl)
+    sd = build_schema_dict(SCHEMAS, PREFIXES)
+    result = validate_and_execute(
+        "PREFIX ex: <http://example.org/>\nSELECT ?w WHERE { ?w a ex:Widget }",
+        store, sd, PREFIXES,
+    )
+    assert len(result.rows) > 0
+    log_file = data_dir / "diagnostics" / "zero_results.jsonl"
+    assert not log_file.exists()
