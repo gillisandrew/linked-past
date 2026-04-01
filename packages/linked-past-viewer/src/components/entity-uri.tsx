@@ -16,7 +16,7 @@ function toHttps(uri: string): string {
   return uri.replace(/^http:\/\//, "https://");
 }
 
-export function EntityUri({ uri, display }: { uri: string; display?: string }) {
+export function EntityUri({ uri, display, showBadge = true }: { uri: string; display?: string; showBadge?: boolean }) {
   const dataset = datasetForUri(uri);
   const [open, setOpen] = useState(false);
   const { data, isLoading } = useEntityQuery(uri, open);
@@ -42,7 +42,7 @@ export function EntityUri({ uri, display }: { uri: string; display?: string }) {
         ) : (
           <code className="text-xs text-primary underline">{display ?? shortUri(uri)}</code>
         )}
-        {dataset && <DatasetBadge dataset={dataset} />}
+        {showBadge && dataset && <DatasetBadge dataset={dataset} />}
       </PopoverTrigger>
       <PopoverContent
         className="p-0 w-auto"

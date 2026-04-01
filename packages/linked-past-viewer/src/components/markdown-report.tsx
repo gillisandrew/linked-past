@@ -12,7 +12,7 @@ import { EntityUri } from "./entity-uri";
 function MarkdownLink({ href, children }: ComponentPropsWithoutRef<"a">) {
   if (href && datasetForUri(href)) {
     const display = typeof children === "string" ? children : undefined;
-    return <EntityUri uri={href} display={display} />;
+    return <EntityUri uri={href} display={display} showBadge={false} />;
   }
 
   return (
