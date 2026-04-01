@@ -222,6 +222,26 @@ def _run_heuristics(
                     )
                     break
 
+    # 4b. Date string comparison without type cast — catches "-0100" compared as string
+    if date_preds:
+        untyped_date = re.compile(
+            r"""FILTER\s*\(.*?\?(\w+)\s*[<>=!]+\s*"(-?\d{4})"(?!\s*\^\^)""",
+            re.IGNORECASE,
+        )
+        for match in untyped_date.finditer(sparql):
+            var_name = match.group(1)
+            year_val = match.group(2)
+            for pred_uri in var_preds.get(var_name, []):
+                if pred_uri in date_preds:
+                    pred_local = _local_name(pred_uri)
+                    hints.append(
+                        f'Diagnostic: Comparing \'{pred_local}\' as a plain string "{year_val}" '
+                        f"will give wrong results for date ranges (string ordering ≠ chronological). "
+                        f"Use xsd:integer cast: FILTER(xsd:integer(?{var_name}) >= {int(year_val)}) "
+                        f'or typed literal: FILTER(?{var_name} >= "{year_val}"^^xsd:gYear).'
+                    )
+                    break
+
     # 5. String literal vs URI mismatch in FILTER
     var_range_types: dict[str, list[str]] = {}
     for s, p, o in triples:

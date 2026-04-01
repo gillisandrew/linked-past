@@ -8,11 +8,37 @@ tips:
     classes: ["CoinType"]
 
   - title: "date_encoding"
-    body: "Dates use xsd:gYear. Republican dates are negative: '100 BC' = '-0099'. Use FILTER with xsd:gYear cast for date ranges."
+    body: |
+      Dates are stored as xsd:gYear strings with 4-digit zero-padding.
+      Republican dates are negative: 100 BC = "-0099", 44 BC = "-0043".
+      IMPORTANT: String comparison does NOT work for date ranges because
+      "-0100" < "-0043" is TRUE as strings but WRONG chronologically.
+      Always cast to integer for comparisons:
+        FILTER(xsd:integer(?startDate) >= -100 && xsd:integer(?startDate) <= -44)
+      Or cast to xsd:gYear:
+        FILTER(?startDate >= "-0100"^^xsd:gYear)
     classes: ["CoinType"]
 
   - title: "obverse_reverse_fragments"
-    body: "nmo:hasObverse and nmo:hasReverse link to fragment URIs (e.g., crro:rrc-44.5#obverse). These contain iconographic descriptions and legends accessible via nmo:hasPortrait, nmo:hasLegend."
+    body: |
+      nmo:hasObverse and nmo:hasReverse link to fragment URIs (e.g., crro:rrc-44.5#obverse).
+      These fragments contain iconographic descriptions and legends — you MUST join through them:
+        WRONG: ?type nmo:hasPortrait ?portrait .
+        RIGHT: ?type nmo:hasObverse ?obv . ?obv nmo:hasPortrait ?portrait .
+      Available fragment properties: nmo:hasPortrait, dcterms:description, nmo:hasLegend.
+    classes: ["CoinType"]
+
+  - title: "intermediate_resource_pattern"
+    body: |
+      CRRO coin types use intermediate resources for obverse/reverse details.
+      Do NOT query properties like nmo:hasPortrait, nmo:hasLegend, or dcterms:description
+      directly on the TypeSeriesItem. You must go through nmo:hasObverse or nmo:hasReverse first:
+        ?type nmo:hasObverse ?obv .
+        ?obv nmo:hasPortrait ?portrait .
+        ?obv dcterms:description ?desc .
+      Direct properties on TypeSeriesItem include: nmo:hasIssuer, nmo:hasMint,
+      nmo:hasDenomination, nmo:hasMaterial, nmo:hasStartDate, nmo:hasEndDate,
+      nmo:hasManufacture, skos:prefLabel, dcterms:source.
     classes: ["CoinType"]
 
   - title: "denomination_mint_material_are_nomisma_concepts"

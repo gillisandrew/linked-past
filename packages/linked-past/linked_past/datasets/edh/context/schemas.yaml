@@ -46,9 +46,27 @@ classes:
 
   Person:
     label: "Person"
-    comment: "A person attested in an EDH inscription."
-    uri: "edh:person"
+    comment: "A person attested in an EDH inscription. Uses LAWD (Linking Ancient World Data) ontology."
+    uri: "lawd:Person"
     properties:
       - pred: "rdfs:label"
         range: "xsd:string"
         comment: "Person name as attested"
+
+  PersonAttestation:
+    label: "Person Attestation"
+    comment: "Links a Person to the Inscription where they are attested. Each person-inscription pair creates one attestation."
+    uri: "lawd:PersonAttestation"
+    properties:
+      - pred: "lawd:hasAttestation"
+        range: "lawd:PersonAttestation"
+        comment: "Links from Person to their attestation record"
+
+  Place:
+    label: "Place"
+    comment: "A geographic place in the EDH gazetteer, typically an ancient findspot or province. Uses LAWD ontology."
+    uri: "lawd:Place"
+    properties:
+      - pred: "rdfs:label"
+        range: "xsd:string"
+        comment: "Place name"

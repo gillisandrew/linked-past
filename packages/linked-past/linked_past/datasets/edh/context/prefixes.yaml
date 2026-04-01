@@ -1,7 +1,7 @@
 prefixes:
   epi: "http://edh-www.adw.uni-heidelberg.de/lod/ontology#"
   edh: "http://edh-www.adw.uni-heidelberg.de/edh/"
-  lawd: "http://lawd.info/ontology/1.0/"
+  lawd: "http://lawd.info/ontology/"
   nmo: "http://nomisma.org/ontology#"
   skos: "http://www.w3.org/2004/02/skos/core#"
   dcterms: "http://purl.org/dc/terms/"
