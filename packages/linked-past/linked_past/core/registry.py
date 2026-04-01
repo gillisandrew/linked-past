@@ -158,6 +158,11 @@ class DatasetRegistry:
             if void_meta:
                 meta = self._metadata.setdefault(name, {})
                 meta["void"] = void_meta
+                # Pass class counts to plugin for validation hints
+                plugin = self._plugins.get(name)
+                if plugin and "classPartitions" in void_meta:
+                    counts = {cp["class"]: int(cp["entities"]) for cp in void_meta["classPartitions"]}
+                    plugin.set_void_class_counts(counts)
                 logger.info("Loaded VoID for %s: %s triples, %s classes",
                             name, void_meta.get("triples", "?"), void_meta.get("classes", "?"))
             del vs

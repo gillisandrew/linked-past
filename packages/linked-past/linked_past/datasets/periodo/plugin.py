@@ -79,7 +79,8 @@ class PeriodOPlugin(DatasetPlugin):
         return result
 
     def validate(self, sparql: str) -> ValidationResult:
-        hints = validate_semantics(sparql, self._schema_dict)
+        class_counts = getattr(self, "_class_counts", None)
+        hints = validate_semantics(sparql, self._schema_dict, class_counts=class_counts)
         return ValidationResult(valid=True, sparql=sparql, suggestions=hints)
 
     def get_relevant_context(self, sparql: str) -> str:

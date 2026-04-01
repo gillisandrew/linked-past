@@ -100,6 +100,10 @@ class DatasetPlugin(ABC):
         """Compare local vs upstream. Returns None if up to date."""
         return None
 
+    def set_void_class_counts(self, class_counts: dict[str, int]) -> None:
+        """Store VoID class counts for validation hints."""
+        self._class_counts = class_counts
+
     def set_auto_schema(self, auto_schema: dict | None) -> None:
         """Merge auto-generated schema classes into this plugin's schemas.
 
