@@ -53,7 +53,7 @@ export function EntityPopoverContent({ data }: { data: EntityData }) {
   const topProps = humanProps.slice(0, 5);
 
   return (
-    <Card className="border-0 shadow-none w-[320px]">
+    <Card className="border-0 shadow-none w-[420px]">
       <CardHeader className="p-3 pb-1">
         <div className="flex items-center gap-1.5">
           {data.dataset && <DatasetBadge dataset={data.dataset} />}
