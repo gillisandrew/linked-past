@@ -4,6 +4,7 @@ export type QueryData = {
   sparql: string;
   row_count: number;
   prefix_map?: Record<string, string>;
+  title?: string | null;
 };
 
 export type EntityData = {
@@ -36,9 +37,15 @@ export type ReportData = {
   markdown: string;
 };
 
+type BaseMessage = {
+  seq: number;
+  dataset: string | null;
+  timestamp: string;
+};
+
 export type ViewerMessage =
-  | { type: "query"; dataset: string | null; timestamp: string; data: QueryData }
-  | { type: "entity"; dataset: string | null; timestamp: string; data: EntityData }
-  | { type: "links"; dataset: string | null; timestamp: string; data: LinksData }
-  | { type: "search"; dataset: string | null; timestamp: string; data: SearchData }
-  | { type: "report"; dataset: string | null; timestamp: string; data: ReportData };
+  | (BaseMessage & { type: "query"; data: QueryData })
+  | (BaseMessage & { type: "entity"; data: EntityData })
+  | (BaseMessage & { type: "links"; data: LinksData })
+  | (BaseMessage & { type: "search"; data: SearchData })
+  | (BaseMessage & { type: "report"; data: ReportData });

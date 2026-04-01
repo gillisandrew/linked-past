@@ -322,6 +322,7 @@ async def _push_to_viewer(app: AppContext, tool_name: str, dataset: str | None, 
     from datetime import datetime, timezone
 
     message = json.dumps({
+        "seq": app.viewer.next_seq(),
         "type": tool_name,
         "dataset": dataset,
         "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -616,8 +617,8 @@ def create_mcp_server() -> FastMCP:
         return base + plugin.get_relevant_context(fixed_sparql)
 
     @mcp.tool()
-    async def query(ctx: Context, sparql: str, dataset: str, timeout: int | None = None) -> str:
-        """Validate and execute a SPARQL query against a dataset's local RDF store. Returns results in tabular format with dataset citation."""
+    async def query(ctx: Context, sparql: str, dataset: str, timeout: int | None = None, title: str | None = None) -> str:
+        """Validate and execute a SPARQL query against a dataset's local RDF store. Returns results in tabular format with dataset citation. Optional title appears in the viewer feed header."""
         t0 = time.monotonic()
         app: AppContext = ctx.request_context.lifespan_context
         plugin = app.registry.get_plugin(dataset)
@@ -661,6 +662,7 @@ def create_mcp_server() -> FastMCP:
                 "sparql": result.sparql,
                 "row_count": len(result.rows),
                 "prefix_map": prefix_map,
+                "title": title,
             })
         return output
 

@@ -34,6 +34,7 @@ class ViewerManager:
         self._clients: set[WebSocket] = set()
         self._active: bool = False
         self._history: list[str] = []
+        self._seq: int = 0
         self.app_context = app_context
 
     # ── Properties ────────────────────────────────────────────────────────────
@@ -53,6 +54,11 @@ class ViewerManager:
         """All messages broadcast since activation."""
         return list(self._history)
 
+    def next_seq(self) -> int:
+        """Return the next sequence number."""
+        self._seq += 1
+        return self._seq
+
     # ── Lifecycle ─────────────────────────────────────────────────────────────
 
     def activate(self) -> None:
@@ -63,6 +69,7 @@ class ViewerManager:
     async def deactivate(self) -> None:
         """Send close frames to all clients, clear the client set, go inactive."""
         self._history.clear()
+        self._seq = 0
         for ws in list(self._clients):
             try:
                 await ws.close()

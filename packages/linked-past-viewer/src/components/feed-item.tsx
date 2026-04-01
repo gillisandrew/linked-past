@@ -24,6 +24,9 @@ export function FeedItem({
     <Collapsible open={open} onOpenChange={setOpen} className="border rounded-lg mb-3 overflow-hidden">
       <div className="flex items-center gap-2 px-3 py-2 bg-muted/50 text-sm">
         <CollapsibleTrigger className="flex items-center gap-2 flex-1 cursor-pointer select-none hover:opacity-80">
+          <span className="text-muted-foreground text-[11px] tabular-nums w-5 text-right">
+            {message.seq}
+          </span>
           <span className="bg-primary text-primary-foreground px-2 py-0.5 rounded text-[11px] font-semibold uppercase">
             {message.type}
           </span>
