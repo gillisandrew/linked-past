@@ -6,6 +6,7 @@ career, geography, temporal overlap) using weighted linear combination.
 
 from __future__ import annotations
 
+import logging
 import re
 from dataclasses import dataclass, field
 
@@ -17,6 +18,8 @@ from linked_past.core.onomastics import (
     parse_roman_name,
     transliterate_greek,
 )
+
+logger = logging.getLogger(__name__)
 
 WEIGHTS = {
     "filiation": 0.4,
@@ -272,6 +275,7 @@ class PersonDisambiguator:
 
         candidates_signals: list of (dprr_uri, dprr_label, signals_dict)
         """
+        logger.info("rank_candidates: scoring %d candidates", len(candidates_signals))
         scored = []
         for dprr_uri, dprr_label, signals in candidates_signals:
             score = self._compute_weighted_score(signals)
@@ -291,6 +295,11 @@ class PersonDisambiguator:
                 signals=signals,
             ))
 
+        if results:
+            logger.info(
+                "rank_candidates: top=%s score=%.3f confidence=%s",
+                results[0].dprr_uri, results[0].score, results[0].confidence,
+            )
         return results
 
     def disambiguate(
@@ -527,7 +536,9 @@ def fetch_dprr_candidates(dprr_store, nomen: str) -> list[dict]:
       OPTIONAL {{ ?person vocab:hasEraTo ?eraTo }}
     }}
     """
-    return execute_query(dprr_store, sparql)
+    rows = execute_query(dprr_store, sparql)
+    logger.debug("fetch_dprr_candidates: rows=%d nomen=%s", len(rows), nomen)
+    return rows
 
 
 def fetch_dprr_offices(dprr_store, person_uri: str) -> list[dict]:
@@ -546,6 +557,7 @@ def fetch_dprr_offices(dprr_store, person_uri: str) -> list[dict]:
     }}
     """
     rows = execute_query(dprr_store, sparql)
+    logger.debug("fetch_dprr_offices: rows=%d person=%s", len(rows), person_uri)
     return [{
         "office": r.get("officeName", ""),
         "date_start": int(r["dateStart"]) if r.get("dateStart") else None,
@@ -586,6 +598,7 @@ def fetch_dprr_family(dprr_store, person_uri: str) -> dict[str, str | None]:
     LIMIT 1
     """
     rows = execute_query(dprr_store, sparql)
+    logger.debug("fetch_dprr_family: rows=%d person=%s", len(rows), person_uri)
     result: dict[str, str | None] = {"father_praenomen": None, "grandfather_praenomen": None}
     for r in rows:
         father_label = r.get("fatherPrae", "")
@@ -611,6 +624,7 @@ def fetch_dprr_province_pleiades(dprr_store, linkage, person_uri: str) -> list[s
     }}
     """
     rows = execute_query(dprr_store, sparql)
+    logger.debug("fetch_dprr_province_pleiades: rows=%d person=%s", len(rows), person_uri)
     pleiades_uris = []
     for r in rows:
         province_uri = r.get("province", "")
