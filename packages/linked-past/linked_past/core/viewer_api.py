@@ -125,7 +125,14 @@ async def entity_handler(request: Request) -> JSONResponse | PlainTextResponse:
                     f"  FILTER(!isLiteral(?obj) || lang(?obj) = '' || lang(?obj) = 'en' || lang(?obj) = 'la') "
                     f"}} LIMIT 100",
                 )
-                return [{"pred": r["pred"], "obj": r["obj"] or ""} for r in rows]
+                seen = set()
+                deduped = []
+                for r in rows:
+                    key = (r["pred"], r["obj"] or "")
+                    if key not in seen:
+                        seen.add(key)
+                        deduped.append({"pred": key[0], "obj": key[1]})
+                return deduped
 
             properties = _query_props(canonical_uri)
             # If no results, try the opposite scheme (store may use different scheme than registry)
