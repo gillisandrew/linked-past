@@ -23,15 +23,29 @@ _VOID_PREFIXES = """\
 
 
 def _longest_common_prefix(uris: list[str]) -> str:
-    """Compute longest common prefix of a list of URI strings."""
+    """Compute longest common prefix of a list of URI strings.
+
+    Returns empty string if the prefix is too generic (just a scheme like
+    "http://" with no authority). A useful URI space must include at least
+    the scheme and host (e.g., "http://romanrepublic.ac.uk/rdf/").
+    """
     if not uris:
         return ""
     shortest = min(uris, key=len)
+    prefix = shortest
     for i, char in enumerate(shortest):
         for uri in uris:
             if uri[i] != char:
-                return shortest[:i]
-    return shortest
+                prefix = shortest[:i]
+                break
+        else:
+            continue
+        break
+    # Reject if it's just a scheme with no host
+    stripped = prefix.rstrip("/")
+    if stripped in ("http:", "https:", "http:/", "https:/", "http://", "https://"):
+        return ""
+    return prefix
 
 
 @dataclass
