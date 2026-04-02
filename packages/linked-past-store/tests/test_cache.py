@@ -282,7 +282,7 @@ class TestLayerAwarePull:
         manifest_json = json.dumps(SAMPLE_MANIFEST)
         download_calls = []
 
-        def fake_blob_fetch(ref, digest, outpath):
+        def fake_blob_fetch(ref, digest, outpath, **kwargs):
             download_calls.append(digest)
             Path(outpath).write_text(f"content of {digest}")
 

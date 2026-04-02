@@ -208,7 +208,12 @@ class ArtifactCache:
                     ) as tmp_file:
                         tmp_path = Path(tmp_file.name)
                     try:
-                        self._download_layer(ref, layer.digest, str(tmp_path))
+                        self._download_layer(
+                            ref, layer.digest, str(tmp_path),
+                            filename=layer.filename,
+                            expected_size=layer.size,
+                            progress_lock=lock,
+                        )
                         self.put_layer(layer.digest, layer.filename, tmp_path)
                     finally:
                         tmp_path.unlink(missing_ok=True)
@@ -362,14 +367,32 @@ class ArtifactCache:
 
         return blob_dir
 
-    def _download_layer(self, ref: str, digest: str, outpath: str) -> None:
-        """Download a single layer blob by digest and verify its content hash."""
+    def _download_layer(
+        self, ref: str, digest: str, outpath: str,
+        filename: str = "", expected_size: int = 0,
+        progress_lock: object | None = None,
+    ) -> None:
+        """Download a single layer blob by digest with streaming progress."""
         repo = ref.rsplit(":", 1)[0]
         try:
             client = oras.client.OrasClient()
-            response = client.get_blob(repo, digest)
+            response = client.get_blob(repo, digest, stream=True)
+            downloaded = 0
+            last_pct = -1
             with open(outpath, "wb") as f:
-                f.write(response.content)
+                for chunk in response.iter_content(chunk_size=256 * 1024):
+                    f.write(chunk)
+                    downloaded += len(chunk)
+                    if expected_size > 1_000_000 and progress_lock:
+                        pct = int(downloaded * 100 / expected_size) // 10 * 10
+                        if pct > last_pct:
+                            last_pct = pct
+                            with progress_lock:
+                                print(
+                                    f"  {filename:20s} {pct}% ({downloaded // 1_000_000}/"
+                                    f"{expected_size // 1_000_000} MB)",
+                                    flush=True,
+                                )
         except Exception as e:
             logger.warning("Blob fetch failed for %s: %s", digest[:20], e)
             raise
