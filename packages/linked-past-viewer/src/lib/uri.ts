@@ -26,7 +26,41 @@ export function datasetForUri(uri: string): string | null {
   return null;
 }
 
+/**
+ * Compress a full URI to prefixed form using known namespace prefixes.
+ * Falls back to the last path/fragment segment if no prefix matches.
+ *
+ * Examples:
+ *   http://nomisma.org/id/rome → nm:rome
+ *   http://romanrepublic.ac.uk/rdf/entity/Person/1 → entity:Person/1
+ *   http://unknown.org/foo → foo
+ */
+const COMPRESS_PREFIXES: [string, string][] = [
+  ["http://romanrepublic.ac.uk/rdf/ontology#", "vocab:"],
+  ["http://romanrepublic.ac.uk/rdf/entity/", "entity:"],
+  ["http://nomisma.org/ontology#", "nmo:"],
+  ["http://nomisma.org/id/", "nm:"],
+  ["http://numismatics.org/crro/id/", "crro:"],
+  ["http://numismatics.org/ocre/id/", "ocre:"],
+  ["https://pleiades.stoa.org/places/", "pleiades:"],
+  ["http://n2t.net/ark:/99152/", "periodo:"],
+  ["http://edh-www.adw.uni-heidelberg.de/edh/", "edh:"],
+  ["https://edh-www.adw.uni-heidelberg.de/edh/", "edh:"],
+  ["http://www.w3.org/2004/02/skos/core#", "skos:"],
+  ["http://www.w3.org/2000/01/rdf-schema#", "rdfs:"],
+  ["http://www.w3.org/1999/02/22-rdf-syntax-ns#", "rdf:"],
+  ["http://xmlns.com/foaf/0.1/", "foaf:"],
+  ["http://purl.org/dc/terms/", "dcterms:"],
+  ["http://www.w3.org/ns/org#", "org:"],
+  ["http://lawd.info/ontology/", "lawd:"],
+  ["http://www.w3.org/2003/01/geo/wgs84_pos#", "geo:"],
+];
+
 export function shortUri(uri: string): string {
+  for (const [ns, prefix] of COMPRESS_PREFIXES) {
+    if (uri.startsWith(ns)) return prefix + uri.slice(ns.length);
+  }
+  // Fallback: last path segment or fragment
   return uri.split("/").pop()?.split("#").pop() ?? uri;
 }
 
