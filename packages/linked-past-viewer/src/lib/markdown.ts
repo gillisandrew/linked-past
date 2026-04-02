@@ -1,19 +1,36 @@
 import type { ViewerMessage } from "./types";
+import { expandPrefixedUri, isEntityUri, markdownLink } from "./uri";
 
 /**
  * Convert query rows to a markdown table string.
+ * Entity URIs in cell values are rendered as markdown links.
  */
 export function rowsToMarkdown(
   columns: string[],
   rows: Record<string, string>[],
+  prefixMap?: Record<string, string>,
 ): string {
   if (columns.length === 0 || rows.length === 0) return "_No results_";
   const header = `| ${columns.join(" | ")} |`;
   const sep = `| ${columns.map(() => "---").join(" | ")} |`;
   const body = rows
-    .map((row) => `| ${columns.map((c) => row[c] ?? "").join(" | ")} |`)
+    .map((row) => `| ${columns.map((c) => {
+      const val = row[c] ?? "";
+      return isEntityUri(val) ? markdownLink(val, prefixMap) : val;
+    }).join(" | ")} |`)
     .join("\n");
   return `${header}\n${sep}\n${body}`;
+}
+
+/**
+ * Format a URI value for markdown — linked if resolvable, backtick-quoted otherwise.
+ */
+function mdUri(uri: string, prefixMap?: Record<string, string>): string {
+  const full = expandPrefixedUri(uri, prefixMap ?? {});
+  if (full.startsWith("http://") || full.startsWith("https://")) {
+    return markdownLink(full, prefixMap);
+  }
+  return `\`${uri}\``;
 }
 
 /**
@@ -35,6 +52,7 @@ export function messageToMarkdown(msg: ViewerMessage): string {
 
   switch (msg.type) {
     case "query": {
+      const prefixMap = msg.data.prefix_map;
       const parts = [header];
       if (msg.data.title) {
         parts.push(`**${msg.data.title}**`);
@@ -42,7 +60,7 @@ export function messageToMarkdown(msg: ViewerMessage): string {
       if (msg.data.sparql) {
         parts.push("```sparql", msg.data.sparql, "```");
       }
-      parts.push(rowsToMarkdown(msg.data.columns, msg.data.rows));
+      parts.push(rowsToMarkdown(msg.data.columns, msg.data.rows, prefixMap));
       parts.push(`_${msg.data.row_count} row${msg.data.row_count !== 1 ? "s" : ""}_`);
       return parts.join("\n\n");
     }
@@ -56,7 +74,8 @@ export function messageToMarkdown(msg: ViewerMessage): string {
         .slice(0, 10)
         .map((p) => {
           const pred = p.pred.split("/").pop()?.split("#").pop() ?? p.pred;
-          return `- **${pred}:** ${p.obj}`;
+          const val = isEntityUri(p.obj) ? mdUri(p.obj) : p.obj;
+          return `- **${pred}:** ${val}`;
         })
         .join("\n");
 
@@ -64,17 +83,17 @@ export function messageToMarkdown(msg: ViewerMessage): string {
         ? `\n\n_${msg.data.xrefs.length} cross-reference${msg.data.xrefs.length !== 1 ? "s" : ""}_`
         : "";
 
-      return `${header}\n\n**${msg.data.name}** \`${msg.data.uri}\`${metaLine}\n\n${props}${xrefs}`;
+      return `${header}\n\n**${msg.data.name}** ${mdUri(msg.data.uri)}${metaLine}\n\n${props}${xrefs}`;
     }
     case "links": {
       const links = msg.data.links
-        .map((l) => `- ${l.confidence} | ${l.relationship} → \`${l.target}\``)
+        .map((l) => `- ${l.confidence} | ${l.relationship} → ${mdUri(l.target)}`)
         .join("\n");
-      return `${header}\n\nSource: \`${msg.data.uri}\`\n\n${links || "_No links_"}`;
+      return `${header}\n\nSource: ${mdUri(msg.data.uri)}\n\n${links || "_No links_"}`;
     }
     case "search": {
       const results = msg.data.results
-        .map((r) => `- **${r.label}** \`${r.uri}\` (${r.dataset})`)
+        .map((r) => `- **${r.label}** ${mdUri(r.uri)} (${r.dataset})`)
         .join("\n");
       const count = msg.data.results.length;
       return `${header}\n\nQuery: "${msg.data.query_text}" — ${count} result${count !== 1 ? "s" : ""}\n\n${results || "_No results_"}`;

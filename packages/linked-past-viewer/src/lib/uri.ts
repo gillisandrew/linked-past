@@ -65,6 +65,21 @@ export function shortUri(uri: string): string {
 }
 
 /**
+ * Format a URI as a markdown link: [prefixed](https://full-uri).
+ * Converts http:// to https:// for the link target.
+ * Returns plain text if the URI can't be resolved to a full URL.
+ */
+export function markdownLink(uri: string, prefixMap?: Record<string, string>): string {
+  const full = expandPrefixedUri(uri, prefixMap ?? {});
+  const short = shortUri(full);
+  if (full.startsWith("http://") || full.startsWith("https://")) {
+    const href = full.replace(/^http:\/\//, "https://");
+    return `[${short}](${href})`;
+  }
+  return `\`${short}\``;
+}
+
+/**
  * Check if a value looks like a prefixed URI (e.g., "entity:Person/123", "vocab:hasName").
  * Must have a prefix part, a colon, and a local part with no spaces.
  * Excludes plain text like "Province: provincia declined".
