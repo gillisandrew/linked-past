@@ -150,14 +150,56 @@ def materialize(store: Store) -> int:
     if not has_axioms:
         return 0
 
-    # Serialize store to temp Turtle file (reasonable only reads ttl/n3)
+    # Collect predicates and classes involved in RDFS axiom chains.
+    # Only serialize triples relevant to inference — avoids loading the
+    # entire store into the reasoner (which OOMs on large datasets like EDH).
+    axiom_rows = list(store.query(
+        "SELECT ?sub ?super ?type WHERE { "
+        "  { ?sub <http://www.w3.org/2000/01/rdf-schema#subPropertyOf> ?super . BIND('prop' AS ?type) } "
+        "  UNION "
+        "  { ?sub <http://www.w3.org/2000/01/rdf-schema#subClassOf> ?super . BIND('class' AS ?type) } "
+        "}"
+    ))
+
+    sub_props = set()
+    sub_classes = set()
+    for row in axiom_rows:
+        sub_uri = str(row[0]).strip("<>")
+        super_uri = str(row[1]).strip("<>")
+        if row[2].value == "prop":
+            sub_props.add(sub_uri)
+            sub_props.add(super_uri)
+        else:
+            sub_classes.add(sub_uri)
+            sub_classes.add(super_uri)
+
+    # Build CONSTRUCT that extracts only inference-relevant triples:
+    # 1. The axiom triples themselves (subPropertyOf, subClassOf)
+    # 2. Instance triples using sub-properties (e.g., ?s skos:prefLabel ?o)
+    # 3. Type triples for sub-classes (e.g., ?s a nmo:Hoard)
+    _RDF_TYPE = "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>"
+    _SUB_PROP = "<http://www.w3.org/2000/01/rdf-schema#subPropertyOf>"
+    _SUB_CLASS = "<http://www.w3.org/2000/01/rdf-schema#subClassOf>"
+    parts = [
+        f"{{ ?s ?p ?o . FILTER(?p = {_SUB_PROP} || ?p = {_SUB_CLASS}) }}",
+    ]
+    if sub_props:
+        prop_values = " ".join(f"<{p}>" for p in sub_props)
+        parts.append(f"{{ ?s ?p ?o . VALUES ?p {{ {prop_values} }} }}")
+    if sub_classes:
+        class_values = " ".join(f"<{c}>" for c in sub_classes)
+        parts.append(
+            f"{{ ?s {_RDF_TYPE} ?o . VALUES ?o {{ {class_values} }} . BIND({_RDF_TYPE} AS ?p) }}"
+        )
+
+    construct_sparql = "CONSTRUCT { ?s ?p ?o } WHERE { " + " UNION ".join(parts) + " }"
+
     tmp = tempfile.NamedTemporaryFile(suffix=".ttl", delete=False)
     try:
-        quads = store.query("CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o }")
+        quads = store.query(construct_sparql)
         with open(tmp.name, "wb") as f:
             serialize(quads, f, format=RdfFormat.TURTLE)
 
-        # Run OWL2 RL reasoning
         r = reasonable.PyReasoner()
         r.load_file(tmp.name)
         inferred = r.reason()

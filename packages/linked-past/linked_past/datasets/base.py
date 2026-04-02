@@ -103,8 +103,11 @@ class DatasetPlugin:
         from rdfs:subPropertyOf, rdfs:subClassOf, and other axioms present
         in the data.
         """
+        import logging
+
         from linked_past.core.store import materialize
 
+        load_logger = logging.getLogger(__name__)
         data_dir = rdf_path.parent
         ttl_files = [f for f in sorted(data_dir.glob("*.ttl")) if not f.name.startswith("_")]
         for ttl in ttl_files:
@@ -118,7 +121,10 @@ class DatasetPlugin:
         if bundled_dir.exists():
             for ont in sorted(bundled_dir.glob("*.ttl")):
                 store.bulk_load(path=str(ont), format=self.rdf_format)
-        materialize(store)
+        try:
+            materialize(store)
+        except Exception as e:
+            load_logger.warning("Materialization failed for %s: %s (continuing without inference)", self.name, e)
         return len(store)
 
     # ------------------------------------------------------------------
