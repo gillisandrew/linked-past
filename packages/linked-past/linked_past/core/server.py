@@ -1693,18 +1693,24 @@ Use this to send formatted analysis, summaries, comparisons, or visualizations t
     return mcp
 
 
-def _cmd_serve(args):
-    """Start the MCP server."""
-    # Use uvicorn's DefaultFormatter so all log output matches its colorized
-    # "INFO:     " style.  The root handler picks up both our loggers and the
-    # MCP framework's loggers that propagate to root.
-    from uvicorn.logging import DefaultFormatter
-
+def _setup_logging():
+    """Configure structured logging for all CLI commands and the server."""
+    if logging.root.handlers:
+        return  # Already configured (e.g., tests)
+    try:
+        from uvicorn.logging import DefaultFormatter
+        fmt = "%(levelprefix)s %(name)s: %(message)s"
+    except ImportError:
+        from logging import Formatter as DefaultFormatter
+        fmt = "%(levelname)s %(name)s: %(message)s"
     handler = logging.StreamHandler()
-    handler.setFormatter(DefaultFormatter(fmt="%(levelprefix)s %(name)s: %(message)s"))
+    handler.setFormatter(DefaultFormatter(fmt=fmt))
     logging.root.addHandler(handler)
     logging.root.setLevel(logging.INFO)
 
+
+def _cmd_serve(args):
+    """Start the MCP server."""
     host = args.host
     port = args.port
 
@@ -1965,6 +1971,7 @@ def main():
     parser.add_argument("--port", type=int, default=8000, help=argparse.SUPPRESS)
 
     args = parser.parse_args()
+    _setup_logging()
 
     if args.command is None:
         # No subcommand = start server (backward compat)
