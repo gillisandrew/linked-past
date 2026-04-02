@@ -180,7 +180,7 @@ class DatasetRegistry:
                             name, void_meta.get("triples", "?"), void_meta.get("classes", "?"))
             del vs
         except Exception as e:
-            logger.debug("Could not load VoID for %s: %s", name, e)
+            logger.warning("Could not load VoID for %s: %s (validation hints unavailable)", name, e)
 
     def _load_schema(self, name: str, dataset_dir: Path) -> None:
         """Load auto-generated schema from dataset directory if present."""
@@ -202,7 +202,7 @@ class DatasetRegistry:
                     plugin.set_auto_schema(classes)
                 logger.info("Loaded auto-generated schema for %s: %d classes", name, len(classes))
         except Exception as e:
-            logger.debug("Could not load schema for %s: %s", name, e)
+            logger.warning("Could not load auto-schema for %s: %s (auto-detected classes unavailable)", name, e)
 
     def _save_registry(self, name: str, plugin: DatasetPlugin, dataset_dir: Path, triple_count: int) -> None:
         version_info = plugin.get_version_info(dataset_dir)

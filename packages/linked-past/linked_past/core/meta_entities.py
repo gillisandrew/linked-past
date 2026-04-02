@@ -254,7 +254,7 @@ class MetaEntityIndex:
                         date_range = f"{from_bc}–{to_bc}"
                     highest_office = r.get("office")
             except Exception as e:
-                logger.debug("Failed to get DPRR properties for %s: %s", dprr_uri, e)
+                logger.warning("Failed to get DPRR properties for %s: %s", dprr_uri, e)
 
         # Fall back to Nomisma label if no DPRR name
         if canonical_name == cluster_id:
