@@ -1,0 +1,14 @@
+.venv/
+.git/
+.github/
+__pycache__/
+*.pyc
+node_modules/
+packages/linked-past-viewer/node_modules/
+packages/linked-past-viewer/dist/
+docs/
+scripts/
+*.egg-info/
+.ruff_cache/
+.pytest_cache/
+dprr.ttl
