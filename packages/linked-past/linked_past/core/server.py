@@ -1726,8 +1726,91 @@ def _cmd_status(args):
         print(f"{name:12s} {status:14s} {triples:>10s}  {plugin.display_name}")
 
 
-def _cmd_rebuild(args):
-    """Clear and rebuild search index + meta-entity caches."""
+def _cmd_update(args):
+    """Re-pull dataset(s) from OCI, reload store, and rebuild search entries."""
+    import shutil
+
+    data_dir = get_data_dir()
+    registry = DatasetRegistry(data_dir=data_dir)
+    for plugin in discover_plugins():
+        registry.register(plugin)
+
+    selected = _select_datasets(registry, args, data_dir)
+    if selected is None:
+        return
+
+    force = getattr(args, "force", False)
+
+    for name in selected:
+        plugin = registry.get_plugin(name)
+        print(f"\n{'=' * 60}")
+        print(f"Updating {plugin.display_name}...")
+        print(f"{'=' * 60}")
+
+        # Delete existing store to force re-load
+        store_path = data_dir / name / "store"
+        if store_path.exists():
+            if name in registry._stores:
+                del registry._stores[name]
+            shutil.rmtree(store_path)
+
+        try:
+            registry.initialize_dataset(name, force=force)
+            meta = registry.get_metadata(name)
+            print(f"  Done: {meta.get('triple_count', '?'):,} triples loaded")
+        except Exception as e:
+            print(f"  Error: {e}")
+            continue
+
+    # Rebuild search index
+    _rebuild_search(data_dir)
+
+
+def _cmd_reload(args):
+    """Re-open stores from existing TTL files on disk (no download)."""
+    import shutil
+
+    data_dir = get_data_dir()
+    registry = DatasetRegistry(data_dir=data_dir)
+    for plugin in discover_plugins():
+        registry.register(plugin)
+
+    selected = _select_datasets(registry, args, data_dir)
+    if selected is None:
+        return
+
+    for name in selected:
+        plugin = registry.get_plugin(name)
+        dataset_dir = data_dir / name
+        store_path = dataset_dir / "store"
+
+        # Check TTL files exist
+        ttl_files = [f for f in sorted(dataset_dir.glob("*.ttl")) if not f.name.startswith("_")]
+        if not ttl_files:
+            print(f"  {name}: no TTL files in {dataset_dir}, skipping")
+            continue
+
+        print(f"  Reloading {plugin.display_name}...")
+
+        # Delete store to force re-load from disk
+        if store_path.exists():
+            if name in registry._stores:
+                del registry._stores[name]
+            shutil.rmtree(store_path)
+
+        try:
+            registry.initialize_dataset(name)
+            meta = registry.get_metadata(name)
+            print(f"  Done: {meta.get('triple_count', '?'):,} triples loaded")
+        except Exception as e:
+            print(f"  Error: {e}")
+
+    # Rebuild search index
+    _rebuild_search(data_dir)
+
+
+def _cmd_reindex(args):
+    """Rebuild search index + meta-entity caches from existing stores."""
     data_dir = get_data_dir()
 
     for db_name in ["search.db", "embeddings.db", "meta_entities.db"]:
@@ -1745,6 +1828,58 @@ def _cmd_rebuild(args):
     if ctx.meta:
         meta_count = len(ctx.meta.all_entities())
     print(f"Done: {search_count} search documents, {meta_count} meta-entities")
+
+
+def _select_datasets(registry: DatasetRegistry, args, data_dir) -> list[str] | None:
+    """Shared dataset selection logic for update/reload commands."""
+    import sys
+
+    available = registry.list_datasets()
+
+    if getattr(args, "datasets", None):
+        selected = args.datasets
+        invalid = [d for d in selected if d not in available]
+        if invalid:
+            print(f"Unknown datasets: {', '.join(invalid)}")
+            print(f"Available: {', '.join(available)}")
+            sys.exit(1)
+        return selected
+    elif getattr(args, "all", False):
+        return available
+    else:
+        # Interactive selection
+        print("Available datasets:\n")
+        for i, name in enumerate(available, 1):
+            plugin = registry.get_plugin(name)
+            from linked_past.core.store import is_initialized
+
+            store_path = data_dir / name / "store"
+            status = "installed" if is_initialized(store_path) else "not installed"
+            print(f"  {i}. {name:12s} {plugin.display_name} [{status}]")
+        print(f"\n  Data directory: {data_dir}")
+        print("\nEnter dataset names (space-separated), 'all', or Ctrl+C to cancel:")
+        try:
+            choice = input("> ").strip()
+        except (KeyboardInterrupt, EOFError):
+            print("\nCancelled.")
+            return None
+        if choice == "all":
+            return available
+        return choice.split()
+
+
+def _rebuild_search(data_dir):
+    """Rebuild search index after dataset changes."""
+    # Clear cached fingerprint to force rebuild on next server start
+    fp_path = data_dir / "search.fingerprint"
+    if fp_path.exists():
+        fp_path.unlink()
+    # Also clear the DB so it gets rebuilt fresh
+    for suffix in ("", "-wal", "-shm"):
+        p = data_dir / f"search.db{suffix}"
+        if p.exists():
+            p.unlink()
+    print("  Search index cleared (will rebuild on next server start)")
 
 
 def main():
@@ -1772,9 +1907,22 @@ def main():
     status = sub.add_parser("status", help="Show dataset installation status")
     status.set_defaults(func=_cmd_status)
 
-    # rebuild: clear caches and rebuild search index/meta-entities
-    rebuild = sub.add_parser("rebuild", help="Clear and rebuild embedding + meta-entity caches")
-    rebuild.set_defaults(func=_cmd_rebuild)
+    # update: re-pull from OCI + reload + reindex
+    update = sub.add_parser("update", help="Re-pull dataset(s) from OCI and reload")
+    update.add_argument("datasets", nargs="*", help="Dataset names to update")
+    update.add_argument("--all", action="store_true", help="Update all datasets")
+    update.add_argument("--force", action="store_true", help="Force re-pull even if unchanged")
+    update.set_defaults(func=_cmd_update)
+
+    # reload: re-open stores from disk (no download)
+    reload_ = sub.add_parser("reload", help="Re-open stores from existing TTL files on disk")
+    reload_.add_argument("datasets", nargs="*", help="Dataset names to reload")
+    reload_.add_argument("--all", action="store_true", help="Reload all datasets")
+    reload_.set_defaults(func=_cmd_reload)
+
+    # reindex: rebuild search + meta-entity caches
+    reindex = sub.add_parser("reindex", help="Rebuild search index and meta-entity caches")
+    reindex.set_defaults(func=_cmd_reindex)
 
     # Also support bare --host/--port for backward compat (no subcommand = serve)
     parser.add_argument("--host", default="127.0.0.1", help=argparse.SUPPRESS)
