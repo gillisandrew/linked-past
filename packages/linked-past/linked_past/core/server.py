@@ -382,6 +382,10 @@ def _log_tool_call(app: AppContext, tool_name: str, inputs: dict, result: str, d
         if meta:
             entry["dataset_version"] = meta
     app.session_log.append(entry)
+    logger.info(
+        "tool=%s dataset=%s duration=%dms output_len=%d",
+        tool_name, inputs.get("dataset"), duration_ms, len(result),
+    )
 
 
 async def _push_to_viewer(app: AppContext, tool_name: str, dataset: str | None, data: dict):
@@ -707,10 +711,13 @@ def create_mcp_server() -> FastMCP:
                 timeout=effective_timeout,
             )
         except asyncio.TimeoutError:
+            logger.warning("tool=query dataset=%s timeout after %ds", dataset, effective_timeout)
             return f"ERROR: Query timed out after {effective_timeout}s. Simplify the query or increase the timeout."
         except OSError as e:
+            logger.error("tool=query dataset=%s store_error: %s", dataset, e)
             return f"ERROR: Store access error: {e}"
         except Exception as e:
+            logger.error("tool=query dataset=%s error: %s", dataset, e)
             return f"ERROR: Unexpected error: {e}"
 
         if not result.success:
@@ -1212,6 +1219,7 @@ def create_mcp_server() -> FastMCP:
         """Check status, initialize unloaded datasets, or force re-download. If a dataset is registered but not yet initialized (no local data), this will download and load it. Use force=True to re-pull from the registry even if already initialized."""
         app: AppContext = ctx.request_context.lifespan_context
         registry = app.registry
+        t0 = time.monotonic()
 
         datasets_to_check = [dataset] if dataset else registry.list_datasets()
         lines = ["# Dataset Status\n"]
@@ -1279,7 +1287,9 @@ def create_mcp_server() -> FastMCP:
             lines.append("- **Status:** Up to date (or no update check available)")
             lines.append("")
 
-        return "\n".join(lines)
+        output = "\n".join(lines)
+        _log_tool_call(app, "update_dataset", {"dataset": dataset, "force": force}, output, int((time.monotonic() - t0) * 1000))
+        return output
 
     @mcp.tool()
     def export_report(ctx: Context, format: str = "markdown", path: str | None = None) -> str:
@@ -1345,6 +1355,7 @@ def create_mcp_server() -> FastMCP:
         from linked_past.core.onomastics import parse_filiation
 
         app: AppContext = ctx.request_context.lifespan_context
+        t0 = time.monotonic()
 
         # ── Build PersonContext ──────────────────────────────────────────────
         person_ctx = None
@@ -1482,7 +1493,9 @@ def create_mcp_server() -> FastMCP:
                 "`find_links(uri)` for cross-references."
             )
 
-        return "\n".join(lines)
+        output = "\n".join(lines)
+        _log_tool_call(app, "disambiguate", {"name": name, "uri": uri}, output, int((time.monotonic() - t0) * 1000))
+        return output
 
     @mcp.tool()
     def analyze_question(ctx: Context, question: str) -> str:
