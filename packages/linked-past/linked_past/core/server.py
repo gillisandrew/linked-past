@@ -1738,7 +1738,8 @@ def _cmd_init(args):
         try:
             registry.initialize_dataset(name)
             meta = registry.get_metadata(name)
-            print(f"  Done: {meta.get('triple_count', '?'):,} triples loaded")
+            tc = meta.get("triple_count", "?")
+            print(f"  Done: {tc:,} triples loaded" if isinstance(tc, int) else f"  Done: {tc} triples loaded")
         except Exception as e:
             print(f"  Error: {e}")
 
@@ -1748,10 +1749,16 @@ def _cmd_init(args):
 
 def _cmd_status(args):
     """Show status of all datasets."""
+    from linked_past_store import ArtifactCache
+
+    from linked_past.core.fetch import artifact_ref
+    from linked_past.core.store import is_initialized
+
     data_dir = get_data_dir()
     registry = DatasetRegistry(data_dir=data_dir)
     for plugin in discover_plugins():
         registry.register(plugin)
+    cache = ArtifactCache()
 
     print(f"Data directory: {data_dir}\n")
     print(f"{'Dataset':12s} {'Status':14s} {'Triples':>10s}  {'Display Name'}")
@@ -1759,19 +1766,22 @@ def _cmd_status(args):
 
     for name in registry.list_datasets():
         plugin = registry.get_plugin(name)
-        from linked_past.core.store import is_initialized
 
         store_path = data_dir / name / "store"
         if is_initialized(store_path):
-            # Load metadata
             registry.initialize_dataset(name)
             meta = registry.get_metadata(name)
-            triples = f"{meta.get('triple_count', '?'):,}"
+            tc = meta.get("triple_count", "?")
+            triples = f"{tc:,}" if isinstance(tc, int) else str(tc)
             status = "installed"
         else:
             triples = "-"
             status = "not installed"
+        ref = artifact_ref(plugin.oci_dataset, plugin.oci_version)
+        digest = cache.digest_for(ref)
+        digest_short = digest[:19] if digest else "unknown"
         print(f"{name:12s} {status:14s} {triples:>10s}  {plugin.display_name}")
+        print(f"{'':12s} {'':14s} {'':>10s}  {ref} @ {digest_short}")
 
 
 def _cmd_update(args):
@@ -1805,7 +1815,8 @@ def _cmd_update(args):
         try:
             registry.initialize_dataset(name, force=force)
             meta = registry.get_metadata(name)
-            print(f"  Done: {meta.get('triple_count', '?'):,} triples loaded")
+            tc = meta.get("triple_count", "?")
+            print(f"  Done: {tc:,} triples loaded" if isinstance(tc, int) else f"  Done: {tc} triples loaded")
         except Exception as e:
             print(f"  Error: {e}")
             continue
@@ -1849,7 +1860,8 @@ def _cmd_reload(args):
         try:
             registry.initialize_dataset(name)
             meta = registry.get_metadata(name)
-            print(f"  Done: {meta.get('triple_count', '?'):,} triples loaded")
+            tc = meta.get("triple_count", "?")
+            print(f"  Done: {tc:,} triples loaded" if isinstance(tc, int) else f"  Done: {tc} triples loaded")
         except Exception as e:
             print(f"  Error: {e}")
 
