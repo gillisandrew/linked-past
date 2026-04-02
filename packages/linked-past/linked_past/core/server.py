@@ -40,7 +40,7 @@ class AppContext:
             self.session_log = []
 
 
-def _index_dataset(search: SearchIndex, name: str, plugin: object, store=None) -> None:
+def _index_dataset(search: SearchIndex, name: str, plugin: object, store=None, registry=None) -> None:
     """Index a single dataset's context into the search index."""
     search.add(name, "dataset", f"{plugin.display_name}: {plugin.description}")
     if hasattr(plugin, "_examples"):
@@ -74,7 +74,8 @@ def _index_dataset(search: SearchIndex, name: str, plugin: object, store=None) -
     if store is None:
         return
 
-    # Bulk-index rdfs:label, skos:prefLabel, dcterms:title as entity labels
+    # Bulk-index rdfs:label, skos:prefLabel, dcterms:title as entity labels.
+    # Note: editionText (full Latin inscription) excluded — too noisy for search.
     label_predicates = [
         "http://www.w3.org/2000/01/rdf-schema#label",
         "http://www.w3.org/2004/02/skos/core#prefLabel",
@@ -83,8 +84,6 @@ def _index_dataset(search: SearchIndex, name: str, plugin: object, store=None) -
         # Pleiades alternative name forms
         "https://pleiades.stoa.org/places/vocab#nameAttested",
         "https://pleiades.stoa.org/places/vocab#nameRomanized",
-        # EDH inscription text (for person name search)
-        "http://edh-www.adw.uni-heidelberg.de/lod/ontology#editionText",
     ]
     # Add dataset-specific name predicates
     if hasattr(plugin, "_prefixes") and hasattr(plugin, "_schemas"):
@@ -125,6 +124,45 @@ def _index_dataset(search: SearchIndex, name: str, plugin: object, store=None) -
     except Exception as e:
         logger.warning("Failed to index entity labels for %s: %s", name, e)
 
+    # Enrich coin type labels with issuer/authority names from Nomisma (cross-dataset)
+    if name in ("crro", "ocre") and registry and store:
+        try:
+            nomisma_store = registry.get_store("nomisma")
+            issuer_rows = list(store.query(
+                "PREFIX nmo: <http://nomisma.org/ontology#> "
+                "PREFIX skos: <http://www.w3.org/2004/02/skos/core#> "
+                "SELECT DISTINCT ?coin ?coinLabel ?issuer WHERE { "
+                "  ?coin a nmo:TypeSeriesItem ; "
+                "        skos:prefLabel ?coinLabel ; "
+                "        nmo:hasIssuer ?issuer . "
+                "}"
+            ))
+            issuer_batch = []
+            issuer_seen = set()
+            for row in issuer_rows:
+                coin_uri = row[0].value if hasattr(row[0], "value") else str(row[0])
+                coin_label = row[1].value if hasattr(row[1], "value") else str(row[1])
+                issuer_uri = row[2].value if hasattr(row[2], "value") else str(row[2])
+                # Look up issuer label in Nomisma store
+                issuer_labels = list(nomisma_store.query(
+                    f'SELECT ?label WHERE {{ <{issuer_uri}> <http://www.w3.org/2004/02/skos/core#prefLabel> ?label . '
+                    f"FILTER(lang(?label) = 'en' || lang(?label) = '') }} LIMIT 1"
+                ))
+                if issuer_labels:
+                    issuer_name = issuer_labels[0][0].value
+                    enriched = f"{coin_label} — {issuer_name}"
+                    key = (coin_uri, enriched)
+                    if key not in issuer_seen:
+                        issuer_seen.add(key)
+                        issuer_batch.append((name, "entity_label", f"{enriched}\t{coin_uri}"))
+            if issuer_batch:
+                search.add_batch(issuer_batch)
+            logger.info("Indexed %d enriched coin types with issuer names for %s", len(issuer_batch), name)
+        except KeyError:
+            pass  # Nomisma not initialized
+        except Exception as e:
+            logger.warning("Failed to enrich %s with issuer names: %s", name, e)
+
     # Index SKOS vocabulary terms
     schemes = list(store.query(
         "PREFIX skos: <http://www.w3.org/2004/02/skos/core#> "
@@ -142,7 +180,7 @@ def _index_dataset(search: SearchIndex, name: str, plugin: object, store=None) -
             "PREFIX skos: <http://www.w3.org/2004/02/skos/core#> "
             f"SELECT ?label WHERE {{ "
             f"  ?c a skos:Concept ; skos:inScheme <{scheme_uri}> ; skos:prefLabel ?label . "
-            f"  FILTER(lang(?label) = 'en' || lang(?label) = '') "
+            f"  FILTER(lang(?label) = 'en' || lang(?label) = '' || lang(?label) = 'la') "
             f"}} {limit}"
         ))
         if not concepts:
@@ -159,7 +197,7 @@ def _index_dataset(search: SearchIndex, name: str, plugin: object, store=None) -
             f"  ?c a skos:Concept ; skos:inScheme <{scheme_uri}> ; "
             f"     skos:prefLabel ?label . "
             f"  {{ ?c skos:scopeNote ?note }} UNION {{ ?c skos:definition ?note }} "
-            f"  FILTER(lang(?label) = 'en' || lang(?label) = '') "
+            f"  FILTER(lang(?label) = 'en' || lang(?label) = '' || lang(?label) = 'la') "
             f"  FILTER(lang(?note) = 'en' || lang(?note) = '') "
             f"}}"
         ))
@@ -216,7 +254,7 @@ def _build_search_index(registry: DatasetRegistry, data_dir: Path) -> SearchInde
                 store = registry.get_store(name)
             except KeyError:
                 store = None
-            _index_dataset(search, name, plugin, store)
+            _index_dataset(search, name, plugin, store, registry=registry)
 
         # Save fingerprint for next startup
         fingerprint_path.write_text(current_fp)
@@ -1269,7 +1307,7 @@ def create_mcp_server() -> FastMCP:
                             store = registry.get_store(ds_name)
                         except KeyError:
                             store = None
-                        _index_dataset(app.search, ds_name, plugin, store)
+                        _index_dataset(app.search, ds_name, plugin, store, registry=registry)
                         lines.append("- **Search index:** rebuilt")
                 except Exception as e:
                     lines.append(f"- **Error:** {e}")
