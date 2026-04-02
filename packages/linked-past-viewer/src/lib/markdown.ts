@@ -17,23 +17,41 @@ export function rowsToMarkdown(
 }
 
 /**
+ * Format a message header line with sequence number, type, dataset, and timestamp.
+ */
+function formatHeader(msg: ViewerMessage): string {
+  const ts = new Date(msg.timestamp).toLocaleTimeString();
+  const parts = [`### #${msg.seq} ${msg.type.toUpperCase()}`];
+  if (msg.dataset) parts[0] += ` [${msg.dataset}]`;
+  parts[0] += ` — ${ts}`;
+  return parts[0];
+}
+
+/**
  * Serialize a single viewer message to markdown.
  */
 export function messageToMarkdown(msg: ViewerMessage): string {
-  const ts = new Date(msg.timestamp).toLocaleTimeString();
-  const header = `### ${msg.type}${msg.dataset ? ` (${msg.dataset})` : ""} — ${ts}`;
+  const header = formatHeader(msg);
 
   switch (msg.type) {
     case "query": {
       const parts = [header];
+      if (msg.data.title) {
+        parts.push(`**${msg.data.title}**`);
+      }
       if (msg.data.sparql) {
         parts.push("```sparql", msg.data.sparql, "```");
       }
       parts.push(rowsToMarkdown(msg.data.columns, msg.data.rows));
-      parts.push(`_${msg.data.row_count} rows_`);
+      parts.push(`_${msg.data.row_count} row${msg.data.row_count !== 1 ? "s" : ""}_`);
       return parts.join("\n\n");
     }
     case "entity": {
+      const meta: string[] = [];
+      if (msg.data.dataset) meta.push(`Dataset: ${msg.data.dataset}`);
+      if (msg.data.type_hierarchy?.length) meta.push(`Type: ${msg.data.type_hierarchy.join(" › ")}`);
+      const metaLine = meta.length ? `\n${meta.join(" · ")}` : "";
+
       const props = msg.data.properties
         .slice(0, 10)
         .map((p) => {
@@ -41,19 +59,25 @@ export function messageToMarkdown(msg: ViewerMessage): string {
           return `- **${pred}:** ${p.obj}`;
         })
         .join("\n");
-      return `${header}\n\n**${msg.data.name}** \`${msg.data.uri}\`\n\n${props}`;
+
+      const xrefs = msg.data.xrefs.length
+        ? `\n\n_${msg.data.xrefs.length} cross-reference${msg.data.xrefs.length !== 1 ? "s" : ""}_`
+        : "";
+
+      return `${header}\n\n**${msg.data.name}** \`${msg.data.uri}\`${metaLine}\n\n${props}${xrefs}`;
     }
     case "links": {
       const links = msg.data.links
         .map((l) => `- ${l.confidence} | ${l.relationship} → \`${l.target}\``)
         .join("\n");
-      return `${header}\n\n${links || "_No links_"}`;
+      return `${header}\n\nSource: \`${msg.data.uri}\`\n\n${links || "_No links_"}`;
     }
     case "search": {
       const results = msg.data.results
         .map((r) => `- **${r.label}** \`${r.uri}\` (${r.dataset})`)
         .join("\n");
-      return `${header}\n\nQuery: "${msg.data.query_text}"\n\n${results || "_No results_"}`;
+      const count = msg.data.results.length;
+      return `${header}\n\nQuery: "${msg.data.query_text}" — ${count} result${count !== 1 ? "s" : ""}\n\n${results || "_No results_"}`;
     }
     case "report": {
       const title = msg.data.title ? `**${msg.data.title}**\n\n` : "";
