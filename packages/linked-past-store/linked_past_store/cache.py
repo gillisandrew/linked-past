@@ -201,6 +201,9 @@ class ArtifactCache:
 
                 print(f"  Downloading {total} layer(s) ({_fmt_size(total_bytes)})...", flush=True)
 
+                # Shared client for connection pooling across parallel downloads
+                shared_client = oras.client.OrasClient()
+
                 def _fetch_layer(layer: LayerInfo) -> str:
                     nonlocal completed_count
                     with tempfile.NamedTemporaryFile(
@@ -213,6 +216,7 @@ class ArtifactCache:
                             filename=layer.filename,
                             expected_size=layer.size,
                             progress_lock=lock,
+                            client=shared_client,
                         )
                         self.put_layer(layer.digest, layer.filename, tmp_path)
                     finally:
@@ -371,11 +375,13 @@ class ArtifactCache:
         self, ref: str, digest: str, outpath: str,
         filename: str = "", expected_size: int = 0,
         progress_lock: object | None = None,
+        client: oras.client.OrasClient | None = None,
     ) -> None:
         """Download a single layer blob by digest with streaming progress."""
         repo = ref.rsplit(":", 1)[0]
         try:
-            client = oras.client.OrasClient()
+            if client is None:
+                client = oras.client.OrasClient()
             response = client.get_blob(repo, digest, stream=True)
             downloaded = 0
             last_pct = -1
