@@ -20,7 +20,7 @@ Scholars can ask natural language questions and receive well-cited results acros
 docker run -d \
   -v linked-past-data:/data \
   -p 8000:8000 \
-  ghcr.io/gillisandrew/dprr-tool:main
+  ghcr.io/gillisandrew/linked-past:main
 
 # Initialize datasets (first run only)
 docker exec -it <container> linked-past-server init --all
