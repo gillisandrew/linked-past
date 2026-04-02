@@ -98,11 +98,18 @@ class DatasetPlugin:
         Loads all .ttl files in rdf_path's directory, skipping _* sidecars
         (e.g. _void.ttl, _schema.yaml). Single-file datasets load just the
         one file; multi-file datasets (like EDH) load all of them.
+
+        After loading, runs RDFS/OWL2 RL materialization to infer triples
+        from rdfs:subPropertyOf, rdfs:subClassOf, and other axioms present
+        in the data.
         """
+        from linked_past.core.store import materialize
+
         data_dir = rdf_path.parent
         ttl_files = [f for f in sorted(data_dir.glob("*.ttl")) if not f.name.startswith("_")]
         for ttl in ttl_files:
             store.bulk_load(path=str(ttl), format=self.rdf_format)
+        materialize(store)
         return len(store)
 
     # ------------------------------------------------------------------
