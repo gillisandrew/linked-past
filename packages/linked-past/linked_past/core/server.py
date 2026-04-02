@@ -1000,10 +1000,20 @@ def create_mcp_server() -> FastMCP:
 
     @mcp.tool()
     async def explore_entity(ctx: Context, uri: str) -> str:
-        """Explore an entity across datasets. Returns properties from its home dataset, cross-links from the linkage graph, and suggested next steps."""
+        """Explore an entity by URI. Accepts full URIs (http://nomisma.org/id/rome) or prefixed forms (nm:rome, entity:Person/1). Returns properties from its home dataset, cross-links from the linkage graph, and suggested next steps."""
         t0 = time.monotonic()
         app: AppContext = ctx.request_context.lifespan_context
         registry = app.registry
+
+        # Expand prefixed URIs (e.g., nm:rome → http://nomisma.org/id/rome)
+        if not uri.startswith("http://") and not uri.startswith("https://") and ":" in uri:
+            prefix, local = uri.split(":", 1)
+            for ds_name in registry.list_datasets():
+                plugin = registry.get_plugin(ds_name)
+                ns = plugin.get_prefixes().get(prefix)
+                if ns:
+                    uri = ns + local
+                    break
 
         ds_name = registry.dataset_for_uri(uri)
         lines = [f"# Entity: `{uri}`\n"]
