@@ -1696,9 +1696,19 @@ def _cmd_serve(args):
     logging.root.addHandler(handler)
     logging.root.setLevel(logging.INFO)
 
+    host = args.host
+    port = args.port
+
+    print()
+    print("  \033[1mlinked-past\033[0m server ready")
+    print()
+    print(f"  \033[2m➜\033[0m  MCP:     \033[36mhttp://{host}:{port}/mcp\033[0m")
+    print(f"  \033[2m➜\033[0m  Viewer:  \033[36mhttp://{host}:{port}/viewer\033[0m")
+    print()
+
     mcp = create_mcp_server()
-    mcp.settings.host = args.host
-    mcp.settings.port = args.port
+    mcp.settings.host = host
+    mcp.settings.port = port
     mcp.run(transport="streamable-http")
 
 
