@@ -13,6 +13,26 @@ Scholars can ask natural language questions and receive well-cited results acros
 
 ## Quickstart
 
+### Docker (recommended)
+
+```bash
+# Pull and run
+docker run -d \
+  -v linked-past-data:/data \
+  -p 8000:8000 \
+  ghcr.io/gillisandrew/dprr-tool:main
+
+# Initialize datasets (first run only)
+docker exec -it <container> linked-past-server init --all
+
+# Connect with Claude Code
+claude
+```
+
+The `/data` volume persists datasets, Oxigraph stores, search indexes, and meta-entity caches across container restarts. Without a volume, data is lost when the container is removed.
+
+### From source
+
 ```bash
 # Install
 uv sync
@@ -22,6 +42,17 @@ uv run linked-past-server
 
 # In another terminal, connect with Claude Code
 claude
+```
+
+### CLI Commands
+
+```bash
+linked-past-server serve                    # Start MCP server (default)
+linked-past-server init [datasets...] --all # Download and initialize datasets
+linked-past-server status                   # Show installed datasets
+linked-past-server update [datasets...] --force  # Re-pull from OCI + reload
+linked-past-server reload [datasets...]     # Re-open stores from disk
+linked-past-server reindex                  # Rebuild search + meta-entity caches
 ```
 
 ## Development
