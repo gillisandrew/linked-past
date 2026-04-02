@@ -171,7 +171,7 @@ class ArtifactCache:
         if manifest and manifest.get("layers"):
             layers = self.parse_layers(manifest)
 
-            # Download only missing layers (docker-style progress)
+            # Download missing layers in parallel with progress
             tmp_dir = self._cache_dir / "tmp"
             tmp_dir.mkdir(parents=True, exist_ok=True)
 
@@ -182,10 +182,27 @@ class ArtifactCache:
                     return f"{n / 1_000:.1f} KB"
                 return f"{n} B"
 
-            for i, layer in enumerate(layers, 1):
-                prefix = f"  [{i}/{len(layers)}] {layer.filename:20s}"
-                if not self.has_layer(layer.digest):
-                    print(f"{prefix} Pulling... ({_fmt_size(layer.size)})", flush=True)
+            # Partition into cached vs needs-download
+            to_download = []
+            for layer in layers:
+                if self.has_layer(layer.digest):
+                    print(f"  {layer.filename:20s} Cached ({layer.digest[:12]})", flush=True)
+                else:
+                    to_download.append(layer)
+
+            if to_download:
+                import threading
+                from concurrent.futures import ThreadPoolExecutor, as_completed
+
+                lock = threading.Lock()
+                completed_count = 0
+                total = len(to_download)
+                total_bytes = sum(layer.size for layer in to_download)
+
+                print(f"  Downloading {total} layer(s) ({_fmt_size(total_bytes)})...", flush=True)
+
+                def _fetch_layer(layer: LayerInfo) -> str:
+                    nonlocal completed_count
                     with tempfile.NamedTemporaryFile(
                         dir=tmp_dir, suffix=f"_{layer.filename}", delete=False
                     ) as tmp_file:
@@ -195,9 +212,22 @@ class ArtifactCache:
                         self.put_layer(layer.digest, layer.filename, tmp_path)
                     finally:
                         tmp_path.unlink(missing_ok=True)
-                    print(f"{prefix} Done ({layer.digest[:12]})", flush=True)
-                else:
-                    print(f"{prefix} Cached ({layer.digest[:12]})", flush=True)
+                    with lock:
+                        completed_count += 1
+                        print(
+                            f"  {layer.filename:20s} Done ({_fmt_size(layer.size)}) [{completed_count}/{total}]",
+                            flush=True,
+                        )
+                    return layer.filename
+
+                with ThreadPoolExecutor(max_workers=4) as pool:
+                    futures = {pool.submit(_fetch_layer, layer): layer for layer in to_download}
+                    for future in as_completed(futures):
+                        try:
+                            future.result()
+                        except Exception as e:
+                            layer = futures[future]
+                            logger.warning("Failed to download %s: %s", layer.filename, e)
 
             # Resolve manifest digest if we didn't have it
             if not digest:
