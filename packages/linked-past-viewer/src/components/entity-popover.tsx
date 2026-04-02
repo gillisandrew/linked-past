@@ -56,7 +56,7 @@ export function EntityPopoverContent({ data }: { data: EntityData }) {
               <div key={i} className="contents">
                 <dt className="font-semibold text-muted-foreground">{humanizePredicate(p.pred)}</dt>
                 <dd className="truncate">
-                  <PropertyValue value={p.obj} showBadge={false} />
+                  <PropertyValue value={p.obj} />
                 </dd>
               </div>
             ))}

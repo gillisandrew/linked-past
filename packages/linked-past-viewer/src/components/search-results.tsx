@@ -50,7 +50,7 @@ export function SearchResults({ data }: { data: SearchData }) {
                   className="py-1 flex items-baseline gap-2 text-sm hover:bg-muted/30 rounded px-1 -mx-1"
                 >
                   <span className="font-medium flex-shrink-0">{r.label}</span>
-                  <EntityUri uri={r.uri} showBadge={false} />
+                  <EntityUri uri={r.uri} />
                 </div>
               ))}
               {!isExpanded && hiddenCount > 0 && (

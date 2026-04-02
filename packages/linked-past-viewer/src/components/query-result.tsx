@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { rowsToMarkdown } from "../lib/markdown";
 import type { QueryData } from "../lib/types";
 import { expandPrefixedUri, isEntityUri } from "../lib/uri";
@@ -12,6 +13,25 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+
+function ExpandableCell({ value, children }: { value: string; children: React.ReactNode }) {
+  const [expanded, setExpanded] = useState(false);
+  const needsTruncation = value.length > 40;
+
+  if (!needsTruncation) {
+    return <TableCell className="max-w-[300px]">{children}</TableCell>;
+  }
+
+  return (
+    <TableCell
+      className={`cursor-pointer transition-all ${expanded ? "whitespace-normal break-words" : "max-w-[300px] truncate"}`}
+      onClick={() => setExpanded(!expanded)}
+      title={expanded ? "Click to collapse" : "Click to expand"}
+    >
+      {children}
+    </TableCell>
+  );
+}
 
 export function QueryResult({ data }: { data: QueryData }) {
   const prefixMap = data.prefix_map ?? {};
@@ -41,13 +61,13 @@ export function QueryResult({ data }: { data: QueryData }) {
                   {data.columns.map((col) => {
                     const val = row[col] ?? "";
                     return (
-                      <TableCell key={col} className="max-w-[300px] truncate">
+                      <ExpandableCell key={col} value={val}>
                         {isEntityUri(val) ? (
                           <EntityUri uri={resolveUri(val)} display={val} />
                         ) : (
                           val
                         )}
-                      </TableCell>
+                      </ExpandableCell>
                     );
                   })}
                 </TableRow>

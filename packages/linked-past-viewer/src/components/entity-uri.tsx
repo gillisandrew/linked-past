@@ -27,7 +27,7 @@ function datasetStyle(dataset: string | null): React.CSSProperties {
   };
 }
 
-export function EntityUri({ uri, display, showBadge = true }: { uri: string; display?: string; showBadge?: boolean }) {
+export function EntityUri({ uri, display }: { uri: string; display?: string }) {
   const dataset = datasetForUri(uri);
   const [open, setOpen] = useState(false);
   const { data, isLoading } = useEntityQuery(uri, open);
@@ -37,7 +37,7 @@ export function EntityUri({ uri, display, showBadge = true }: { uri: string; dis
   const pill = (
     <span
       className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium cursor-pointer transition-[filter] hover:brightness-95 dark:hover:brightness-110"
-      style={showBadge ? datasetStyle(dataset) : undefined}
+      style={datasetStyle(dataset)}
     >
       {label}
     </span>

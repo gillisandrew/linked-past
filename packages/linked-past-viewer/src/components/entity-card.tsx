@@ -94,7 +94,7 @@ export function EntityCard({ data }: { data: EntityData }) {
                   <PredicateLabel pred={p.pred} meta={meta[p.pred]} />
                 </dt>
                 <dd className="break-words">
-                  <PropertyValue value={p.obj} showBadge={false} />
+                  <PropertyValue value={p.obj} />
                   {p.count && p.count > 1 && (
                     <span className="text-xs text-muted-foreground ml-1">
                       (+{p.count - 1} more)
