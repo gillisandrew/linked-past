@@ -4,6 +4,7 @@ Also runs schema diff against the previous version (if available) before pushing
 since both schemas are in memory at that point.
 """
 
+import subprocess
 import sys
 import tempfile
 from pathlib import Path
@@ -118,6 +119,33 @@ def main(dataset: str, version: str = "latest"):
         }
 
         files_to_push = [clean_ttl, tmpdir / "_void.ttl", tmpdir / "_schema.yaml"]
+
+        # Include ontology sidecar if present (needed for RDFS materialization).
+        # Datasets that depend on an external ontology (e.g., CRRO/OCRE use Nomisma)
+        # should specify ontology_url in datasets.yaml.
+        # Include ontology sidecar if present (needed for RDFS materialization).
+        # Datasets that depend on an external ontology (e.g., CRRO/OCRE use Nomisma)
+        # should specify ontology_url in datasets.yaml.
+        ontology_url = ds.get("ontology_url")
+        if ontology_url:
+            import urllib.request
+
+            ontology_path = tmpdir / "_ontology.ttl"
+            print(f"Fetching ontology from {ontology_url}...")
+            if ontology_url.endswith(".rdf"):
+                # Convert RDF/XML to Turtle
+                rdf_path = tmpdir / "_ontology.rdf"
+                urllib.request.urlretrieve(ontology_url, str(rdf_path))
+                subprocess.run(
+                    ["rapper", "-i", "rdfxml", "-o", "turtle", str(rdf_path)],
+                    stdout=open(ontology_path, "w"),
+                    stderr=subprocess.PIPE,
+                    check=True,
+                )
+            else:
+                urllib.request.urlretrieve(ontology_url, str(ontology_path))
+            print(f"Downloaded ontology ({ontology_path.stat().st_size:,} bytes)")
+            files_to_push.append(ontology_path)
 
         digest = push_dataset(clean_ref, files_to_push, annotations=annotations)
         print(f"Pushed clean: {clean_ref}")

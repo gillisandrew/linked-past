@@ -222,7 +222,7 @@ def test_materialize_idempotent(tmp_path):
         'ex:Person1 a ex:Person .\n'
     )
     load_rdf(store, ttl)
-    first = materialize(store)
+    materialize(store)
     count_after_first = len(store)
     second = materialize(store)
     assert second == 0

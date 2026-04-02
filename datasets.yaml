@@ -74,6 +74,7 @@ crro:
   ingest_script: scripts/ingest_generic.py
   fetch_url: https://numismatics.org/crro/nomisma.rdf
   source_format: rdf-xml
+  ontology_url: http://nomisma.org/ontology.ttl
   min_triple_count: 50000
   license: ODbL-1.0
   source_url: https://numismatics.org/crro/
@@ -93,6 +94,7 @@ ocre:
   ingest_script: scripts/ingest_generic.py
   fetch_url: https://numismatics.org/ocre/nomisma.rdf
   source_format: rdf-xml
+  ontology_url: http://nomisma.org/ontology.ttl
   min_triple_count: 1100000
   license: ODbL-1.0
   source_url: https://numismatics.org/ocre/

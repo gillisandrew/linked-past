@@ -109,6 +109,10 @@ class DatasetPlugin:
         ttl_files = [f for f in sorted(data_dir.glob("*.ttl")) if not f.name.startswith("_")]
         for ttl in ttl_files:
             store.bulk_load(path=str(ttl), format=self.rdf_format)
+        # Load ontology sidecar if present (needed for RDFS/OWL materialization)
+        ontology_path = data_dir / "_ontology.ttl"
+        if ontology_path.exists():
+            store.bulk_load(path=str(ontology_path), format=self.rdf_format)
         materialize(store)
         return len(store)
 
