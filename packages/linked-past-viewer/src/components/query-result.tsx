@@ -23,12 +23,14 @@ function ExpandableCell({ value, children }: { value: string; children: React.Re
   }
 
   return (
-    <TableCell
-      className={`cursor-pointer transition-all ${expanded ? "whitespace-normal break-words" : "max-w-[300px] truncate"}`}
-      onClick={() => setExpanded(!expanded)}
-      title={expanded ? "Click to collapse" : "Click to expand"}
-    >
+    <TableCell className={expanded ? "whitespace-normal break-words" : "max-w-[300px] truncate"}>
       {children}
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="ml-1 text-[10px] text-muted-foreground hover:text-foreground cursor-pointer"
+      >
+        {expanded ? "less" : "more"}
+      </button>
     </TableCell>
   );
 }

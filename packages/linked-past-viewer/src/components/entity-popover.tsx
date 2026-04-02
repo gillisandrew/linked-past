@@ -22,13 +22,19 @@ function ExpandableValue({ value, children }: { value: string; children: React.R
   const [expanded, setExpanded] = useState(false);
   const needsExpand = value.length > 35;
 
+  if (!needsExpand) {
+    return <dd>{children}</dd>;
+  }
+
   return (
-    <dd
-      className={`${needsExpand ? "cursor-pointer" : ""} ${expanded ? "whitespace-normal break-words" : "truncate"}`}
-      onClick={needsExpand ? () => setExpanded(!expanded) : undefined}
-      title={needsExpand ? (expanded ? "Click to collapse" : "Click to expand") : undefined}
-    >
+    <dd className={expanded ? "whitespace-normal break-words" : "truncate"}>
       {children}
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="ml-1 text-[10px] text-muted-foreground hover:text-foreground cursor-pointer"
+      >
+        {expanded ? "less" : "more"}
+      </button>
     </dd>
   );
 }
