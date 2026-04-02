@@ -835,30 +835,39 @@ def create_mcp_server() -> FastMCP:
         all_results = []
         fts_hit_datasets: set[str] = set()
 
-        # FTS5 entity label search (instant, uses cached index)
+        # FTS5 entity label search — per-dataset with score cutoff
         if app.search:
-            # Use AND for multi-word queries (precision), OR for single words (recall)
             terms = query_text.strip().split()
             op = "AND" if len(terms) > 1 else "OR"
-            fts_hits = app.search.search(query_text, k=50, dataset=dataset, doc_type="entity_label", operator=op)
-            seen_uris: set[str] = set()
-            for hit in fts_hits:
-                if hit["doc_type"] != "entity_label":
+            per_dataset_k = 10
+
+            for ds_name in datasets_to_search:
+                fts_hits = app.search.search(
+                    query_text, k=per_dataset_k, dataset=ds_name,
+                    doc_type="entity_label", operator=op,
+                )
+                if not fts_hits:
                     continue
-                parts = hit["text"].split("\t", 1)
-                if len(parts) != 2:
-                    continue
-                label_val, uri_val = parts
-                if uri_val in seen_uris:
-                    continue
-                seen_uris.add(uri_val)
-                ds = hit["dataset"]
-                fts_hit_datasets.add(ds)
-                all_results.append({
-                    "dataset": ds,
-                    "uri": uri_val,
-                    "label": label_val,
-                })
+                # Score cutoff: skip results scoring less than 30% of the top hit
+                top_score = fts_hits[0]["score"]
+                min_score = top_score * 0.3
+                seen_uris: set[str] = set()
+                for hit in fts_hits:
+                    if hit["score"] < min_score:
+                        break
+                    parts = hit["text"].split("\t", 1)
+                    if len(parts) != 2:
+                        continue
+                    label_val, uri_val = parts
+                    if uri_val in seen_uris:
+                        continue
+                    seen_uris.add(uri_val)
+                    fts_hit_datasets.add(ds_name)
+                    all_results.append({
+                        "dataset": ds_name,
+                        "uri": uri_val,
+                        "label": label_val,
+                    })
 
         # SPARQL fallback for datasets with no FTS hits
         for ds_name in datasets_to_search:
