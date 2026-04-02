@@ -3,11 +3,9 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { ExternalLink } from "lucide-react";
 import { useState } from "react";
 import { useEntityQuery } from "../hooks/use-entity-query";
 import { datasetForUri, shortUri } from "../lib/uri";
-import { DatasetBadge } from "./dataset-badge";
 import { EntityPopoverContent } from "./entity-popover";
 
 /**
@@ -17,6 +15,18 @@ function toHttps(uri: string): string {
   return uri.replace(/^http:\/\//, "https://");
 }
 
+/**
+ * CSS variable names for dataset-colored pills.
+ * Falls back to neutral gray for unknown datasets.
+ */
+function datasetStyle(dataset: string | null): React.CSSProperties {
+  const ds = dataset ?? "default";
+  return {
+    backgroundColor: `var(--ds-${ds}-bg, var(--ds-default-bg))`,
+    color: `var(--ds-${ds}-fg, var(--ds-default-fg))`,
+  };
+}
+
 export function EntityUri({ uri, display, showBadge = true }: { uri: string; display?: string; showBadge?: boolean }) {
   const dataset = datasetForUri(uri);
   const [open, setOpen] = useState(false);
@@ -24,10 +34,19 @@ export function EntityUri({ uri, display, showBadge = true }: { uri: string; dis
   const isFullUri = uri.startsWith("http://") || uri.startsWith("https://");
   const label = display ?? shortUri(uri);
 
+  const pill = (
+    <span
+      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium cursor-pointer transition-[filter] hover:brightness-95 dark:hover:brightness-110"
+      style={showBadge ? datasetStyle(dataset) : undefined}
+    >
+      {label}
+    </span>
+  );
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger
-        className="inline-flex items-center gap-1 cursor-pointer group"
+        className="inline-flex items-center cursor-pointer"
         onMouseEnter={() => setOpen(true)}
         onMouseLeave={() => setOpen(false)}
       >
@@ -36,16 +55,13 @@ export function EntityUri({ uri, display, showBadge = true }: { uri: string; dis
             href={toHttps(uri)}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors"
             onClick={(e) => e.stopPropagation()}
           >
-            <span className="underline underline-offset-2 decoration-primary/40">{label}</span>
-            <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-60 transition-opacity shrink-0" />
+            {pill}
           </a>
         ) : (
-          <span className="text-xs text-primary underline underline-offset-2 decoration-primary/40">{label}</span>
+          pill
         )}
-        {showBadge && dataset && <DatasetBadge dataset={dataset} />}
       </PopoverTrigger>
       <PopoverContent
         className="p-0 w-auto"

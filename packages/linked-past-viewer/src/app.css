@@ -118,6 +118,46 @@
     --sidebar-ring: oklch(0.556 0 0);
 }
 
+:root {
+    /* Dataset entity pill colors — light mode */
+    --ds-dprr-bg: oklch(0.93 0.03 250);
+    --ds-dprr-fg: oklch(0.35 0.1 250);
+    --ds-pleiades-bg: oklch(0.93 0.04 155);
+    --ds-pleiades-fg: oklch(0.35 0.1 155);
+    --ds-periodo-bg: oklch(0.93 0.04 300);
+    --ds-periodo-fg: oklch(0.35 0.1 300);
+    --ds-nomisma-bg: oklch(0.94 0.04 85);
+    --ds-nomisma-fg: oklch(0.35 0.1 85);
+    --ds-crro-bg: oklch(0.93 0.04 55);
+    --ds-crro-fg: oklch(0.38 0.12 55);
+    --ds-ocre-bg: oklch(0.93 0.04 25);
+    --ds-ocre-fg: oklch(0.38 0.12 25);
+    --ds-edh-bg: oklch(0.93 0.04 200);
+    --ds-edh-fg: oklch(0.35 0.1 200);
+    --ds-default-bg: oklch(0.95 0 0);
+    --ds-default-fg: oklch(0.4 0 0);
+}
+
+.dark {
+    /* Dataset entity pill colors — dark mode */
+    --ds-dprr-bg: oklch(0.25 0.04 250);
+    --ds-dprr-fg: oklch(0.78 0.08 250);
+    --ds-pleiades-bg: oklch(0.25 0.04 155);
+    --ds-pleiades-fg: oklch(0.78 0.08 155);
+    --ds-periodo-bg: oklch(0.25 0.04 300);
+    --ds-periodo-fg: oklch(0.78 0.08 300);
+    --ds-nomisma-bg: oklch(0.27 0.04 85);
+    --ds-nomisma-fg: oklch(0.82 0.08 85);
+    --ds-crro-bg: oklch(0.27 0.04 55);
+    --ds-crro-fg: oklch(0.82 0.1 55);
+    --ds-ocre-bg: oklch(0.27 0.04 25);
+    --ds-ocre-fg: oklch(0.82 0.1 25);
+    --ds-edh-bg: oklch(0.25 0.04 200);
+    --ds-edh-fg: oklch(0.78 0.08 200);
+    --ds-default-bg: oklch(0.25 0 0);
+    --ds-default-fg: oklch(0.7 0 0);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
