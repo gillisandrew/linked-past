@@ -1,10 +1,18 @@
+import { Wifi, WifiOff } from "lucide-react";
+
 export function ConnectionStatus({ connected }: { connected: boolean }) {
   return (
-    <span className="flex items-center gap-1.5 text-xs">
-      <span
-        className={`w-2 h-2 rounded-full ${connected ? "bg-green-500" : "bg-red-500"}`}
-      />
-      {connected ? "connected" : "disconnected"}
+    <span
+      className={`inline-flex items-center gap-1 text-xs ${
+        connected ? "text-green-600 dark:text-green-400" : "text-red-500"
+      }`}
+    >
+      {connected ? (
+        <Wifi className="w-3.5 h-3.5" />
+      ) : (
+        <WifiOff className="w-3.5 h-3.5" />
+      )}
+      <span>{connected ? "connected" : "disconnected"}</span>
     </span>
   );
 }

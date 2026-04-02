@@ -1,3 +1,11 @@
+import {
+  ArrowDownToLine,
+  ChevronsDownUp,
+  ChevronsUpDown,
+  Download,
+  Moon,
+  Sun,
+} from "lucide-react";
 import { messageToMarkdown } from "../lib/markdown";
 import type { ViewerMessage } from "../lib/types";
 
@@ -27,10 +35,11 @@ export function ExportButton({ messages, notes }: { messages: ViewerMessage[]; n
   return (
     <button
       onClick={handleExport}
-      className="text-[11px] text-muted-foreground hover:text-foreground cursor-pointer"
+      className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
       title="Export session as markdown"
     >
-      Export
+      <Download className="w-3.5 h-3.5" />
+      <span>Export</span>
     </button>
   );
 }
@@ -43,20 +52,35 @@ export function ExpandCollapseButtons({ onExpandAll, onCollapseAll }: {
     <span className="flex items-center gap-1">
       <button
         onClick={onExpandAll}
-        className="text-[11px] text-muted-foreground hover:text-foreground cursor-pointer"
+        className="inline-flex items-center gap-0.5 text-[11px] text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
         title="Expand all"
       >
-        expand all
+        <ChevronsUpDown className="w-3.5 h-3.5" />
       </button>
-      <span className="text-muted-foreground">/</span>
+      <span className="text-muted-foreground/50">/</span>
       <button
         onClick={onCollapseAll}
-        className="text-[11px] text-muted-foreground hover:text-foreground cursor-pointer"
+        className="inline-flex items-center gap-0.5 text-[11px] text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
         title="Collapse all"
       >
-        collapse all
+        <ChevronsDownUp className="w-3.5 h-3.5" />
       </button>
     </span>
+  );
+}
+
+export function AutoScrollButton({ active, onClick }: { active: boolean; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`inline-flex items-center gap-1 text-[11px] cursor-pointer transition-colors ${
+        active ? "text-primary" : "text-muted-foreground hover:text-foreground"
+      }`}
+      title={active ? "Auto-scroll ON — click to disable" : "Auto-scroll OFF — click to enable"}
+    >
+      <ArrowDownToLine className="w-3.5 h-3.5" />
+      <span>{active ? "auto-scroll" : "scroll"}</span>
+    </button>
   );
 }
 
@@ -68,10 +92,11 @@ export function DarkModeToggle() {
   return (
     <button
       onClick={toggle}
-      className="text-[11px] text-muted-foreground hover:text-foreground cursor-pointer"
+      className="text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
       title="Toggle dark mode"
     >
-      ◐
+      <Sun className="w-3.5 h-3.5 dark:hidden" />
+      <Moon className="w-3.5 h-3.5 hidden dark:block" />
     </button>
   );
 }

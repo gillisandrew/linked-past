@@ -1,9 +1,28 @@
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import {
+  Bookmark,
+  BookmarkCheck,
+  ChevronDown,
+  ChevronUp,
+  Database,
+  FileText,
+  Link2,
+  Search,
+  User,
+} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { messageToMarkdown } from "../lib/markdown";
 import type { ViewerMessage } from "../lib/types";
 import { CopyButton } from "./copy-button";
 import { DatasetBadge } from "./dataset-badge";
+
+const TYPE_ICONS: Record<string, React.ReactNode> = {
+  query: <Database className="w-3 h-3" />,
+  search: <Search className="w-3 h-3" />,
+  entity: <User className="w-3 h-3" />,
+  links: <Link2 className="w-3 h-3" />,
+  report: <FileText className="w-3 h-3" />,
+};
 
 export function FeedItem({
   message,
@@ -44,6 +63,8 @@ export function FeedItem({
     setEditingNote(false);
   }
 
+  const icon = TYPE_ICONS[message.type];
+
   return (
     <Collapsible
       open={open}
@@ -55,7 +76,8 @@ export function FeedItem({
           <span className="text-muted-foreground text-[11px] tabular-nums w-5 text-right shrink-0">
             {message.seq}
           </span>
-          <span className="bg-primary text-primary-foreground px-2 py-0.5 rounded text-[11px] font-semibold uppercase shrink-0">
+          <span className="inline-flex items-center gap-1 bg-primary text-primary-foreground px-2 py-0.5 rounded text-[11px] font-semibold uppercase shrink-0">
+            {icon}
             {message.type}
           </span>
           {message.dataset && <DatasetBadge dataset={message.dataset} />}
@@ -63,15 +85,17 @@ export function FeedItem({
             <span className="font-semibold text-xs truncate">{subtitle}</span>
           )}
           <span className="ml-auto text-muted-foreground tabular-nums text-xs shrink-0">{time}</span>
-          <span className="text-muted-foreground text-[11px] shrink-0">{open ? "collapse" : "expand"}</span>
+          <span className="text-muted-foreground shrink-0">
+            {open ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          </span>
         </CollapsibleTrigger>
         {onToggleBookmark && (
           <button
             onClick={onToggleBookmark}
-            className={`text-sm cursor-pointer shrink-0 ${bookmarked ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}
+            className={`cursor-pointer shrink-0 transition-colors ${bookmarked ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}
             title={bookmarked ? "Remove bookmark" : "Bookmark"}
           >
-            {bookmarked ? "★" : "☆"}
+            {bookmarked ? <BookmarkCheck className="w-4 h-4" /> : <Bookmark className="w-4 h-4" />}
           </button>
         )}
         <CopyButton text={markdown} label="Copy" />

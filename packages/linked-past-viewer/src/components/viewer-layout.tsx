@@ -6,7 +6,7 @@ import { ConnectionStatus } from "./connection-status";
 import { Feed } from "./feed";
 import { applyFilters, emptyFilters, FeedFilters, type Filters } from "./feed-filters";
 import { SessionPicker } from "./session-picker";
-import { DarkModeToggle, ExpandCollapseButtons, ExportButton } from "./toolbar-actions";
+import { AutoScrollButton, DarkModeToggle, ExpandCollapseButtons, ExportButton } from "./toolbar-actions";
 
 export function ViewerLayout() {
   const { messages: liveMessages, isConnected } = useViewerSocket();
@@ -54,13 +54,10 @@ export function ViewerLayout() {
                 onCollapseAll={() => setForceOpen((prev) => ({ value: false, rev: (prev?.rev ?? 0) + 1 }))}
               />
             )}
-            <button
+            <AutoScrollButton
+              active={autoScroll}
               onClick={() => setAutoScroll((prev) => !prev)}
-              className={`text-[11px] cursor-pointer ${autoScroll ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}
-              title={autoScroll ? "Auto-scroll ON — click to disable" : "Auto-scroll OFF — click to enable"}
-            >
-              {autoScroll ? "⤓ auto-scroll" : "⤓ scroll"}
-            </button>
+            />
             <ExportButton messages={filtered} notes={notes} />
             <DarkModeToggle />
             <span className="text-muted-foreground text-xs tabular-nums">

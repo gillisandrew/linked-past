@@ -3,6 +3,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { ExternalLink } from "lucide-react";
 import { useState } from "react";
 import { useEntityQuery } from "../hooks/use-entity-query";
 import { datasetForUri, shortUri } from "../lib/uri";
@@ -21,11 +22,12 @@ export function EntityUri({ uri, display, showBadge = true }: { uri: string; dis
   const [open, setOpen] = useState(false);
   const { data, isLoading } = useEntityQuery(uri, open);
   const isFullUri = uri.startsWith("http://") || uri.startsWith("https://");
+  const label = display ?? shortUri(uri);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger
-        className="inline-flex items-center gap-1 cursor-pointer"
+        className="inline-flex items-center gap-1 cursor-pointer group"
         onMouseEnter={() => setOpen(true)}
         onMouseLeave={() => setOpen(false)}
       >
@@ -34,13 +36,14 @@ export function EntityUri({ uri, display, showBadge = true }: { uri: string; dis
             href={toHttps(uri)}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-xs text-primary underline font-mono"
+            className="inline-flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors"
             onClick={(e) => e.stopPropagation()}
           >
-            {display ?? shortUri(uri)}
+            <span className="underline underline-offset-2 decoration-primary/40">{label}</span>
+            <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-60 transition-opacity shrink-0" />
           </a>
         ) : (
-          <code className="text-xs text-primary underline">{display ?? shortUri(uri)}</code>
+          <span className="text-xs text-primary underline underline-offset-2 decoration-primary/40">{label}</span>
         )}
         {showBadge && dataset && <DatasetBadge dataset={dataset} />}
       </PopoverTrigger>

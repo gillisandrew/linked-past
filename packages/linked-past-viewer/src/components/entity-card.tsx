@@ -1,6 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ExternalLink } from "lucide-react";
 import { humanizePredicate } from "../lib/predicates";
 import type { EntityData } from "../lib/types";
+import { shortUri } from "../lib/uri";
 import { DatasetBadge } from "./dataset-badge";
 import { PredicateLabel } from "./predicate-label";
 import { PropertyValue } from "./property-value";
@@ -76,7 +78,7 @@ export function EntityCard({ data }: { data: EntityData }) {
           )}
         </div>
         <CardTitle className="text-lg">{data.name}</CardTitle>
-        <p className="text-xs text-muted-foreground font-mono">{data.uri}</p>
+        <p className="text-xs text-muted-foreground">{shortUri(data.uri)}</p>
         {data.description && (
           <p className="text-sm text-muted-foreground leading-relaxed mt-1">
             {data.description}
@@ -113,9 +115,12 @@ export function EntityCard({ data }: { data: EntityData }) {
                     href={url.replace(/^http:\/\//, "https://")}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-primary underline font-mono"
+                    className="inline-flex items-center gap-1 text-primary hover:text-primary/80 transition-colors"
                   >
-                    {url.replace(/^https?:\/\//, "").replace(/\/$/, "")}
+                    <span className="underline underline-offset-2 decoration-primary/40">
+                      {url.replace(/^https?:\/\//, "").replace(/\/$/, "")}
+                    </span>
+                    <ExternalLink className="w-3 h-3 opacity-60" />
                   </a>
                 </li>
               ))}

@@ -1,3 +1,4 @@
+import { Check, Copy } from "lucide-react";
 import { useState } from "react";
 
 export function CopyButton({
@@ -20,9 +21,20 @@ export function CopyButton({
   return (
     <button
       onClick={handleCopy}
-      className={`text-[11px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer ${className}`}
+      className={`inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer ${className}`}
+      title={label}
     >
-      {copied ? "Copied!" : label}
+      {copied ? (
+        <>
+          <Check className="w-3 h-3" />
+          <span>Copied</span>
+        </>
+      ) : (
+        <>
+          <Copy className="w-3 h-3" />
+          <span>{label}</span>
+        </>
+      )}
     </button>
   );
 }

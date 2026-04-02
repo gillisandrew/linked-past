@@ -1,3 +1,4 @@
+import { SearchX } from "lucide-react";
 import { useState } from "react";
 import type { SearchData } from "../lib/types";
 import { DATASETS } from "../lib/datasets";
@@ -11,9 +12,10 @@ export function SearchResults({ data }: { data: SearchData }) {
 
   if (data.results.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground">
-        No entities found matching &ldquo;{data.query_text}&rdquo;.
-      </p>
+      <div className="flex items-center gap-2 text-sm text-muted-foreground py-2">
+        <SearchX className="w-4 h-4 shrink-0" />
+        <span>No entities found matching &ldquo;{data.query_text}&rdquo;.</span>
+      </div>
     );
   }
 
