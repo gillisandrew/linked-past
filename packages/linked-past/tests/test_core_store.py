@@ -10,6 +10,7 @@ from linked_past.core.store import (
     get_read_only_store,
     is_initialized,
     load_rdf,
+    materialize,
 )
 
 SAMPLE_TURTLE = """\
@@ -133,3 +134,96 @@ def test_execute_ask_rejects_select(tmp_path):
     load_rdf(store, ttl)
     with pytest.raises(ValueError, match="Expected ASK"):
         execute_ask(store, "SELECT ?s WHERE { ?s ?p ?o }")
+
+
+# ── Materialization tests ────────────────────────────────────────────
+
+
+def test_materialize_subpropertyof(tmp_path):
+    """rdfs:subPropertyOf materialization: hasPersonName subPropertyOf rdfs:label."""
+    store = create_store(tmp_path / "store")
+    ttl = tmp_path / "data.ttl"
+    ttl.write_text(
+        '@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n'
+        '@prefix owl: <http://www.w3.org/2002/07/owl#> .\n'
+        '@prefix ex: <http://example.org/> .\n'
+        '\n'
+        'ex:hasPersonName a owl:DatatypeProperty ;\n'
+        '    rdfs:subPropertyOf rdfs:label .\n'
+        '\n'
+        'ex:Person1 ex:hasPersonName "Marcus Tullius Cicero" .\n'
+    )
+    load_rdf(store, ttl)
+
+    # Before materialization: no rdfs:label on Person1
+    rows = list(store.query(
+        'SELECT ?label WHERE { <http://example.org/Person1> <http://www.w3.org/2000/01/rdf-schema#label> ?label }'
+    ))
+    assert len(rows) == 0
+
+    added = materialize(store)
+    assert added > 0
+
+    # After materialization: rdfs:label is inferred
+    rows = list(store.query(
+        'SELECT ?label WHERE { <http://example.org/Person1> <http://www.w3.org/2000/01/rdf-schema#label> ?label }'
+    ))
+    assert len(rows) == 1
+    assert rows[0][0].value == "Marcus Tullius Cicero"
+
+
+def test_materialize_subclassof(tmp_path):
+    """rdfs:subClassOf materialization: Person subClassOf Agent."""
+    store = create_store(tmp_path / "store")
+    ttl = tmp_path / "data.ttl"
+    ttl.write_text(
+        '@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n'
+        '@prefix ex: <http://example.org/> .\n'
+        '\n'
+        'ex:Person rdfs:subClassOf ex:Agent .\n'
+        'ex:Person1 a ex:Person .\n'
+    )
+    load_rdf(store, ttl)
+
+    # Before: not typed as Agent
+    result = store.query('ASK { <http://example.org/Person1> a <http://example.org/Agent> }')
+    assert not bool(result)
+
+    materialize(store)
+
+    # After: inferred as Agent
+    result = store.query('ASK { <http://example.org/Person1> a <http://example.org/Agent> }')
+    assert bool(result)
+
+
+def test_materialize_no_axioms(tmp_path):
+    """When data has no RDFS/OWL axioms, materialize is a no-op."""
+    store = create_store(tmp_path / "store")
+    ttl = tmp_path / "data.ttl"
+    ttl.write_text(
+        '@prefix ex: <http://example.org/> .\n'
+        'ex:Thing1 a ex:Widget .\n'
+    )
+    load_rdf(store, ttl)
+    original = len(store)
+    added = materialize(store)
+    assert added == 0
+    assert len(store) == original
+
+
+def test_materialize_idempotent(tmp_path):
+    """Running materialize twice doesn't add duplicate triples."""
+    store = create_store(tmp_path / "store")
+    ttl = tmp_path / "data.ttl"
+    ttl.write_text(
+        '@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n'
+        '@prefix ex: <http://example.org/> .\n'
+        'ex:Person rdfs:subClassOf ex:Agent .\n'
+        'ex:Person1 a ex:Person .\n'
+    )
+    load_rdf(store, ttl)
+    first = materialize(store)
+    count_after_first = len(store)
+    second = materialize(store)
+    assert second == 0
+    assert len(store) == count_after_first

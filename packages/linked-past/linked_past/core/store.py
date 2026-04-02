@@ -123,6 +123,72 @@ def execute_query(
     return rows
 
 
+def materialize(store: Store) -> int:
+    """Run RDFS/OWL2 RL forward-chaining and insert inferred triples.
+
+    Uses the `reasonable` library (Rust Datalog engine) to compute the
+    deductive closure. Returns the number of genuinely new triples added.
+
+    Fast no-op when the data contains no RDFS/OWL axioms.
+    """
+    import logging
+    import tempfile
+
+    import reasonable
+    from pyoxigraph import BlankNode, NamedNode, Quad, RdfFormat, serialize
+
+    logger = logging.getLogger(__name__)
+
+    # Quick check: skip if no RDFS/OWL axioms present
+    has_axioms = bool(store.query(
+        "ASK { "
+        "  { ?p <http://www.w3.org/2000/01/rdf-schema#subPropertyOf> ?q } "
+        "  UNION "
+        "  { ?c <http://www.w3.org/2000/01/rdf-schema#subClassOf> ?d } "
+        "}"
+    ))
+    if not has_axioms:
+        return 0
+
+    # Serialize store to temp Turtle file (reasonable only reads ttl/n3)
+    tmp = tempfile.NamedTemporaryFile(suffix=".ttl", delete=False)
+    try:
+        quads = store.query("CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o }")
+        with open(tmp.name, "wb") as f:
+            serialize(quads, f, format=RdfFormat.TURTLE)
+
+        # Run OWL2 RL reasoning
+        r = reasonable.PyReasoner()
+        r.load_file(tmp.name)
+        inferred = r.reason()
+    finally:
+        Path(tmp.name).unlink(missing_ok=True)
+
+    # Insert genuinely new triples
+    def _to_term(val: str):
+        if val.startswith("http://") or val.startswith("https://"):
+            return NamedNode(val)
+        if val.startswith("_:"):
+            return BlankNode(val[2:])
+        return Literal(val)
+
+    added = 0
+    for s, p, o in inferred:
+        try:
+            subj = _to_term(s)
+            pred = NamedNode(p)
+            obj = _to_term(o)
+            existing = list(store.quads_for_pattern(subj, pred, obj, None))
+            if not existing:
+                store.add(Quad(subj, pred, obj))
+                added += 1
+        except Exception:
+            pass  # Skip malformed triples (e.g., literals in subject position)
+
+    logger.info("materialize: %d new triples inferred (%d total from reasoner)", added, len(inferred))
+    return added
+
+
 def _filter_by_lang_prefs(
     rows: list[dict],
     variables: list[str],
