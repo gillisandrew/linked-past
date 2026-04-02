@@ -16,20 +16,18 @@ Scholars can ask natural language questions and receive well-cited results acros
 ### Docker (recommended)
 
 ```bash
-# Pull and run
+# Pull and run (auto-downloads all datasets on first start)
 docker run -d \
   -v linked-past-data:/data \
   -p 8000:8000 \
+  -e LINKED_PAST_DATASETS=all \
   ghcr.io/gillisandrew/linked-past:main
-
-# Download datasets (first run only)
-docker exec -it <container> linked-past-server update --all
 
 # Connect with Claude Code
 claude
 ```
 
-The `/data` volume persists datasets, Oxigraph stores, search indexes, and meta-entity caches across container restarts. Without a volume, data is lost when the container is removed.
+Set `LINKED_PAST_DATASETS` to a comma-separated list (e.g., `dprr,pleiades,nomisma`) or `all`. Datasets are downloaded on first startup and cached in the `/data` volume. Subsequent starts skip the download.
 
 ### From source
 

@@ -284,6 +284,20 @@ def build_app_context(*, eager: bool = False, skip_search: bool = True) -> AppCo
     else:
         registry.initialize_cached()
 
+    # LINKED_PAST_DATASETS env var: ensure these datasets are initialized (download if needed)
+    ds_env = os.environ.get("LINKED_PAST_DATASETS", "").strip()
+    if ds_env:
+        requested = [d.strip() for d in ds_env.split(",") if d.strip()]
+        if requested == ["all"]:
+            requested = registry.list_datasets()
+        for name in requested:
+            if name not in registry._stores:
+                try:
+                    logger.info("Initializing dataset %s (from LINKED_PAST_DATASETS)", name)
+                    registry.initialize_dataset(name)
+                except Exception as e:
+                    logger.warning("Failed to initialize dataset %s: %s", name, e)
+
     # Load linkage graph in-memory (rebuilt from files on each startup — no disk lock)
     linkage = LinkageGraph()
     linkages_dir = Path(__file__).parent.parent / "linkages"
