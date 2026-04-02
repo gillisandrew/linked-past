@@ -30,7 +30,7 @@ Bulk data dumps (gzipped Turtle, N-Triples, RDF/XML) are the fallback when endpo
 
 ### 1.3 The Quality Gap
 
-The LOD Laundromat project (Beek et al., 2014) found that the majority of published LOD datasets do not meet basic publishing guidelines. A 2024 analysis of 1,658 LOD Cloud datasets concluded that "well-curated, up-to-date datasets are exceptions rather than the rule" (Farazi et al., 2024). Datasets accumulate encoding errors, broken IRIs, and stale links over time, with no standard pipeline for cleaning and republishing.
+The LOD Laundromat project (Beek et al., 2014) found that the majority of published LOD datasets do not meet basic publishing guidelines. A 2024 analysis of 1,658 LOD Cloud datasets found persistent quality problems, concluding that well-curated, regularly maintained datasets remain the exception (Pellegrino et al., 2024). Datasets accumulate encoding errors, broken IRIs, and stale links over time, with no standard pipeline for cleaning and republishing.
 
 ### 1.4 Scholarly Reproducibility
 
@@ -56,9 +56,11 @@ Several projects have addressed pieces of the distribution problem:
 | **VoID** (W3C, 2011) | Dataset-level statistics and linksets | Metadata vocabulary, not a distribution format |
 | **RDFC-1.0** (W3C, 2024) | Content-addressable hashing of RDF graphs | Integrity primitive — no packaging or distribution mechanism |
 | **RO-Crate** (Soiland-Reyes et al., 2022) | Research artifact packaging with JSON-LD metadata | File-level packaging; no registry infrastructure or layer-level deduplication |
-| **Zenodo/Figshare** | DOIs, versioning, long-term archival | General-purpose; no RDF-specific tooling; no incremental updates |
+| **Zenodo/Figshare** | DOIs, versioning, long-term archival | General-purpose; no RDF-specific tooling; no incremental downloads |
+| **KitOps / OMLMD** (CNCF, 2024–2025) | OCI-based packaging of ML models and training datasets | ML-domain-specific; no RDF or Semantic Web metadata integration |
+| **OSTRICH** (Taelman et al., 2018) | Versioned RDF storage via HDT snapshots + delta chains | Archival/query system, not a distribution mechanism |
 
-None of these provides a complete solution combining: versioned distribution, content-addressable integrity, incremental updates, co-located metadata, and leveraging existing infrastructure.
+The ML ecosystem has begun using OCI registries for model and dataset distribution (KitOps entered the CNCF Sandbox in 2025), demonstrating the viability of OCI for non-container artifacts at scale. However, no published work has applied this approach specifically to RDF datasets with Semantic Web metadata integration (VoID, PROV-O, RDFC-1.0). None of the above provides a complete solution combining: versioned distribution, content-addressable integrity, incremental updates, co-located Semantic Web metadata, and standard registry infrastructure.
 
 ## 3. Proposed Approach: OCI Artifacts for LOD
 
@@ -73,7 +75,7 @@ OCI registries (GitHub Container Registry, Docker Hub, Amazon ECR, Harbor, etc.)
 - **Immutably versioned** — tags point to manifest digests; digests never change
 - **Access-controlled** — per-repository authentication and authorization
 - **Highly available** — major registries offer 99.9%+ uptime SLAs
-- **Free for public artifacts** — GitHub Container Registry provides unlimited public storage
+- **Currently free for public artifacts** — GitHub Container Registry provides free public image storage (subject to policy changes with 30 days notice; 10 GB per-layer limit)
 
 The ORAS (OCI Registry As Storage) project provides CLI and client libraries for pushing and pulling non-container artifacts to OCI registries, already used in production for Helm charts, WebAssembly modules, SBOMs, policy bundles, and ML models.
 
@@ -84,7 +86,7 @@ We propose packaging each LOD dataset as a multi-layer OCI artifact:
 ```
 ghcr.io/publisher/lod/{dataset}:{version}
   │
-  ├─ Layer 1: {dataset}.ttl          (RDF data, application/vnd.w3.rdf+turtle)
+  ├─ Layer 1: {dataset}.ttl          (RDF data, text/turtle)
   ├─ Layer 2: _void.ttl              (VoID metadata)
   ├─ Layer 3: _schema.yaml           (Extracted ontology / shapes)
   ├─ Layer 4: _ontology.ttl          (Bundled external ontology, optional)
@@ -93,10 +95,10 @@ ghcr.io/publisher/lod/{dataset}:{version}
        org.opencontainers.image.licenses: "CC-BY-4.0"
        org.opencontainers.image.source: "https://source.example.org"
        org.opencontainers.image.created: "2026-04-01T12:00:00Z"
-       io.w3.rdf.triples: "427281"
-       io.w3.rdf.format: "text/turtle"
-       io.w3.rdf.citation: "Author (Year). Title. URL."
-       io.w3.rdf.void-digest: "sha256:abc123..."
+       dev.lod.triples: "427281"
+       dev.lod.format: "text/turtle"
+       dev.lod.citation: "Author (Year). Title. URL."
+       dev.lod.void-digest: "sha256:abc123..."
 ```
 
 ### 3.3 Properties Achieved
@@ -118,11 +120,11 @@ We propose a layer naming convention for RDF dataset artifacts:
 
 | Layer filename | Media type | Required | Purpose |
 |---------------|-----------|----------|---------|
-| `{name}.ttl` | `application/vnd.w3.rdf+turtle` | Yes | Primary RDF data |
-| `_void.ttl` | `application/vnd.w3.rdf+turtle` | Recommended | VoID dataset description |
+| `{name}.ttl` | `text/turtle` | Yes | Primary RDF data |
+| `_void.ttl` | `text/turtle` | Recommended | VoID dataset description |
 | `_schema.yaml` | `application/x-yaml` | Optional | Extracted class/property schema |
-| `_ontology.ttl` | `application/vnd.w3.rdf+turtle` | Optional | Bundled ontology for inference |
-| `_shacl.ttl` | `application/vnd.w3.rdf+turtle` | Optional | SHACL shapes for validation |
+| `_ontology.ttl` | `text/turtle` | Optional | Bundled ontology for inference |
+| `_shacl.ttl` | `text/turtle` | Optional | SHACL shapes for validation |
 
 The `_` prefix distinguishes metadata sidecars from data files. Multi-file datasets (e.g., sharded by entity type) use multiple data layers without the prefix.
 
@@ -135,12 +137,12 @@ We propose a namespace for RDF-specific OCI manifest annotations, building on th
 | `org.opencontainers.image.licenses` | SPDX identifier | OCI spec |
 | `org.opencontainers.image.source` | Upstream source URL | OCI spec |
 | `org.opencontainers.image.created` | ISO 8601 timestamp | OCI spec |
-| `io.w3.rdf.format` | MIME type (e.g., `text/turtle`) | Proposed |
-| `io.w3.rdf.triples` | Triple count (string) | Proposed |
-| `io.w3.rdf.classes` | Number of distinct classes | Proposed |
-| `io.w3.rdf.citation` | Plain-text citation string | Proposed |
-| `io.w3.rdf.void-digest` | SHA-256 of VoID sidecar | Proposed |
-| `io.w3.rdf.canonical-digest` | RDFC-1.0 canonical hash | Proposed |
+| `dev.lod.format` | MIME type (e.g., `text/turtle`) | Proposed |
+| `dev.lod.triples` | Triple count (string) | Proposed |
+| `dev.lod.classes` | Number of distinct classes | Proposed |
+| `dev.lod.citation` | Plain-text citation string | Proposed |
+| `dev.lod.void-digest` | SHA-256 of VoID sidecar | Proposed |
+| `dev.lod.canonical-digest` | RDFC-1.0 canonical hash | Proposed |
 
 ## 4. Pipeline Architecture
 
@@ -191,14 +193,19 @@ Publisher                        OCI Registry                    Consumer
 ────────────────────────────────────────────────────────────────────────────────────────
 SPARQL Endpoint        ✗          N/A         ✗          ✗         ✗         △
 Data Dump (HTTP)       ✗          ✗           ✗          ✗         ✓         ✗
-HDT                    ✗          ✗           ✗          △         ✓         ✗
+HDT                    △¹         ✗           ✗          △         ✓         ✗
 LOD Laundromat         ✗          ✗           ✓          ✓         ✓         ✓
-Zenodo/Figshare        ✓          ✗           ✓          ✓         ✓         ✓
+Zenodo/Figshare        ✓          ✗²          ✓          ✓         ✓         ✓
 RO-Crate               ✓          ✗           △          ✓         ✓         △
-OCI Artifact (this)    ✓          ✓           ✓          ✓         ✓         ✓
+KitOps (ML/OCI)        ✓          ✓           ✓          △         ✓         ✓
+OCI Artifact (this)    ✓          ✓³          ✓          ✓         ✓         ✓
 ```
 
-The key differentiator is **incremental updates via layer-level deduplication** — unique to OCI's content-addressable storage model.
+¹ HDT itself has no versioning, but OSTRICH (Taelman et al., 2018) layers versioning on HDT snapshots with delta chains.
+² Zenodo deduplicates storage internally across versions, but consumers must download whole files — no incremental transfer.
+³ Incremental updates operate at **layer granularity**, not triple-level. If the main data file changes at all, the entire data layer re-downloads. The benefit is strongest when metadata sidecars change independently of the data.
+
+The key differentiator is **incremental updates via layer-level deduplication** combined with **co-located Semantic Web metadata** — the combination is unique to this approach.
 
 ## 6. Implementation Status
 
@@ -248,8 +255,8 @@ Manifest:
   artifactType: application/vnd.w3.void+turtle
   layers:       [void.ttl]
   annotations:
-    io.w3.void.triples: "650000"
-    io.w3.void.classes: "12"
+    dev.lod.void.triples: "650000"
+    dev.lod.void.classes: "12"
 ```
 
 Consumers query: `GET /v2/.../referrers/<digest>?artifactType=application/vnd.w3.void+turtle`
@@ -319,8 +326,8 @@ Manifest:
   artifactType: application/vnd.w3.void.linkset+turtle
   layers:       [dprr-nomisma-links.ttl]
   annotations:
-    io.w3.void.target: "ghcr.io/publisher/lod/nomisma:latest"
-    io.w3.void.triples: "1200"
+    dev.lod.void.target: "ghcr.io/publisher/lod/nomisma:latest"
+    dev.lod.void.triples: "1200"
 ```
 
 Linksets describe connections between datasets — the LOD equivalent of a software dependency. By storing them as referrer artifacts, consumers discover inter-dataset relationships automatically when they pull a dataset.
@@ -363,7 +370,7 @@ We can define LOD Supply Chain Levels analogous to SLSA:
 
 4. **DCAT integration** — Should OCI manifests reference DCAT catalog entries, or should DCAT catalogs reference OCI artifacts as distributions? Both directions seem useful.
 
-5. **Vocabulary convergence** — The `io.w3.rdf.*` annotation namespace is proposed here. Standardization would require community consensus and potentially W3C coordination.
+5. **Vocabulary convergence** — The `dev.lod.*` annotation namespace is proposed here. Standardization would require community consensus and potentially W3C coordination.
 
 6. **Compression** — OCI layers support gzip compression. For large datasets (100M+ triples), should we standardize on compressed layers, or rely on registry-level transfer compression?
 
@@ -373,6 +380,27 @@ We can define LOD Supply Chain Levels analogous to SLSA:
 
 9. **Signing** — Should LOD artifacts be signed using Sigstore/Cosign? This would provide non-repudiation (the publisher provably published this exact dataset). The infrastructure exists but adds tooling requirements.
 
+10. **Scalability** — The current implementation distributes datasets of ~4M triples (~26 MB Turtle). For very large datasets (Wikidata: 18B+ triples, DBpedia: 2B+), single-file layers may hit registry limits (GHCR: 10 GB per layer, 10-minute upload timeout). Sharding strategies (by entity type, by named graph, or by partition) would need a layer-naming convention.
+
+11. **Registry migration** — While OCI registries are interoperable in theory, migrating artifacts between registries (e.g., GHCR → Harbor) requires updating all consumer configurations. Multi-registry mirroring strategies should be considered for critical datasets.
+
+### FAIR Principles Alignment
+
+The proposed approach maps well to the FAIR principles (Wilkinson et al., 2016):
+
+| Principle | How OCI artifacts satisfy it |
+|-----------|----------------------------|
+| **F1** (Globally unique identifier) | OCI manifest digests (`sha256:...`) are globally unique, persistent, content-addressed identifiers |
+| **F2** (Rich metadata) | Manifest annotations carry license, citation, provenance; VoID sidecars carry structural statistics |
+| **F3** (Metadata references data) | VoID and provenance referrer artifacts contain the dataset's manifest digest |
+| **A1** (Retrievable by identifier) | Standard OCI pull by digest or tag; no custom protocol needed |
+| **A2** (Metadata accessible even when data isn't) | Manifest annotations and referrer artifacts are accessible via registry API without pulling data layers |
+| **I1** (Formal, shared knowledge representation) | RDF/Turtle with standard vocabularies (VoID, PROV-O, DCAT) |
+| **I2** (Uses FAIR vocabularies) | VoID and PROV-O are W3C standards |
+| **R1** (Rich provenance) | PROV-O provenance as referrer artifact; SLSA-inspired trust levels |
+
+The main gap is **F4** (registered in a searchable resource) — OCI registries support tag listing and manifest inspection but lack the federated search capabilities of DCAT catalogs. Bridging OCI manifests to DCAT distributions (Open Question #4) would close this gap.
+
 ## 9. References
 
 ### SPARQL Endpoint Availability
@@ -381,7 +409,7 @@ We can define LOD Supply Chain Levels analogous to SLSA:
 
 ### LOD Quality and Distribution
 - Beek, W., Rietveld, L., Bazoobandi, H.R., Wielemaker, J., Schlobach, S. (2014). "LOD Laundromat: A Uniform Way of Publishing Other People's Dirty Data." *ISWC 2014*, LNCS 8796, pp. 213–228. [DOI: 10.1007/978-3-319-11964-9_14](https://doi.org/10.1007/978-3-319-11964-9_14)
-- Farazi, F., et al. (2024). "Lost in LOD: Analyzing the Linked Open Data Cloud Quality Maze." [ResearchGate](https://www.researchgate.net/publication/399470661)
+- Pellegrino, M.A., Rula, A., Tuozzo, G. (2024). "Lost in LOD: Analyzing the Linked Open Data Cloud Quality Maze." *ACM Journal of Data and Information Quality*. [DOI: 10.1145/3786331](https://doi.org/10.1145/3786331)
 
 ### Formats and Interfaces
 - Fernandez, J.D., Martinez-Prieto, M.A., Gutierrez, C., Polleres, A., Arias, M. (2013). "Binary RDF Representation for Publication and Exchange (HDT)." *Journal of Web Semantics* 19:22–41. [DOI: 10.1016/j.websem.2013.01.002](https://doi.org/10.1016/j.websem.2013.01.002)
@@ -396,6 +424,13 @@ We can define LOD Supply Chain Levels analogous to SLSA:
 ### FAIR Principles and Research Packaging
 - Wilkinson, M.D., et al. (2016). "The FAIR Guiding Principles for Scientific Data Management and Stewardship." *Scientific Data* 3:160018. [DOI: 10.1038/sdata.2016.18](https://doi.org/10.1038/sdata.2016.18)
 - Soiland-Reyes, S., et al. (2022). "Packaging Research Artefacts with RO-Crate." *Data Science* 5(2). [DOI: 10.3233/DS-210053](https://doi.org/10.3233/DS-210053)
+
+### RDF Versioning
+- Taelman, R., Vander Sande, M., Van Herwegen, J., Mannens, E., Verborgh, R. (2018). "Triple Storage for Random-Access Versioned Querying of RDF Archives." *Journal of Web Semantics* 54:4–28. [DOI: 10.1016/j.websem.2018.08.001](https://doi.org/10.1016/j.websem.2018.08.001)
+
+### OCI for ML/Data
+- KitOps (CNCF Sandbox, 2025). [https://kitops.org/](https://kitops.org/)
+- OMLMD — OCI-based ML Model Distribution (Red Hat, 2024). [https://github.com/containers/omlmd](https://github.com/containers/omlmd)
 
 ### OCI, ORAS, and Supply Chain Security
 - OCI Distribution Specification v1.1. [https://github.com/opencontainers/distribution-spec](https://github.com/opencontainers/distribution-spec)
