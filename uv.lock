@@ -373,26 +373,30 @@ requires-dist = [
 name = "linked-past-workspace"
 version = "0.0.0"
 source = { virtual = "." }
+dependencies = [
+    { name = "linked-past" },
+    { name = "linked-past-store" },
+]
 
 [package.dev-dependencies]
 analysis = [
     { name = "pandas" },
 ]
 dev = [
-    { name = "linked-past" },
-    { name = "linked-past-store" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "ruff" },
 ]
 
 [package.metadata]
+requires-dist = [
+    { name = "linked-past", editable = "packages/linked-past" },
+    { name = "linked-past-store", editable = "packages/linked-past-store" },
+]
 
 [package.metadata.requires-dev]
 analysis = [{ name = "pandas" }]
 dev = [
-    { name = "linked-past", editable = "packages/linked-past" },
-    { name = "linked-past-store", editable = "packages/linked-past-store" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "ruff" },

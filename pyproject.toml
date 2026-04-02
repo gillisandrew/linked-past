@@ -3,6 +3,10 @@ name = "linked-past-workspace"
 version = "0.0.0"
 description = "Workspace root for the linked-past monorepo"
 requires-python = ">=3.13"
+dependencies = [
+    "linked-past",
+    "linked-past-store",
+]
 
 [tool.uv.workspace]
 members = ["packages/*"]
@@ -10,8 +14,6 @@ exclude = ["packages/linked-past-viewer"]
 
 [dependency-groups]
 dev = [
-    "linked-past",
-    "linked-past-store",
     "pytest",
     "pytest-asyncio",
     "ruff",
