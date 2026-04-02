@@ -1,8 +1,21 @@
+/**
+ * Normalize a URI: decode %23 → #, then strip #this / #self fragments
+ * (RDF identity conventions that aren't useful for web navigation).
+ */
+function normalizeUri(uri: string): string {
+  let normalized = uri.replace(/%23/g, "#");
+  // Strip RDF identity fragments like #this, #self, #it
+  normalized = normalized.replace(/#(this|self|it)$/i, "");
+  return normalized;
+}
+
 const URI_NAMESPACES: Record<string, string> = {
   "http://romanrepublic.ac.uk/rdf/": "dprr",
   "http://www.romanrepublic.ac.uk/rdf/": "dprr",
   "https://romanrepublic.ac.uk/rdf/": "dprr",
   "https://www.romanrepublic.ac.uk/rdf/": "dprr",
+  "https://pleiades.stoa.org/places/vocab#": "pleiades",
+  "http://pleiades.stoa.org/places/vocab#": "pleiades",
   "https://pleiades.stoa.org/places/": "pleiades",
   "http://pleiades.stoa.org/places/": "pleiades",
   "http://n2t.net/ark:/99152/": "periodo",
@@ -20,8 +33,9 @@ const URI_NAMESPACES: Record<string, string> = {
 };
 
 export function datasetForUri(uri: string): string | null {
+  const n = normalizeUri(uri);
   for (const [ns, ds] of Object.entries(URI_NAMESPACES)) {
-    if (uri.startsWith(ns)) return ds;
+    if (n.startsWith(ns)) return ds;
   }
   return null;
 }
@@ -33,7 +47,7 @@ export function datasetForUri(uri: string): string | null {
  * Examples:
  *   http://nomisma.org/id/rome → nm:rome
  *   http://romanrepublic.ac.uk/rdf/entity/Person/1 → entity:Person/1
- *   http://unknown.org/foo → foo
+ *   https://pleiades.stoa.org/places/433134%23this → pleiades:433134
  */
 const COMPRESS_PREFIXES: [string, string][] = [
   ["http://romanrepublic.ac.uk/rdf/ontology#", "vocab:"],
@@ -42,6 +56,7 @@ const COMPRESS_PREFIXES: [string, string][] = [
   ["http://nomisma.org/id/", "nm:"],
   ["http://numismatics.org/crro/id/", "crro:"],
   ["http://numismatics.org/ocre/id/", "ocre:"],
+  ["https://pleiades.stoa.org/places/vocab#", "pleiades-vocab:"],
   ["https://pleiades.stoa.org/places/", "pleiades:"],
   ["http://n2t.net/ark:/99152/", "periodo:"],
   ["http://edh-www.adw.uni-heidelberg.de/edh/", "edh:"],
@@ -57,23 +72,38 @@ const COMPRESS_PREFIXES: [string, string][] = [
 ];
 
 export function shortUri(uri: string): string {
+  const n = normalizeUri(uri);
   for (const [ns, prefix] of COMPRESS_PREFIXES) {
-    if (uri.startsWith(ns)) return prefix + uri.slice(ns.length);
+    if (n.startsWith(ns)) return prefix + n.slice(ns.length);
   }
   // Fallback: last path segment or fragment
-  return uri.split("/").pop()?.split("#").pop() ?? uri;
+  return n.split("/").pop()?.split("#").pop() ?? n;
+}
+
+/**
+ * Return the normalized full URI suitable for use as a link target.
+ * Decodes %23, strips #this fragments, converts http→https.
+ * Pleiades vocab# URIs are rewritten to the place page URL.
+ */
+export function linkHref(uri: string): string {
+  let href = normalizeUri(uri).replace(/^http:\/\//, "https://");
+  // Pleiades vocab#<id> → places/<id> (the web page for the place)
+  href = href.replace(
+    /^https:\/\/pleiades\.stoa\.org\/places\/vocab#(\d+)/,
+    "https://pleiades.stoa.org/places/$1",
+  );
+  return href;
 }
 
 /**
  * Format a URI as a markdown link: [prefixed](https://full-uri).
- * Converts http:// to https:// for the link target.
  * Returns plain text if the URI can't be resolved to a full URL.
  */
 export function markdownLink(uri: string, prefixMap?: Record<string, string>): string {
   const full = expandPrefixedUri(uri, prefixMap ?? {});
   const short = shortUri(full);
-  if (full.startsWith("http://") || full.startsWith("https://")) {
-    const href = full.replace(/^http:\/\//, "https://");
+  const href = linkHref(full);
+  if (href.startsWith("https://") || href.startsWith("http://")) {
     return `[${short}](${href})`;
   }
   return `\`${short}\``;

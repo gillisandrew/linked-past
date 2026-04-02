@@ -5,15 +5,8 @@ import {
 } from "@/components/ui/popover";
 import { useState } from "react";
 import { useEntityQuery } from "../hooks/use-entity-query";
-import { datasetForUri, shortUri } from "../lib/uri";
+import { datasetForUri, linkHref, shortUri } from "../lib/uri";
 import { EntityPopoverContent } from "./entity-popover";
-
-/**
- * Convert http:// URIs to https:// for external links.
- */
-function toHttps(uri: string): string {
-  return uri.replace(/^http:\/\//, "https://");
-}
 
 /**
  * CSS variable names for dataset-colored pills.
@@ -52,7 +45,7 @@ export function EntityUri({ uri, display }: { uri: string; display?: string }) {
       >
         {isFullUri ? (
           <a
-            href={toHttps(uri)}
+            href={linkHref(uri)}
             target="_blank"
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}

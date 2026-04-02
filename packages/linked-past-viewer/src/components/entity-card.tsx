@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ExternalLink } from "lucide-react";
 import { humanizePredicate } from "../lib/predicates";
 import type { EntityData } from "../lib/types";
-import { shortUri } from "../lib/uri";
+import { linkHref, shortUri } from "../lib/uri";
 import { DatasetBadge } from "./dataset-badge";
 import { PredicateLabel } from "./predicate-label";
 import { PropertyValue } from "./property-value";
@@ -112,13 +112,13 @@ export function EntityCard({ data }: { data: EntityData }) {
               {data.see_also.map((url, i) => (
                 <li key={i} className="text-xs">
                   <a
-                    href={url.replace(/^http:\/\//, "https://")}
+                    href={linkHref(url)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1 text-primary hover:text-primary/80 transition-colors"
                   >
                     <span className="underline underline-offset-2 decoration-primary/40">
-                      {url.replace(/^https?:\/\//, "").replace(/\/$/, "")}
+                      {shortUri(url)}
                     </span>
                     <ExternalLink className="w-3 h-3 opacity-60" />
                   </a>
