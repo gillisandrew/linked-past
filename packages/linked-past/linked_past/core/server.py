@@ -107,7 +107,7 @@ def _index_dataset(search: SearchIndex, name: str, plugin: object, store=None) -
     union = " UNION ".join(f"{{ ?uri <{p}> ?label }}" for p in label_predicates)
     try:
         entity_labels = list(store.query(
-            f"SELECT DISTINCT ?uri ?label WHERE {{ {union} }} LIMIT 50000"
+            f"SELECT DISTINCT ?uri ?label WHERE {{ {union} }}"
         ))
         seen = set()
         batch = []
