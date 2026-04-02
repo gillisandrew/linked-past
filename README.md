@@ -22,8 +22,8 @@ docker run -d \
   -p 8000:8000 \
   ghcr.io/gillisandrew/linked-past:main
 
-# Initialize datasets (first run only)
-docker exec -it <container> linked-past-server init --all
+# Download datasets (first run only)
+docker exec -it <container> linked-past-server update --all
 
 # Connect with Claude Code
 claude
@@ -47,12 +47,12 @@ claude
 ### CLI Commands
 
 ```bash
-linked-past-server serve                    # Start MCP server (default)
-linked-past-server init [datasets...] --all # Download and initialize datasets
-linked-past-server status                   # Show installed datasets
-linked-past-server update [datasets...] --force  # Re-pull from OCI + reload
-linked-past-server reload [datasets...]     # Re-open stores from disk
-linked-past-server reindex                  # Rebuild search + meta-entity caches
+linked-past-server serve                         # Start MCP server (default)
+linked-past-server status                        # Show installed datasets + OCI digests
+linked-past-server update [datasets...] --all    # Download or update datasets from OCI
+linked-past-server update --all --force          # Force re-pull even if cached
+linked-past-server reload [datasets...]          # Re-open stores from disk (no download)
+linked-past-server reindex                       # Rebuild search + meta-entity caches
 ```
 
 ## Development

@@ -1688,63 +1688,19 @@ def _cmd_serve(args):
     mcp.run(transport="streamable-http")
 
 
-def _cmd_init(args):
-    """Download and initialize selected datasets."""
-    import sys
+def _print_dataset_result(plugin, meta):
+    """Print dataset init/update result with triple count and OCI digest."""
+    from linked_past_store import ArtifactCache
 
-    data_dir = get_data_dir()
-    registry = DatasetRegistry(data_dir=data_dir)
-    for plugin in discover_plugins():
-        registry.register(plugin)
+    from linked_past.core.fetch import artifact_ref
 
-    available = registry.list_datasets()
-
-    if args.datasets:
-        selected = args.datasets
-        invalid = [d for d in selected if d not in available]
-        if invalid:
-            print(f"Unknown datasets: {', '.join(invalid)}")
-            print(f"Available: {', '.join(available)}")
-            sys.exit(1)
-    elif args.all:
-        selected = available
-    else:
-        # Interactive selection
-        print("Available datasets:\n")
-        for i, name in enumerate(available, 1):
-            plugin = registry.get_plugin(name)
-            from linked_past.core.store import is_initialized
-
-            store_path = data_dir / name / "store"
-            status = "installed" if is_initialized(store_path) else "not installed"
-            print(f"  {i}. {name:12s} {plugin.display_name} [{status}]")
-        print(f"\n  Data directory: {data_dir}")
-        print("\nEnter dataset names (space-separated), 'all', or Ctrl+C to cancel:")
-        try:
-            choice = input("> ").strip()
-        except (KeyboardInterrupt, EOFError):
-            print("\nCancelled.")
-            return
-        if choice == "all":
-            selected = available
-        else:
-            selected = choice.split()
-
-    for name in selected:
-        plugin = registry.get_plugin(name)
-        print(f"\n{'=' * 60}")
-        print(f"Initializing {plugin.display_name}...")
-        print(f"{'=' * 60}")
-        try:
-            registry.initialize_dataset(name)
-            meta = registry.get_metadata(name)
-            tc = meta.get("triple_count", "?")
-            print(f"  Done: {tc:,} triples loaded" if isinstance(tc, int) else f"  Done: {tc} triples loaded")
-        except Exception as e:
-            print(f"  Error: {e}")
-
-    print(f"\nDatasets stored in {data_dir}")
-    print("Start the server with: linked-past-server")
+    tc = meta.get("triple_count", "?")
+    triples_str = f"{tc:,}" if isinstance(tc, int) else str(tc)
+    ref = artifact_ref(plugin.oci_dataset, plugin.oci_version)
+    digest = ArtifactCache().digest_for(ref) or "unknown"
+    print(f"  Triples: {triples_str}")
+    print(f"  Artifact: {ref}")
+    print(f"  Digest: {digest}")
 
 
 def _cmd_status(args):
@@ -1785,7 +1741,7 @@ def _cmd_status(args):
 
 
 def _cmd_update(args):
-    """Re-pull dataset(s) from OCI, reload store, and rebuild search entries."""
+    """Download, re-pull, or force-refresh dataset(s) from OCI."""
     import shutil
 
     data_dir = get_data_dir()
@@ -1815,14 +1771,14 @@ def _cmd_update(args):
         try:
             registry.initialize_dataset(name, force=force)
             meta = registry.get_metadata(name)
-            tc = meta.get("triple_count", "?")
-            print(f"  Done: {tc:,} triples loaded" if isinstance(tc, int) else f"  Done: {tc} triples loaded")
+            _print_dataset_result(plugin, meta)
         except Exception as e:
             print(f"  Error: {e}")
             continue
 
     # Rebuild search index
     _rebuild_search(data_dir)
+    print(f"\nDatasets stored in {data_dir}")
 
 
 def _cmd_reload(args):
@@ -1860,8 +1816,7 @@ def _cmd_reload(args):
         try:
             registry.initialize_dataset(name)
             meta = registry.get_metadata(name)
-            tc = meta.get("triple_count", "?")
-            print(f"  Done: {tc:,} triples loaded" if isinstance(tc, int) else f"  Done: {tc} triples loaded")
+            _print_dataset_result(plugin, meta)
         except Exception as e:
             print(f"  Error: {e}")
 
@@ -1957,19 +1912,13 @@ def main():
     serve.add_argument("--port", type=int, default=8000, help="Bind port (default: 8000)")
     serve.set_defaults(func=_cmd_serve)
 
-    # init: download datasets
-    init = sub.add_parser("init", help="Download and initialize datasets")
-    init.add_argument("datasets", nargs="*", help="Dataset names to initialize (e.g., dprr pleiades)")
-    init.add_argument("--all", action="store_true", help="Initialize all datasets")
-    init.set_defaults(func=_cmd_init)
-
     # status: show what's installed
     status = sub.add_parser("status", help="Show dataset installation status")
     status.set_defaults(func=_cmd_status)
 
-    # update: re-pull from OCI + reload + reindex
-    update = sub.add_parser("update", help="Re-pull dataset(s) from OCI and reload")
-    update.add_argument("datasets", nargs="*", help="Dataset names to update")
+    # update: download/re-pull datasets from OCI + reload + reindex
+    update = sub.add_parser("update", help="Download or update dataset(s) from OCI")
+    update.add_argument("datasets", nargs="*", help="Dataset names (e.g., dprr pleiades)")
     update.add_argument("--all", action="store_true", help="Update all datasets")
     update.add_argument("--force", action="store_true", help="Force re-pull even if unchanged")
     update.set_defaults(func=_cmd_update)
