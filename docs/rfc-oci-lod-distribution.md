@@ -8,17 +8,37 @@
 
 We propose using OCI (Open Container Initiative) registries as a distribution mechanism for Linked Open Data (LOD) datasets. By packaging RDF datasets as OCI artifacts — with content-addressable layers, immutable versioning, and standardized metadata — we address persistent shortcomings in LOD distribution: unreliable SPARQL endpoints, unversioned data dumps, poor discoverability, and lack of integrity verification. This approach builds on existing infrastructure (container registries, ORAS tooling) and complements established Semantic Web standards (VoID, DCAT, RDFC-1.0).
 
-## 1. Problem Statement
+## 1. Motivation: The Fragility of Scholarly Linked Data
 
-The Linked Open Data ecosystem has well-documented distribution problems that have persisted for over a decade.
+Linked Open Data has transformed how scholars publish and interconnect research data. Digital humanities projects, archaeological databases, numismatic corpora, and historical gazetteers have embraced RDF and SPARQL to make their data machine-readable, interoperable, and citable. The promise is compelling: a global graph of scholarly knowledge, queryable across institutional boundaries.
 
-### 1.1 SPARQL Endpoint Fragility
+The reality is more fragile. Most scholarly LOD projects are small teams — often a single researcher or a small lab — with fixed-term funding. When the grant ends, the infrastructure that keeps the data accessible tends to follow. SPARQL endpoints go down. Download links break. Domains lapse. The data doesn't disappear in a dramatic failure; it decays quietly, one unreturned HTTP request at a time.
+
+This is not a theoretical concern. The LOD Laundromat project (Beek et al., 2014), which aimed to solve LOD quality problems by uniformly cleaning and republishing datasets, itself went offline when its maintainers moved on — the domain now hosts unrelated content. The SPARQLES monitoring project found that only about a quarter of LOD Cloud datasets have a functioning endpoint or downloadable file. A 2024 analysis of 1,658 LOD Cloud datasets found persistent quality problems, concluding that well-curated, regularly maintained datasets remain the exception (Pellegrino et al., 2024).
+
+The cost is measured in lost scholarship. When a prosopographical database goes dark, every paper that cited its URIs loses its verifiable evidence chain. When a numismatic vocabulary's SPARQL endpoint stops responding, cross-references from coin catalogs become opaque identifiers pointing nowhere. When a gazetteer's data dump URL returns a 404, the geographic links that connected inscriptions to places become dead ends.
+
+Large, well-funded projects (Wikidata, DBpedia) can sustain infrastructure indefinitely. But the long tail of specialized scholarly datasets — precisely the ones that encode deep domain expertise — cannot. These projects need a distribution mechanism that:
+
+- **Survives the project** — data remains accessible after funding ends
+- **Requires no ongoing infrastructure** — no servers to maintain, no endpoints to monitor
+- **Preserves provenance** — who published what, when, derived from where
+- **Enables verification** — consumers can confirm they have exactly what was published
+- **Costs nothing to maintain** — free or near-free hosting for public scholarly data
+
+This RFC proposes such a mechanism.
+
+## 2. Technical Problem Statement
+
+The challenges described above manifest as specific technical shortcomings in current LOD distribution methods.
+
+### 2.1 SPARQL Endpoint Fragility
 
 The dominant access method for LOD — public SPARQL endpoints — is unreliable at scale. Buil-Aranda et al. (2013) monitored 427 public endpoints over 27 months and found that only **32.2% achieved 99–100% availability**. Performance varied by 3–4 orders of magnitude across endpoints, and only one-third provided discoverable metadata. The SPARQLES monitoring project (Vandenbussche et al., 2017) confirmed these findings with ongoing probing: endpoints go down, change URLs, or degrade without notice.
 
 For scholarly applications — where a query executed today must be reproducible next year — this is untenable.
 
-### 1.2 Data Dump Limitations
+### 2.2 Data Dump Limitations
 
 Bulk data dumps (gzipped Turtle, N-Triples, RDF/XML) are the fallback when endpoints fail. But they lack:
 
@@ -28,11 +48,11 @@ Bulk data dumps (gzipped Turtle, N-Triples, RDF/XML) are the fallback when endpo
 - **Metadata co-location** — License, provenance, citation, and structural statistics are typically published separately from the data (if at all), leading to metadata loss during distribution.
 - **Discoverability** — Finding whether a dataset exists, what version is current, and where to download it requires consulting external catalogs (LOD Cloud, DCAT portals) that are themselves incomplete.
 
-### 1.3 The Quality Gap
+### 2.3 The Quality Gap
 
 The LOD Laundromat project (Beek et al., 2014) found that the majority of published LOD datasets do not meet basic publishing guidelines. A 2024 analysis of 1,658 LOD Cloud datasets found persistent quality problems, concluding that well-curated, regularly maintained datasets remain the exception (Pellegrino et al., 2024). Datasets accumulate encoding errors, broken IRIs, and stale links over time, with no standard pipeline for cleaning and republishing.
 
-### 1.4 Scholarly Reproducibility
+### 2.4 Scholarly Reproducibility
 
 For digital humanities and computational archaeology — the domain that motivated this work — reproducibility requires:
 
@@ -43,7 +63,7 @@ For digital humanities and computational archaeology — the domain that motivat
 
 No current LOD distribution method satisfies all four requirements.
 
-## 2. Prior Art
+## 3. Prior Art
 
 Several projects have addressed pieces of the distribution problem:
 
@@ -62,9 +82,9 @@ Several projects have addressed pieces of the distribution problem:
 
 The ML ecosystem has begun using OCI registries for model and dataset distribution (KitOps entered the CNCF Sandbox in 2025), demonstrating the viability of OCI for non-container artifacts at scale. However, no published work has applied this approach specifically to RDF datasets with Semantic Web metadata integration (VoID, PROV-O, RDFC-1.0). None of the above provides a complete solution combining: versioned distribution, content-addressable integrity, incremental updates, co-located Semantic Web metadata, and standard registry infrastructure.
 
-## 3. Proposed Approach: OCI Artifacts for LOD
+## 4. Proposed Approach: OCI Artifacts for LOD
 
-### 3.1 OCI Registries as Distribution Infrastructure
+### 4.1 OCI Registries as Distribution Infrastructure
 
 The Open Container Initiative (OCI) defines standards for container images and their distribution. A key insight is that the OCI distribution spec is **content-type agnostic** — it distributes content-addressable blobs organized into manifests, regardless of what those blobs contain. Container images are the primary use case, but the same infrastructure supports any artifact type.
 
@@ -79,7 +99,7 @@ OCI registries (GitHub Container Registry, Docker Hub, Amazon ECR, Harbor, etc.)
 
 The ORAS (OCI Registry As Storage) project provides CLI and client libraries for pushing and pulling non-container artifacts to OCI registries, already used in production for Helm charts, WebAssembly modules, SBOMs, policy bundles, and ML models.
 
-### 3.2 LOD Dataset as OCI Artifact
+### 4.2 LOD Dataset as OCI Artifact
 
 We propose packaging each LOD dataset as a multi-layer OCI artifact:
 
@@ -101,7 +121,7 @@ ghcr.io/publisher/lod/{dataset}:{version}
        dev.lod.void-digest: "sha256:abc123..."
 ```
 
-### 3.3 Properties Achieved
+### 4.3 Properties Achieved
 
 | Property | How OCI achieves it |
 |----------|-------------------|
@@ -114,7 +134,7 @@ ghcr.io/publisher/lod/{dataset}:{version}
 | **Reproducibility** | Pin to manifest digest (`@sha256:...`) for bitwise-identical reproduction. |
 | **Global distribution** | Leverage existing CDN infrastructure of major registries. |
 
-### 3.4 Layer Convention
+### 4.4 Layer Convention
 
 We propose a layer naming convention for RDF dataset artifacts:
 
@@ -128,7 +148,7 @@ We propose a layer naming convention for RDF dataset artifacts:
 
 The `_` prefix distinguishes metadata sidecars from data files. Multi-file datasets (e.g., sharded by entity type) use multiple data layers without the prefix.
 
-### 3.5 Manifest Annotations
+### 4.5 Manifest Annotations
 
 We propose a namespace for RDF-specific OCI manifest annotations, building on the OCI image spec's annotation keys:
 
@@ -144,7 +164,7 @@ We propose a namespace for RDF-specific OCI manifest annotations, building on th
 | `dev.lod.void-digest` | SHA-256 of VoID sidecar | Proposed |
 | `dev.lod.canonical-digest` | RDFC-1.0 canonical hash | Proposed |
 
-## 4. Pipeline Architecture
+## 5. Pipeline Architecture
 
 A complete LOD distribution pipeline using OCI:
 
@@ -170,14 +190,14 @@ Publisher                        OCI Registry                    Consumer
                               └──────────────┘
 ```
 
-### 4.1 Publisher Workflow
+### 5.1 Publisher Workflow
 
 1. **Ingest** — Fetch from upstream, normalize to Turtle, push as raw artifact
 2. **Clean** — Pull raw, sanitize (encoding fixes, blank node normalization), verify, generate VoID + schema
 3. **Publish** — Push clean artifact with sidecars and annotations
 4. **Tag** — Optionally tag with semantic version (`v2025.04`)
 
-### 4.2 Consumer Workflow
+### 5.2 Consumer Workflow
 
 1. **Discover** — Query registry API for available datasets and their annotations
 2. **Pull** — Download artifact (layer-cached; only new/changed layers transfer)
@@ -185,7 +205,7 @@ Publisher                        OCI Registry                    Consumer
 4. **Load** — Bulk-load into local triplestore; apply ontology sidecars; materialize inferences
 5. **Pin** — Record manifest digest in research outputs for reproducibility
 
-## 5. Comparison with Existing Approaches
+## 6. Comparison with Existing Approaches
 
 ```
                     Versioned  Incremental  Integrity  Metadata   Offline  Discoverable
@@ -207,7 +227,7 @@ OCI Artifact (this)    ✓          ✓³          ✓          ✓         ✓ 
 
 The key differentiator is **incremental updates via layer-level deduplication** combined with **co-located Semantic Web metadata** — the combination is unique to this approach.
 
-## 6. Implementation Status
+## 7. Implementation Status
 
 This proposal is implemented and in production use as the `linked-past-store` Python package, distributing 7 ancient world datasets (DPRR, Pleiades, PeriodO, Nomisma, CRRO, OCRE, EDH) totaling ~4M triples via GitHub Container Registry.
 
@@ -222,11 +242,11 @@ Implementation components:
 - `sanitize_turtle()` — RDF normalization (encoding fixes, blank nodes)
 - `verify_turtle()` — RDF integrity verification
 
-## 7. Attestation Model: Lessons from Software Supply Chain Security
+## 8. Attestation Model: Lessons from Software Supply Chain Security
 
 The software supply chain faces remarkably parallel challenges to LOD distribution. The OCI ecosystem has developed a sophisticated attestation model to address them. We propose adapting this model for RDF datasets.
 
-### 7.1 Parallel Problems
+### 8.1 Parallel Problems
 
 | Software Supply Chain | LOD Distribution | OCI Solution |
 |----------------------|------------------|-------------|
@@ -237,13 +257,13 @@ The software supply chain faces remarkably parallel challenges to LOD distributi
 | Pin exact version in lockfile | Pin exact dataset for reproducibility | Manifest digest (`@sha256:...`) |
 | npm/PyPI outage breaks builds | SPARQL endpoint goes down | Local pull + offline use |
 
-### 7.2 The OCI Referrers API
+### 8.2 The OCI Referrers API
 
 OCI Distribution Spec v1.1 introduced a mechanism for artifacts to **reference** other artifacts. Any OCI manifest can include a `subject` field pointing to another manifest's digest. The registry's Referrers API (`GET /v2/<name>/referrers/<digest>`) returns all manifests that reference a given artifact, filterable by `artifactType`.
 
 This is how the software ecosystem attaches signatures (Cosign), SBOMs (SPDX/CycloneDX), provenance (SLSA), and vulnerability scan results to container images — without modifying the original image.
 
-### 7.3 Proposed LOD Referrer Types
+### 8.3 Proposed LOD Referrer Types
 
 We propose five referrer artifact types for RDF datasets:
 
@@ -332,7 +352,7 @@ Manifest:
 
 Linksets describe connections between datasets — the LOD equivalent of a software dependency. By storing them as referrer artifacts, consumers discover inter-dataset relationships automatically when they pull a dataset.
 
-### 7.4 Discovery Flow
+### 8.4 Discovery Flow
 
 ```
 Consumer pulls dataset artifact
@@ -349,7 +369,7 @@ GET /v2/.../referrers/<digest>
 
 This mirrors how Docker Scout discovers SBOMs, Cosign discovers signatures, and Trivy discovers scan results — all via the same referrers API, differentiated by `artifactType`.
 
-### 7.5 Trust Levels (Inspired by SLSA)
+### 8.5 Trust Levels (Inspired by SLSA)
 
 We can define LOD Supply Chain Levels analogous to SLSA:
 
@@ -360,7 +380,7 @@ We can define LOD Supply Chain Levels analogous to SLSA:
 | **L2** | RDFC-1.0 integrity hash attached; provenance record with pipeline identity |
 | **L3** | Provenance generated by a trusted, isolated pipeline (CI/CD); cryptographic signature on the integrity hash |
 
-## 8. Open Questions (Updated)
+## 9. Open Questions
 
 1. **Media types** — Should we register a dedicated OCI artifact media type for RDF datasets (e.g., `application/vnd.w3.rdf.dataset.v1+json` for the manifest config), or reuse the generic artifact type?
 
@@ -401,7 +421,7 @@ The proposed approach maps well to the FAIR principles (Wilkinson et al., 2016):
 
 The main gap is **F4** (registered in a searchable resource) — OCI registries support tag listing and manifest inspection but lack the federated search capabilities of DCAT catalogs. Bridging OCI manifests to DCAT distributions (Open Question #4) would close this gap.
 
-## 9. References
+## 10. References
 
 ### SPARQL Endpoint Availability
 - Buil-Aranda, C., Hogan, A., Umbrich, J., Vandenbussche, P.-Y. (2013). "SPARQL Web-Querying Infrastructure: Ready for Action?" *ISWC 2013*, LNCS 8219. [DOI: 10.1007/978-3-642-41338-4_18](https://link.springer.com/chapter/10.1007/978-3-642-41338-4_18)
