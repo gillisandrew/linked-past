@@ -1777,7 +1777,7 @@ def _cmd_update(args):
             continue
 
     # Rebuild search index
-    _rebuild_search(data_dir)
+    _reindex()
     print(f"\nDatasets stored in {data_dir}")
 
 
@@ -1821,28 +1821,12 @@ def _cmd_reload(args):
             print(f"  Error: {e}")
 
     # Rebuild search index
-    _rebuild_search(data_dir)
+    _reindex()
 
 
 def _cmd_reindex(args):
     """Rebuild search index + meta-entity caches from existing stores."""
-    data_dir = get_data_dir()
-
-    for db_name in ["search.db", "embeddings.db", "meta_entities.db"]:
-        db_path = data_dir / db_name
-        if db_path.exists():
-            db_path.unlink()
-            print(f"Cleared {db_name}")
-
-    print("\nRebuilding...")
-    ctx = build_app_context(eager=False, skip_search=False)
-    search_count = 0
-    meta_count = 0
-    if ctx.search:
-        search_count = ctx.search._conn.execute("SELECT COUNT(*) FROM documents").fetchone()[0]
-    if ctx.meta:
-        meta_count = len(ctx.meta.all_entities())
-    print(f"Done: {search_count} search documents, {meta_count} meta-entities")
+    _reindex()
 
 
 def _select_datasets(registry: DatasetRegistry, args, data_dir) -> list[str] | None:
@@ -1883,18 +1867,28 @@ def _select_datasets(registry: DatasetRegistry, args, data_dir) -> list[str] | N
         return choice.split()
 
 
-def _rebuild_search(data_dir):
-    """Rebuild search index after dataset changes."""
-    # Clear cached fingerprint to force rebuild on next server start
-    fp_path = data_dir / "search.fingerprint"
-    if fp_path.exists():
-        fp_path.unlink()
-    # Also clear the DB so it gets rebuilt fresh
-    for suffix in ("", "-wal", "-shm"):
+def _reindex():
+    """Clear and rebuild search index + meta-entity caches."""
+    data_dir = get_data_dir()
+    for db_name in ["search.db", "search.fingerprint", "embeddings.db", "meta_entities.db"]:
+        db_path = data_dir / db_name
+        if db_path.exists():
+            db_path.unlink()
+    # Also clear WAL/SHM lock files
+    for suffix in ("-wal", "-shm"):
         p = data_dir / f"search.db{suffix}"
         if p.exists():
             p.unlink()
-    print("  Search index cleared (will rebuild on next server start)")
+
+    print("\nRebuilding search index...")
+    ctx = build_app_context(eager=False, skip_search=False)
+    search_count = 0
+    meta_count = 0
+    if ctx.search:
+        search_count = ctx.search._conn.execute("SELECT COUNT(*) FROM documents").fetchone()[0]
+    if ctx.meta:
+        meta_count = len(ctx.meta.all_entities())
+    print(f"Done: {search_count} search documents, {meta_count} meta-entities")
 
 
 def main():
