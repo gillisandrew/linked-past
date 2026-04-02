@@ -1624,6 +1624,12 @@ Use this to send formatted analysis, summaries, comparisons, or visualizations t
 
 def _cmd_serve(args):
     """Start the MCP server."""
+    # Configure structured log format: level, logger name, and message
+    logging.basicConfig(
+        format="%(levelname)s %(name)s: %(message)s",
+        level=logging.INFO,
+    )
+
     mcp = create_mcp_server()
     mcp.settings.host = args.host
     mcp.settings.port = args.port
