@@ -139,6 +139,8 @@ def materialize(store: Store) -> int:
 
     logger = logging.getLogger(__name__)
 
+    import time
+
     # Quick check: skip if no RDFS/OWL axioms present
     has_axioms = bool(store.query(
         "ASK { "
@@ -148,7 +150,12 @@ def materialize(store: Store) -> int:
         "}"
     ))
     if not has_axioms:
+        logger.info("materialize: no RDFS/OWL axioms found, skipping")
         return 0
+
+    t0 = time.monotonic()
+    store_size = len(store)
+    logger.info("materialize: starting (store has %d triples)", store_size)
 
     # Collect predicates and classes involved in RDFS axiom chains.
     # Only serialize triples relevant to inference — avoids loading the
@@ -172,6 +179,11 @@ def materialize(store: Store) -> int:
         else:
             sub_classes.add(sub_uri)
             sub_classes.add(super_uri)
+
+    logger.info(
+        "materialize: found %d axioms (%d sub-properties, %d sub-classes)",
+        len(axiom_rows), len(sub_props), len(sub_classes),
+    )
 
     # Build CONSTRUCT that extracts only inference-relevant triples:
     # 1. The axiom triples themselves (subPropertyOf, subClassOf)
@@ -200,9 +212,21 @@ def materialize(store: Store) -> int:
         with open(tmp.name, "wb") as f:
             serialize(quads, f, format=RdfFormat.TURTLE)
 
+        tmp_size = Path(tmp.name).stat().st_size
+        logger.info(
+            "materialize: serialized %s relevant triples to temp file (%d KB) in %.1fs",
+            f"{tmp_size // 1024:,}", tmp_size // 1024,
+            time.monotonic() - t0,
+        )
+
+        t1 = time.monotonic()
         r = reasonable.PyReasoner()
         r.load_file(tmp.name)
         inferred = r.reason()
+        logger.info(
+            "materialize: reasoner produced %d triples in %.1fs",
+            len(inferred), time.monotonic() - t1,
+        )
     finally:
         Path(tmp.name).unlink(missing_ok=True)
 
@@ -227,7 +251,11 @@ def materialize(store: Store) -> int:
         except Exception:
             pass  # Skip malformed triples (e.g., literals in subject position)
 
-    logger.info("materialize: %d new triples inferred (%d total from reasoner)", added, len(inferred))
+    elapsed = time.monotonic() - t0
+    logger.info(
+        "materialize: added %d new triples (%d from reasoner, %d duplicates skipped) in %.1fs",
+        added, len(inferred), len(inferred) - added, elapsed,
+    )
     return added
 
 

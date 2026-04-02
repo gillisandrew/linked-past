@@ -110,21 +110,26 @@ class DatasetPlugin:
         load_logger = logging.getLogger(__name__)
         data_dir = rdf_path.parent
         ttl_files = [f for f in sorted(data_dir.glob("*.ttl")) if not f.name.startswith("_")]
+        load_logger.info("load dataset=%s files=%d dir=%s", self.name, len(ttl_files), data_dir)
         for ttl in ttl_files:
             store.bulk_load(path=str(ttl), format=self.rdf_format)
+            load_logger.info("load dataset=%s loaded=%s triples=%d", self.name, ttl.name, len(store))
         # Load ontology sidecar if present (dataset-specific, e.g. Nomisma for CRRO/OCRE)
         ontology_path = data_dir / "_ontology.ttl"
         if ontology_path.exists():
             store.bulk_load(path=str(ontology_path), format=self.rdf_format)
+            load_logger.info("load dataset=%s loaded=_ontology.ttl triples=%d", self.name, len(store))
         # Load bundled standard ontologies (SKOS etc.) for universal inference
         bundled_dir = Path(__file__).resolve().parent.parent / "ontologies"
         if bundled_dir.exists():
             for ont in sorted(bundled_dir.glob("*.ttl")):
                 store.bulk_load(path=str(ont), format=self.rdf_format)
+                load_logger.info("load dataset=%s loaded=%s triples=%d", self.name, ont.name, len(store))
         try:
             materialize(store)
         except Exception as e:
             load_logger.warning("Materialization failed for %s: %s (continuing without inference)", self.name, e)
+        load_logger.info("load dataset=%s complete triples=%d", self.name, len(store))
         return len(store)
 
     # ------------------------------------------------------------------
