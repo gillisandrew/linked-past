@@ -215,7 +215,145 @@ Implementation components:
 - `sanitize_turtle()` — RDF normalization (encoding fixes, blank nodes)
 - `verify_turtle()` — RDF integrity verification
 
-## 7. Open Questions
+## 7. Attestation Model: Lessons from Software Supply Chain Security
+
+The software supply chain faces remarkably parallel challenges to LOD distribution. The OCI ecosystem has developed a sophisticated attestation model to address them. We propose adapting this model for RDF datasets.
+
+### 7.1 Parallel Problems
+
+| Software Supply Chain | LOD Distribution | OCI Solution |
+|----------------------|------------------|-------------|
+| Is this the binary CI built? | Is this the dataset the publisher released? | Content-addressed digests (`sha256:...`) |
+| What packages are inside? (SBOM) | What classes/properties are inside? (VoID) | Sidecar artifacts via referrers API |
+| Who built it and from what source? (SLSA provenance) | Who transformed it and from what upstream? (PROV-O) | Attestation manifests with `subject` field |
+| Does it have known vulnerabilities? (Trivy scan) | Does it meet quality thresholds? (Validation report) | Quality report as referrer artifact |
+| Pin exact version in lockfile | Pin exact dataset for reproducibility | Manifest digest (`@sha256:...`) |
+| npm/PyPI outage breaks builds | SPARQL endpoint goes down | Local pull + offline use |
+
+### 7.2 The OCI Referrers API
+
+OCI Distribution Spec v1.1 introduced a mechanism for artifacts to **reference** other artifacts. Any OCI manifest can include a `subject` field pointing to another manifest's digest. The registry's Referrers API (`GET /v2/<name>/referrers/<digest>`) returns all manifests that reference a given artifact, filterable by `artifactType`.
+
+This is how the software ecosystem attaches signatures (Cosign), SBOMs (SPDX/CycloneDX), provenance (SLSA), and vulnerability scan results to container images — without modifying the original image.
+
+### 7.3 Proposed LOD Referrer Types
+
+We propose five referrer artifact types for RDF datasets:
+
+**A. VoID Description** (analogous to SBOM)
+
+```
+Manifest:
+  subject:      sha256:<dataset-digest>
+  artifactType: application/vnd.w3.void+turtle
+  layers:       [void.ttl]
+  annotations:
+    io.w3.void.triples: "650000"
+    io.w3.void.classes: "12"
+```
+
+Consumers query: `GET /v2/.../referrers/<digest>?artifactType=application/vnd.w3.void+turtle`
+
+Like an SBOM enumerating a container's packages, the VoID description enumerates a dataset's classes, properties, partitions, and linksets — enabling discovery and assessment without downloading the data.
+
+**B. RDFC-1.0 Integrity Hash** (analogous to Cosign signature)
+
+```
+Manifest:
+  subject:      sha256:<dataset-digest>
+  artifactType: application/vnd.w3.rdfc1+json
+  layers:       [{ "algorithm": "rdfc-1.0-sha256", "hash": "<canonical-hash>" }]
+```
+
+OCI digests verify byte-level integrity (same serialization → same hash). RDFC-1.0 verifies **graph-level** integrity (same triples → same hash, regardless of serialization order or blank node labeling). This is the RDF analog of a Cosign signature — it attests that the semantic content is what the publisher intended.
+
+**C. PROV-O Provenance** (analogous to SLSA provenance)
+
+```
+Manifest:
+  subject:      sha256:<dataset-digest>
+  artifactType: application/vnd.w3.prov+turtle
+  layers:       [provenance.ttl]
+```
+
+The provenance record captures the full derivation chain using PROV-O:
+
+```turtle
+<#activity> a prov:Activity ;
+    prov:wasAssociatedWith <#pipeline> ;
+    prov:used <upstream-source-url> ;
+    prov:startedAtTime "2026-04-01T12:00:00Z" ;
+    prov:generated <dataset-artifact-digest> .
+
+<dataset-artifact-digest> a prov:Entity ;
+    prov:wasDerivedFrom <upstream-source-url> ;
+    prov:wasGeneratedBy <#activity> .
+```
+
+This parallels SLSA provenance (builder identity, source inputs, build parameters) but uses the W3C PROV ontology native to the Semantic Web.
+
+**D. Data Quality Report** (analogous to vulnerability scan)
+
+```
+Manifest:
+  subject:      sha256:<dataset-digest>
+  artifactType: application/vnd.lod.quality-report+json
+  layers:       [{
+    "triple_count": 650000,
+    "min_threshold": 600000,
+    "schema_conformance": { "known_classes": 24, "unknown_classes": 7 },
+    "broken_uris": 0,
+    "encoding_fixes": 0,
+    "validation_passed": true,
+    "timestamp": "2026-04-01T12:00:00Z"
+  }]
+```
+
+Like a Trivy vulnerability scan attached to a container image, quality reports document whether the dataset meets publishing standards. Consumers can make trust decisions based on these reports without loading the data.
+
+**E. Linkset Declaration** (analogous to dependency manifest)
+
+```
+Manifest:
+  subject:      sha256:<dataset-digest>
+  artifactType: application/vnd.w3.void.linkset+turtle
+  layers:       [dprr-nomisma-links.ttl]
+  annotations:
+    io.w3.void.target: "ghcr.io/publisher/lod/nomisma:latest"
+    io.w3.void.triples: "1200"
+```
+
+Linksets describe connections between datasets — the LOD equivalent of a software dependency. By storing them as referrer artifacts, consumers discover inter-dataset relationships automatically when they pull a dataset.
+
+### 7.4 Discovery Flow
+
+```
+Consumer pulls dataset artifact
+        │
+        ▼
+GET /v2/.../referrers/<digest>
+        │
+        ├─ artifactType=void     → VoID description (what's inside?)
+        ├─ artifactType=rdfc1    → Integrity hash (is it authentic?)
+        ├─ artifactType=prov     → Provenance (where did it come from?)
+        ├─ artifactType=quality  → Quality report (is it clean?)
+        └─ artifactType=linkset  → Linksets (what does it connect to?)
+```
+
+This mirrors how Docker Scout discovers SBOMs, Cosign discovers signatures, and Trivy discovers scan results — all via the same referrers API, differentiated by `artifactType`.
+
+### 7.5 Trust Levels (Inspired by SLSA)
+
+We can define LOD Supply Chain Levels analogous to SLSA:
+
+| Level | Requirements |
+|-------|-------------|
+| **L0** | Dataset published as OCI artifact with manifest annotations (license, source URL) |
+| **L1** | VoID description and quality report attached as referrer artifacts |
+| **L2** | RDFC-1.0 integrity hash attached; provenance record with pipeline identity |
+| **L3** | Provenance generated by a trusted, isolated pipeline (CI/CD); cryptographic signature on the integrity hash |
+
+## 8. Open Questions (Updated)
 
 1. **Media types** — Should we register a dedicated OCI artifact media type for RDF datasets (e.g., `application/vnd.w3.rdf.dataset.v1+json` for the manifest config), or reuse the generic artifact type?
 
@@ -231,7 +369,11 @@ Implementation components:
 
 7. **Named graphs** — The current proposal treats each artifact as a single default graph. Multi-graph datasets (e.g., with provenance in named graphs) would need a convention for graph-layer mapping.
 
-## 8. References
+8. **Referrer adoption** — The OCI Referrers API (v1.1) is supported by GHCR, ECR, and Harbor, but not all registries. Should the proposal require referrers support, or include a fallback tag-based scheme (as Cosign does)?
+
+9. **Signing** — Should LOD artifacts be signed using Sigstore/Cosign? This would provide non-repudiation (the publisher provably published this exact dataset). The infrastructure exists but adds tooling requirements.
+
+## 9. References
 
 ### SPARQL Endpoint Availability
 - Buil-Aranda, C., Hogan, A., Umbrich, J., Vandenbussche, P.-Y. (2013). "SPARQL Web-Querying Infrastructure: Ready for Action?" *ISWC 2013*, LNCS 8219. [DOI: 10.1007/978-3-642-41338-4_18](https://link.springer.com/chapter/10.1007/978-3-642-41338-4_18)
@@ -255,6 +397,15 @@ Implementation components:
 - Wilkinson, M.D., et al. (2016). "The FAIR Guiding Principles for Scientific Data Management and Stewardship." *Scientific Data* 3:160018. [DOI: 10.1038/sdata.2016.18](https://doi.org/10.1038/sdata.2016.18)
 - Soiland-Reyes, S., et al. (2022). "Packaging Research Artefacts with RO-Crate." *Data Science* 5(2). [DOI: 10.3233/DS-210053](https://doi.org/10.3233/DS-210053)
 
-### OCI and ORAS
-- OCI Distribution Specification. [https://github.com/opencontainers/distribution-spec](https://github.com/opencontainers/distribution-spec)
+### OCI, ORAS, and Supply Chain Security
+- OCI Distribution Specification v1.1. [https://github.com/opencontainers/distribution-spec](https://github.com/opencontainers/distribution-spec)
+- OCI Image Manifest Specification (subject field, artifactType). [https://github.com/opencontainers/image-spec/blob/main/manifest.md](https://github.com/opencontainers/image-spec/blob/main/manifest.md)
 - ORAS Project. [https://oras.land/](https://oras.land/)
+- ORAS Attached Artifacts (referrers model). [https://oras.land/docs/concepts/reftypes/](https://oras.land/docs/concepts/reftypes/)
+- Sigstore / Cosign. [https://docs.sigstore.dev/](https://docs.sigstore.dev/)
+- SLSA (Supply-chain Levels for Software Artifacts) v1.0. [https://slsa.dev/spec/v1.0/](https://slsa.dev/spec/v1.0/)
+- In-toto Attestation Framework v1. [https://github.com/in-toto/attestation](https://github.com/in-toto/attestation)
+- SPDX (Software Package Data Exchange). [https://spdx.dev/](https://spdx.dev/)
+
+### Provenance
+- PROV-O: The PROV Ontology. W3C Recommendation, 2013. [https://www.w3.org/TR/prov-o/](https://www.w3.org/TR/prov-o/)
