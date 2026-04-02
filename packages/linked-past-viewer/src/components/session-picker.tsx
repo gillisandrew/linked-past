@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useEffect, useRef } from "react";
 import type { SessionInfo, ViewerMessage } from "../lib/types";
 
 async function fetchSessions(): Promise<SessionInfo[]> {
@@ -26,16 +27,31 @@ export function SessionPicker({
   onLoadSession,
   onBackToLive,
   viewingSessionId,
+  initialSessionId,
 }: {
   onLoadSession: (messages: ViewerMessage[], sessionId: string) => void;
   onBackToLive: () => void;
   viewingSessionId: string | null;
+  initialSessionId?: string | null;
 }) {
   const { data: sessions, refetch } = useQuery({
     queryKey: ["sessions"],
     queryFn: fetchSessions,
     staleTime: 10_000,
   });
+
+  // Auto-load session from URL param on first render
+  const didAutoLoad = useRef(false);
+  useEffect(() => {
+    if (didAutoLoad.current || !initialSessionId || !sessions) return;
+    const match = sessions.find((s) => s.id === initialSessionId);
+    if (match) {
+      didAutoLoad.current = true;
+      fetchSession(initialSessionId).then((messages) => {
+        onLoadSession(messages, initialSessionId);
+      });
+    }
+  }, [sessions, initialSessionId, onLoadSession]);
 
   async function handleSelect(id: string) {
     const messages = await fetchSession(id);

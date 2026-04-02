@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAnnotations } from "../hooks/use-annotations";
 import { useViewerSocket } from "../hooks/use-viewer-socket";
 import type { ViewerMessage } from "../lib/types";
@@ -7,6 +7,27 @@ import { Feed } from "./feed";
 import { applyFilters, emptyFilters, FeedFilters, type Filters } from "./feed-filters";
 import { SessionPicker } from "./session-picker";
 import { AutoScrollButton, DarkModeToggle, ExpandCollapseButtons, ExportButton } from "./toolbar-actions";
+
+/**
+ * Read ?session= from the current URL.
+ */
+function getSessionFromUrl(): string | null {
+  const params = new URLSearchParams(window.location.search);
+  return params.get("session");
+}
+
+/**
+ * Update ?session= in the URL without a full page reload.
+ */
+function setSessionInUrl(sessionId: string | null) {
+  const url = new URL(window.location.href);
+  if (sessionId) {
+    url.searchParams.set("session", sessionId);
+  } else {
+    url.searchParams.delete("session");
+  }
+  window.history.replaceState({}, "", url.toString());
+}
 
 export function ViewerLayout() {
   const { messages: liveMessages, isConnected } = useViewerSocket();
@@ -23,6 +44,9 @@ export function ViewerLayout() {
     messages: ViewerMessage[];
   } | null>(null);
 
+  // On mount: load session from URL param if present
+  const [initialSessionId] = useState(getSessionFromUrl);
+
   const isViewingPast = pastSession !== null;
   const activeMessages = isViewingPast ? pastSession.messages : liveMessages;
   const filtered = applyFilters(activeMessages, filters, bookmarks);
@@ -30,12 +54,29 @@ export function ViewerLayout() {
   function handleLoadSession(messages: ViewerMessage[], sessionId: string) {
     setPastSession({ id: sessionId, messages });
     setFilters(emptyFilters());
+    setSessionInUrl(sessionId);
   }
 
   function handleBackToLive() {
     setPastSession(null);
     setFilters(emptyFilters());
+    setSessionInUrl(null);
   }
+
+  // Handle browser back/forward
+  useEffect(() => {
+    function onPopState() {
+      const sessionId = getSessionFromUrl();
+      if (!sessionId) {
+        setPastSession(null);
+        setFilters(emptyFilters());
+      }
+      // If there's a session ID in the URL after popstate, the SessionPicker
+      // will handle loading it via the initialSessionId mechanism
+    }
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -71,6 +112,7 @@ export function ViewerLayout() {
             onLoadSession={handleLoadSession}
             onBackToLive={handleBackToLive}
             viewingSessionId={isViewingPast ? pastSession.id : null}
+            initialSessionId={initialSessionId}
           />
           {activeMessages.length > 0 && (
             <FeedFilters
