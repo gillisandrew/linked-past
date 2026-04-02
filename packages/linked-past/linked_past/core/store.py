@@ -230,19 +230,36 @@ def materialize(store: Store) -> int:
     finally:
         Path(tmp.name).unlink(missing_ok=True)
 
-    # Insert genuinely new triples
-    def _to_term(val: str):
-        if val.startswith("http://") or val.startswith("https://"):
-            return NamedNode(val)
-        if val.startswith("_:"):
-            return BlankNode(val[2:])
-        return Literal(val)
+    # Insert genuinely new triples — preserve language tags and datatypes
+    def _to_term(val):
+        # reasonable returns rdflib terms — convert to pyoxigraph equivalents
+        from rdflib.term import BNode as RdflibBNode
+        from rdflib.term import Literal as RdflibLiteral
+        from rdflib.term import URIRef as RdflibURIRef
+
+        if isinstance(val, RdflibURIRef):
+            return NamedNode(str(val))
+        if isinstance(val, RdflibBNode):
+            return BlankNode(str(val))
+        if isinstance(val, RdflibLiteral):
+            if val.language:
+                return Literal(str(val), language=val.language)
+            if val.datatype:
+                return Literal(str(val), datatype=NamedNode(str(val.datatype)))
+            return Literal(str(val))
+        # Fallback for plain strings
+        val_str = str(val)
+        if val_str.startswith("http://") or val_str.startswith("https://"):
+            return NamedNode(val_str)
+        if val_str.startswith("_:"):
+            return BlankNode(val_str[2:])
+        return Literal(val_str)
 
     added = 0
     for s, p, o in inferred:
         try:
             subj = _to_term(s)
-            pred = NamedNode(p)
+            pred = NamedNode(str(p))
             obj = _to_term(o)
             existing = list(store.quads_for_pattern(subj, pred, obj, None))
             if not existing:
