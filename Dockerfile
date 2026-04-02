@@ -22,6 +22,7 @@ COPY --from=viewer-build /app/packages/linked-past-viewer/dist/ packages/linked-
 
 ENV PATH="/app/.venv/bin:$PATH"
 ENV LINKED_PAST_DATA_DIR="/data"
+ENV LINKED_PAST_CACHE_DIR="/data/.cache"
 # Set to comma-separated dataset names (or "all") to auto-download on startup
 # ENV LINKED_PAST_DATASETS="all"
 
