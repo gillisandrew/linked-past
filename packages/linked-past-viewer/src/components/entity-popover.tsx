@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState } from "react";
 import { humanizePredicate } from "../lib/predicates";
 import type { EntityData } from "../lib/types";
 import { DatasetBadge } from "./dataset-badge";
@@ -15,6 +16,21 @@ const HIDDEN_PREDICATES = new Set([
 
 function localName(pred: string): string {
   return pred.split("/").pop()?.split("#").pop() ?? pred;
+}
+
+function ExpandableValue({ value, children }: { value: string; children: React.ReactNode }) {
+  const [expanded, setExpanded] = useState(false);
+  const needsExpand = value.length > 35;
+
+  return (
+    <dd
+      className={`${needsExpand ? "cursor-pointer" : ""} ${expanded ? "whitespace-normal break-words" : "truncate"}`}
+      onClick={needsExpand ? () => setExpanded(!expanded) : undefined}
+      title={needsExpand ? (expanded ? "Click to collapse" : "Click to expand") : undefined}
+    >
+      {children}
+    </dd>
+  );
 }
 
 export function EntityPopoverContent({ data }: { data: EntityData }) {
@@ -55,9 +71,9 @@ export function EntityPopoverContent({ data }: { data: EntityData }) {
             {topProps.map((p, i) => (
               <div key={i} className="contents">
                 <dt className="font-semibold text-muted-foreground">{humanizePredicate(p.pred)}</dt>
-                <dd className="truncate">
+                <ExpandableValue value={p.obj}>
                   <PropertyValue value={p.obj} />
-                </dd>
+                </ExpandableValue>
               </div>
             ))}
           </dl>
