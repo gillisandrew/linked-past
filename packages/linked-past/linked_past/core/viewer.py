@@ -93,8 +93,8 @@ class ViewerManager:
         for ws in list(self._clients):
             try:
                 await ws.close()
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug("WebSocket close failed: %s", e)
         self._clients.clear()
         self._active = False
         logger.debug("ViewerManager deactivated")

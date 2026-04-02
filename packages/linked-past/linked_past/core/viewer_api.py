@@ -52,8 +52,8 @@ def _extract_name(uri: str, properties: list[dict[str, str]], store=None) -> str
             )
             if rows and rows[0].get("label"):
                 return rows[0]["label"]
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug("Label query failed for %s: %s", uri, e)
 
     return uri.rstrip("/").rsplit("/", 1)[-1].rsplit("#", 1)[-1]
 
