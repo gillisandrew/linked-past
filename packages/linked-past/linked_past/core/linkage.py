@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+import logging
 import uuid
 from pathlib import Path
 from typing import Any
 
 import yaml
 from pyoxigraph import Literal, NamedNode, Quad, Store
+
+logger = logging.getLogger(__name__)
 
 _LINKPAST = "http://linked-past.org/ontology#"
 _PROV = "http://www.w3.org/ns/prov#"
@@ -41,6 +44,7 @@ class LinkageGraph:
         with path.open() as f:
             data = yaml.safe_load(f)
         self._load_data(data)
+        logger.info("Loaded %d links from file=%s", len(data.get("links", [])), path.name)
 
     def load_data(self, data: dict[str, Any]) -> None:
         """Load linkage data from an already-parsed dict (useful for testing)."""
@@ -60,6 +64,7 @@ class LinkageGraph:
             fmt = RdfFormat.TURTLE
         self._store.bulk_load(path=str(path), format=fmt)
         added = len(self._store) - before
+        logger.info("Loaded %d triples from file=%s", added, path.name)
         return added
 
     # Keep old name as alias
