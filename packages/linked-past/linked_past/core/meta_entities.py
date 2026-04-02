@@ -223,7 +223,7 @@ class MetaEntityIndex:
         highest_office = None
 
         dprr_uris = cluster.get("dprr", set())
-        if dprr_uris:
+        if dprr_uris and "dprr" in registry._stores:
             dprr_uri = sorted(dprr_uris)[0]
             try:
                 store = registry.get_store("dprr")
@@ -259,7 +259,7 @@ class MetaEntityIndex:
         # Fall back to Nomisma label if no DPRR name
         if canonical_name == cluster_id:
             nomisma_uris = cluster.get("nomisma", set())
-            if nomisma_uris:
+            if nomisma_uris and "nomisma" in registry._stores:
                 nm_uri = sorted(nomisma_uris)[0]
                 try:
                     store = registry.get_store("nomisma")
@@ -277,7 +277,7 @@ class MetaEntityIndex:
         # Get Nomisma definition
         nomisma_def = ""
         nomisma_uris = cluster.get("nomisma", set())
-        if nomisma_uris:
+        if nomisma_uris and "nomisma" in registry._stores:
             nm_uri = sorted(nomisma_uris)[0]
             try:
                 store = registry.get_store("nomisma")
