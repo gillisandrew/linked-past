@@ -2,12 +2,9 @@
 
 from __future__ import annotations
 
-import logging
 from pathlib import Path
 
 from pyoxigraph import Literal, RdfFormat, Store
-
-logger = logging.getLogger(__name__)
 
 # Default XDG data directory
 _DEFAULT_DATA_DIR = Path.home() / ".local" / "share" / "linked-past"

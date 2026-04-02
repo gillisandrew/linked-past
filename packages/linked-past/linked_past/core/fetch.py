@@ -2,13 +2,10 @@
 
 from __future__ import annotations
 
-import logging
 import os
 from pathlib import Path
 
 from linked_past_store.pull import pull_for_dataset
-
-logger = logging.getLogger(__name__)
 
 _DEFAULT_REGISTRY = "ghcr.io/gillisandrew/linked-past"
 

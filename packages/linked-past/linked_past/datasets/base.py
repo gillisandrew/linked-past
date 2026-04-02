@@ -3,13 +3,10 @@
 from __future__ import annotations
 
 import inspect
-import logging
 from dataclasses import dataclass, field
 from pathlib import Path
 
 from pyoxigraph import RdfFormat, Store
-
-logger = logging.getLogger(__name__)
 
 
 @dataclass
