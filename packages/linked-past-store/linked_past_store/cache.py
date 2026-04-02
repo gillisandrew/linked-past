@@ -23,7 +23,6 @@ from __future__ import annotations
 
 import json
 import logging
-import subprocess
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -62,41 +61,32 @@ def _ref_to_path(ref: str) -> str:
 
 
 def _fetch_manifest_json(ref: str) -> str | None:
-    """Fetch raw manifest JSON from OCI registry.
-
-    Note: uses oras CLI — oras-py's get_manifest returns parsed dict, not raw JSON.
-    """
+    """Fetch manifest JSON from OCI registry using the Python oras library."""
     try:
-        result = subprocess.run(
-            ["oras", "manifest", "fetch", ref],
-            capture_output=True,
-            text=True,
-            timeout=30,
-        )
-        if result.returncode != 0:
-            return None
-        return result.stdout
+        import oras.client
+
+        client = oras.client.OrasClient()
+        manifest = client.get_manifest(ref)
+        if isinstance(manifest, dict):
+            return json.dumps(manifest)
+        return None
     except Exception as e:
         logger.debug("Failed to fetch manifest for %s: %s", ref, e)
         return None
 
 
 def _resolve_digest(ref: str) -> str | None:
-    """Resolve an OCI ref to its manifest digest without downloading."""
-    try:
-        result = subprocess.run(
-            ["oras", "manifest", "fetch", ref, "--descriptor"],
-            capture_output=True,
-            text=True,
-            timeout=30,
-        )
-        if result.returncode != 0:
-            return None
-        descriptor = json.loads(result.stdout)
-        return descriptor.get("digest")
-    except Exception as e:
-        logger.debug("Failed to resolve digest for %s: %s", ref, e)
+    """Resolve an OCI ref to its manifest digest without downloading.
+
+    Computes SHA-256 of the canonical manifest JSON.
+    """
+    import hashlib
+
+    raw = _fetch_manifest_json(ref)
+    if not raw:
         return None
+    digest = hashlib.sha256(raw.encode()).hexdigest()
+    return f"sha256:{digest}"
 
 
 def _verify_digest(path: Path, expected: str) -> bool:
@@ -181,17 +171,21 @@ class ArtifactCache:
         if manifest and manifest.get("layers"):
             layers = self.parse_layers(manifest)
 
-            # Download only missing layers
+            # Download only missing layers (docker-style progress)
             tmp_dir = self._cache_dir / "tmp"
             tmp_dir.mkdir(parents=True, exist_ok=True)
-            for layer in layers:
+
+            def _fmt_size(n: int) -> str:
+                if n >= 1_000_000:
+                    return f"{n / 1_000_000:.1f} MB"
+                if n >= 1_000:
+                    return f"{n / 1_000:.1f} KB"
+                return f"{n} B"
+
+            for i, layer in enumerate(layers, 1):
+                prefix = f"  [{i}/{len(layers)}] {layer.filename:20s}"
                 if not self.has_layer(layer.digest):
-                    logger.info(
-                        "Downloading layer %s (%s, %d bytes)",
-                        layer.filename,
-                        layer.digest[:20],
-                        layer.size,
-                    )
+                    print(f"{prefix} Pulling... ({_fmt_size(layer.size)})", flush=True)
                     with tempfile.NamedTemporaryFile(
                         dir=tmp_dir, suffix=f"_{layer.filename}", delete=False
                     ) as tmp_file:
@@ -201,8 +195,9 @@ class ArtifactCache:
                         self.put_layer(layer.digest, layer.filename, tmp_path)
                     finally:
                         tmp_path.unlink(missing_ok=True)
+                    print(f"{prefix} Done ({layer.digest[:12]})", flush=True)
                 else:
-                    logger.info("Layer cached: %s (%s)", layer.filename, layer.digest[:20])
+                    print(f"{prefix} Cached ({layer.digest[:12]})", flush=True)
 
             # Resolve manifest digest if we didn't have it
             if not digest:
@@ -339,18 +334,16 @@ class ArtifactCache:
 
     def _download_layer(self, ref: str, digest: str, outpath: str) -> None:
         """Download a single layer blob by digest and verify its content hash."""
-        # oras blob fetch uses repo@digest syntax (strip tag from ref)
+        import oras.client
+
         repo = ref.rsplit(":", 1)[0]
         try:
-            subprocess.run(
-                ["oras", "blob", "fetch", f"{repo}@{digest}", "--output", outpath],
-                capture_output=True,
-                text=True,
-                timeout=120,
-                check=True,
-            )
-        except (subprocess.CalledProcessError, FileNotFoundError) as e:
-            logger.warning("oras blob fetch failed for %s: %s", digest[:20], e)
+            client = oras.client.OrasClient()
+            response = client.get_blob(f"{repo}@{digest}")
+            with open(outpath, "wb") as f:
+                f.write(response.content)
+        except Exception as e:
+            logger.warning("Blob fetch failed for %s: %s", digest[:20], e)
             raise
 
         # Verify downloaded content matches declared digest
