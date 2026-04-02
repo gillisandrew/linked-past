@@ -14,6 +14,7 @@ dependencies = [
     "markdown",
     "websockets",
     "linked-past-store",
+    "reasonable",
 ]
 
 [tool.uv.sources]
