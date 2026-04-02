@@ -364,12 +364,10 @@ class ArtifactCache:
 
     def _download_layer(self, ref: str, digest: str, outpath: str) -> None:
         """Download a single layer blob by digest and verify its content hash."""
-        import oras.client
-
         repo = ref.rsplit(":", 1)[0]
         try:
             client = oras.client.OrasClient()
-            response = client.get_blob(f"{repo}@{digest}")
+            response = client.get_blob(repo, digest)
             with open(outpath, "wb") as f:
                 f.write(response.content)
         except Exception as e:
