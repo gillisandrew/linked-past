@@ -1,12 +1,12 @@
-# Stage 1: Build viewer
-FROM node:22-slim AS viewer-build
+# Stage 1: Build viewer (runs on builder's native arch — output is static JS/CSS)
+FROM --platform=$BUILDPLATFORM node:22-slim AS viewer-build
 WORKDIR /app/packages/linked-past-viewer
 COPY packages/linked-past-viewer/package.json packages/linked-past-viewer/package-lock.json ./
 RUN npm ci
 COPY packages/linked-past-viewer/ .
 RUN npm run build
 
-# Stage 2: Python runtime
+# Stage 2: Python runtime (multi-arch: amd64, arm64)
 FROM python:3.13-slim
 
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
@@ -17,7 +17,7 @@ COPY packages/linked-past/ packages/linked-past/
 COPY packages/linked-past-store/ packages/linked-past-store/
 RUN uv sync --no-dev --frozen
 
-# Copy built viewer assets
+# Copy built viewer assets (platform-independent static files)
 COPY --from=viewer-build /app/packages/linked-past-viewer/dist/ packages/linked-past-viewer/dist/
 
 ENV PATH="/app/.venv/bin:$PATH"
