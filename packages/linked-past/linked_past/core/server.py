@@ -1737,9 +1737,7 @@ def _print_dataset_result(plugin, meta):
     triples_str = f"{tc:,}" if isinstance(tc, int) else str(tc)
     ref = artifact_ref(plugin.oci_dataset, plugin.oci_version)
     digest = ArtifactCache().digest_for(ref) or "unknown"
-    print(f"  Triples: {triples_str}")
-    print(f"  Artifact: {ref}")
-    print(f"  Digest: {digest}")
+    logger.info("dataset=%s triples=%s artifact=%s digest=%s", plugin.name, triples_str, ref, digest)
 
 
 def _cmd_status(args):
@@ -1755,10 +1753,7 @@ def _cmd_status(args):
         registry.register(plugin)
     cache = ArtifactCache()
 
-    print(f"Data directory: {data_dir}\n")
-    print(f"{'Dataset':12s} {'Status':14s} {'Triples':>10s}  {'Display Name'}")
-    print("-" * 70)
-
+    logger.info("data_dir=%s", data_dir)
     for name in registry.list_datasets():
         plugin = registry.get_plugin(name)
 
@@ -1775,8 +1770,10 @@ def _cmd_status(args):
         ref = artifact_ref(plugin.oci_dataset, plugin.oci_version)
         digest = cache.digest_for(ref)
         digest_short = digest[:19] if digest else "unknown"
-        print(f"{name:12s} {status:14s} {triples:>10s}  {plugin.display_name}")
-        print(f"{'':12s} {'':14s} {'':>10s}  {ref} @ {digest_short}")
+        logger.info(
+            "dataset=%-12s status=%-14s triples=%10s name=%s artifact=%s @ %s",
+            name, status, triples, plugin.display_name, ref, digest_short,
+        )
 
 
 def _cmd_update(args):
@@ -1796,9 +1793,7 @@ def _cmd_update(args):
 
     for name in selected:
         plugin = registry.get_plugin(name)
-        print(f"\n{'=' * 60}")
-        print(f"Updating {plugin.display_name}...")
-        print(f"{'=' * 60}")
+        logger.info("update: dataset=%s force=%s", name, force)
 
         # Delete existing store to force re-load
         store_path = data_dir / name / "store"
@@ -1812,12 +1807,12 @@ def _cmd_update(args):
             meta = registry.get_metadata(name)
             _print_dataset_result(plugin, meta)
         except Exception as e:
-            print(f"  Error: {e}")
+            logger.error("update: dataset=%s error: %s", name, e)
             continue
 
     # Rebuild search index
     _reindex()
-    print(f"\nDatasets stored in {data_dir}")
+    logger.info("update: complete data_dir=%s", data_dir)
 
 
 def _cmd_reload(args):
@@ -1841,10 +1836,10 @@ def _cmd_reload(args):
         # Check TTL files exist
         ttl_files = [f for f in sorted(dataset_dir.glob("*.ttl")) if not f.name.startswith("_")]
         if not ttl_files:
-            print(f"  {name}: no TTL files in {dataset_dir}, skipping")
+            logger.warning("reload: dataset=%s no TTL files in %s, skipping", name, dataset_dir)
             continue
 
-        print(f"  Reloading {plugin.display_name}...")
+        logger.info("reload: dataset=%s", name)
 
         # Delete store to force re-load from disk
         if store_path.exists():
@@ -1857,7 +1852,7 @@ def _cmd_reload(args):
             meta = registry.get_metadata(name)
             _print_dataset_result(plugin, meta)
         except Exception as e:
-            print(f"  Error: {e}")
+            logger.error("reload: dataset=%s error: %s", name, e)
 
     # Rebuild search index
     _reindex()
@@ -1878,8 +1873,7 @@ def _select_datasets(registry: DatasetRegistry, args, data_dir) -> list[str] | N
         selected = args.datasets
         invalid = [d for d in selected if d not in available]
         if invalid:
-            print(f"Unknown datasets: {', '.join(invalid)}")
-            print(f"Available: {', '.join(available)}")
+            logger.error("Unknown datasets: %s (available: %s)", ", ".join(invalid), ", ".join(available))
             sys.exit(1)
         return selected
     elif getattr(args, "all", False):
@@ -1919,7 +1913,7 @@ def _reindex():
         if p.exists():
             p.unlink()
 
-    print("\nRebuilding search index...")
+    logger.info("reindex: rebuilding search index and meta-entities...")
     ctx = build_app_context(eager=False, skip_search=False)
     search_count = 0
     meta_count = 0
@@ -1927,7 +1921,7 @@ def _reindex():
         search_count = ctx.search._conn.execute("SELECT COUNT(*) FROM documents").fetchone()[0]
     if ctx.meta:
         meta_count = len(ctx.meta.all_entities())
-    print(f"Done: {search_count} search documents, {meta_count} meta-entities")
+    logger.info("reindex: complete search_docs=%d meta_entities=%d", search_count, meta_count)
 
 
 def main():
