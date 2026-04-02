@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import logging
 import sqlite3
 from pathlib import Path
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 
 class SearchIndex:
@@ -65,6 +68,7 @@ class SearchIndex:
             rows,
         )
         self._conn.commit()
+        logger.debug("indexed %d documents dataset=%s", len(rows), rows[0][0] if rows else "?")
         return len(rows)
 
     def build(self) -> int:
@@ -120,10 +124,12 @@ class SearchIndex:
             return []
 
         # BM25 returns negative scores (lower = better match), negate for consistency
-        return [
+        results = [
             {"dataset": ds, "doc_type": dt, "text": text, "score": -score}
             for ds, dt, text, score in rows
         ]
+        logger.debug("search query=%r dataset=%s results=%d", query, dataset, len(results))
+        return results
 
     def clear_dataset(self, dataset: str) -> int:
         """Remove all documents for a dataset. Returns count removed."""
@@ -131,6 +137,7 @@ class SearchIndex:
             "DELETE FROM documents WHERE dataset = ?", (dataset,)
         )
         self._conn.commit()
+        logger.info("cleared search index dataset=%s count=%d", dataset, cursor.rowcount)
         return cursor.rowcount
 
     def close(self) -> None:
