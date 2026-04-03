@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
-    "build:static": "cross-env BUILD_STATIC=1 tsc --noEmit && cross-env BUILD_STATIC=1 vite build",
+    "build:static": "cross-env BUILD_STATIC=1 tsc --noEmit && cross-env BUILD_STATIC=1 vite build && mv dist-static/static.html dist-static/index.html",
     "preview": "vite preview",
     "preview:static": "cross-env BUILD_STATIC=1 vite preview"
   },

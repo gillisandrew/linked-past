@@ -26,7 +26,7 @@ const XrefLinkSchema = z.object({
 });
 
 export const QueryDataSchema = z.object({
-  rows: z.array(z.record(z.string(), z.string())),
+  rows: z.array(z.record(z.string(), z.union([z.string(), z.number(), z.null()]))),
   columns: z.array(z.string()),
   sparql: z.string(),
   row_count: z.number(),

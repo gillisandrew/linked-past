@@ -61,7 +61,7 @@ export function QueryResult({ data }: { data: QueryData }) {
               {data.rows.map((row, i) => (
                 <TableRow key={i}>
                   {data.columns.map((col) => {
-                    const val = row[col] ?? "";
+                    const val = String(row[col] ?? "");
                     return (
                       <ExpandableCell key={col} value={val}>
                         {isEntityUri(val) ? (

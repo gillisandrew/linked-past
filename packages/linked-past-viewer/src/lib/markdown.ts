@@ -7,7 +7,7 @@ import { expandPrefixedUri, isEntityUri, markdownLink } from "./uri";
  */
 export function rowsToMarkdown(
   columns: string[],
-  rows: Record<string, string>[],
+  rows: Record<string, string | number | null>[],
   prefixMap?: Record<string, string>,
 ): string {
   if (columns.length === 0 || rows.length === 0) return "_No results_";
@@ -15,7 +15,7 @@ export function rowsToMarkdown(
   const sep = `| ${columns.map(() => "---").join(" | ")} |`;
   const body = rows
     .map((row) => `| ${columns.map((c) => {
-      const val = row[c] ?? "";
+      const val = String(row[c] ?? "");
       return isEntityUri(val) ? markdownLink(val, prefixMap) : val;
     }).join(" | ")} |`)
     .join("\n");
