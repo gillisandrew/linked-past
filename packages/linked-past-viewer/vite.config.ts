@@ -7,7 +7,7 @@ const isStatic = process.env.BUILD_STATIC === "1";
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
-  base: isStatic ? "/linked-past/" : "/viewer/",
+  base: isStatic ? "/linked-past/viewer/" : "/viewer/",
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
