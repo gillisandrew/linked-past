@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import logging
 
 from starlette.websockets import WebSocket, WebSocketDisconnect
@@ -80,6 +81,14 @@ class ViewerManager:
         sessions_dir = Path(get_data_dir()) / "viewer" / "sessions"
         sessions_dir.mkdir(parents=True, exist_ok=True)
         self._session_file = open(sessions_dir / f"{self._session_id}.jsonl", "a")  # noqa: SIM115
+        meta = json.dumps({
+            "format_version": 1,
+            "type": "session_meta",
+            "session_id": self._session_id,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        })
+        self._session_file.write(meta + "\n")
+        self._session_file.flush()
         logger.info("ViewerManager activated, session %s", self._session_id)
 
     async def deactivate(self) -> None:
