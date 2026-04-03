@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { ViewerMessageSchema } from "../lib/schemas";
 import { clearMessages, getAllMessages, putMessage } from "../lib/store";
 import type { ViewerMessage } from "../lib/types";
 
@@ -22,7 +23,12 @@ export function useViewerSocket() {
 
     ws.onmessage = (e) => {
       try {
-        const msg = JSON.parse(e.data) as ViewerMessage;
+        const parsed = ViewerMessageSchema.safeParse(JSON.parse(e.data));
+        if (!parsed.success) {
+          console.warn("Invalid viewer message:", parsed.error.issues[0]?.message);
+          return;
+        }
+        const msg = parsed.data;
 
         // Detect new session by session_id change
         if (msg.session_id && msg.session_id !== currentSessionId.current) {
