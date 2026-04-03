@@ -1,60 +1,17 @@
-export type QueryData = {
-  rows: Record<string, string>[];
-  columns: string[];
-  sparql: string;
-  row_count: number;
-  prefix_map?: Record<string, string>;
-  title?: string | null;
-};
+// Message types — inferred from Zod schemas (single source of truth)
+export type {
+  ViewerMessage,
+  QueryData,
+  EntityData,
+  LinksData,
+  SearchData,
+  ReportData,
+  XrefLink,
+  PredicateMeta,
+  SessionMeta,
+} from "./schemas";
 
-export type PredicateMeta = {
-  label?: string;
-  comment?: string;
-  domain?: string;
-  range?: string;
-};
-
-export type EntityData = {
-  uri: string;
-  name: string;
-  dataset: string | null;
-  description?: string;
-  type_hierarchy?: string[];
-  see_also?: string[];
-  properties: { pred: string; obj: string }[];
-  predicate_meta?: Record<string, PredicateMeta>;
-  xrefs: XrefLink[];
-};
-
-export type XrefLink = {
-  target: string;
-  relationship: string;
-  confidence: string;
-  basis: string;
-};
-
-export type LinksData = {
-  uri: string;
-  links: XrefLink[];
-};
-
-export type SearchData = {
-  query_text: string;
-  results: { uri: string; label: string; dataset: string }[];
-};
-
-export type ReportData = {
-  title: string | null;
-  markdown: string;
-};
-
-type BaseMessage = {
-  session_id: string;
-  seq: number;
-  dataset: string | null;
-  timestamp: string;
-};
-
+// Session list item (from /viewer/api/sessions, not part of JSONL format)
 export type SessionInfo = {
   id: string;
   message_count: number;
@@ -62,10 +19,3 @@ export type SessionInfo = {
   last_activity: string;
   is_current: boolean;
 };
-
-export type ViewerMessage =
-  | (BaseMessage & { type: "query"; data: QueryData })
-  | (BaseMessage & { type: "entity"; data: EntityData })
-  | (BaseMessage & { type: "links"; data: LinksData })
-  | (BaseMessage & { type: "search"; data: SearchData })
-  | (BaseMessage & { type: "report"; data: ReportData });
