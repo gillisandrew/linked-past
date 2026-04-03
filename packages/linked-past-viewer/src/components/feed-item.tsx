@@ -17,12 +17,12 @@ import type { ViewerMessage } from "../lib/types";
 import { CopyButton } from "./copy-button";
 import { DatasetBadge } from "./dataset-badge";
 
-const TYPE_META: Record<string, { icon: React.ReactNode; color: string; label: string }> = {
-  query: { icon: <Database className="w-3.5 h-3.5" />, color: "text-blue-500", label: "Query" },
-  search: { icon: <Search className="w-3.5 h-3.5" />, color: "text-violet-500", label: "Search" },
-  entity: { icon: <User className="w-3.5 h-3.5" />, color: "text-emerald-500", label: "Entity" },
-  links: { icon: <Link2 className="w-3.5 h-3.5" />, color: "text-amber-500", label: "Links" },
-  report: { icon: <FileText className="w-3.5 h-3.5" />, color: "text-rose-500", label: "Report" },
+const TYPE_META: Record<string, { icon: React.ReactNode; color: string; bg: string; label: string }> = {
+  query: { icon: <Database className="w-3 h-3" />, color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-100 dark:bg-blue-950", label: "Query" },
+  search: { icon: <Search className="w-3 h-3" />, color: "text-violet-600 dark:text-violet-400", bg: "bg-violet-100 dark:bg-violet-950", label: "Search" },
+  entity: { icon: <User className="w-3 h-3" />, color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-100 dark:bg-emerald-950", label: "Entity" },
+  links: { icon: <Link2 className="w-3 h-3" />, color: "text-amber-600 dark:text-amber-400", bg: "bg-amber-100 dark:bg-amber-950", label: "Links" },
+  report: { icon: <FileText className="w-3 h-3" />, color: "text-rose-600 dark:text-rose-400", bg: "bg-rose-100 dark:bg-rose-950", label: "Report" },
 };
 
 export function FeedItem({
@@ -64,7 +64,7 @@ export function FeedItem({
     setEditingNote(false);
   }
 
-  const typeMeta = TYPE_META[message.type] ?? { icon: null, color: "text-muted-foreground", label: message.type };
+  const typeMeta = TYPE_META[message.type] ?? { icon: null, color: "text-muted-foreground", bg: "bg-muted", label: message.type };
 
   return (
     <Collapsible
@@ -78,7 +78,7 @@ export function FeedItem({
             {message.seq}
           </span>
           <Tooltip>
-            <TooltipTrigger className={`shrink-0 ${typeMeta.color}`}>
+            <TooltipTrigger className={`shrink-0 inline-flex items-center justify-center w-5 h-5 rounded-full ${typeMeta.bg} ${typeMeta.color}`}>
               {typeMeta.icon}
             </TooltipTrigger>
             <TooltipContent side="bottom" className="text-xs">
