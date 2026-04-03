@@ -87,6 +87,8 @@ export function shortUri(uri: string): string {
  */
 export function linkHref(uri: string): string {
   let href = normalizeUri(uri).replace(/^http:\/\//, "https://");
+  // Reject non-HTTPS protocols (blocks javascript:, data:, vbscript:, etc.)
+  if (!href.startsWith("https://")) return "#";
   // Pleiades vocab#<id> → places/<id> (the web page for the place)
   href = href.replace(
     /^https:\/\/pleiades\.stoa\.org\/places\/vocab#(\d+)/,

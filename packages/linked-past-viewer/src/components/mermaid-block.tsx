@@ -9,7 +9,7 @@ function getMermaid() {
       m.default.initialize({
         startOnLoad: false,
         theme: "default",
-        securityLevel: "loose",
+        securityLevel: "strict",
       });
       return m.default;
     });
