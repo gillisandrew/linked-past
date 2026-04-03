@@ -196,7 +196,7 @@ export type ParseResult = {
 };
 
 export function parseSessionJsonl(text: string): ParseResult {
-  const lines = text.split("\n").filter((l) => l.trim() !== "");
+  const lines = text.split(/\r?\n/).filter((l) => l.trim() !== "");
   const messages: ViewerMessage[] = [];
   const errors: ParseError[] = [];
   let formatVersion: number | null = null;
@@ -285,39 +285,99 @@ export function useIsStaticMode(): boolean {
 
 - [ ] **Step 2: Modify `entity-uri.tsx` to skip popover in static mode**
 
-Find the existing `EntityUri` component. Add the static mode check so the popover trigger is replaced with a plain link when in static mode.
+The existing component renders a `pill` variable (a `<span>` with inline dataset styles) and wraps it in a `Popover`. In static mode, we skip the popover entirely and wrap the pill in a plain `<a>` tag.
 
-At the top of the file, add the import:
+Replace the entire file with:
 
 ```typescript
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { useState } from "react";
+import { useEntityQuery } from "../hooks/use-entity-query";
+import { datasetForUri, linkHref, shortUri } from "../lib/uri";
 import { useIsStaticMode } from "@/lib/static-context";
-```
+import { EntityPopoverContent } from "./entity-popover";
 
-Inside the `EntityUri` component, add at the start of the function body:
+function datasetStyle(dataset: string | null): React.CSSProperties {
+  const ds = dataset ?? "default";
+  return {
+    backgroundColor: `var(--ds-${ds}-bg, var(--ds-default-bg))`,
+    color: `var(--ds-${ds}-fg, var(--ds-default-fg))`,
+  };
+}
 
-```typescript
-const isStatic = useIsStaticMode();
-```
+const PILL_CLASSES =
+  "inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium cursor-pointer transition-[filter] hover:brightness-95 dark:hover:brightness-110";
 
-Then wrap the popover rendering. Find the section where `Popover` is rendered (the component currently wraps the pill in a `Popover` with `PopoverTrigger` and `PopoverContent`). Add an early return before the `Popover` block:
+export function EntityUri({ uri, display }: { uri: string; display?: string }) {
+  const dataset = datasetForUri(uri);
+  const isStatic = useIsStaticMode();
+  const [open, setOpen] = useState(false);
+  const { data, isLoading } = useEntityQuery(uri, open);
+  const label = display ?? shortUri(uri);
 
-```typescript
-if (isStatic) {
-  return (
-    <a
-      href={linkHref(uri)}
-      target="_blank"
-      rel="noopener noreferrer"
-      className={pillClasses}
-      title={uri}
-    >
+  const pill = (
+    <span className={PILL_CLASSES} style={datasetStyle(dataset)}>
       {label}
-    </a>
+    </span>
+  );
+
+  // Static mode: no popover, just a link to the raw URI
+  if (isStatic) {
+    return (
+      <a href={linkHref(uri)} target="_blank" rel="noopener noreferrer" title={uri}>
+        {pill}
+      </a>
+    );
+  }
+
+  const isFullUri = uri.startsWith("http://") || uri.startsWith("https://");
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger
+        className="inline-flex items-center cursor-pointer"
+        onMouseEnter={() => setOpen(true)}
+        onMouseLeave={() => setOpen(false)}
+      >
+        {isFullUri ? (
+          <a
+            href={linkHref(uri)}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {pill}
+          </a>
+        ) : (
+          pill
+        )}
+      </PopoverTrigger>
+      <PopoverContent
+        className="p-0 w-auto"
+        onMouseEnter={() => setOpen(true)}
+        onMouseLeave={() => setOpen(false)}
+        side="bottom"
+        align="start"
+        sideOffset={2}
+      >
+        {isLoading ? (
+          <div className="p-4 text-sm text-muted-foreground">Loading…</div>
+        ) : data ? (
+          <EntityPopoverContent data={data} />
+        ) : (
+          <div className="p-4 text-sm text-muted-foreground">{uri}</div>
+        )}
+      </PopoverContent>
+    </Popover>
   );
 }
 ```
 
-Where `pillClasses` and `label` are the same variables used in the existing pill rendering (the `className` applied to the `PopoverTrigger` button and the display text). Extract those from the existing code so both the static and live paths share them.
+Note: `useEntityQuery(uri, open)` is called unconditionally (React hooks rule), but `open` is always `false` in static mode since `setOpen` is never called, so it never fetches. However, `useEntityQuery` internally calls `useQuery` from `@tanstack/react-query`, which requires a `QueryClientProvider` to exist in the tree. This is handled in Task 6 by wrapping the static app in a no-op `QueryClientProvider`.
 
 - [ ] **Step 3: Verify type-check passes**
 
@@ -592,20 +652,23 @@ git commit -m "feat(viewer): add DropZone component for file upload and paste"
 
 This is the static viewer app shell. It shows the DropZone when no session is loaded, and the Feed when one is. Parse errors render as inline warning items in the feed.
 
+Note: The static app needs a no-op `QueryClientProvider` because shared components (entity-uri → useEntityQuery → useQuery) require one in the React tree, even though no fetches are made in static mode.
+
 ```typescript
 import "./app.css";
 
 import { createRoot } from "react-dom/client";
 import { useState } from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { DropZone } from "@/components/drop-zone";
 import { Feed } from "@/components/feed";
 import { StaticModeProvider } from "@/lib/static-context";
 import { useStaticSession } from "@/hooks/use-static-session";
 import { Button } from "@/components/ui/button";
 import { FolderOpen, ChevronDown, ChevronUp, AlertTriangle } from "lucide-react";
-import type { ViewerMessage } from "@/lib/schemas";
 
 const CURRENT_FORMAT_VERSION = 1;
+const queryClient = new QueryClient();
 
 function StaticApp() {
   const session = useStaticSession();
@@ -614,9 +677,6 @@ function StaticApp() {
   if (!session.isLoaded) {
     return <DropZone onLoadText={session.loadFromText} onLoadFile={session.loadFromFile} />;
   }
-
-  // Build feed messages, interleaving parse errors as synthetic warning items
-  const feedMessages: ViewerMessage[] = session.messages;
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -671,7 +731,7 @@ function StaticApp() {
           </div>
         )}
 
-      {/* Parse errors */}
+      {/* Parse errors — shown as a collapsible banner above the feed */}
       {session.errors.length > 0 && (
         <div className="border-b border-amber-500/30 bg-amber-500/5 px-4 py-3 space-y-2">
           <p className="text-xs font-medium text-amber-700 dark:text-amber-400">
@@ -697,7 +757,7 @@ function StaticApp() {
       {/* Feed */}
       <div className="p-4">
         <Feed
-          messages={feedMessages}
+          messages={session.messages}
           bookmarks={new Set()}
           notes={new Map()}
           forceOpen={forceOpen}
@@ -708,9 +768,11 @@ function StaticApp() {
 }
 
 createRoot(document.getElementById("root")!).render(
-  <StaticModeProvider value={true}>
-    <StaticApp />
-  </StaticModeProvider>,
+  <QueryClientProvider client={queryClient}>
+    <StaticModeProvider value={true}>
+      <StaticApp />
+    </StaticModeProvider>
+  </QueryClientProvider>,
 );
 ```
 
@@ -777,12 +839,18 @@ export default defineConfig({
 });
 ```
 
-- [ ] **Step 2: Add `build:static` script to `package.json`**
+- [ ] **Step 2: Install `cross-env` and add `build:static` script**
 
-Add to the `"scripts"` section:
+`BUILD_STATIC=1 command` is Unix-only syntax. Use `cross-env` for cross-platform support.
+
+```bash
+cd packages/linked-past-viewer && npm install --save-dev cross-env
+```
+
+Add to the `"scripts"` section of `package.json`:
 
 ```json
-"build:static": "BUILD_STATIC=1 tsc --noEmit && BUILD_STATIC=1 vite build"
+"build:static": "cross-env BUILD_STATIC=1 tsc --noEmit && cross-env BUILD_STATIC=1 vite build"
 ```
 
 - [ ] **Step 3: Test the static build**
@@ -863,25 +931,23 @@ git commit -m "feat(viewer): write session_meta preamble to JSONL on session sta
 **Files:**
 - Modify: `packages/linked-past/linked_past/core/viewer_api.py`
 
-- [ ] **Step 1: Modify `session_detail_handler` to support `?format=jsonl`**
+- [ ] **Step 1: Add `datetime` import and modify `session_detail_handler` to support `?format=jsonl`**
 
-Read the current `session_detail_handler` in `packages/linked-past/linked_past/core/viewer_api.py`. Add a branch at the top that checks for the `format` query param:
+Read the current `session_detail_handler` in `packages/linked-past/linked_past/core/viewer_api.py`.
+
+First, ensure these imports exist at the module level (add if missing):
 
 ```python
-async def session_detail_handler(request: Request) -> JSONResponse | PlainTextResponse:
-    """GET /viewer/api/sessions/{session_id} — return all messages for a session."""
-    mgr = get_manager()
-    if mgr is None or not mgr.is_active:
-        return PlainTextResponse("Viewer not active", status_code=404)
+import json
+from datetime import datetime, timezone
+```
 
-    session_id = request.path_params.get("session_id", "")
-    session_file = _sessions_dir() / f"{session_id}.jsonl"
+Then modify the handler. **Important:** Do NOT add a viewer-active guard (`mgr.is_active` check). The existing handler serves session files from disk regardless of whether the viewer is currently running — this is correct behavior since users need to export past sessions without requiring an active MCP session.
 
-    resolved = session_file.resolve()
-    if not str(resolved).startswith(str(_sessions_dir().resolve())):
-        return PlainTextResponse("Invalid session ID", status_code=400)
-    if not session_file.exists():
-        return PlainTextResponse("Session not found", status_code=404)
+Add a `format` query param branch to the existing handler. Keep the existing path-traversal and existence checks unchanged, then add the `jsonl` format branch before the existing JSON response:
+
+```python
+    # After existing session_file existence check, before existing JSON response:
 
     fmt = request.query_params.get("format", "json")
 
@@ -906,13 +972,8 @@ async def session_detail_handler(request: Request) -> JSONResponse | PlainTextRe
             },
         )
 
-    # Existing JSON response
-    lines = session_file.read_text().strip().splitlines()
-    messages = [json.loads(line) for line in lines if line.strip()]
-    return JSONResponse(messages)
+    # ... existing JSON response code continues unchanged
 ```
-
-Ensure `json` is imported at the module level (it likely already is).
 
 - [ ] **Step 2: Run existing tests**
 
@@ -934,9 +995,20 @@ git commit -m "feat(viewer): add ?format=jsonl export endpoint for sessions"
 ### Task 10: Refactor session picker with shadcn Select and export buttons
 
 **Files:**
+- Create: `packages/linked-past-viewer/src/components/ui/select.tsx` (via shadcn CLI)
 - Modify: `packages/linked-past-viewer/src/components/session-picker.tsx`
 
-- [ ] **Step 1: Rewrite `session-picker.tsx`**
+- [ ] **Step 1: Install shadcn Select component**
+
+The `Select` component is not yet installed. Add it:
+
+```bash
+cd packages/linked-past-viewer && npx shadcn@latest add select
+```
+
+This creates `src/components/ui/select.tsx` with `Select`, `SelectTrigger`, `SelectContent`, `SelectItem`, etc.
+
+- [ ] **Step 2: Rewrite `session-picker.tsx`**
 
 Read the current file to understand the exact props and behavior. Replace the implementation with a shadcn `Select`-based component. Keep the same component signature (`SessionPicker` with `onLoadSession`, `onBackToLive`, `viewingSessionId`, `initialSessionId` props).
 
@@ -965,16 +1037,16 @@ const handleExport = useCallback(async (sessionId: string, e: React.MouseEvent) 
 
 Use `Download` from `lucide-react` for the export icon.
 
-- [ ] **Step 2: Verify type-check passes**
+- [ ] **Step 3: Verify type-check passes**
 
 ```bash
 cd packages/linked-past-viewer && npx tsc --noEmit
 ```
 
-- [ ] **Step 3: Commit**
+- [ ] **Step 4: Commit**
 
 ```bash
-git add packages/linked-past-viewer/src/components/session-picker.tsx
+git add packages/linked-past-viewer/src/components/ui/select.tsx packages/linked-past-viewer/src/components/session-picker.tsx
 git commit -m "refactor(viewer): session picker with shadcn Select and JSONL export"
 ```
 
@@ -985,12 +1057,23 @@ git commit -m "refactor(viewer): session picker with shadcn Select and JSONL exp
 **Files:**
 - Modify: `packages/linked-past-viewer/src/components/viewer-layout.tsx`
 
-- [ ] **Step 1: Add export button to the toolbar in `viewer-layout.tsx`**
+- [ ] **Step 1: Add JSONL export button to the toolbar in `viewer-layout.tsx`**
 
-Read the current file. In the toolbar section, add a download button next to the existing export/actions buttons. This button exports the current (live or viewed) session:
+Read the current file. The toolbar already has an `ExportButton` that exports as **Markdown**. Add a second button for **JSONL export** — use `FileDown` (not `Download`) from `lucide-react` to visually distinguish from the existing Markdown export which uses `Download`. Add a tooltip to make the distinction clear.
+
+Add a memoized `liveSessionId` near the top of `ViewerLayout`:
 
 ```typescript
-const handleExportSession = useCallback(async () => {
+const liveSessionId = useMemo(
+  () => (liveMessages.length > 0 ? liveMessages[0].session_id : null),
+  [liveMessages],
+);
+```
+
+Then add the export handler — use `liveMessages` in the dependency array (not the derived `liveSessionId`):
+
+```typescript
+const handleExportJsonl = useCallback(async () => {
   const sessionId = pastSession?.id ?? liveSessionId;
   if (!sessionId) return;
   const res = await fetch(`/viewer/api/sessions/${sessionId}?format=jsonl`);
@@ -1005,24 +1088,18 @@ const handleExportSession = useCallback(async () => {
 }, [pastSession, liveSessionId]);
 ```
 
-Where `liveSessionId` is extracted from the first live message's `session_id` (if available):
-
-```typescript
-const liveSessionId = liveMessages.length > 0 ? liveMessages[0].session_id : null;
-```
-
-Add the button in the toolbar (use `Download` from `lucide-react`):
+Add the button next to the existing Markdown export button:
 
 ```tsx
 <Button
   variant="ghost"
   size="icon"
   className="h-7 w-7"
-  title="Export session as JSONL"
+  title="Export session as JSONL (for sharing)"
   disabled={!liveSessionId && !pastSession}
-  onClick={handleExportSession}
+  onClick={handleExportJsonl}
 >
-  <Download className="h-4 w-4" />
+  <FileDown className="h-4 w-4" />
 </Button>
 ```
 
@@ -1041,7 +1118,49 @@ git commit -m "feat(viewer): add toolbar button to export current session as JSO
 
 ---
 
-### Task 12: Create GitHub Actions deployment workflow
+### Task 12: Add Zod validation to live viewer WebSocket hook
+
+**Files:**
+- Modify: `packages/linked-past-viewer/src/hooks/use-viewer-socket.ts`
+
+The spec lists `use-viewer-socket.ts` as "MODIFIED — add Zod parsing at boundary". Currently the live viewer does a raw `JSON.parse(e.data) as ViewerMessage` cast. Add Zod validation at the parse boundary so both viewers validate identically.
+
+- [ ] **Step 1: Add Zod validation to the WebSocket message handler**
+
+Read the current `use-viewer-socket.ts`. Find the `ws.onmessage` handler where `JSON.parse(e.data) as ViewerMessage` is called. Replace the cast with Zod validation:
+
+```typescript
+import { ViewerMessageSchema } from "@/lib/schemas";
+
+// In ws.onmessage handler, replace:
+//   const msg = JSON.parse(e.data) as ViewerMessage;
+// with:
+const parsed = ViewerMessageSchema.safeParse(JSON.parse(e.data));
+if (!parsed.success) {
+  console.warn("Invalid viewer message:", parsed.error.issues[0]?.message);
+  return;
+}
+const msg = parsed.data;
+```
+
+Keep all other behavior unchanged (dedup by `seq`, session change detection, IndexedDB persistence).
+
+- [ ] **Step 2: Verify type-check passes**
+
+```bash
+cd packages/linked-past-viewer && npx tsc --noEmit
+```
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add packages/linked-past-viewer/src/hooks/use-viewer-socket.ts
+git commit -m "feat(viewer): add Zod validation to WebSocket message boundary"
+```
+
+---
+
+### Task 13: Create GitHub Actions deployment workflow
 
 **Files:**
 - Create: `.github/workflows/deploy-viewer.yml`
@@ -1099,13 +1218,9 @@ jobs:
         uses: actions/deploy-pages@v4
 ```
 
-- [ ] **Step 2: Check if `.nvmrc` exists, create if needed**
+- [ ] **Step 2: Create `.nvmrc`**
 
-```bash
-ls packages/linked-past-viewer/.nvmrc 2>/dev/null || echo "missing"
-```
-
-If missing, check the Node version used in the project and create:
+No `.nvmrc` exists in the viewer package. Create one:
 
 ```bash
 node -v | sed 's/^v//' > packages/linked-past-viewer/.nvmrc
@@ -1125,7 +1240,7 @@ git commit -m "ci: add GitHub Actions workflow for static viewer deployment"
 
 ---
 
-### Task 13: End-to-end manual verification
+### Task 14: End-to-end manual verification
 
 **Files:** None (verification only)
 
