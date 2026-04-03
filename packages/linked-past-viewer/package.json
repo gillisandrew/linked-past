@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
+    "build:static": "cross-env BUILD_STATIC=1 tsc --noEmit && cross-env BUILD_STATIC=1 vite build",
     "preview": "vite preview"
   },
   "keywords": [],
@@ -38,6 +39,7 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
+    "cross-env": "^10.1.0",
     "tailwindcss": "^4.2.2",
     "typescript": "^6.0.2",
     "vite": "^8.0.3"

@@ -1,11 +1,13 @@
+import path from "node:path";
+import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
-import { defineConfig } from "vite";
-import path from "path";
+
+const isStatic = process.env.BUILD_STATIC === "1";
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
-  base: "/viewer/",
+  base: isStatic ? "/linked-past/" : "/viewer/",
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
@@ -23,6 +25,9 @@ export default defineConfig({
     },
   },
   build: {
-    outDir: "dist",
+    outDir: isStatic ? "dist-static" : "dist",
+    rollupOptions: isStatic
+      ? { input: path.resolve(__dirname, "static.html") }
+      : undefined,
   },
 });
