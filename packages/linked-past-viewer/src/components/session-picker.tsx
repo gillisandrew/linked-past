@@ -8,7 +8,6 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from "./ui/select";
 
 async function fetchSessions(): Promise<SessionInfo[]> {
@@ -23,8 +22,11 @@ async function fetchSession(id: string): Promise<ViewerMessage[]> {
   return res.json();
 }
 
-function formatTime(iso: string): string {
-  return new Date(iso).toLocaleString(undefined, {
+function formatTime(iso: string | null): string {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "—";
+  return d.toLocaleString(undefined, {
     month: "short",
     day: "numeric",
     hour: "2-digit",
@@ -32,13 +34,15 @@ function formatTime(iso: string): string {
   });
 }
 
-function formatTimeRange(started: string, lastActivity: string): string {
+function formatTimeRange(
+  started: string | null,
+  lastActivity: string | null,
+): string {
   const start = formatTime(started);
-  const end = new Date(lastActivity).toLocaleTimeString(undefined, {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-  return `${start} - ${end}`;
+  if (!lastActivity) return start;
+  const end = new Date(lastActivity);
+  if (isNaN(end.getTime())) return start;
+  return `${start} – ${end.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}`;
 }
 
 export function SessionPicker({
@@ -122,9 +126,25 @@ export function SessionPicker({
         }}
       >
         <SelectTrigger size="sm" className="min-w-[180px] text-xs">
-          <SelectValue />
+          {viewingSessionId ? (
+            <span className="flex flex-1 text-left truncate">
+              {(() => {
+                const s = pastSessions.find((s) => s.id === viewingSessionId);
+                return s
+                  ? `${formatTime(s.started)} · ${s.message_count} msgs`
+                  : viewingSessionId;
+              })()}
+            </span>
+          ) : (
+            <span className="flex flex-1 items-center gap-1.5 text-left">
+              {currentSession && (
+                <span className="inline-block h-2 w-2 rounded-full bg-green-500" />
+              )}
+              Current session
+            </span>
+          )}
         </SelectTrigger>
-        <SelectContent align="start" alignItemWithTrigger={false}>
+        <SelectContent align="start" alignItemWithTrigger={false} className="min-w-[320px]">
           <SelectItem value="__live__">
             <span className="flex items-center gap-1.5">
               {currentSession && (
