@@ -58,7 +58,7 @@ function CodeBlock({
 
 export function MarkdownReport({ data }: { data: ReportData }) {
   return (
-    <div className="space-y-4 px-6 py-4">
+    <div className="space-y-4 px-6 py-4 max-w-3xl mx-auto">
       <div className="prose dark:prose-invert max-w-none prose-headings:mt-6 prose-headings:mb-3 prose-p:my-3 prose-ul:my-3 prose-ol:my-3 prose-li:my-1 prose-pre:my-3 prose-pre:bg-muted prose-pre:text-foreground prose-pre:rounded prose-pre:p-3 prose-pre:text-sm prose-hr:my-6 prose-table:my-4 prose-blockquote:my-4">
         <Markdown
           remarkPlugins={[remarkGfm, remarkBreaks]}
