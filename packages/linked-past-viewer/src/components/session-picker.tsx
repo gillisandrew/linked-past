@@ -1,6 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useRef } from "react";
+import { Download } from "lucide-react";
+import { useCallback, useEffect, useRef } from "react";
 import type { SessionInfo, ViewerMessage } from "../lib/types";
+import { Button } from "./ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
 
 async function fetchSessions(): Promise<SessionInfo[]> {
   const res = await fetch("/viewer/api/sessions");
@@ -21,6 +30,15 @@ function formatTime(iso: string): string {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+function formatTimeRange(started: string, lastActivity: string): string {
+  const start = formatTime(started);
+  const end = new Date(lastActivity).toLocaleTimeString(undefined, {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  return `${start} - ${end}`;
 }
 
 export function SessionPicker({
@@ -53,42 +71,100 @@ export function SessionPicker({
     }
   }, [sessions, initialSessionId, onLoadSession]);
 
-  async function handleSelect(id: string) {
-    const messages = await fetchSession(id);
-    onLoadSession(messages, id);
-  }
+  const handleSelect = useCallback(
+    async (value: string | null) => {
+      if (!value || value === "__live__") {
+        onBackToLive();
+        return;
+      }
+      const messages = await fetchSession(value);
+      onLoadSession(messages, value);
+    },
+    [onLoadSession, onBackToLive],
+  );
+
+  const handleExport = useCallback(
+    async (sessionId: string, e: React.MouseEvent) => {
+      e.stopPropagation();
+      const res = await fetch(
+        `/viewer/api/sessions/${sessionId}?format=jsonl`,
+      );
+      if (!res.ok) return;
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `linked-past-${sessionId}.jsonl`;
+      a.click();
+      URL.revokeObjectURL(url);
+    },
+    [],
+  );
 
   if (!sessions || sessions.length === 0) return null;
+
+  const currentSession = sessions.find((s) => s.is_current);
+  const pastSessions = sessions.filter((s) => !s.is_current);
+
+  // Build items map for SelectValue display
+  const items: Record<string, React.ReactNode> = {
+    __live__: "Current session",
+  };
+  for (const s of pastSessions) {
+    items[s.id] = `${formatTime(s.started)} (${s.message_count} msgs)`;
+  }
 
   return (
     <div className="flex items-center gap-2 text-xs">
       <span className="text-muted-foreground font-medium">Session:</span>
       {viewingSessionId && (
-        <button
-          onClick={onBackToLive}
-          className="px-2 py-0.5 rounded text-[11px] font-medium border border-primary bg-primary text-primary-foreground cursor-pointer"
-        >
-          ← Live
-        </button>
+        <Button variant="default" size="xs" onClick={onBackToLive}>
+          &larr; Live
+        </Button>
       )}
-      <select
-        value={viewingSessionId ?? ""}
-        onChange={(e) => {
-          if (e.target.value) handleSelect(e.target.value);
-          else onBackToLive();
+      <Select
+        value={viewingSessionId ?? "__live__"}
+        onValueChange={handleSelect}
+        onOpenChange={(open) => {
+          if (open) refetch();
         }}
-        onFocus={() => refetch()}
-        className="bg-transparent border rounded px-1.5 py-0.5 text-xs text-foreground cursor-pointer"
+        items={items}
       >
-        <option value="">Current session</option>
-        {sessions
-          .filter((s) => !s.is_current)
-          .map((s) => (
-            <option key={s.id} value={s.id}>
-              {formatTime(s.started)} ({s.message_count} messages)
-            </option>
+        <SelectTrigger size="sm" className="min-w-[180px] text-xs">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent align="start" alignItemWithTrigger={false}>
+          <SelectItem value="__live__">
+            <span className="flex items-center gap-1.5">
+              {currentSession && (
+                <span className="inline-block h-2 w-2 rounded-full bg-green-500" />
+              )}
+              <span>
+                Current session
+                {currentSession &&
+                  ` (${currentSession.message_count} msgs)`}
+              </span>
+            </span>
+          </SelectItem>
+          {pastSessions.map((s) => (
+            <SelectItem key={s.id} value={s.id}>
+              <span className="flex items-center justify-between gap-2 w-full">
+                <span className="truncate">
+                  {formatTimeRange(s.started, s.last_activity)} &middot;{" "}
+                  {s.message_count} msgs
+                </span>
+                <button
+                  className="shrink-0 text-muted-foreground hover:text-foreground transition-colors p-0.5 rounded"
+                  title="Download as JSONL"
+                  onClick={(e) => handleExport(s.id, e)}
+                >
+                  <Download className="h-3 w-3" />
+                </button>
+              </span>
+            </SelectItem>
           ))}
-      </select>
+        </SelectContent>
+      </Select>
     </div>
   );
 }
