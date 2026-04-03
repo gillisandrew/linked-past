@@ -1,4 +1,5 @@
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   Bookmark,
   BookmarkCheck,
@@ -16,12 +17,12 @@ import type { ViewerMessage } from "../lib/types";
 import { CopyButton } from "./copy-button";
 import { DatasetBadge } from "./dataset-badge";
 
-const TYPE_ICONS: Record<string, React.ReactNode> = {
-  query: <Database className="w-3 h-3" />,
-  search: <Search className="w-3 h-3" />,
-  entity: <User className="w-3 h-3" />,
-  links: <Link2 className="w-3 h-3" />,
-  report: <FileText className="w-3 h-3" />,
+const TYPE_META: Record<string, { icon: React.ReactNode; color: string; label: string }> = {
+  query: { icon: <Database className="w-3.5 h-3.5" />, color: "text-blue-500", label: "Query" },
+  search: { icon: <Search className="w-3.5 h-3.5" />, color: "text-violet-500", label: "Search" },
+  entity: { icon: <User className="w-3.5 h-3.5" />, color: "text-emerald-500", label: "Entity" },
+  links: { icon: <Link2 className="w-3.5 h-3.5" />, color: "text-amber-500", label: "Links" },
+  report: { icon: <FileText className="w-3.5 h-3.5" />, color: "text-rose-500", label: "Report" },
 };
 
 export function FeedItem({
@@ -63,7 +64,7 @@ export function FeedItem({
     setEditingNote(false);
   }
 
-  const icon = TYPE_ICONS[message.type];
+  const typeMeta = TYPE_META[message.type] ?? { icon: null, color: "text-muted-foreground", label: message.type };
 
   return (
     <Collapsible
@@ -76,10 +77,14 @@ export function FeedItem({
           <span className="text-muted-foreground text-[11px] tabular-nums w-5 text-right shrink-0">
             {message.seq}
           </span>
-          <span className="inline-flex items-center gap-1 bg-primary text-primary-foreground px-2 py-0.5 rounded text-[11px] font-semibold uppercase shrink-0">
-            {icon}
-            {message.type}
-          </span>
+          <Tooltip>
+            <TooltipTrigger className={`shrink-0 ${typeMeta.color}`}>
+              {typeMeta.icon}
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="text-xs">
+              {typeMeta.label}
+            </TooltipContent>
+          </Tooltip>
           {message.dataset && <DatasetBadge dataset={message.dataset} />}
           {subtitle && (
             <span className="font-semibold text-xs truncate">{subtitle}</span>

@@ -23,6 +23,7 @@ import {
   Loader2,
   ExternalLink,
 } from "lucide-react";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 const CURRENT_FORMAT_VERSION = 1;
 const queryClient = new QueryClient();
@@ -251,8 +252,10 @@ function StaticApp() {
 
 createRoot(document.getElementById("root")!).render(
   <QueryClientProvider client={queryClient}>
-    <StaticModeProvider value={true}>
-      <StaticApp />
-    </StaticModeProvider>
+    <TooltipProvider>
+      <StaticModeProvider value={true}>
+        <StaticApp />
+      </StaticModeProvider>
+    </TooltipProvider>
   </QueryClientProvider>,
 );
