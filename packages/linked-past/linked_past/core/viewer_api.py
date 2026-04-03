@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+from datetime import datetime, timezone
 from pathlib import Path
 
 from starlette.requests import Request
@@ -293,6 +294,29 @@ async def session_detail_handler(request: Request) -> JSONResponse | PlainTextRe
     # Resolve to prevent path traversal
     if not str(session_file.resolve()).startswith(str(_sessions_dir().resolve())):
         return PlainTextResponse("Forbidden", status_code=403)
+
+    fmt = request.query_params.get("format", "json")
+
+    if fmt == "jsonl":
+        content = session_file.read_text()
+        # Ensure session_meta preamble exists (for sessions created before this feature)
+        if not content.startswith('{"format_version"'):
+            lines = content.strip().splitlines()
+            first = json.loads(lines[0]) if lines else {}
+            meta = json.dumps({
+                "format_version": 1,
+                "type": "session_meta",
+                "session_id": session_id,
+                "created_at": first.get("timestamp", datetime.now(timezone.utc).isoformat()),
+            })
+            content = meta + "\n" + content
+
+        return PlainTextResponse(
+            content,
+            headers={
+                "Content-Disposition": f'attachment; filename="linked-past-{session_id}.jsonl"',
+            },
+        )
 
     lines = session_file.read_text().strip().splitlines()
     messages = [json.loads(line) for line in lines if line.strip()]
