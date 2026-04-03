@@ -6,12 +6,9 @@ import {
 import { useState } from "react";
 import { useEntityQuery } from "../hooks/use-entity-query";
 import { datasetForUri, linkHref, shortUri } from "../lib/uri";
+import { useIsStaticMode } from "@/lib/static-context";
 import { EntityPopoverContent } from "./entity-popover";
 
-/**
- * CSS variable names for dataset-colored pills.
- * Falls back to neutral gray for unknown datasets.
- */
 function datasetStyle(dataset: string | null): React.CSSProperties {
   const ds = dataset ?? "default";
   return {
@@ -20,21 +17,31 @@ function datasetStyle(dataset: string | null): React.CSSProperties {
   };
 }
 
+const PILL_CLASSES =
+  "inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium cursor-pointer transition-[filter] hover:brightness-95 dark:hover:brightness-110";
+
 export function EntityUri({ uri, display }: { uri: string; display?: string }) {
   const dataset = datasetForUri(uri);
+  const isStatic = useIsStaticMode();
   const [open, setOpen] = useState(false);
   const { data, isLoading } = useEntityQuery(uri, open);
-  const isFullUri = uri.startsWith("http://") || uri.startsWith("https://");
   const label = display ?? shortUri(uri);
 
   const pill = (
-    <span
-      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium cursor-pointer transition-[filter] hover:brightness-95 dark:hover:brightness-110"
-      style={datasetStyle(dataset)}
-    >
+    <span className={PILL_CLASSES} style={datasetStyle(dataset)}>
       {label}
     </span>
   );
+
+  if (isStatic) {
+    return (
+      <a href={linkHref(uri)} target="_blank" rel="noopener noreferrer" title={uri}>
+        {pill}
+      </a>
+    );
+  }
+
+  const isFullUri = uri.startsWith("http://") || uri.startsWith("https://");
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -65,7 +72,7 @@ export function EntityUri({ uri, display }: { uri: string; display?: string }) {
         sideOffset={2}
       >
         {isLoading ? (
-          <div className="p-4 text-sm text-muted-foreground">Loading…</div>
+          <div className="p-4 text-sm text-muted-foreground">Loading...</div>
         ) : data ? (
           <EntityPopoverContent data={data} />
         ) : (
