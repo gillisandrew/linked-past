@@ -275,7 +275,7 @@ async def sessions_list_handler(request: Request) -> JSONResponse:  # noqa: ARG0
         sessions.append({
             "id": f.stem,
             "message_count": len(lines),
-            "started": first.get("timestamp"),
+            "started": first.get("timestamp") or first.get("created_at"),
             "last_activity": last.get("timestamp"),
             "is_current": is_current,
         })
