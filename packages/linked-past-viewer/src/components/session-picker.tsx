@@ -158,20 +158,18 @@ export function SessionPicker({
             </span>
           </SelectItem>
           {pastSessions.map((s) => (
-            <SelectItem key={s.id} value={s.id}>
-              <span className="flex items-center justify-between gap-2 w-full">
-                <span className="truncate">
-                  {formatTimeRange(s.started, s.last_activity)} &middot;{" "}
-                  {s.message_count} msgs
-                </span>
-                <button
-                  className="shrink-0 text-muted-foreground hover:text-foreground transition-colors p-0.5 rounded"
-                  title="Download as JSONL"
-                  onClick={(e) => handleExport(s.id, e)}
-                >
-                  <Download className="h-3 w-3" />
-                </button>
+            <SelectItem key={s.id} value={s.id} className="pr-8">
+              <span className="truncate">
+                {formatTimeRange(s.started, s.last_activity)} &middot;{" "}
+                {s.message_count} msgs
               </span>
+              <button
+                className="absolute right-1.5 shrink-0 text-muted-foreground hover:text-foreground transition-colors p-0.5 rounded"
+                title="Download as JSONL"
+                onClick={(e) => handleExport(s.id, e)}
+              >
+                <Download className="h-3 w-3" />
+              </button>
             </SelectItem>
           ))}
         </SelectContent>
