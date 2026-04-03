@@ -6,7 +6,8 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "build:static": "cross-env BUILD_STATIC=1 tsc --noEmit && cross-env BUILD_STATIC=1 vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "preview:static": "cross-env BUILD_STATIC=1 vite preview"
   },
   "keywords": [],
   "author": "",
