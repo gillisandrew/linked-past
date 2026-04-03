@@ -106,14 +106,6 @@ export function SessionPicker({
   const currentSession = sessions.find((s) => s.is_current);
   const pastSessions = sessions.filter((s) => !s.is_current);
 
-  // Build items map for SelectValue display
-  const items: Record<string, React.ReactNode> = {
-    __live__: "Current session",
-  };
-  for (const s of pastSessions) {
-    items[s.id] = `${formatTime(s.started)} (${s.message_count} msgs)`;
-  }
-
   return (
     <div className="flex items-center gap-2 text-xs">
       <span className="text-muted-foreground font-medium">Session:</span>
@@ -128,7 +120,6 @@ export function SessionPicker({
         onOpenChange={(open) => {
           if (open) refetch();
         }}
-        items={items}
       >
         <SelectTrigger size="sm" className="min-w-[180px] text-xs">
           <SelectValue />
