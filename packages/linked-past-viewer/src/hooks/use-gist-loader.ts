@@ -30,7 +30,9 @@ const CACHE_PREFIX = "gist:";
 function getCached(gistId: string): GistResponse | null {
   try {
     const raw = sessionStorage.getItem(CACHE_PREFIX + gistId);
-    return raw ? (JSON.parse(raw) as GistResponse) : null;
+    if (!raw) return null;
+    const parsed = GistResponseSchema.safeParse(JSON.parse(raw));
+    return parsed.success ? parsed.data : null;
   } catch {
     return null;
   }
