@@ -133,10 +133,7 @@ export function useStaticSession(): StaticSession {
     [applyResult],
   );
 
-  const loadFromParseResult = useCallback(
-    (result: ParseResult) => applyResult(result),
-    [applyResult],
-  );
+  const loadFromParseResult = applyResult;
 
   const clear = useCallback(() => {
     setMessages([]);
@@ -182,6 +179,7 @@ git commit -m "feat(viewer): add loadFromParseResult to useStaticSession"
 
 ```typescript
 import { useEffect, useState } from "react";
+import { z } from "zod";
 import { parseSessionJsonl } from "@/lib/parse-session";
 import type { ParseResult } from "@/lib/parse-session";
 
@@ -190,20 +188,22 @@ export type GistSession = {
   result: ParseResult;
 };
 
-type GistFile = {
-  filename: string;
-  type: string;
-  size: number;
-  truncated: boolean;
-  raw_url: string;
-  content: string;
-};
+const GistFileSchema = z.object({
+  filename: z.string(),
+  type: z.string(),
+  size: z.number(),
+  truncated: z.boolean(),
+  raw_url: z.string().url(),
+  content: z.string(),
+});
 
-type GistResponse = {
-  id: string;
-  html_url: string;
-  files: Record<string, GistFile>;
-};
+const GistResponseSchema = z.object({
+  id: z.string(),
+  html_url: z.string().url(),
+  files: z.record(z.string(), GistFileSchema),
+});
+
+type GistResponse = z.infer<typeof GistResponseSchema>;
 
 const CACHE_PREFIX = "gist:";
 
@@ -244,7 +244,10 @@ async function loadGist(gistId: string): Promise<{
       throw new Error("GitHub API rate limit exceeded. Try again in a few minutes.");
     }
     if (!res.ok) throw new Error("Failed to fetch gist. Check your connection.");
-    data = (await res.json()) as GistResponse;
+    const json = await res.json();
+    const parsed = GistResponseSchema.safeParse(json);
+    if (!parsed.success) throw new Error("Unexpected gist response format.");
+    data = parsed.data;
     setCache(gistId, data);
   }
 
@@ -365,7 +368,8 @@ const queryClient = new QueryClient();
 
 function getGistId(): string | null {
   const hash = window.location.hash.slice(1);
-  return hash.length > 0 ? hash : null;
+  // Validate gist ID format: 20-32 hex chars (blocks path traversal)
+  return /^[a-f0-9]{20,32}$/.test(hash) ? hash : null;
 }
 
 function StaticApp() {
@@ -385,14 +389,17 @@ function StaticApp() {
     return () => window.removeEventListener("hashchange", onHashChange);
   }, []);
 
+  // Destructure stable callbacks to avoid stale-reference issues in effects
+  const { loadFromParseResult, clear: clearSession } = session;
+
   // Auto-select first session when gist loads
   useEffect(() => {
     if (gist.sessions.length > 0 && !selectedFilename) {
       const first = gist.sessions[0];
       setSelectedFilename(first.filename);
-      session.loadFromParseResult(first.result);
+      loadFromParseResult(first.result);
     }
-  }, [gist.sessions, selectedFilename, session]);
+  }, [gist.sessions, selectedFilename, loadFromParseResult]);
 
   const handleSessionChange = useCallback(
     (filename: string | null) => {
@@ -400,18 +407,18 @@ function StaticApp() {
       const match = gist.sessions.find((s) => s.filename === filename);
       if (match) {
         setSelectedFilename(filename);
-        session.loadFromParseResult(match.result);
+        loadFromParseResult(match.result);
       }
     },
-    [gist.sessions, session],
+    [gist.sessions, loadFromParseResult],
   );
 
   const handleClearAll = useCallback(() => {
-    session.clear();
+    clearSession();
     setGistId(null);
     setSelectedFilename(null);
-    window.location.hash = "";
-  }, [session]);
+    history.replaceState(null, "", window.location.pathname + window.location.search);
+  }, [clearSession]);
 
   // --- Gist loading state ---
   if (gistId && gist.isLoading) {
@@ -431,7 +438,7 @@ function StaticApp() {
         <p className="text-sm text-foreground">{gist.error}</p>
         <div className="flex items-center gap-3 text-sm">
           <a
-            href={gist.gistUrl ?? `https://gist.github.com/${gistId}`}
+            href={`https://gist.github.com/${gistId}`}
             target="_blank"
             rel="noopener noreferrer"
             className="text-primary underline inline-flex items-center gap-1"
