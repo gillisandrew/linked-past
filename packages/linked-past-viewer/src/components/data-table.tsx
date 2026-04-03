@@ -8,7 +8,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { ArrowUpDown, ArrowUp, ArrowDown, Columns3 } from "lucide-react";
+import { ArrowUpDown, ArrowUp, ArrowDown, Columns3, WrapText } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -37,6 +37,7 @@ export function DataTable<TData, TValue>({
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [wrapText, setWrapText] = useState(false);
 
   const table = useReactTable({
     data,
@@ -54,9 +55,20 @@ export function DataTable<TData, TValue>({
 
   return (
     <div>
-      {/* Column visibility toggle — only show when there are many columns */}
-      {columns.length > 4 && (
-        <div className="flex justify-end mb-1">
+      <div className="flex justify-end gap-1 mb-1">
+        <button
+          onClick={() => setWrapText((v) => !v)}
+          className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors cursor-pointer ${
+            wrapText
+              ? "text-foreground bg-muted"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted"
+          }`}
+          title={wrapText ? "Truncate cell text" : "Wrap cell text"}
+        >
+          <WrapText className="h-3.5 w-3.5" />
+          Wrap
+        </button>
+        {columns.length > 4 && (
           <DropdownMenu>
             <DropdownMenuTrigger
               className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
@@ -76,8 +88,8 @@ export function DataTable<TData, TValue>({
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
-        </div>
-      )}
+        )}
+      </div>
 
       <div className="overflow-x-auto">
         <Table style={{ width: table.getCenterTotalSize() }}>
@@ -146,6 +158,7 @@ export function DataTable<TData, TValue>({
                     <TableCell
                       key={cell.id}
                       style={{ width: cell.column.getSize() }}
+                      className={wrapText ? "whitespace-normal break-words" : ""}
                     >
                       {flexRender(
                         cell.column.columnDef.cell,
