@@ -1,5 +1,4 @@
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   Bookmark,
   BookmarkCheck,
@@ -77,14 +76,12 @@ export function FeedItem({
           <span className="text-muted-foreground text-[11px] tabular-nums w-5 text-right shrink-0">
             {message.seq}
           </span>
-          <Tooltip>
-            <TooltipTrigger className={`shrink-0 inline-flex items-center justify-center w-5 h-5 rounded-full ${typeMeta.bg} ${typeMeta.color}`}>
-              {typeMeta.icon}
-            </TooltipTrigger>
-            <TooltipContent side="bottom" className="text-xs">
-              {typeMeta.label}
-            </TooltipContent>
-          </Tooltip>
+          <span
+            className={`shrink-0 inline-flex items-center justify-center w-5 h-5 rounded-full ${typeMeta.bg} ${typeMeta.color}`}
+            title={typeMeta.label}
+          >
+            {typeMeta.icon}
+          </span>
           {message.dataset && <DatasetBadge dataset={message.dataset} />}
           {subtitle && (
             <span className="font-semibold text-xs truncate">{subtitle}</span>

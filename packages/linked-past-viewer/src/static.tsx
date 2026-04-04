@@ -25,6 +25,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { ErrorBoundary } from "@/components/error-boundary";
 
 const CURRENT_FORMAT_VERSION = 1;
 const queryClient = new QueryClient();
@@ -212,11 +213,13 @@ function StaticApp() {
 }
 
 createRoot(document.getElementById("root")!).render(
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <StaticModeProvider value={true}>
-        <StaticApp />
-      </StaticModeProvider>
-    </TooltipProvider>
-  </QueryClientProvider>,
+  <ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <StaticModeProvider value={true}>
+          <StaticApp />
+        </StaticModeProvider>
+      </TooltipProvider>
+    </QueryClientProvider>
+  </ErrorBoundary>,
 );
