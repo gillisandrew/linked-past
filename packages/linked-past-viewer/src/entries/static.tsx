@@ -1,4 +1,4 @@
-import "./app.css";
+import "@/app.css";
 
 import { createRoot } from "react-dom/client";
 import { useCallback, useEffect, useMemo, useState } from "react";

@@ -6,7 +6,7 @@
     "dev": "vite",
     "dev:static": "cross-env BUILD_STATIC=1 vite",
     "build": "tsc --noEmit && vite build",
-    "build:static": "cross-env BUILD_STATIC=1 tsc --noEmit && cross-env BUILD_STATIC=1 vite build && mv dist-static/static.html dist-static/index.html",
+    "build:static": "cross-env BUILD_STATIC=1 tsc --noEmit && cross-env BUILD_STATIC=1 vite build && mv dist-static/static/index.html dist-static/index.html && rmdir dist-static/static",
     "preview": "vite preview",
     "preview:static": "cross-env BUILD_STATIC=1 vite preview"
   },

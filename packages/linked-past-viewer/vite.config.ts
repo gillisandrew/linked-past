@@ -29,7 +29,7 @@ export default defineConfig({
   build: {
     outDir: isStatic ? "dist-static" : "dist",
     rollupOptions: isStatic
-      ? { input: path.resolve(__dirname, "static.html") }
+      ? { input: path.resolve(__dirname, "static/index.html") }
       : undefined,
   },
 });
