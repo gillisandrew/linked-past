@@ -3,11 +3,15 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import { useEntityQuery } from "../hooks/use-entity-query";
 import { datasetForUri, linkHref, shortUri } from "../lib/uri";
 import { useIsStaticMode } from "@/lib/static-context";
-import { EntityPopoverContent } from "./entity-popover";
+
+// Lazy import to break circular dep: entity-popover → property-value → entity-uri
+const EntityPopoverContent = lazy(() =>
+  import("./entity-popover").then((m) => ({ default: m.EntityPopoverContent })),
+);
 
 function datasetStyle(dataset: string | null): React.CSSProperties {
   const ds = dataset ?? "default";
@@ -74,7 +78,9 @@ export function EntityUri({ uri, display }: { uri: string; display?: string }) {
         {isLoading ? (
           <div className="p-4 text-sm text-muted-foreground">Loading...</div>
         ) : data ? (
-          <EntityPopoverContent data={data} />
+          <Suspense fallback={<div className="p-4 text-sm text-muted-foreground">Loading...</div>}>
+            <EntityPopoverContent data={data} />
+          </Suspense>
         ) : (
           <div className="p-4 text-sm text-muted-foreground">{uri}</div>
         )}

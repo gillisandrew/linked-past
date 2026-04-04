@@ -2,6 +2,7 @@ import { FileDown } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAnnotations } from "../hooks/use-annotations";
 import { useViewerSocket } from "../hooks/use-viewer-socket";
+import { downloadSessionJsonl } from "../lib/download";
 import type { ViewerMessage } from "../lib/types";
 import { Button } from "./ui/button";
 import { ConnectionStatus } from "./connection-status";
@@ -58,18 +59,9 @@ export function ViewerLayout() {
     [liveMessages],
   );
 
-  const handleExportJsonl = useCallback(async () => {
+  const handleExportJsonl = useCallback(() => {
     const sessionId = pastSession?.id ?? liveSessionId;
-    if (!sessionId) return;
-    const res = await fetch(`/viewer/api/sessions/${sessionId}?format=jsonl`);
-    if (!res.ok) return;
-    const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `linked-past-${sessionId}.jsonl`;
-    a.click();
-    URL.revokeObjectURL(url);
+    if (sessionId) downloadSessionJsonl(sessionId);
   }, [pastSession, liveSessionId]);
 
   function handleLoadSession(messages: ViewerMessage[], sessionId: string) {

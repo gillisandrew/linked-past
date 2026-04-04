@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Download } from "lucide-react";
 import { useCallback, useEffect, useRef } from "react";
+import { downloadSessionJsonl } from "../lib/download";
 import type { SessionInfo, ViewerMessage } from "../lib/types";
 import { Button } from "./ui/button";
 import {
@@ -88,19 +89,9 @@ export function SessionPicker({
   );
 
   const handleExport = useCallback(
-    async (sessionId: string, e: React.MouseEvent) => {
+    (sessionId: string, e: React.MouseEvent) => {
       e.stopPropagation();
-      const res = await fetch(
-        `/viewer/api/sessions/${sessionId}?format=jsonl`,
-      );
-      if (!res.ok) return;
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `linked-past-${sessionId}.jsonl`;
-      a.click();
-      URL.revokeObjectURL(url);
+      downloadSessionJsonl(sessionId);
     },
     [],
   );
