@@ -13,17 +13,19 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  server: {
-    proxy: {
-      "/viewer/ws": {
-        target: "http://localhost:8000",
-        ws: true,
+  server: isStatic
+    ? {}
+    : {
+        proxy: {
+          "/viewer/ws": {
+            target: "http://localhost:8000",
+            ws: true,
+          },
+          "/viewer/api": {
+            target: "http://localhost:8000",
+          },
+        },
       },
-      "/viewer/api": {
-        target: "http://localhost:8000",
-      },
-    },
-  },
   build: {
     outDir: isStatic ? "dist-static" : "dist",
     rollupOptions: isStatic
