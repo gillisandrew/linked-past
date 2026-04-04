@@ -11,12 +11,12 @@ import type { ViewerMessage } from "../lib/types";
 
 const TYPE_OPTIONS = ["query", "entity", "links", "search", "report"] as const;
 
-const TYPE_ICONS: Record<string, React.ReactNode> = {
-  query: <Database className="w-3 h-3" />,
-  search: <Search className="w-3 h-3" />,
-  entity: <User className="w-3 h-3" />,
-  links: <Link2 className="w-3 h-3" />,
-  report: <FileText className="w-3 h-3" />,
+const TYPE_META: Record<string, { icon: React.ReactNode; color: string; bg: string }> = {
+  query: { icon: <Database className="w-2.5 h-2.5" />, color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-100 dark:bg-blue-950" },
+  search: { icon: <Search className="w-2.5 h-2.5" />, color: "text-violet-600 dark:text-violet-400", bg: "bg-violet-100 dark:bg-violet-950" },
+  entity: { icon: <User className="w-2.5 h-2.5" />, color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-100 dark:bg-emerald-950" },
+  links: { icon: <Link2 className="w-2.5 h-2.5" />, color: "text-amber-600 dark:text-amber-400", bg: "bg-amber-100 dark:bg-amber-950" },
+  report: { icon: <FileText className="w-2.5 h-2.5" />, color: "text-rose-600 dark:text-rose-400", bg: "bg-rose-100 dark:bg-rose-950" },
 };
 
 export type Filters = {
@@ -120,9 +120,22 @@ export function FeedFilters({
           <span className="text-muted-foreground/40">|</span>
         </>
       )}
-      {TYPE_OPTIONS.filter((t) => activeTypes.includes(t)).map((t) => (
-        <ToggleChip key={t} label={t} icon={TYPE_ICONS[t]} active={filters.types.has(t)} onClick={() => toggleType(t)} />
-      ))}
+      {TYPE_OPTIONS.filter((t) => activeTypes.includes(t)).map((t) => {
+        const meta = TYPE_META[t];
+        return (
+          <ToggleChip
+            key={t}
+            label={t}
+            icon={
+              <span className={`inline-flex items-center justify-center w-4 h-4 rounded-full ${meta.bg} ${meta.color}`}>
+                {meta.icon}
+              </span>
+            }
+            active={filters.types.has(t)}
+            onClick={() => toggleType(t)}
+          />
+        );
+      })}
       {datasets.length > 0 && (
         <>
           <span className="text-muted-foreground/40">|</span>

@@ -1,10 +1,11 @@
 import "./app.css";
 
 import { createRoot } from "react-dom/client";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { DropZone } from "@/components/drop-zone";
 import { Feed } from "@/components/feed";
+import { FeedFilters, applyFilters, emptyFilters, type Filters } from "@/components/feed-filters";
 import { StaticModeProvider } from "@/lib/static-context";
 import { useStaticSession } from "@/hooks/use-static-session";
 import { useGistLoader } from "@/hooks/use-gist-loader";
@@ -43,6 +44,7 @@ function StaticApp() {
     rev: number;
   } | null>(null);
   const [selectedFilename, setSelectedFilename] = useState<string | null>(null);
+  const [filters, setFilters] = useState<Filters>(emptyFilters);
 
   // Listen for hash changes (back/forward navigation)
   useEffect(() => {
@@ -131,6 +133,10 @@ function StaticApp() {
 
   // --- Session loaded (gist or local) ---
   const isGistMode = gistId !== null && gist.sessions.length > 0;
+  const filtered = useMemo(
+    () => applyFilters(session.messages, filters, new Set()),
+    [session.messages, filters],
+  );
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -165,10 +171,10 @@ function StaticApp() {
             )}
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">
-              {session.messages.length} items
+            <span className="text-xs text-muted-foreground tabular-nums">
+              {filtered.length}/{session.messages.length}
               {session.errors.length > 0 &&
-                `, ${session.errors.length} errors`}
+                ` · ${session.errors.length} errors`}
             </span>
             <Button
               variant="ghost"
@@ -204,6 +210,16 @@ function StaticApp() {
             </Button>
           </div>
         </div>
+        {session.messages.length > 0 && (
+          <div className="px-4 py-1.5 border-t border-border/50">
+            <FeedFilters
+              messages={session.messages}
+              filters={filters}
+              bookmarkCount={0}
+              onChange={setFilters}
+            />
+          </div>
+        )}
       </header>
 
       {session.formatVersion !== null &&
@@ -240,7 +256,7 @@ function StaticApp() {
 
       <div className="p-4">
         <Feed
-          messages={session.messages}
+          messages={filtered}
           bookmarks={new Set()}
           notes={new Map()}
           forceOpen={forceOpen}
