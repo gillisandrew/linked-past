@@ -26,16 +26,28 @@ def main(dataset: str):
         # Download
         print(f"Downloading {fetch_url}...")
         raw_path = tmpdir / f"{dataset}_raw"
-        urllib.request.urlretrieve(fetch_url, str(raw_path))
+        req = urllib.request.Request(fetch_url, headers={"User-Agent": "linked-past/1.0"})
+        with urllib.request.urlopen(req) as resp, open(raw_path, "wb") as out:
+            out.write(resp.read())
         print(f"Downloaded ({raw_path.stat().st_size:,} bytes)")
 
         # Convert to Turtle
         ttl_path = tmpdir / f"{dataset}.ttl"
         if source_format == "rdf-xml":
+            # Inject a DOCTYPE with common HTML entities so rapper can parse
+            # files that use &nbsp; etc. (e.g. RPC data from Oxford).
+            fixed_path = tmpdir / f"{dataset}_fixed.rdf"
+            with open(raw_path, "r", encoding="utf-8") as src, open(fixed_path, "w", encoding="utf-8") as dst:
+                first_line = src.readline()
+                dst.write(first_line)
+                dst.write('<!DOCTYPE rdf:RDF [<!ENTITY nbsp "&#160;">]>\n')
+                for line in src:
+                    dst.write(line)
+
             print("Converting RDF/XML to Turtle via rapper...")
             with open(ttl_path, "w") as ttl_out:
                 subprocess.run(
-                    ["rapper", "-i", "rdfxml", "-o", "turtle", str(raw_path)],
+                    ["rapper", "-i", "rdfxml", "-o", "turtle", str(fixed_path)],
                     stdout=ttl_out,
                     stderr=subprocess.PIPE,
                     check=True,
