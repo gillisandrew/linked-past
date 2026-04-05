@@ -131,6 +131,93 @@ Key inferences:
 
 Fast no-op for datasets without RDFS/OWL axioms (Pleiades, PeriodO, EDH).
 
+## Data Cleaning
+
+Upstream scholarly datasets are not produced with strict RDF parsers in mind. The pipeline has encountered — and now automatically fixes — the following classes of issues.
+
+### Catalog of upstream data issues
+
+#### XML-level issues (pre-parser)
+
+These break the XML parser before RDF semantics are even considered.
+
+| Issue | Example | Datasets | Fix |
+| ----- | ------- | -------- | --- |
+| Undefined HTML entities | `R.&nbsp;Martini` in text content | RPC | DOCTYPE injection: `<!ENTITY nbsp "&#160;">` |
+| Server blocks bot User-Agents | HTTP 403 for default `Python-urllib` UA | RPC | Send `User-Agent: linked-past/1.0` header |
+
+#### IRI-level issues (valid XML, invalid RDF)
+
+The XML parses, but the IRI values violate RFC 3987.
+
+| Issue | Example | Datasets | Fix |
+| ----- | ------- | -------- | --- |
+| Placeholder IRIs | `rdf:resource="-"`, `rdf:resource="—"` | RPC | Drop the attribute (meaningless) |
+| Trailing whitespace in IRIs | `rdf:resource="http://lgpn.ox.ac.uk/id/V5a-54230 "` | RPC | Strip whitespace |
+| Interior spaces in IRIs | spaces inside URI local names | RPC | Percent-encode to `%20` |
+| Unicode replacement chars in IRIs | `Ayd�nc�k` in DBpedia URI (Turkish ı/ğ lost upstream) | Nomisma | Correct to known-good percent-encoded URI (`Ayd%C4%B1nc%C4%B1k`) |
+| Bare DOIs missing scheme | `<doi.org/10.1234/test>` | Pleiades | Prepend `https://` |
+
+#### Turtle-level issues (valid RDF/XML, breaks strict Turtle parsers)
+
+These only appear after RDF/XML → Turtle conversion or in native Turtle sources.
+
+| Issue | Example | Datasets | Fix |
+| ----- | ------- | -------- | --- |
+| BCP 47 language subtags > 8 chars | `"Vatl"@etruscan-in-latin-characters` (10 occurrences) | Pleiades | Replace with RFC 5646 private-use tag `@x-etruscan-latn`; unknown tags: drop oversized subtags at boundaries |
+| URI fragment encoding (`%23` vs `#`) | `pleiades:433134%23this` instead of `#this` (~100K IRIs) | Pleiades | `%23` → `#` replacement at ingest (blanket — all are fragments) |
+| Missing path segment in vocabulary URIs | `/vocabularies/abbey` instead of `/vocabularies/place-types/abbey` (~159K IRIs) | Pleiades | Insert `place-types/` segment at ingest |
+
+#### Semantic-level issues (valid RDF, wrong triples)
+
+Technically parseable but produce incorrect or duplicate data.
+
+| Issue | Example | Datasets | Fix |
+| ----- | ------- | -------- | --- |
+| Language tags lost during materialization | `"Julius Caesar"@en` → untagged `"Julius Caesar"` duplicate | All (during RDFS inference) | Preserve `rdflib.Literal.language` and `.datatype` when converting reasoner output to pyoxigraph terms |
+| Incorrect ontology namespace | `lawd:` at `http://lawd.info/ontology/1.0/` vs correct `http://lawd.info/ontology/` | EDH | Fix prefix in schema YAML |
+
+### Current cleaning architecture
+
+Cleaning happens at two pipeline stages:
+
+**Ingest stage** (per-dataset scripts): handles source-format-specific issues before the data reaches OCI. Each dataset's ingest script owns its own quirks:
+
+- `ingest_generic.py` — RDF/XML sources (CRRO, OCRE, RPC): DOCTYPE entity injection + SAX IRI rewrite + pyoxigraph conversion
+- `ingest_nomisma.py` — strips lines with Unicode replacement characters after conversion
+- `ingest_pleiades.py` — concatenates multi-file tar.gz (BCP 47 / DOI fixes deferred to clean stage)
+
+**Clean stage** (`clean_dataset.py`): dataset-agnostic sanitization via `linked_past_store.sanitize_turtle()`:
+
+1. Regex pre-fixes on input (bare DOIs, BCP 47 language tags)
+2. Format normalization (currently via rapper, being replaced by pyoxigraph)
+3. Regex post-fixes on output (catches anything the converter preserved verbatim)
+4. Strict verification via pyoxigraph `bulk_load`
+
+### Replacing rapper with pyoxigraph
+
+The pipeline originally used `rapper` (Raptor RDF parser, a C system binary) for lenient RDF/XML → Turtle conversion. This had drawbacks:
+
+- **External dependency**: `rapper` must be installed on the host and in CI
+- **Silent leniency**: rapper accepts many malformed inputs without error, so bad data can slip through undetected
+- **No IRI repair**: rapper doesn't fix placeholder IRIs, trailing whitespace, or other IRI-level issues — those needed separate patches
+
+The replacement approach uses a two-phase pipeline built entirely on stdlib + pyoxigraph (already a project dependency):
+
+**Phase 1: SAX streaming rewrite** (stdlib `xml.sax`)
+
+A namespace-aware SAX handler streams through the RDF/XML in a single pass with constant memory:
+
+1. Injects DOCTYPE with common HTML entities (`&nbsp;`, `&mdash;`, `&ndash;`)
+2. Sanitizes `rdf:resource`, `rdf:about`, `rdf:datatype` attributes (strip, encode, drop placeholders)
+3. Passes all other content through unchanged
+
+**Phase 2: pyoxigraph strict parse**
+
+The cleaned RDF/XML is loaded via `bulk_load(format=RdfFormat.RDF_XML)` and serialized to Turtle. pyoxigraph is strict — if phase 1 missed an issue, it fails loudly rather than producing silently broken data.
+
+On the RPC dataset (149 MB RDF/XML, 1.65M triples), the full SAX + pyoxigraph pipeline completes in ~16 seconds with no external dependencies.
+
 ## CLI Commands
 
 | Command | What it does |
