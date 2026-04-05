@@ -22,7 +22,7 @@ pleiades:
   ingest_script: scripts/ingest_pleiades.py
   min_triple_count: 2500000
   license: CC-BY-3.0
-  source_url: https://pleiades.stoa.org/
+  source_url: https://github.com/isawnyu/pleiades.datasets
   description: "Gazetteer of ancient places — coordinates, names, time periods"
   citation: |
     @misc{pleiades,
@@ -106,6 +106,26 @@ ocre:
       year         = {2012},
       howpublished = {\url{https://numismatics.org/ocre/}},
       note         = {American Numismatic Society and ISAW (NYU). ODbL 1.0}
+    }
+
+rpc:
+  raw_ref: ghcr.io/gillisandrew/linked-past/raw/rpc:latest
+  clean_ref: ghcr.io/gillisandrew/linked-past/datasets/rpc:latest
+  ingest_script: scripts/ingest_generic.py
+  fetch_url: https://rpc.ashmus.ox.ac.uk/rpc/nomisma.rdf
+  source_format: rdf-xml
+  ontology_url: http://nomisma.org/ontology.ttl
+  min_triple_count: 1500000
+  license: ODbL-1.0
+  source_url: https://rpc.ashmus.ox.ac.uk/
+  description: "Roman provincial coin types (RPC) — provincial mint coinage (44 BC - 296 AD) with Nomisma links"
+  citation: |
+    @misc{burnett_rpc,
+      author       = {Burnett, Andrew and Amandry, Michel and Ripoll\`{e}s, Pere Pau},
+      title        = {{Roman Provincial Coinage Online}},
+      howpublished = {\url{https://rpc.ashmus.ox.ac.uk/}},
+      year         = {1992--2025},
+      note         = {University of Oxford. ODbL 1.0}
     }
 
 edh:

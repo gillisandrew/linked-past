@@ -10,6 +10,7 @@ from linked_past.datasets.edh.plugin import EDHPlugin
 from linked_past.datasets.nomisma.plugin import NomismaPlugin
 from linked_past.datasets.ocre.plugin import OCREPlugin
 from linked_past.datasets.periodo.plugin import PeriodOPlugin
+from linked_past.datasets.rpc.plugin import RPCPlugin
 from linked_past.datasets.pleiades.plugin import PleiadesPlugin
 
 __all__ = [
@@ -20,4 +21,5 @@ __all__ = [
     "OCREPlugin",
     "PeriodOPlugin",
     "PleiadesPlugin",
+    "RPCPlugin",
 ]

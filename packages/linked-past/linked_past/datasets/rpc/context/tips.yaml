@@ -1,0 +1,32 @@
+tips:
+  - title: "provincial_mints"
+    body: "RPC focuses on provincial mints — cities across the Roman Empire that struck their own coinage. Unlike CRRO/OCRE which center on Rome, RPC covers hundreds of provincial mints (e.g., nm:antioch, nm:alexandria, nm:ephesus). Use nmo:hasMint to explore geographic distribution."
+    classes: ["CoinType"]
+
+  - title: "authority_includes_local_magistrates"
+    body: "nmo:hasAuthority links to Nomisma person URIs. Unlike OCRE (emperor-only), RPC types may name both the emperor and local magistrates. Some types have multiple authorities."
+    classes: ["CoinType"]
+
+  - title: "date_encoding"
+    body: |
+      Dates are stored as xsd:gYear strings with 4-digit zero-padding.
+      Late Republican dates are negative: 44 BC = "-0043".
+      Imperial dates are positive: 14 AD = "0014", 296 AD = "0296".
+      IMPORTANT: String comparison does NOT work for date ranges because
+      "-0043" < "0014" is TRUE as strings but may cause issues at BC/AD boundary.
+      Always cast to integer for comparisons:
+        FILTER(xsd:integer(?startDate) >= -43 && xsd:integer(?startDate) <= 296)
+    classes: ["CoinType"]
+
+  - title: "obverse_reverse_fragments"
+    body: |
+      nmo:hasObverse and nmo:hasReverse link to fragment URIs.
+      These fragments contain iconographic descriptions and legends — you MUST join through them:
+        WRONG: ?type nmo:hasPortrait ?portrait .
+        RIGHT: ?type nmo:hasObverse ?obv . ?obv nmo:hasPortrait ?portrait .
+      Available fragment properties: nmo:hasPortrait, dcterms:description, nmo:hasLegend.
+    classes: ["CoinType"]
+
+  - title: "shared_concepts_with_nomisma"
+    body: "Denominations, mints, and materials are Nomisma concept URIs — the same URIs used in CRRO and OCRE. This means you can cross-reference provincial coins with Republican (CRRO) and Imperial (OCRE) types via shared authority, mint, or denomination URIs."
+    classes: ["CoinType"]
