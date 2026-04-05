@@ -1,5 +1,5 @@
 # tests/test_plugins.py
-"""Parametrized tests covering all 7 dataset plugins."""
+"""Parametrized tests covering all 8 dataset plugins."""
 
 import pytest
 from linked_past.core.store import create_store
@@ -11,6 +11,7 @@ from linked_past.datasets.nomisma.plugin import NomismaPlugin
 from linked_past.datasets.ocre.plugin import OCREPlugin
 from linked_past.datasets.periodo.plugin import PeriodOPlugin
 from linked_past.datasets.pleiades.plugin import PleiadesPlugin
+from linked_past.datasets.rpc.plugin import RPCPlugin
 
 # (PluginClass, expected_name, expected_license, required_prefix, schema_class_keywords, sample_turtle)
 PLUGIN_SPECS = [
@@ -88,6 +89,19 @@ PLUGIN_SPECS = [
             '@prefix skos: <http://www.w3.org/2004/02/skos/core#> .\n'
             '<http://numismatics.org/ocre/id/ric.1.aug.1A> a nmo:TypeSeriesItem, skos:Concept ;\n'
             '    skos:prefLabel "RIC I Augustus 1A" .\n'
+        ),
+    ),
+    (
+        RPCPlugin,
+        "rpc",
+        "ODbL 1.0",
+        "nmo",
+        ["CoinType", "TypeSeriesItem"],
+        (
+            '@prefix nmo: <http://nomisma.org/ontology#> .\n'
+            '@prefix skos: <http://www.w3.org/2004/02/skos/core#> .\n'
+            '<https://rpc.ashmus.ox.ac.uk/coins/1001> a nmo:TypeSeriesItem, skos:Concept ;\n'
+            '    skos:prefLabel "RPC I 1001" .\n'
         ),
     ),
     (

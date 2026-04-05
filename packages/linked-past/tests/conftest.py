@@ -31,7 +31,7 @@ DPRR_SAMPLE_TURTLE = """\
 
 MINIMAL_TURTLE = "@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n"
 
-ALL_DATASETS = ("dprr", "pleiades", "periodo", "nomisma", "crro", "ocre", "edh")
+ALL_DATASETS = ("dprr", "pleiades", "periodo", "nomisma", "crro", "ocre", "rpc", "edh")
 
 
 @pytest.fixture
@@ -55,6 +55,7 @@ def patched_app_context(tmp_path, monkeypatch):
             "nomisma": "linked_past.datasets.nomisma.plugin.NomismaPlugin",
             "crro": "linked_past.datasets.crro.plugin.CRROPlugin",
             "ocre": "linked_past.datasets.ocre.plugin.OCREPlugin",
+            "rpc": "linked_past.datasets.rpc.plugin.RPCPlugin",
             "edh": "linked_past.datasets.edh.plugin.EDHPlugin",
         }[dataset]
         monkeypatch.setattr(
