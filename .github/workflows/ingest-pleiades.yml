@@ -1,0 +1,139 @@
+name: Ingest Pleiades
+
+on:
+  schedule:
+    # Weekly on Monday, after the Sunday RDF dump update
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "pleiades.datasets ref (commit, tag, or branch)"
+        required: false
+        default: "main"
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          repository: isawnyu/pleiades.datasets
+          ref: ${{ inputs.ref || 'main' }}
+          sparse-checkout: data/rdf
+          path: pleiades-source
+
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          path: linked-past
+
+      - uses: astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57 # v8.0.0
+
+      - name: Install dependencies
+        run: uv sync
+        working-directory: linked-past
+
+      - name: Concatenate and clean Turtle files
+        run: |
+          OUTPUT="linked-past/pleiades.ttl"
+          FIX_COUNT=0
+
+          for ttl in $(ls pleiades-source/data/rdf/*.ttl | sort); do
+            echo "# Source: $(basename "$ttl")" >> "$OUTPUT"
+            cat "$ttl" >> "$OUTPUT"
+            printf '\n\n' >> "$OUTPUT"
+          done
+
+          TOTAL_BEFORE=$(wc -l < "$OUTPUT")
+
+          # Fix percent-encoded fragment identifiers (%23 → #)
+          FIX_COUNT=$(grep -c '%23' "$OUTPUT" || true)
+          if [ "$FIX_COUNT" -gt 0 ]; then
+            sed -i 's/%23/#/g' "$OUTPUT"
+            echo "Fixed $FIX_COUNT percent-encoded fragment identifiers (%23 → #)"
+          fi
+
+          # Fix vocabulary URIs missing place-types/ segment
+          # e.g., /vocabularies/abbey → /vocabularies/place-types/abbey
+          # Use Python to avoid double-replacement (sed can't do negative lookahead)
+          VOCAB_FIXES=$(uv run python -c "
+          path = '$OUTPUT'
+          text = open(path).read()
+          broken = 'pleiades.stoa.org/vocabularies/'
+          fixed = 'pleiades.stoa.org/vocabularies/place-types/'
+          # Only replace URIs not already containing place-types/
+          count = text.count(broken) - text.count(fixed)
+          if count > 0:
+              text = text.replace(fixed, '@@PLACEHOLDER@@')
+              text = text.replace(broken, fixed)
+              text = text.replace('@@PLACEHOLDER@@', fixed)
+              open(path, 'w').write(text)
+          print(count)
+          ")
+          if [ "$VOCAB_FIXES" -gt 0 ]; then
+            echo "Fixed $VOCAB_FIXES vocabulary URIs (added place-types/ segment)"
+          fi
+
+          # Fix BCP 47 language tags with subtags > 8 chars (RFC 5646).
+          # Currently only one tag: @etruscan-in-latin-characters → @x-etruscan-latn
+          BCP47_FIXES=$(uv run python -c "
+          path = '$OUTPUT'
+          text = open(path).read()
+          old = 'etruscan-in-latin-characters'
+          new = 'x-etruscan-latn'
+          count = text.count(old)
+          if count:
+              open(path, 'w').write(text.replace(old, new))
+          print(count)
+          ")
+          if [ "$BCP47_FIXES" -gt 0 ]; then
+            echo "Fixed $BCP47_FIXES BCP 47 language tags (@etruscan-in-latin-characters → @x-etruscan-latn)"
+          fi
+
+          SIZE=$(stat --format=%s "$OUTPUT")
+          echo "Created pleiades.ttl ($SIZE bytes)"
+          echo "output_path=$OUTPUT" >> "$GITHUB_ENV"
+
+      - name: Verify with pyoxigraph
+        run: |
+          uv run python -c "
+          from pyoxigraph import Store, RdfFormat
+          s = Store()
+          s.bulk_load(path='${{ env.output_path }}', format=RdfFormat.TURTLE)
+          print(f'Verified: {len(s):,} triples')
+          "
+        working-directory: linked-past
+
+      - name: Install ORAS CLI
+        run: |
+          ORAS_VERSION="1.2.2"
+          curl -LO "https://github.com/oras-project/oras/releases/download/v${ORAS_VERSION}/oras_${ORAS_VERSION}_linux_amd64.tar.gz"
+          tar xzf "oras_${ORAS_VERSION}_linux_amd64.tar.gz"
+          sudo mv oras /usr/local/bin/
+
+      - name: Login to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | oras login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Push raw artifact
+        run: |
+          uv run python -c "
+          from linked_past_store import push_dataset
+          from scripts.pipeline_config import build_annotations, load_dataset_config
+          ds = load_dataset_config('pleiades')
+          annotations = {
+              **build_annotations(ds, 'pleiades'),
+              'io.github.gillisandrew.linked-past.source-url': 'https://github.com/isawnyu/pleiades.datasets',
+          }
+          digest = push_dataset(ds['raw_ref'], '${{ env.output_path }}', annotations=annotations)
+          print(f'Pushed raw: {ds[\"raw_ref\"]}')
+          if digest:
+              print(f'Digest: {digest}')
+          "
+        working-directory: linked-past
+
+      - name: Clean and validate
+        run: |
+          uv run python scripts/clean_dataset.py pleiades
+          uv run python scripts/validate_dataset.py pleiades
+        working-directory: linked-past

@@ -27,4 +27,5 @@ data/extracted/
 # Superpowers cache
 .superpowers/
 nomisma.rdf
+rpc.rdf
 .superpowers/
