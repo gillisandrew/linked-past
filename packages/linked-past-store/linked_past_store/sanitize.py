@@ -42,14 +42,31 @@ class SanitizeResult:
     used_rapper: bool
 
 
+# Known non-conforming language tags and their RFC 5646 replacements.
+# These are invented tags from upstream data that violate the 8-char subtag limit.
+# Replacements use private-use subtags (x-...) per RFC 5646 §4.5.
+_LANG_TAG_REPLACEMENTS = {
+    "etruscan-in-latin-characters": "x-etruscan-latn",
+}
+
+
 def _fix_lang_tag(match: re.Match) -> str:
-    """Fix language tags with subtags exceeding 8 characters."""
+    """Fix language tags with subtags exceeding 8 characters.
+
+    RFC 5646 limits all subtags to 8 characters. Rather than truncating
+    mid-subtag (which produces meaningless tags), this uses a lookup table
+    for known tags and drops oversized subtags at boundaries for unknown ones.
+    """
     text = match.group(1)
     tag = match.group(2)
     parts = tag.split("-")
     if not any(len(part) > 8 for part in parts):
         return match.group(0)
-    fixed_parts = [part[:8] if len(part) > 8 else part for part in parts]
+    # Check for a known replacement first
+    if tag in _LANG_TAG_REPLACEMENTS:
+        return f'"{text}"@{_LANG_TAG_REPLACEMENTS[tag]}'
+    # Fallback: drop oversized subtags entirely (RFC 5646: truncate at subtag boundaries)
+    fixed_parts = [part for part in parts if len(part) <= 8]
     return f'"{text}"@{"-".join(fixed_parts)}'
 
 

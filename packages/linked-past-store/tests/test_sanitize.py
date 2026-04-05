@@ -3,8 +3,8 @@
 from linked_past_store.sanitize import has_rapper, sanitize_turtle
 
 
-def test_fix_long_language_subtag(tmp_path):
-    """BCP 47 subtags > 8 chars are truncated."""
+def test_fix_known_language_tag(tmp_path):
+    """Known non-conforming BCP 47 tags are replaced with RFC 5646 equivalents."""
     ttl = tmp_path / "input.ttl"
     ttl.write_text(
         '@prefix ex: <http://example.org/> .\n'
@@ -15,7 +15,24 @@ def test_fix_long_language_subtag(tmp_path):
 
     assert result.fixes_applied >= 1
     content = result.output_path.read_text()
+    assert "x-etruscan-latn" in content
     assert "in-latin-characters" not in content
+
+
+def test_fix_unknown_long_language_subtag(tmp_path):
+    """Unknown tags with oversized subtags are fixed by dropping those subtags."""
+    ttl = tmp_path / "input.ttl"
+    ttl.write_text(
+        '@prefix ex: <http://example.org/> .\n'
+        'ex:Thing ex:name "Test"@und-longerthan .\n'
+    )
+
+    result = sanitize_turtle(ttl, tmp_path / "output.ttl")
+
+    assert result.fixes_applied >= 1
+    content = result.output_path.read_text()
+    assert "longerthan" not in content
+    assert '"Test"@und' in content
 
 
 def test_fix_bare_doi(tmp_path):
