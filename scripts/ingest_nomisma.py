@@ -1,9 +1,8 @@
 """Ingest Nomisma: download RDF/XML, convert to Turtle via rapper, push raw to OCI.
 
-Removes lines with Unicode replacement characters (bad IRIs in upstream data).
+Corrects two mangled DBpedia URIs (Turkish characters lost as U+FFFD upstream).
 """
 
-import re
 import subprocess
 import tempfile
 import urllib.request
@@ -14,7 +13,14 @@ from linked_past_store import push_dataset
 from scripts.pipeline_config import build_annotations, load_dataset_config
 
 FETCH_URL = "https://nomisma.org/nomisma.org.rdf"
-_BAD_UNICODE = re.compile(r".*\ufffd.*\n?")
+
+# Upstream Nomisma export has two DBpedia URIs with mangled Turkish characters.
+# The original bytes (ı, ğ) were lost and replaced with U+FFFD / '?'.
+# Correct URIs verified against DBpedia on 2026-04-05.
+_IRI_CORRECTIONS = {
+    b"http://dbpedia.org/resource/Ayd\xef\xbf\xbdnc\xef\xbf\xbdk,_Mersin": b"http://dbpedia.org/resource/Ayd%C4%B1nc%C4%B1k,_Mersin",
+    b"http://dbpedia.org/resource/Da?pazar\xef\xbf\xbd": b"http://dbpedia.org/resource/Da%C4%9Fpazar%C4%B1",
+}
 
 
 def main():
@@ -28,23 +34,23 @@ def main():
         urllib.request.urlretrieve(FETCH_URL, str(rdf_path))
         print(f"Downloaded ({rdf_path.stat().st_size:,} bytes)")
 
+        # Fix known mangled IRIs in the source RDF/XML before conversion
+        raw_bytes = rdf_path.read_bytes()
+        for bad, good in _IRI_CORRECTIONS.items():
+            if bad in raw_bytes:
+                raw_bytes = raw_bytes.replace(bad, good)
+                print(f"Fixed IRI: {good.decode()}")
+        rdf_path.write_bytes(raw_bytes)
+
         print("Converting RDF/XML to Turtle via rapper...")
-        raw_ttl = tmpdir / "nomisma_raw.ttl"
-        with open(raw_ttl, "w") as ttl_out:
+        ttl_path = tmpdir / "nomisma.ttl"
+        with open(ttl_path, "w") as ttl_out:
             subprocess.run(
                 ["rapper", "-i", "rdfxml", "-o", "turtle", "-q", str(rdf_path)],
                 stdout=ttl_out,
                 stderr=subprocess.PIPE,
                 check=False,  # rapper returns 1 for warnings
             )
-
-        # Remove lines with bad Unicode
-        text = raw_ttl.read_text(errors="replace")
-        clean_text, fix_count = _BAD_UNICODE.subn("", text)
-        ttl_path = tmpdir / "nomisma.ttl"
-        ttl_path.write_text(clean_text)
-        if fix_count:
-            print(f"Removed {fix_count} lines with bad Unicode")
         print(f"Created nomisma.ttl ({ttl_path.stat().st_size:,} bytes)")
 
         # Push raw
