@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ViewerMessageSchema } from "../lib/schemas";
+import { ViewerMessageSchema, EntityCacheMessageSchema } from "../lib/schemas";
 import { clearMessages, getAllMessages, putMessage } from "../lib/store";
 import type { ViewerMessage } from "../lib/types";
+import type { EntityData } from "../lib/types";
 
 export function useViewerSocket() {
   const [messages, setMessages] = useState<ViewerMessage[]>([]);
   const [isConnected, setIsConnected] = useState(false);
+  const [entityCache, setEntityCache] = useState<Map<string, EntityData>>(new Map());
   const wsRef = useRef<WebSocket | null>(null);
   const backoffRef = useRef(1000);
   const seenSeqs = useRef(new Set<number>());
@@ -23,7 +25,24 @@ export function useViewerSocket() {
 
     ws.onmessage = (e) => {
       try {
-        const parsed = ViewerMessageSchema.safeParse(JSON.parse(e.data));
+        const raw = JSON.parse(e.data);
+
+        // Check for entity cache message first
+        const cacheResult = EntityCacheMessageSchema.safeParse(raw);
+        if (cacheResult.success) {
+          const entities = cacheResult.data.data.entities;
+          setEntityCache((prev) => {
+            const next = new Map(prev);
+            for (const [uri, entity] of Object.entries(entities)) {
+              next.set(uri, entity);
+            }
+            return next;
+          });
+          return;
+        }
+
+        // Fall through to ViewerMessage handling
+        const parsed = ViewerMessageSchema.safeParse(raw);
         if (!parsed.success) {
           console.warn("Invalid viewer message:", parsed.error.issues[0]?.message);
           return;
@@ -36,6 +55,7 @@ export function useViewerSocket() {
             // Session changed — clear old data
             seenSeqs.current.clear();
             setMessages([]);
+            setEntityCache(new Map());
             clearMessages();
           }
           currentSessionId.current = msg.session_id;
@@ -77,5 +97,5 @@ export function useViewerSocket() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  return { messages, isConnected };
+  return { messages, isConnected, entityCache };
 }

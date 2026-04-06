@@ -1,12 +1,13 @@
 import { useState, useCallback } from "react";
 import { parseSessionJsonl } from "@/lib/parse-session";
 import type { ParseError, ParseResult } from "@/lib/parse-session";
-import type { ViewerMessage } from "@/lib/schemas";
+import type { ViewerMessage, EntityData } from "@/lib/schemas";
 
 export type StaticSession = {
   messages: ViewerMessage[];
   errors: ParseError[];
   formatVersion: number | null;
+  entityCache: Map<string, EntityData>;
   loadFromText: (text: string) => void;
   loadFromFile: (file: File) => void;
   loadFromParseResult: (result: ParseResult) => void;
@@ -19,11 +20,13 @@ export function useStaticSession(): StaticSession {
   const [errors, setErrors] = useState<ParseError[]>([]);
   const [formatVersion, setFormatVersion] = useState<number | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [entityCache, setEntityCache] = useState<Map<string, EntityData>>(new Map());
 
   const applyResult = useCallback((result: ParseResult) => {
     setMessages(result.messages);
     setErrors(result.errors);
     setFormatVersion(result.formatVersion);
+    setEntityCache(result.entityCache);
     setIsLoaded(true);
   }, []);
 
@@ -50,6 +53,7 @@ export function useStaticSession(): StaticSession {
     setMessages([]);
     setErrors([]);
     setFormatVersion(null);
+    setEntityCache(new Map());
     setIsLoaded(false);
   }, []);
 
@@ -57,6 +61,7 @@ export function useStaticSession(): StaticSession {
     messages,
     errors,
     formatVersion,
+    entityCache,
     loadFromText,
     loadFromFile,
     loadFromParseResult,

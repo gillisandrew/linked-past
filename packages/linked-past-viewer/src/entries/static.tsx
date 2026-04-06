@@ -10,6 +10,7 @@ import { FormatVersionWarning, ParseErrorBanner } from "@/components/session-war
 import { ExpandCollapseButtons } from "@/components/toolbar-actions";
 import { StaticModeProvider } from "@/lib/static-context";
 import { useStaticSession } from "@/hooks/use-static-session";
+import { EntityCacheProvider } from "@/lib/entity-cache-context";
 import { useGistLoader } from "@/hooks/use-gist-loader";
 import {
   Select,
@@ -133,6 +134,7 @@ function StaticApp() {
   }
 
   return (
+    <EntityCacheProvider value={session.entityCache}>
     <div className="min-h-screen bg-background text-foreground">
       <header className="sticky top-0 z-10 border-b border-border bg-background">
         <div className="flex items-center gap-3 px-5 h-10 text-sm">
@@ -212,6 +214,7 @@ function StaticApp() {
         />
       </div>
     </div>
+    </EntityCacheProvider>
   );
 }
 

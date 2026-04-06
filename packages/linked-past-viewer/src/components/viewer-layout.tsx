@@ -2,6 +2,7 @@ import { SlidersHorizontal } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAnnotations } from "../hooks/use-annotations";
 import { useViewerSocket } from "../hooks/use-viewer-socket";
+import { EntityCacheProvider } from "../lib/entity-cache-context";
 import { downloadSessionJsonl } from "../lib/download";
 import type { ViewerMessage } from "../lib/types";
 import { ConnectionStatus } from "./connection-status";
@@ -32,7 +33,7 @@ function setSessionInUrl(sessionId: string | null) {
 }
 
 export function ViewerLayout() {
-  const { messages: liveMessages, isConnected } = useViewerSocket();
+  const { messages: liveMessages, isConnected, entityCache } = useViewerSocket();
   const { bookmarks, notes, toggleBookmark, updateNote } = useAnnotations();
   const [filters, setFilters] = useState<Filters>(emptyFilters);
 
@@ -92,6 +93,7 @@ export function ViewerLayout() {
   }, []);
 
   return (
+    <EntityCacheProvider value={entityCache}>
     <div className="min-h-screen bg-background text-foreground">
       <header className="sticky top-0 z-50 border-b border-border bg-background">
         <div className="flex items-center gap-3 px-5 h-10 text-sm">
@@ -161,5 +163,6 @@ export function ViewerLayout() {
         />
       </main>
     </div>
+    </EntityCacheProvider>
   );
 }

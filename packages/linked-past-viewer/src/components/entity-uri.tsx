@@ -36,13 +36,15 @@ export function EntityUri({ uri, display }: { uri: string; display?: string }) {
     </span>
   );
 
-  if (isStatic) {
+  // In static mode without cache data, render as plain link
+  if (isStatic && !data) {
     return (
       <a href={linkHref(uri)} target="_blank" rel="noopener noreferrer" title={uri}>
         {link}
       </a>
     );
   }
+  // Both live mode and static-with-cache reach here — render popover
 
   const isFullUri = uri.startsWith("http://") || uri.startsWith("https://");
 
