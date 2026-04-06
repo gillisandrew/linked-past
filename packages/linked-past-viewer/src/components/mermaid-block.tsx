@@ -29,6 +29,35 @@ function stripMaxWidth(svg: string): string {
   );
 }
 
+/**
+ * Ensure the SVG has explicit width/height attributes (required for <img> rendering).
+ * Falls back to viewBox dimensions if width/height are missing or percentage-based.
+ */
+function ensureSvgDimensions(svg: string): string {
+  const viewBoxMatch = svg.match(/viewBox=["'](\d+[\s,]+\d+[\s,]+(\d+(?:\.\d+)?)[\s,]+(\d+(?:\.\d+)?))["']/);
+  if (!viewBoxMatch) return svg;
+
+  const vbWidth = viewBoxMatch[2];
+  const vbHeight = viewBoxMatch[3];
+
+  // Replace percentage or missing width/height with viewBox values
+  let result = svg;
+  const hasValidWidth = /\bwidth=["']\d/.test(svg);
+  const hasValidHeight = /\bheight=["']\d/.test(svg);
+
+  if (!hasValidWidth) {
+    result = result.replace(/<svg/, `<svg width="${vbWidth}"`);
+  }
+  if (!hasValidHeight) {
+    result = result.replace(/<svg/, `<svg height="${vbHeight}"`);
+  }
+  // Replace percentage widths (e.g. width="100%")
+  result = result.replace(/(<svg[^>]*)\bwidth=["']\d*%["']/, `$1 width="${vbWidth}"`);
+  result = result.replace(/(<svg[^>]*)\bheight=["']\d*%["']/, `$1 height="${vbHeight}"`);
+
+  return result;
+}
+
 export function MermaidBlock({ chart }: { chart: string }) {
   const id = useId().replace(/:/g, "_");
   const [error, setError] = useState<string | null>(null);
@@ -61,7 +90,7 @@ export function MermaidBlock({ chart }: { chart: string }) {
   if (!svgHtml) return null;
 
   const previewUri = svgToDataUri(svgHtml);
-  const lightboxUri = svgToDataUri(stripMaxWidth(svgHtml));
+  const lightboxUri = svgToDataUri(ensureSvgDimensions(stripMaxWidth(svgHtml)));
 
   return <DiagramImage previewUri={previewUri} lightboxUri={lightboxUri} />;
 }
