@@ -56,10 +56,10 @@ function ToggleChip({
   return (
     <button
       onClick={onClick}
-      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium border transition-colors cursor-pointer ${
+      className={`inline-flex items-center gap-1 px-1.5 py-0.5 text-[11px] font-medium cursor-pointer transition-colors select-none ${
         active
-          ? "bg-primary text-primary-foreground border-primary"
-          : "bg-transparent text-muted-foreground border-border hover:border-foreground/30"
+          ? "text-foreground"
+          : "text-muted-foreground/60 hover:text-muted-foreground"
       }`}
     >
       {icon}
@@ -117,7 +117,7 @@ export function FeedFilters({
             active={filters.bookmarkedOnly}
             onClick={toggleBookmarked}
           />
-          <span className="text-muted-foreground/40">|</span>
+          <span className="text-border">·</span>
         </>
       )}
       {TYPE_OPTIONS.filter((t) => activeTypes.includes(t)).map((t) => {
@@ -126,11 +126,7 @@ export function FeedFilters({
           <ToggleChip
             key={t}
             label={t}
-            icon={
-              <span className={`inline-flex items-center justify-center w-4 h-4 rounded-full ${meta.bg} ${meta.color}`}>
-                {meta.icon}
-              </span>
-            }
+            icon={<span className={meta.color}>{meta.icon}</span>}
             active={filters.types.has(t)}
             onClick={() => toggleType(t)}
           />
@@ -138,7 +134,7 @@ export function FeedFilters({
       })}
       {datasets.length > 0 && (
         <>
-          <span className="text-muted-foreground/40">|</span>
+          <span className="text-border">·</span>
           {datasets.map((ds) => (
             <ToggleChip key={ds} label={ds} active={filters.datasets.has(ds)} onClick={() => toggleDataset(ds)} />
           ))}
