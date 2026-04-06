@@ -3,12 +3,12 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "dev": "vite",
-    "dev:static": "cross-env BUILD_STATIC=1 vite",
-    "build": "tsc --noEmit && vite build",
-    "build:static": "cross-env BUILD_STATIC=1 tsc --noEmit && cross-env BUILD_STATIC=1 vite build && mv dist-static/static/index.html dist-static/index.html && rmdir dist-static/static",
-    "preview": "vite preview",
-    "preview:static": "cross-env BUILD_STATIC=1 vite preview"
+    "dev": "vp dev",
+    "dev:static": "BUILD_STATIC=1 vp dev",
+    "build": "tsc --noEmit && vp build",
+    "build:static": "BUILD_STATIC=1 tsc --noEmit && BUILD_STATIC=1 vp build && mv dist-static/static/index.html dist-static/index.html && rmdir dist-static/static",
+    "preview": "vp preview",
+    "preview:static": "BUILD_STATIC=1 vp preview"
   },
   "keywords": [],
   "author": "",
@@ -42,9 +42,15 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
-    "cross-env": "^10.1.0",
     "tailwindcss": "^4.2.2",
     "typescript": "^6.0.2",
-    "vite": "^8.0.3"
+    "vite": "npm:@voidzero-dev/vite-plus-core@latest",
+    "vite-plus": "latest"
+  },
+  "packageManager": "pnpm@10.32.1",
+  "pnpm": {
+    "overrides": {
+      "vite": "npm:@voidzero-dev/vite-plus-core@latest"
+    }
   }
 }

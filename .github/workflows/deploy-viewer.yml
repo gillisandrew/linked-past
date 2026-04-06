@@ -24,18 +24,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - uses: voidzero-dev/setup-vp@v1
         with:
           node-version-file: packages/linked-past-viewer/.nvmrc
-          cache: npm
-          cache-dependency-path: packages/linked-past-viewer/package-lock.json
+          cache: true
 
       - name: Install dependencies
-        run: npm ci
+        run: vp install
         working-directory: packages/linked-past-viewer
 
       - name: Build static viewer
-        run: npm run build:static
+        run: vp run build:static
         working-directory: packages/linked-past-viewer
 
       - uses: actions/configure-pages@v5
