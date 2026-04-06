@@ -1,4 +1,3 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ExternalLink } from "lucide-react";
 import { humanizePredicate } from "../lib/predicates";
 import type { EntityData } from "../lib/types";
@@ -67,73 +66,74 @@ export function EntityCard({ data }: { data: EntityData }) {
   const meta = data.predicate_meta ?? {};
 
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <div className="flex items-center gap-2">
-          {data.dataset && <DatasetBadge dataset={data.dataset} />}
-          {data.type_hierarchy && data.type_hierarchy.length > 0 && (
-            <span className="text-[11px] text-muted-foreground">
-              {data.type_hierarchy.join(" › ")}
-            </span>
-          )}
-        </div>
-        <CardTitle className="text-lg">{data.name}</CardTitle>
-        <p className="text-xs text-muted-foreground">{shortUri(data.uri)}</p>
-        {data.description && (
-          <p className="text-sm text-muted-foreground leading-relaxed mt-1">
-            {data.description}
-          </p>
+    <div>
+      <div className="flex items-baseline gap-2 mb-1">
+        {data.dataset && <DatasetBadge dataset={data.dataset} />}
+        {data.type_hierarchy && data.type_hierarchy.length > 0 && (
+          <span className="text-[11px] text-muted-foreground">
+            {data.type_hierarchy.join(" › ")}
+          </span>
         )}
-      </CardHeader>
-      <CardContent>
-        {visibleProps.length > 0 && (
-          <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm mb-3">
-            {visibleProps.map((p, i) => (
-              <div key={i} className="contents">
-                <dt>
-                  <PredicateLabel pred={p.pred} meta={meta[p.pred]} />
-                </dt>
-                <dd className="break-words">
-                  <PropertyValue value={p.obj} />
-                  {p.count && p.count > 1 && (
-                    <span className="text-xs text-muted-foreground ml-1">
-                      (+{p.count - 1} more)
-                    </span>
-                  )}
-                </dd>
-              </div>
+      </div>
+      <h3 className="text-base font-semibold tracking-tight mb-1">{data.name}</h3>
+      <p className="text-xs text-muted-foreground mb-3">{shortUri(data.uri)}</p>
+      {data.description && (
+        <p className="text-sm text-muted-foreground leading-relaxed mb-3">
+          {data.description}
+        </p>
+      )}
+
+      {visibleProps.length > 0 && (
+        <dl className="grid grid-cols-[100px_1fr] gap-x-4 gap-y-1.5 text-xs mb-4">
+          {visibleProps.map((p, i) => (
+            <div key={i} className="contents">
+              <dt className="text-muted-foreground font-medium">
+                <PredicateLabel pred={p.pred} meta={meta[p.pred]} />
+              </dt>
+              <dd className="break-words">
+                <PropertyValue value={p.obj} />
+                {p.count && p.count > 1 && (
+                  <span className="text-xs text-muted-foreground ml-1">
+                    (+{p.count - 1} more)
+                  </span>
+                )}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      )}
+
+      {data.see_also && data.see_also.length > 0 && (
+        <div className="pt-3 border-t border-border mb-4">
+          <h4 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+            See also
+          </h4>
+          <ul className="space-y-1">
+            {data.see_also.map((url, i) => (
+              <li key={i} className="text-xs">
+                <a
+                  href={linkHref(url)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-primary hover:underline"
+                >
+                  {shortUri(url)}
+                  <ExternalLink className="w-3 h-3 opacity-60" />
+                </a>
+              </li>
             ))}
-          </dl>
-        )}
-        {data.see_also && data.see_also.length > 0 && (
-          <div className="pt-2 border-t mb-3">
-            <h4 className="text-xs font-semibold text-muted-foreground mb-1">See also</h4>
-            <ul className="space-y-0.5">
-              {data.see_also.map((url, i) => (
-                <li key={i} className="text-xs">
-                  <a
-                    href={linkHref(url)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-primary hover:text-primary/80 transition-colors"
-                  >
-                    <span className="underline underline-offset-2 decoration-primary/40">
-                      {shortUri(url)}
-                    </span>
-                    <ExternalLink className="w-3 h-3 opacity-60" />
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-        {data.xrefs.length > 0 && (
-          <div className="pt-2 border-t">
-            <h4 className="text-xs font-semibold text-muted-foreground mb-1">Cross-references</h4>
-            <XrefList links={data.xrefs} />
-          </div>
-        )}
-      </CardContent>
-    </Card>
+          </ul>
+        </div>
+      )}
+
+      {data.xrefs.length > 0 && (
+        <div className="pt-3 border-t border-border">
+          <h4 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+            Cross-references
+          </h4>
+          <XrefList links={data.xrefs} />
+        </div>
+      )}
+    </div>
   );
 }
