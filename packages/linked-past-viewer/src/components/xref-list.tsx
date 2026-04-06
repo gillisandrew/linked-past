@@ -1,16 +1,7 @@
-import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
 import { shortenPredicate } from "../lib/predicates";
 import type { XrefLink } from "../lib/types";
 import { EntityUri } from "./entity-uri";
-
-const CONFIDENCE_COLORS: Record<string, string> = {
-  confirmed: "bg-green-500 hover:bg-green-500",
-  probable: "bg-yellow-500 hover:bg-yellow-500 text-black",
-  candidate: "bg-gray-400 hover:bg-gray-400",
-  concordance: "bg-blue-400 hover:bg-blue-400",
-  "in-data": "bg-cyan-400 hover:bg-cyan-400",
-};
 
 const MAX_VISIBLE = 3;
 
@@ -30,21 +21,18 @@ export function XrefList({ links }: { links: XrefLink[] }) {
   }
 
   return (
-    <div className="space-y-3">
+    <div className="divide-y divide-border">
       {["confirmed", "probable", "candidate", "concordance", "in-data", "unknown"].map((conf) => {
         const items = groups.get(conf);
         if (!items) return null;
-        const color = CONFIDENCE_COLORS[conf] ?? "bg-gray-400 hover:bg-gray-400";
         const isExpanded = expanded.has(conf);
         const visible = isExpanded ? items : items.slice(0, MAX_VISIBLE);
         const hiddenCount = items.length - MAX_VISIBLE;
 
         return (
-          <div key={conf}>
-            <Badge className={`text-[10px] mb-1 ${color}`}>
-              {conf} ({items.length})
-            </Badge>
-            <div className="space-y-1 pl-2 border-l-2">
+          <div key={conf} className="py-2 first:pt-0">
+            <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">{conf} ({items.length})</span>
+            <div className="space-y-1 mt-1">
               {visible.map((link, i) => (
                 <div key={i} className="text-sm">
                   <span className="text-muted-foreground">{shortenPredicate(link.relationship)}</span>
