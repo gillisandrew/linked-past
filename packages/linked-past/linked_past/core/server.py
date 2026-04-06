@@ -502,6 +502,33 @@ async def _push_to_viewer(app: AppContext, tool_name: str, dataset: str | None, 
     logger.info("Viewer push: tool=%s dataset=%s clients=%d", tool_name, dataset, app.viewer.client_count)
     await app.viewer.broadcast(message)
 
+    # --- Entity cache: resolve new URIs found in this message ---
+    from linked_past.core.uri_extract import extract_entity_uris
+    from linked_past.core.viewer_api import resolve_entity
+
+    found = extract_entity_uris(tool_name, data)
+    new_uris = found - app.viewer.resolved_uris
+    if not new_uris:
+        return
+
+    entities = {}
+    for uri in new_uris:
+        try:
+            entity_data = resolve_entity(uri, app.registry, app.linkage)
+        except Exception:
+            logger.debug("Failed to resolve entity %s for cache", uri)
+            continue
+        if entity_data:
+            entities[uri] = entity_data
+            app.viewer.resolved_uris.add(uri)
+
+    if entities:
+        cache_msg = json.dumps({
+            "type": "entity_cache",
+            "data": {"entities": entities},
+        })
+        await app.viewer.broadcast(cache_msg)
+
 
 def _render_provenance_table(log: list, registry: DatasetRegistry) -> str:
     """Render a provenance table from the session log."""

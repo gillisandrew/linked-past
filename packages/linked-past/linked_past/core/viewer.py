@@ -39,6 +39,7 @@ class ViewerManager:
         self._session_id: str | None = None
         self._session_file = None
         self.app_context = app_context
+        self._resolved_uris: set[str] = set()
 
     # ── Properties ────────────────────────────────────────────────────────────
 
@@ -67,6 +68,10 @@ class ViewerManager:
         self._seq += 1
         return self._seq
 
+    @property
+    def resolved_uris(self) -> set[str]:
+        return self._resolved_uris
+
     # ── Lifecycle ─────────────────────────────────────────────────────────────
 
     def activate(self) -> None:
@@ -77,6 +82,7 @@ class ViewerManager:
         from linked_past.core.store import get_data_dir
 
         self._active = True
+        self._resolved_uris = set()
         self._session_id = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
         sessions_dir = Path(get_data_dir()) / "viewer" / "sessions"
         sessions_dir.mkdir(parents=True, exist_ok=True)
