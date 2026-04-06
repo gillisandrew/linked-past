@@ -713,7 +713,22 @@ def create_mcp_server() -> FastMCP:
         registry = app.registry
 
         if topic and app.search:
-            results = app.search.search(topic, k=10)
+            from linked_past.core.search import hybrid_search
+
+            query_vector = None
+            if app.vector and app.embedder:
+                try:
+                    query_vector = app.embedder.embed_single(topic)
+                except Exception:
+                    logger.debug("Vector embedding failed for topic query, using BM25 only")
+
+            results = hybrid_search(
+                query=topic,
+                query_vector=query_vector,
+                search_index=app.search,
+                vector_index=app.vector,
+                k=10,
+            )
             relevant_datasets = {r["dataset"] for r in results}
         else:
             relevant_datasets = None
