@@ -5,7 +5,10 @@ from __future__ import annotations
 import logging
 import sqlite3
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from linked_past.core.vector import VectorIndex
 
 logger = logging.getLogger(__name__)
 
@@ -143,3 +146,70 @@ class SearchIndex:
     def close(self) -> None:
         """Close the database connection."""
         self._conn.close()
+
+
+def hybrid_search(
+    query: str,
+    query_vector: list[float] | None,
+    search_index: SearchIndex,
+    vector_index: "VectorIndex | None",
+    k: int = 10,
+    dataset: str | None = None,
+    doc_type: str | None = None,
+    rrf_k: int = 60,
+) -> list[dict[str, Any]]:
+    """Combine BM25 and vector search via Reciprocal Rank Fusion.
+
+    RRF score: sum(1 / (rrf_k + rank)) across both result lists.
+    Falls back to FTS5-only when vector_index or query_vector is None.
+    """
+    # BM25 results — fetch more than k to give RRF room to rerank
+    fetch_k = k * 3
+    bm25_results = search_index.search(query, k=fetch_k, dataset=dataset, doc_type=doc_type)
+
+    # Build rowid lookup for BM25 results
+    bm25_by_text: dict[str, int] = {}
+    bm25_docs: dict[str, dict] = {}
+    for rank, result in enumerate(bm25_results):
+        bm25_by_text[result["text"]] = rank
+        bm25_docs[result["text"]] = result
+
+    if vector_index is None or query_vector is None:
+        return bm25_results[:k]
+
+    # Vector results
+    vec_results = vector_index.search(query_vector, k=fetch_k)
+
+    # Map vec doc_ids back to document metadata via the FTS index's DB
+    vec_docs: dict[str, int] = {}
+    for rank, (doc_id, _distance) in enumerate(vec_results):
+        row = search_index._conn.execute(
+            "SELECT dataset, doc_type, text FROM documents WHERE id = ?", (doc_id,)
+        ).fetchone()
+        if row is None:
+            continue
+        text = row[2]
+        # Apply same filters as BM25
+        if dataset and row[0] != dataset:
+            continue
+        if doc_type and row[1] != doc_type:
+            continue
+        if text not in vec_docs:
+            vec_docs[text] = rank
+            if text not in bm25_docs:
+                bm25_docs[text] = {"dataset": row[0], "doc_type": row[1], "text": text, "score": 0.0}
+
+    # RRF scoring
+    scored: dict[str, float] = {}
+    all_texts = set(bm25_by_text.keys()) | set(vec_docs.keys())
+    for text in all_texts:
+        score = 0.0
+        if text in bm25_by_text:
+            score += 1.0 / (rrf_k + bm25_by_text[text])
+        if text in vec_docs:
+            score += 1.0 / (rrf_k + vec_docs[text])
+        scored[text] = score
+
+    # Sort by RRF score descending, return top k
+    ranked = sorted(scored.keys(), key=lambda t: scored[t], reverse=True)[:k]
+    return [{**bm25_docs[text], "score": scored[text]} for text in ranked]
