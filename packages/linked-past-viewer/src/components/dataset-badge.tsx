@@ -6,24 +6,28 @@ import {
 import { useState } from "react";
 import { DATASETS } from "../lib/datasets";
 
-const COLORS: Record<string, string> = {
-  dprr: "bg-blue-500",
-  pleiades: "bg-green-500",
-  periodo: "bg-purple-500",
-  nomisma: "bg-yellow-500 text-black",
-  crro: "bg-orange-500",
-  ocre: "bg-red-500",
-  edh: "bg-cyan-500",
+const TEXT_COLORS: Record<string, string> = {
+  dprr: "#60a5fa",     // blue-400
+  pleiades: "#4ade80",  // green-400
+  periodo: "#c084fc",   // violet-400
+  nomisma: "#facc15",   // yellow-400
+  crro: "#fb923c",      // orange-400
+  ocre: "#f87171",      // red-400
+  edh: "#22d3ee",       // cyan-400
+  rpc: "#2dd4bf",       // teal-400
 };
 
 export function DatasetBadge({ dataset }: { dataset: string }) {
-  const color = COLORS[dataset] ?? "bg-gray-500";
+  const textColor = TEXT_COLORS[dataset.toLowerCase()] ?? "#a1a1aa";
   const info = DATASETS[dataset];
   const [open, setOpen] = useState(false);
 
   if (!info) {
     return (
-      <span className={`inline-block px-2 py-0.5 rounded text-[11px] font-semibold text-white ${color}`}>
+      <span
+        className="text-[10px] font-medium uppercase tracking-widest"
+        style={{ color: textColor }}
+      >
         {dataset}
       </span>
     );
@@ -32,11 +36,16 @@ export function DatasetBadge({ dataset }: { dataset: string }) {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger
-        className={`inline-block px-2 py-0.5 rounded text-[11px] font-semibold text-white cursor-pointer ${color}`}
+        className="cursor-pointer"
         onMouseEnter={() => setOpen(true)}
         onMouseLeave={() => setOpen(false)}
       >
-        {dataset}
+        <span
+          className="text-[10px] font-medium uppercase tracking-widest"
+          style={{ color: textColor }}
+        >
+          {dataset}
+        </span>
       </PopoverTrigger>
       <PopoverContent
         className="w-[280px] p-3"

@@ -53,4 +53,10 @@ export const DATASETS: Record<string, DatasetInfo> = {
     license: "CC BY-SA 4.0",
     url: "https://edh.ub.uni-heidelberg.de",
   },
+  rpc: {
+    name: "Roman Provincial Coinage Online",
+    description: "Provincial mint coinage (44 BC – 296 AD) with Nomisma links",
+    license: "ODbL 1.0",
+    url: "https://rpc.ashmus.ox.ac.uk",
+  },
 };
