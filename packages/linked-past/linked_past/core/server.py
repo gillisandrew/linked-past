@@ -20,6 +20,7 @@ from linked_past.core.registry import DatasetRegistry, discover_plugins
 from linked_past.core.search import SearchIndex
 from linked_past.core.store import get_data_dir
 from linked_past.core.validate import parse_and_fix_prefixes, validate_and_execute
+from linked_past.core.vector import VectorIndex
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +32,8 @@ class AppContext:
     registry: DatasetRegistry
     linkage: LinkageGraph | None = None
     search: SearchIndex | None = None
+    vector: object = None  # VectorIndex | None
+    embedder: object = None  # Embedder | None
     meta: object = None  # MetaEntityIndex
     session_log: list = None
     viewer: object = None  # ViewerManager | None
@@ -212,7 +215,7 @@ def _dataset_fingerprint(registry: DatasetRegistry) -> str:
     """
     import hashlib
 
-    parts = []
+    parts = ["v2-hybrid"]
     for name in sorted(registry.list_datasets()):
         meta = registry.get_metadata(name)
         version = meta.get("version", "unknown") if meta else "uninitialized"
@@ -221,28 +224,33 @@ def _dataset_fingerprint(registry: DatasetRegistry) -> str:
     return hashlib.md5("|".join(parts).encode()).hexdigest()
 
 
-def _build_search_index(registry: DatasetRegistry, data_dir: Path) -> SearchIndex | None:
-    """Build or reuse cached full-text search index.
+def _build_search_index(registry: DatasetRegistry, data_dir: Path) -> tuple[SearchIndex | None, VectorIndex | None]:
+    """Build or reuse cached full-text search index and vector index.
 
     Computes a fingerprint of initialized datasets. If the cached index
     matches, reuses it (instant startup). Otherwise rebuilds from scratch.
     """
     try:
         search_path = data_dir / "search.db"
+        vec_path = data_dir / "vec.db"
         fingerprint_path = data_dir / "search.fingerprint"
         current_fp = _dataset_fingerprint(registry)
 
         # Check if cached index is still valid
-        if search_path.exists() and fingerprint_path.exists():
+        if search_path.exists() and fingerprint_path.exists() and vec_path.exists():
             cached_fp = fingerprint_path.read_text().strip()
             if cached_fp == current_fp:
                 logger.info("Search index cache valid (fingerprint %s), reusing", current_fp[:8])
-                return SearchIndex(search_path)
+                return SearchIndex(search_path), VectorIndex(db_path=vec_path)
             logger.info("Search index stale (cached %s, current %s), rebuilding", cached_fp[:8], current_fp[:8])
 
         # Remove stale DB + WAL/SHM lock files from previous runs
         for suffix in ("", "-wal", "-shm"):
             p = search_path.parent / (search_path.name + suffix)
+            if p.exists():
+                p.unlink()
+        for suffix in ("", "-wal", "-shm"):
+            p = vec_path.parent / (vec_path.name + suffix)
             if p.exists():
                 p.unlink()
         search = SearchIndex(search_path)
@@ -256,13 +264,38 @@ def _build_search_index(registry: DatasetRegistry, data_dir: Path) -> SearchInde
                 store = None
             _index_dataset(search, name, plugin, store, registry=registry)
 
+        # Build vector index over embeddable doc types
+        vec_index = None
+        embeddable_types = ("dataset", "example", "tip", "schema_comment", "shex_shape", "skos_vocab", "skos_concept")
+        try:
+            rows = search._conn.execute(
+                "SELECT id, text FROM documents WHERE doc_type IN ({})".format(
+                    ",".join("?" for _ in embeddable_types)
+                ),
+                embeddable_types,
+            ).fetchall()
+
+            if rows:
+                from linked_past.core.embed import Embedder
+
+                embedder = Embedder()
+                doc_ids = [r[0] for r in rows]
+                texts = [r[1] for r in rows]
+                logger.info("Embedding %d documents...", len(texts))
+                vectors = embedder.embed(texts)
+                vec_index = VectorIndex(db_path=vec_path)
+                vec_index.add_batch(doc_ids, vectors)
+                logger.info("Vector index built (%d vectors)", len(vectors))
+        except Exception as e:
+            logger.warning("Failed to build vector index: %s", e)
+
         # Save fingerprint for next startup
         fingerprint_path.write_text(current_fp)
         logger.info("Search index built and cached (fingerprint %s)", current_fp[:8])
-        return search
+        return search, vec_index
     except Exception as e:
         logger.warning("Failed to build search index: %s", e)
-        return None
+        return None, None
 
 
 def build_app_context(*, eager: bool = False, skip_search: bool = True) -> AppContext:
@@ -313,7 +346,10 @@ def build_app_context(*, eager: bool = False, skip_search: bool = True) -> AppCo
                 except Exception as e:
                     logger.warning("Failed to load concordance %s: %s", ttl_file.name, e)
 
-    search_index = None if skip_search else _build_search_index(registry, data_dir)
+    if skip_search:
+        search_index, vec_index = None, None
+    else:
+        search_index, vec_index = _build_search_index(registry, data_dir)
 
     # Build meta-entity index (skip if already cached)
     meta = None
@@ -358,7 +394,15 @@ def build_app_context(*, eager: bool = False, skip_search: bool = True) -> AppCo
         except Exception as e:
             logger.warning("Failed to build meta-entities: %s", e)
 
-    return AppContext(registry=registry, linkage=linkage, search=search_index, meta=meta)
+    embedder = None
+    if vec_index is not None:
+        try:
+            from linked_past.core.embed import Embedder
+            embedder = Embedder()
+        except Exception as e:
+            logger.warning("Failed to create embedder: %s", e)
+
+    return AppContext(registry=registry, linkage=linkage, search=search_index, vector=vec_index, embedder=embedder, meta=meta)
 
 
 # SKOS/OWL predicates that indicate cross-dataset references
