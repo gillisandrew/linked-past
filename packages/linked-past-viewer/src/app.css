@@ -134,6 +134,16 @@
     --ds-edh-fg: oklch(0.35 0.1 200);
     --ds-default-bg: oklch(0.95 0 0);
     --ds-default-fg: oklch(0.4 0 0);
+    /* Dataset underline colors — vivid, for decoration on light bg */
+    --ds-dprr-line: oklch(0.55 0.2 250);
+    --ds-pleiades-line: oklch(0.55 0.18 155);
+    --ds-periodo-line: oklch(0.55 0.2 300);
+    --ds-nomisma-line: oklch(0.6 0.18 85);
+    --ds-crro-line: oklch(0.6 0.18 55);
+    --ds-ocre-line: oklch(0.55 0.2 25);
+    --ds-edh-line: oklch(0.55 0.18 200);
+    --ds-rpc-line: oklch(0.55 0.15 175);
+    --ds-default-line: oklch(0.5 0 0);
 }
 
 .dark {
@@ -154,6 +164,16 @@
     --ds-edh-fg: oklch(0.78 0.08 200);
     --ds-default-bg: oklch(0.25 0 0);
     --ds-default-fg: oklch(0.7 0 0);
+    /* Dataset underline colors — vivid, for decoration on dark bg */
+    --ds-dprr-line: oklch(0.7 0.18 250);
+    --ds-pleiades-line: oklch(0.7 0.16 155);
+    --ds-periodo-line: oklch(0.7 0.18 300);
+    --ds-nomisma-line: oklch(0.75 0.16 85);
+    --ds-crro-line: oklch(0.75 0.16 55);
+    --ds-ocre-line: oklch(0.7 0.18 25);
+    --ds-edh-line: oklch(0.7 0.16 200);
+    --ds-rpc-line: oklch(0.7 0.14 175);
+    --ds-default-line: oklch(0.6 0 0);
 }
 
 @layer base {

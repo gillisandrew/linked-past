@@ -16,7 +16,7 @@ const EntityPopoverContent = lazy(() =>
 function datasetStyle(dataset: string | null): React.CSSProperties {
   const ds = dataset ?? "default";
   return {
-    textDecorationColor: `var(--ds-${ds}-fg, var(--ds-default-fg))`,
+    textDecorationColor: `var(--ds-${ds}-line, var(--ds-default-line))`,
   };
 }
 
