@@ -12,7 +12,7 @@ function barColor(dataset: string): string {
 }
 
 const BADGE_CLASSES =
-  "inline-flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground";
+  "inline-flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground leading-none";
 
 export function DatasetBadge({ dataset }: { dataset: string }) {
   const info = DATASETS[dataset];
@@ -21,7 +21,7 @@ export function DatasetBadge({ dataset }: { dataset: string }) {
   const badge = (
     <span className={BADGE_CLASSES}>
       <span
-        className="w-0.5 h-3 rounded-full shrink-0"
+        className="w-0.5 h-2.5 rounded-full shrink-0"
         style={{ backgroundColor: barColor(dataset) }}
       />
       {dataset}
