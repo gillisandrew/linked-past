@@ -185,3 +185,55 @@ def test_hybrid_vector_only_results():
 
     fts.close()
     vec.close()
+
+
+def test_hybrid_search_with_dataset_filter():
+    """Hybrid search respects dataset filter."""
+    fts = SearchIndex()
+    vec = VectorIndex()
+
+    id1 = fts.add("dprr", "example", "consul office holding")
+    id2 = fts.add("pleiades", "example", "ancient place geography")
+
+    v1 = _make_vector(1.0)
+    v2 = _make_vector(2.0)
+    vec.add_batch([id1, id2], [v1, v2])
+
+    results = hybrid_search(
+        query="consul",
+        query_vector=v1,
+        search_index=fts,
+        vector_index=vec,
+        k=5,
+        dataset="dprr",
+    )
+    assert all(r["dataset"] == "dprr" for r in results)
+
+    fts.close()
+    vec.close()
+
+
+def test_hybrid_search_with_doc_type_filter():
+    """Hybrid search respects doc_type filter."""
+    fts = SearchIndex()
+    vec = VectorIndex()
+
+    id1 = fts.add("dprr", "example", "consul office query")
+    id2 = fts.add("dprr", "tip", "use consul for office searches")
+
+    v1 = _make_vector(1.0)
+    v2 = _make_vector(2.0)
+    vec.add_batch([id1, id2], [v1, v2])
+
+    results = hybrid_search(
+        query="consul",
+        query_vector=v1,
+        search_index=fts,
+        vector_index=vec,
+        k=5,
+        doc_type="example",
+    )
+    assert all(r["doc_type"] == "example" for r in results)
+
+    fts.close()
+    vec.close()
