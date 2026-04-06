@@ -6,7 +6,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-EMBED_MODEL = "intfloat/multilingual-e5-small"
+EMBED_MODEL = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 VECTOR_DIM = 384
 
 class Embedder:
