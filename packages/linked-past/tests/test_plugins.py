@@ -19,11 +19,11 @@ PLUGIN_SPECS = [
         DPRRPlugin,
         "dprr",
         "CC BY-NC 4.0",
-        "vocab",
+        "dprr",
         ["Person", "PostAssertion"],
         (
-            '@prefix vocab: <http://romanrepublic.ac.uk/rdf/ontology#> .\n'
-            '<http://romanrepublic.ac.uk/rdf/entity/Person/1> a vocab:Person .\n'
+            '@prefix dprr: <http://romanrepublic.ac.uk/rdf/ontology#> .\n'
+            '<http://romanrepublic.ac.uk/rdf/entity/Person/1> a dprr:Person .\n'
         ),
     ),
     (

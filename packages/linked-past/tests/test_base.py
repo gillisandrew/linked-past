@@ -38,7 +38,7 @@ def test_minimal_plugin_init():
 def test_minimal_plugin_get_prefixes():
     plugin = MinimalPlugin()
     prefixes = plugin.get_prefixes()
-    assert "vocab" in prefixes
+    assert "dprr" in prefixes
 
 
 def test_minimal_plugin_build_schema_dict():
@@ -58,8 +58,8 @@ def test_minimal_plugin_get_schema():
 def test_minimal_plugin_validate():
     plugin = MinimalPlugin()
     result = plugin.validate(
-        "PREFIX vocab: <http://romanrepublic.ac.uk/rdf/ontology#>\n"
-        "SELECT ?p WHERE { ?p a vocab:Person }"
+        "PREFIX dprr: <http://romanrepublic.ac.uk/rdf/ontology#>\n"
+        "SELECT ?p WHERE { ?p a dprr:Person }"
     )
     assert result.valid is True
     assert isinstance(result, ValidationResult)
@@ -68,8 +68,8 @@ def test_minimal_plugin_validate():
 def test_minimal_plugin_get_relevant_context():
     plugin = MinimalPlugin()
     ctx = plugin.get_relevant_context(
-        "PREFIX vocab: <http://romanrepublic.ac.uk/rdf/ontology#>\n"
-        "SELECT ?p WHERE { ?p a vocab:Person ; vocab:hasPersonName ?n }"
+        "PREFIX dprr: <http://romanrepublic.ac.uk/rdf/ontology#>\n"
+        "SELECT ?p WHERE { ?p a dprr:Person ; dprr:hasPersonName ?n }"
     )
     assert isinstance(ctx, str)
 

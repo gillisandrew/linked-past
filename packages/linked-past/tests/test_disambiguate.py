@@ -280,76 +280,76 @@ class TestExtractContextFromEDH:
 # ── Aquillius golden integration test ───────────────────────────────────────
 
 AQUILLIUS_TURTLE = """\
-@prefix vocab: <http://romanrepublic.ac.uk/rdf/ontology#> .
+@prefix dprr: <http://romanrepublic.ac.uk/rdf/ontology#> .
 @prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
 
 # Praenomen: Manius
-<http://romanrepublic.ac.uk/rdf/entity/Praenomen/1> a vocab:Praenomen ;
+<http://romanrepublic.ac.uk/rdf/entity/Praenomen/1> a dprr:Praenomen ;
     rdfs:label "Praenomen: M'." .
 
 # ── Person 1614: M'. Aquillius cos. 129 BCE ──────────────────────────────
-<http://romanrepublic.ac.uk/rdf/entity/Person/1614> a vocab:Person ;
-    vocab:hasPersonName "AQUI1614 M'. Aquillius (10) M'. f. M'. n." ;
-    vocab:hasNomen "Aquillius" ;
-    vocab:hasPraenomen <http://romanrepublic.ac.uk/rdf/entity/Praenomen/1> ;
-    vocab:hasEraFrom "-185"^^xsd:integer ;
-    vocab:hasEraTo   "-129"^^xsd:integer .
+<http://romanrepublic.ac.uk/rdf/entity/Person/1614> a dprr:Person ;
+    dprr:hasPersonName "AQUI1614 M'. Aquillius (10) M'. f. M'. n." ;
+    dprr:hasNomen "Aquillius" ;
+    dprr:hasPraenomen <http://romanrepublic.ac.uk/rdf/entity/Praenomen/1> ;
+    dprr:hasEraFrom "-185"^^xsd:integer ;
+    dprr:hasEraTo   "-129"^^xsd:integer .
 
-<http://romanrepublic.ac.uk/rdf/entity/PostAssertion/1614a> a vocab:PostAssertion ;
-    vocab:isAboutPerson <http://romanrepublic.ac.uk/rdf/entity/Person/1614> ;
-    vocab:hasOffice <http://romanrepublic.ac.uk/rdf/entity/Office/consul> ;
-    vocab:hasDateStart "-129"^^xsd:integer .
+<http://romanrepublic.ac.uk/rdf/entity/PostAssertion/1614a> a dprr:PostAssertion ;
+    dprr:isAboutPerson <http://romanrepublic.ac.uk/rdf/entity/Person/1614> ;
+    dprr:hasOffice <http://romanrepublic.ac.uk/rdf/entity/Office/consul> ;
+    dprr:hasDateStart "-129"^^xsd:integer .
 
-<http://romanrepublic.ac.uk/rdf/entity/Office/consul> a vocab:Office ;
+<http://romanrepublic.ac.uk/rdf/entity/Office/consul> a dprr:Office ;
     rdfs:label "Office: consul" .
 
 # ── Person 1757: M'. Aquillius cos. 101 BCE ──────────────────────────────
-<http://romanrepublic.ac.uk/rdf/entity/Person/1757> a vocab:Person ;
-    vocab:hasPersonName "AQUI1757 M'. Aquillius (11) M'. f. M'. n." ;
-    vocab:hasNomen "Aquillius" ;
-    vocab:hasPraenomen <http://romanrepublic.ac.uk/rdf/entity/Praenomen/1> ;
-    vocab:hasEraFrom "-155"^^xsd:integer ;
-    vocab:hasEraTo   "-101"^^xsd:integer .
+<http://romanrepublic.ac.uk/rdf/entity/Person/1757> a dprr:Person ;
+    dprr:hasPersonName "AQUI1757 M'. Aquillius (11) M'. f. M'. n." ;
+    dprr:hasNomen "Aquillius" ;
+    dprr:hasPraenomen <http://romanrepublic.ac.uk/rdf/entity/Praenomen/1> ;
+    dprr:hasEraFrom "-155"^^xsd:integer ;
+    dprr:hasEraTo   "-101"^^xsd:integer .
 
-<http://romanrepublic.ac.uk/rdf/entity/PostAssertion/1757a> a vocab:PostAssertion ;
-    vocab:isAboutPerson <http://romanrepublic.ac.uk/rdf/entity/Person/1757> ;
-    vocab:hasOffice <http://romanrepublic.ac.uk/rdf/entity/Office/consul> ;
-    vocab:hasDateStart "-101"^^xsd:integer .
+<http://romanrepublic.ac.uk/rdf/entity/PostAssertion/1757a> a dprr:PostAssertion ;
+    dprr:isAboutPerson <http://romanrepublic.ac.uk/rdf/entity/Person/1757> ;
+    dprr:hasOffice <http://romanrepublic.ac.uk/rdf/entity/Office/consul> ;
+    dprr:hasDateStart "-101"^^xsd:integer .
 
 # ── Person 4686: L. Aquillius M. f. M. n. Florus q. c.70 BCE ────────────
-<http://romanrepublic.ac.uk/rdf/entity/Person/4686> a vocab:Person ;
-    vocab:hasPersonName "AQUI4686 L. Aquillius (12) M'. f. M'. n. Florus" ;
-    vocab:hasNomen "Aquillius" ;
-    vocab:hasPraenomen <http://romanrepublic.ac.uk/rdf/entity/Praenomen/lucius> ;
-    vocab:hasEraFrom "-115"^^xsd:integer ;
-    vocab:hasEraTo   "-60"^^xsd:integer .
+<http://romanrepublic.ac.uk/rdf/entity/Person/4686> a dprr:Person ;
+    dprr:hasPersonName "AQUI4686 L. Aquillius (12) M'. f. M'. n. Florus" ;
+    dprr:hasNomen "Aquillius" ;
+    dprr:hasPraenomen <http://romanrepublic.ac.uk/rdf/entity/Praenomen/lucius> ;
+    dprr:hasEraFrom "-115"^^xsd:integer ;
+    dprr:hasEraTo   "-60"^^xsd:integer .
 
-<http://romanrepublic.ac.uk/rdf/entity/Praenomen/lucius> a vocab:Praenomen ;
+<http://romanrepublic.ac.uk/rdf/entity/Praenomen/lucius> a dprr:Praenomen ;
     rdfs:label "Praenomen: L." .
 
-<http://romanrepublic.ac.uk/rdf/entity/PostAssertion/4686a> a vocab:PostAssertion ;
-    vocab:isAboutPerson <http://romanrepublic.ac.uk/rdf/entity/Person/4686> ;
-    vocab:hasOffice <http://romanrepublic.ac.uk/rdf/entity/Office/quaestor> ;
-    vocab:hasDateStart "-70"^^xsd:integer .
+<http://romanrepublic.ac.uk/rdf/entity/PostAssertion/4686a> a dprr:PostAssertion ;
+    dprr:isAboutPerson <http://romanrepublic.ac.uk/rdf/entity/Person/4686> ;
+    dprr:hasOffice <http://romanrepublic.ac.uk/rdf/entity/Office/quaestor> ;
+    dprr:hasDateStart "-70"^^xsd:integer .
 
-<http://romanrepublic.ac.uk/rdf/entity/Office/quaestor> a vocab:Office ;
+<http://romanrepublic.ac.uk/rdf/entity/Office/quaestor> a dprr:Office ;
     rdfs:label "Office: quaestor" .
 
 # ── Relationship: 1614 is father of 1757 ────────────────────────────────
-<http://romanrepublic.ac.uk/rdf/entity/Relationship/fatherOf> a vocab:Relationship ;
+<http://romanrepublic.ac.uk/rdf/entity/Relationship/fatherOf> a dprr:Relationship ;
     rdfs:label "Relationship: father of" .
 
-<http://romanrepublic.ac.uk/rdf/entity/RelationshipAssertion/ra1> a vocab:RelationshipAssertion ;
-    vocab:isAboutPerson <http://romanrepublic.ac.uk/rdf/entity/Person/1614> ;
-    vocab:hasRelatedPerson <http://romanrepublic.ac.uk/rdf/entity/Person/1757> ;
-    vocab:hasRelationship <http://romanrepublic.ac.uk/rdf/entity/Relationship/fatherOf> .
+<http://romanrepublic.ac.uk/rdf/entity/RelationshipAssertion/ra1> a dprr:RelationshipAssertion ;
+    dprr:isAboutPerson <http://romanrepublic.ac.uk/rdf/entity/Person/1614> ;
+    dprr:hasRelatedPerson <http://romanrepublic.ac.uk/rdf/entity/Person/1757> ;
+    dprr:hasRelationship <http://romanrepublic.ac.uk/rdf/entity/Relationship/fatherOf> .
 
 # ── Relationship: 1757 is father of 4686 ────────────────────────────────
-<http://romanrepublic.ac.uk/rdf/entity/RelationshipAssertion/ra2> a vocab:RelationshipAssertion ;
-    vocab:isAboutPerson <http://romanrepublic.ac.uk/rdf/entity/Person/1757> ;
-    vocab:hasRelatedPerson <http://romanrepublic.ac.uk/rdf/entity/Person/4686> ;
-    vocab:hasRelationship <http://romanrepublic.ac.uk/rdf/entity/Relationship/fatherOf> .
+<http://romanrepublic.ac.uk/rdf/entity/RelationshipAssertion/ra2> a dprr:RelationshipAssertion ;
+    dprr:isAboutPerson <http://romanrepublic.ac.uk/rdf/entity/Person/1757> ;
+    dprr:hasRelatedPerson <http://romanrepublic.ac.uk/rdf/entity/Person/4686> ;
+    dprr:hasRelationship <http://romanrepublic.ac.uk/rdf/entity/Relationship/fatherOf> .
 """
 
 _DPRR_BASE = "http://romanrepublic.ac.uk/rdf/entity/Person/"

@@ -16,15 +16,15 @@ def test_get_schema_has_classes(patched_app_context):
     schema = plugin.get_schema()
     assert "Person" in schema
     assert "PostAssertion" in schema
-    assert "PREFIX vocab:" in schema
+    assert "PREFIX dprr:" in schema
 
 
 def test_validate_valid_query(patched_app_context):
     plugin = patched_app_context.registry.get_plugin("dprr")
     prefix_map = plugin.get_prefixes()
     sparql = (
-        "PREFIX vocab: <http://romanrepublic.ac.uk/rdf/ontology#>\n"
-        "SELECT ?p ?name WHERE { ?p a vocab:Person ; vocab:hasPersonName ?name }"
+        "PREFIX dprr: <http://romanrepublic.ac.uk/rdf/ontology#>\n"
+        "SELECT ?p ?name WHERE { ?p a dprr:Person ; dprr:hasPersonName ?name }"
     )
     fixed, errors = parse_and_fix_prefixes(sparql, prefix_map)
     assert errors == []
@@ -36,8 +36,8 @@ def test_validate_unknown_class_is_warning(patched_app_context):
     """Unknown classes are non-blocking warnings --- query still validates."""
     plugin = patched_app_context.registry.get_plugin("dprr")
     sparql = (
-        "PREFIX vocab: <http://romanrepublic.ac.uk/rdf/ontology#>\n"
-        "SELECT ?p WHERE { ?p a vocab:FakeClass }"
+        "PREFIX dprr: <http://romanrepublic.ac.uk/rdf/ontology#>\n"
+        "SELECT ?p WHERE { ?p a dprr:FakeClass }"
     )
     result = plugin.validate(sparql)
     assert result.valid is True  # Warning only, not an error
@@ -47,8 +47,8 @@ def test_execute_query_returns_results(patched_app_context):
     store = patched_app_context.registry.get_store("dprr")
     plugin = patched_app_context.registry.get_plugin("dprr")
     sparql = (
-        "PREFIX vocab: <http://romanrepublic.ac.uk/rdf/ontology#>\n"
-        "SELECT ?name WHERE { ?p a vocab:Person ; vocab:hasPersonName ?name }"
+        "PREFIX dprr: <http://romanrepublic.ac.uk/rdf/ontology#>\n"
+        "SELECT ?name WHERE { ?p a dprr:Person ; dprr:hasPersonName ?name }"
     )
     result = validate_and_execute(sparql, store, plugin.build_schema_dict(), plugin.get_prefixes())
     assert result.success is True
@@ -59,7 +59,7 @@ def test_execute_query_returns_results(patched_app_context):
 def test_execute_with_prefix_repair(patched_app_context):
     store = patched_app_context.registry.get_store("dprr")
     plugin = patched_app_context.registry.get_plugin("dprr")
-    sparql = "SELECT ?name WHERE { ?p a vocab:Person ; vocab:hasPersonName ?name }"
+    sparql = "SELECT ?name WHERE { ?p a dprr:Person ; dprr:hasPersonName ?name }"
     result = validate_and_execute(sparql, store, plugin.build_schema_dict(), plugin.get_prefixes())
     assert result.success is True
     assert len(result.rows) == 1
@@ -87,8 +87,8 @@ def test_query_result_includes_citation(patched_app_context):
     store = patched_app_context.registry.get_store("dprr")
     plugin = patched_app_context.registry.get_plugin("dprr")
     result = validate_and_execute(
-        "PREFIX vocab: <http://romanrepublic.ac.uk/rdf/ontology#>\n"
-        "SELECT ?name WHERE { ?p a vocab:Person ; vocab:hasPersonName ?name }",
+        "PREFIX dprr: <http://romanrepublic.ac.uk/rdf/ontology#>\n"
+        "SELECT ?name WHERE { ?p a dprr:Person ; dprr:hasPersonName ?name }",
         store, plugin.build_schema_dict(), plugin.get_prefixes(),
     )
     assert result.success is True

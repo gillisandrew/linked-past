@@ -7,18 +7,18 @@ from linked_past.core.registry import DatasetRegistry
 from linked_past.core.store import create_store, execute_query
 
 DPRR_TURTLE = """\
-@prefix vocab: <http://romanrepublic.ac.uk/rdf/ontology#> .
+@prefix dprr: <http://romanrepublic.ac.uk/rdf/ontology#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 
-<http://romanrepublic.ac.uk/rdf/entity/Person/1> a vocab:Person ;
-    vocab:hasPersonName "IUNI0001 L. Iunius Brutus" ;
-    vocab:hasNomen "Iunius" .
+<http://romanrepublic.ac.uk/rdf/entity/Person/1> a dprr:Person ;
+    dprr:hasPersonName "IUNI0001 L. Iunius Brutus" ;
+    dprr:hasNomen "Iunius" .
 
-<http://romanrepublic.ac.uk/rdf/entity/Person/2> a vocab:Person ;
-    vocab:hasPersonName "IUNI0002 M. Iunius Brutus" ;
-    vocab:hasNomen "Iunius" .
+<http://romanrepublic.ac.uk/rdf/entity/Person/2> a dprr:Person ;
+    dprr:hasPersonName "IUNI0002 M. Iunius Brutus" ;
+    dprr:hasNomen "Iunius" .
 
-<http://romanrepublic.ac.uk/rdf/entity/Office/3> a vocab:Office ;
+<http://romanrepublic.ac.uk/rdf/entity/Office/3> a dprr:Office ;
     rdfs:label "Office: consul" .
 """
 
@@ -53,7 +53,7 @@ def test_dataset_for_uri_unregistered():
 def test_search_entities_query(dprr_store):
     """Verify the SPARQL pattern for entity search works."""
     sparql = """
-    PREFIX vocab: <http://romanrepublic.ac.uk/rdf/ontology#>
+    PREFIX dprr: <http://romanrepublic.ac.uk/rdf/ontology#>
     PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
     PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
     SELECT DISTINCT ?uri ?label ?type WHERE {

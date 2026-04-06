@@ -5,27 +5,27 @@ import pytest
 from linked_past.core.server import build_app_context
 
 DPRR_SAMPLE_TURTLE = """\
-@prefix vocab: <http://romanrepublic.ac.uk/rdf/ontology#> .
+@prefix dprr: <http://romanrepublic.ac.uk/rdf/ontology#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
-<http://romanrepublic.ac.uk/rdf/entity/Person/1> a vocab:Person ;
-    vocab:hasPersonName "IUNI0001 L. Iunius Brutus" ;
-    vocab:hasDprrID "IUNI0001" ;
-    vocab:hasNomen "Iunius" ;
-    vocab:hasCognomen "Brutus" ;
-    vocab:isSex <http://romanrepublic.ac.uk/rdf/entity/Sex/Male> ;
-    vocab:hasEraFrom "-509"^^xsd:integer .
+<http://romanrepublic.ac.uk/rdf/entity/Person/1> a dprr:Person ;
+    dprr:hasPersonName "IUNI0001 L. Iunius Brutus" ;
+    dprr:hasDprrID "IUNI0001" ;
+    dprr:hasNomen "Iunius" ;
+    dprr:hasCognomen "Brutus" ;
+    dprr:isSex <http://romanrepublic.ac.uk/rdf/entity/Sex/Male> ;
+    dprr:hasEraFrom "-509"^^xsd:integer .
 
-<http://romanrepublic.ac.uk/rdf/entity/PostAssertion/1> a vocab:PostAssertion ;
-    vocab:isAboutPerson <http://romanrepublic.ac.uk/rdf/entity/Person/1> ;
-    vocab:hasOffice <http://romanrepublic.ac.uk/rdf/entity/Office/3> ;
-    vocab:hasDateStart "-509"^^xsd:integer .
+<http://romanrepublic.ac.uk/rdf/entity/PostAssertion/1> a dprr:PostAssertion ;
+    dprr:isAboutPerson <http://romanrepublic.ac.uk/rdf/entity/Person/1> ;
+    dprr:hasOffice <http://romanrepublic.ac.uk/rdf/entity/Office/3> ;
+    dprr:hasDateStart "-509"^^xsd:integer .
 
-<http://romanrepublic.ac.uk/rdf/entity/Office/3> a vocab:Office ;
+<http://romanrepublic.ac.uk/rdf/entity/Office/3> a dprr:Office ;
     rdfs:label "Office: consul" .
 
-<http://romanrepublic.ac.uk/rdf/entity/Sex/Male> a vocab:Sex ;
+<http://romanrepublic.ac.uk/rdf/entity/Sex/Male> a dprr:Sex ;
     rdfs:label "Sex: Male" .
 """
 

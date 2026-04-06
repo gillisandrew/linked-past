@@ -3,23 +3,23 @@ tips:
     classes: [Person, PostAssertion, StatusAssertion, RelationshipAssertion, DateInformation, TribeAssertion]
     title: "CRITICAL: Always join from assertion TO person, never person to assertion"
     body: |
-      Person entities have NO link to their assertions. There is no vocab:hasPerson,
-      vocab:hasPostAssertion, or similar predicate on Person.
+      Person entities have NO link to their assertions. There is no dprr:hasPerson,
+      dprr:hasPostAssertion, or similar predicate on Person.
       The ONLY way to connect Person to PostAssertion, StatusAssertion,
       RelationshipAssertion, DateInformation, or TribeAssertion is:
-        ?assertion vocab:isAboutPerson ?person .
-      WRONG: ?person vocab:hasPerson ?assertion .
-      WRONG: ?person vocab:hasPostAssertion ?assertion .
-      RIGHT: ?assertion a vocab:PostAssertion ; vocab:isAboutPerson ?person .
-      All assertion classes use vocab:isAboutPerson for this link.
+        ?assertion dprr:isAboutPerson ?person .
+      WRONG: ?person dprr:hasPerson ?assertion .
+      WRONG: ?person dprr:hasPostAssertion ?assertion .
+      RIGHT: ?assertion a dprr:PostAssertion ; dprr:isAboutPerson ?person .
+      All assertion classes use dprr:isAboutPerson for this link.
 
   - id: boolean_open_world
     classes: []
     title: "Boolean properties use open-world semantics"
     body: >
       Properties like isPatrician, isNobilis, isNovus, and all uncertainty flags
-      only store `true` values. Querying `?person vocab:isPatrician false` returns
-      0 rows. Use: FILTER NOT EXISTS { ?person vocab:isPatrician true }.
+      only store `true` values. Querying `?person dprr:isPatrician false` returns
+      0 rows. Use: FILTER NOT EXISTS { ?person dprr:isPatrician true }.
 
   - id: count_distinct
     classes: [PostAssertion]
@@ -42,7 +42,7 @@ tips:
     title: "Provinces are NOT on PostAssertion directly"
     body: >
       To find the province for a post, join through PostAssertionProvince:
-      ?pap vocab:hasPostAssertion ?assertion ; vocab:hasProvince ?province .
+      ?pap dprr:hasPostAssertion ?assertion ; dprr:hasProvince ?province .
       Not all offices have province assignments (e.g. consuls typically do not).
 
   - id: praenomen_labels
@@ -50,14 +50,14 @@ tips:
     title: "Praenomen labels use abbreviations, not full names"
     body: >
       Praenomen rdfs:label is "Praenomen: L." (abbreviated), not "Praenomen: Lucius".
-      Use vocab:hasName on Praenomen to get the full name "Lucius".
+      Use dprr:hasName on Praenomen to get the full name "Lucius".
 
   - id: sex_entity_uris
     classes: [Sex, Person]
     title: "Sex uses full entity URIs, not label matching"
     body: >
       Filter sex using the entity URI directly:
-      ?person vocab:isSex <http://romanrepublic.ac.uk/rdf/entity/Sex/Male> .
+      ?person dprr:isSex <http://romanrepublic.ac.uk/rdf/entity/Sex/Male> .
       Or match via rdfs:label "Sex: Male" / "Sex: Female".
 
   - id: integer_date_filters
@@ -86,10 +86,10 @@ tips:
     title: "Some name properties are plain strings, others are linked entities"
     body: >
       hasNomen, hasCognomen, and hasFiliation are plain string literals — query
-      directly: ?person vocab:hasNomen "Fabius". But hasPraenomen, isSex,
+      directly: ?person dprr:hasNomen "Fabius". But hasPraenomen, isSex,
       hasOffice, and hasSecondarySource are linked entities — join through them:
-      ?person vocab:hasPraenomen ?p . ?p rdfs:label ?praenomen. Check the
-      property range in the schema (xsd:string = direct, vocab:* = linked entity).
+      ?person dprr:hasPraenomen ?p . ?p rdfs:label ?praenomen. Check the
+      property range in the schema (xsd:string = direct, dprr:* = linked entity).
 
   - id: avoid_entity_prefix_in_subject
     classes: [Person]
@@ -97,15 +97,15 @@ tips:
     body: >
       Some SPARQL parsers reject the entity: prefix in subject position (e.g.
       entity:Person/12345). Instead, look up persons by their DPRR identifier:
-      ?person a vocab:Person ; vocab:hasDprrID "CORN0001". This is portable and
+      ?person a dprr:Person ; dprr:hasDprrID "CORN0001". This is portable and
       always works.
 
   - id: highest_office_is_text
     classes: [Person]
     title: "hasHighestOffice is free text, not linked to Office"
     body: >
-      vocab:hasHighestOffice is a free-text summary like "cos. 509". For
-      structured office queries, use PostAssertion with vocab:hasOffice.
+      dprr:hasHighestOffice is a free-text summary like "cos. 509". For
+      structured office queries, use PostAssertion with dprr:hasOffice.
 
   - id: relationship_directionality
     classes: [RelationshipAssertion]
@@ -140,14 +140,14 @@ tips:
     classes: [PostAssertion, StatusAssertion, RelationshipAssertion, DateInformation, PostAssertionNote, StatusAssertionNote, PersonNote, RelationshipAssertionReference]
     title: "Surface uncertainty flags, notes, and source text"
     body: >
-      All assertion classes have vocab:isUncertain (boolean, only true
+      All assertion classes have dprr:isUncertain (boolean, only true
       stored). PostAssertion also has isDateStartUncertain / isDateEndUncertain.
-      To exclude uncertain data: FILTER NOT EXISTS { ?a vocab:isUncertain true }.
+      To exclude uncertain data: FILTER NOT EXISTS { ?a dprr:isUncertain true }.
       For provenance, include hasOriginalText (literal string on PostAssertion
       and StatusAssertion) and hasDateSourceText (on StatusAssertion) via
       OPTIONAL. DateInformation has hasNotes (literal). Note entity fields
       (hasPostAssertionNote, hasStatusAssertionNote, hasPersonNote,
       hasRelationshipReference) return entity URIs, not text — dereference
-      with vocab:hasNoteText for note text (e.g. OPTIONAL {
-      ?a vocab:hasPostAssertionNote ?note . ?note vocab:hasNoteText ?noteText }).
-      hasRelationshipReference uses vocab:hasExtraInfo instead of hasNoteText.
+      with dprr:hasNoteText for note text (e.g. OPTIONAL {
+      ?a dprr:hasPostAssertionNote ?note . ?note dprr:hasNoteText ?noteText }).
+      hasRelationshipReference uses dprr:hasExtraInfo instead of hasNoteText.
