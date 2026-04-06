@@ -215,7 +215,7 @@ def _dataset_fingerprint(registry: DatasetRegistry) -> str:
     """
     import hashlib
 
-    parts = ["v2-hybrid"]
+    parts = ["v3-hybrid-slim"]
     for name in sorted(registry.list_datasets()):
         meta = registry.get_metadata(name)
         version = meta.get("version", "unknown") if meta else "uninitialized"
@@ -266,7 +266,7 @@ def _build_search_index(registry: DatasetRegistry, data_dir: Path) -> tuple[Sear
 
         # Build vector index over embeddable doc types
         vec_index = None
-        embeddable_types = ("dataset", "example", "tip", "schema_comment", "shex_shape", "skos_vocab", "skos_concept")
+        embeddable_types = ("dataset", "example", "tip", "schema_comment", "shex_shape")
         try:
             rows = search._conn.execute(
                 "SELECT id, text FROM documents WHERE doc_type IN ({})".format(
