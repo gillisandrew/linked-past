@@ -25,7 +25,7 @@ export function DatasetBadge({ dataset }: { dataset: string }) {
   if (!info) {
     return (
       <span
-        className="text-[10px] font-medium uppercase tracking-widest"
+        className="text-[10px] font-medium uppercase tracking-wider"
         style={{ color: textColor }}
       >
         {dataset}
@@ -41,7 +41,7 @@ export function DatasetBadge({ dataset }: { dataset: string }) {
         onMouseLeave={() => setOpen(false)}
       >
         <span
-          className="text-[10px] font-medium uppercase tracking-widest"
+          className="text-[10px] font-medium uppercase tracking-wider"
           style={{ color: textColor }}
         >
           {dataset}
