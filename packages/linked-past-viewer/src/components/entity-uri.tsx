@@ -16,13 +16,12 @@ const EntityPopoverContent = lazy(() =>
 function datasetStyle(dataset: string | null): React.CSSProperties {
   const ds = dataset ?? "default";
   return {
-    backgroundColor: `var(--ds-${ds}-bg, var(--ds-default-bg))`,
     color: `var(--ds-${ds}-fg, var(--ds-default-fg))`,
   };
 }
 
-const PILL_CLASSES =
-  "inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium cursor-pointer transition-[filter] hover:brightness-95 dark:hover:brightness-110";
+const LINK_CLASSES =
+  "text-xs font-medium cursor-pointer hover:underline underline-offset-2";
 
 export function EntityUri({ uri, display }: { uri: string; display?: string }) {
   const dataset = datasetForUri(uri);
@@ -31,8 +30,8 @@ export function EntityUri({ uri, display }: { uri: string; display?: string }) {
   const { data, isLoading } = useEntityQuery(uri, open);
   const label = display ?? shortUri(uri);
 
-  const pill = (
-    <span className={PILL_CLASSES} style={datasetStyle(dataset)}>
+  const link = (
+    <span className={LINK_CLASSES} style={datasetStyle(dataset)}>
       {label}
     </span>
   );
@@ -40,7 +39,7 @@ export function EntityUri({ uri, display }: { uri: string; display?: string }) {
   if (isStatic) {
     return (
       <a href={linkHref(uri)} target="_blank" rel="noopener noreferrer" title={uri}>
-        {pill}
+        {link}
       </a>
     );
   }
@@ -61,10 +60,10 @@ export function EntityUri({ uri, display }: { uri: string; display?: string }) {
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
           >
-            {pill}
+            {link}
           </a>
         ) : (
-          pill
+          link
         )}
       </PopoverTrigger>
       <PopoverContent
