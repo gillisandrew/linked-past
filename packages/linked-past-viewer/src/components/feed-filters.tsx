@@ -23,10 +23,18 @@ export type Filters = {
   types: Set<string>;
   datasets: Set<string>;
   bookmarkedOnly: boolean;
+  hideEmpty: boolean;
 };
 
 export function emptyFilters(): Filters {
-  return { types: new Set(), datasets: new Set(), bookmarkedOnly: false };
+  return { types: new Set(), datasets: new Set(), bookmarkedOnly: false, hideEmpty: false };
+}
+
+function isEmptyResult(msg: ViewerMessage): boolean {
+  if (msg.type === "query") return msg.data.row_count === 0;
+  if (msg.type === "search") return msg.data.results.length === 0;
+  if (msg.type === "links") return msg.data.links.length === 0;
+  return false;
 }
 
 export function applyFilters(
@@ -36,6 +44,7 @@ export function applyFilters(
 ): ViewerMessage[] {
   return messages.filter((msg) => {
     if (filters.bookmarkedOnly && !bookmarks.has(msg.seq)) return false;
+    if (filters.hideEmpty && isEmptyResult(msg)) return false;
     if (filters.types.size > 0 && !filters.types.has(msg.type)) return false;
     if (filters.datasets.size > 0 && msg.dataset && !filters.datasets.has(msg.dataset)) return false;
     return true;
@@ -104,7 +113,13 @@ export function FeedFilters({
     onChange(emptyFilters());
   }
 
-  const hasFilters = filters.types.size > 0 || filters.datasets.size > 0 || filters.bookmarkedOnly;
+  const emptyCount = messages.filter(isEmptyResult).length;
+
+  function toggleHideEmpty() {
+    onChange({ ...filters, hideEmpty: !filters.hideEmpty });
+  }
+
+  const hasFilters = filters.types.size > 0 || filters.datasets.size > 0 || filters.bookmarkedOnly || filters.hideEmpty;
 
   return (
     <div className="flex items-center gap-2 flex-wrap text-xs">
@@ -116,6 +131,16 @@ export function FeedFilters({
             icon={<Bookmark className="w-3 h-3" />}
             active={filters.bookmarkedOnly}
             onClick={toggleBookmarked}
+          />
+          <span className="text-border">·</span>
+        </>
+      )}
+      {emptyCount > 0 && (
+        <>
+          <ToggleChip
+            label={`hide empty (${emptyCount})`}
+            active={filters.hideEmpty}
+            onClick={toggleHideEmpty}
           />
           <span className="text-border">·</span>
         </>
