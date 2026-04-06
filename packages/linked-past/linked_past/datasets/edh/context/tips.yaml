@@ -4,11 +4,27 @@ tips:
     classes: ["Inscription"]
 
   - title: "date_as_string"
-    body: "nmo:hasStartDate and nmo:hasEndDate are string values like '0071', not xsd:integer. Use string comparison in FILTER clauses. Negative years (e.g., '-0044') represent BC dates."
+    body: |
+      nmo:hasStartDate and nmo:hasEndDate are xsd:string values like '0071', not xsd:integer or xsd:gYear.
+      Negative years (e.g., '-0044') represent BC dates. For date range filters, compare as strings:
+        FILTER(STR(?startDate) <= "-0001")
+      Note: the lexicographic ordering of zero-padded negative strings works correctly
+      (e.g., "-0200" < "-0100" < "-0001" as strings).
+      IMPORTANT: EDH's dated coverage begins around 2 BC (-0002). There are effectively
+      no inscriptions dated before the late 1st century BC. Do not expect results for
+      Republican-era queries before ~50 BC.
     classes: ["Inscription"]
 
   - title: "findspot_via_lawd"
-    body: "lawd:foundAt links inscriptions to EDH geography place URIs (not directly to Pleiades). The geography places may in turn link to Pleiades or Geonames for coordinates."
+    body: |
+      The findspot predicate uses the LAWD 1.0 namespace: <http://lawd.info/ontology/1.0/foundAt>.
+      This is NOT the same as the standard lawd: prefix (<http://lawd.info/ontology/>).
+      In SPARQL, use the full URI or define a custom prefix:
+        PREFIX lawd1: <http://lawd.info/ontology/1.0/>
+        ?inscription lawd1:foundAt ?place .
+      Geography places may link to Pleiades or Geonames for coordinates.
+      NOTE: As an alternative, province/location names appear in skos:prefLabel text
+      (see province_in_label tip) — this may be more reliable for geographic filtering.
     classes: ["Inscription", "GeographyPlace"]
 
   - title: "province_in_label"

@@ -3,8 +3,15 @@ tips:
     body: "All CRRO types have dcterms:source nm:rrc (Crawford's Roman Republican Coinage). Include this in queries to restrict to CRRO types vs other Nomisma data."
     classes: ["CoinType"]
 
-  - title: "authority_links_to_nomisma_persons"
-    body: "nmo:hasAuthority links to Nomisma person URIs (e.g., nm:julius_caesar). These are the same URIs in the Nomisma concept vocabulary — use them to cross-reference with DPRR persons."
+  - title: "issuer_links_to_nomisma_persons"
+    body: |
+      nmo:hasIssuer links coin types to Nomisma person URIs (e.g., nm:julius_caesar).
+      IMPORTANT: These person URIs have their skos:prefLabel in the Nomisma dataset,
+      NOT in the CRRO dataset. To get issuer names, either:
+      1. Query the Nomisma dataset separately for the person label, or
+      2. Use search_entities/explore_entity on the Nomisma URI.
+      Do NOT expect ?issuer skos:prefLabel ?name to work in a CRRO-only query.
+      The predicate nmo:hasAuthority is NOT used in CRRO — use nmo:hasIssuer instead.
     classes: ["CoinType"]
 
   - title: "date_encoding"
