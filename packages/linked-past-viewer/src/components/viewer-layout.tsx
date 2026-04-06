@@ -1,10 +1,9 @@
-import { FileDown, SlidersHorizontal } from "lucide-react";
+import { SlidersHorizontal } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAnnotations } from "../hooks/use-annotations";
 import { useViewerSocket } from "../hooks/use-viewer-socket";
 import { downloadSessionJsonl } from "../lib/download";
 import type { ViewerMessage } from "../lib/types";
-import { Button } from "./ui/button";
 import { ConnectionStatus } from "./connection-status";
 import { Feed } from "./feed";
 import { applyFilters, emptyFilters, FeedFilters, type Filters } from "./feed-filters";
@@ -128,16 +127,11 @@ export function ViewerLayout() {
               />
             )}
             <AutoScrollButton active={autoScroll} onClick={() => setAutoScroll((prev) => !prev)} />
-            <ExportButton messages={filtered} notes={notes} />
-            <Button
-              variant="ghost"
-              size="icon-xs"
-              title="Export session as JSONL"
-              disabled={!liveSessionId && !pastSession}
-              onClick={handleExportJsonl}
-            >
-              <FileDown className="h-3.5 w-3.5" />
-            </Button>
+            <ExportButton
+              messages={filtered}
+              notes={notes}
+              onExportJsonl={liveSessionId || pastSession ? handleExportJsonl : undefined}
+            />
             <DarkModeToggle />
             <span className="text-muted-foreground text-[11px] tabular-nums">
               {filtered.length}/{activeMessages.length}

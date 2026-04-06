@@ -3,14 +3,30 @@ import {
   ChevronsDownUp,
   ChevronsUpDown,
   Download,
+  FileDown,
+  FileText,
   Moon,
   Sun,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
 import { messageToMarkdown } from "../lib/markdown";
 import type { ViewerMessage } from "../lib/types";
 
-export function ExportButton({ messages, notes }: { messages: ViewerMessage[]; notes: Map<number, string> }) {
-  function handleExport() {
+export function ExportButton({
+  messages,
+  notes,
+  onExportJsonl,
+}: {
+  messages: ViewerMessage[];
+  notes: Map<number, string>;
+  onExportJsonl?: () => void;
+}) {
+  function handleExportMarkdown() {
     const parts = messages.map((msg) => {
       let md = messageToMarkdown(msg);
       const note = notes.get(msg.seq);
@@ -33,14 +49,26 @@ export function ExportButton({ messages, notes }: { messages: ViewerMessage[]; n
   if (messages.length === 0) return null;
 
   return (
-    <button
-      onClick={handleExport}
-      className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
-      title="Export session as markdown"
-    >
-      <Download className="w-3.5 h-3.5" />
-      <span>Export</span>
-    </button>
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
+      >
+        <Download className="w-3.5 h-3.5" />
+        <span>Export</span>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem onClick={handleExportMarkdown}>
+          <FileText className="w-3.5 h-3.5" />
+          Markdown
+        </DropdownMenuItem>
+        {onExportJsonl && (
+          <DropdownMenuItem onClick={onExportJsonl}>
+            <FileDown className="w-3.5 h-3.5" />
+            JSONL (for sharing)
+          </DropdownMenuItem>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
