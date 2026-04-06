@@ -11,7 +11,6 @@ import { ExpandCollapseButtons } from "@/components/toolbar-actions";
 import { StaticModeProvider } from "@/lib/static-context";
 import { useStaticSession } from "@/hooks/use-static-session";
 import { useGistLoader } from "@/hooks/use-gist-loader";
-import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -19,10 +18,10 @@ import {
   SelectTrigger,
 } from "@/components/ui/select";
 import {
-  FolderOpen,
   AlertTriangle,
   Loader2,
   ExternalLink,
+  SlidersHorizontal,
 } from "lucide-react";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ErrorBoundary } from "@/components/error-boundary";
@@ -45,6 +44,7 @@ function StaticApp() {
   } | null>(null);
   const [selectedFilename, setSelectedFilename] = useState<string | null>(null);
   const [filters, setFilters] = useState<Filters>(emptyFilters);
+  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     const onHashChange = () => setGistId(getGistId());
@@ -134,56 +134,59 @@ function StaticApp() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="flex items-center justify-between px-4 h-12">
-          <div className="flex items-center gap-3">
-            <span className="text-sm font-medium">linked-past</span>
-            {isGistMode && gist.sessions.length > 1 && (
-              <Select
-                value={selectedFilename ?? ""}
-                onValueChange={handleSessionChange}
-              >
-                <SelectTrigger size="sm" className="min-w-[160px] text-xs">
-                  <span className="flex flex-1 text-left truncate">
-                    {selectedFilename ?? "Select session"}
-                  </span>
-                </SelectTrigger>
-                <SelectContent align="start" alignItemWithTrigger={false}>
-                  {gist.sessions.map((s) => (
-                    <SelectItem key={s.filename} value={s.filename}>
-                      {s.filename.replace(/\.jsonl$/, "")} ·{" "}
-                      {s.result.messages.length} items
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-            {isGistMode && gist.sessions.length === 1 && (
-              <span className="text-xs text-muted-foreground">
-                {gist.sessions[0].filename.replace(/\.jsonl$/, "")}
-              </span>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground tabular-nums">
+      <header className="sticky top-0 z-10 border-b border-border bg-background">
+        <div className="flex items-center gap-3 px-5 h-10">
+          <span className="text-[13px] font-semibold uppercase tracking-wide">
+            linked-past
+          </span>
+          {isGistMode && gist.sessions.length > 1 && (
+            <Select value={selectedFilename ?? ""} onValueChange={handleSessionChange}>
+              <SelectTrigger size="sm" className="min-w-[160px] text-xs">
+                <span className="flex flex-1 text-left truncate">
+                  {selectedFilename ?? "Select session"}
+                </span>
+              </SelectTrigger>
+              <SelectContent align="start" alignItemWithTrigger={false}>
+                {gist.sessions.map((s) => (
+                  <SelectItem key={s.filename} value={s.filename}>
+                    {s.filename.replace(/\.jsonl$/, "")} · {s.result.messages.length} items
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+          {isGistMode && gist.sessions.length === 1 && (
+            <span className="text-[11px] text-muted-foreground">
+              {gist.sessions[0].filename.replace(/\.jsonl$/, "")}
+            </span>
+          )}
+          <span className="ml-auto flex items-center gap-3">
+            <span className="text-[11px] text-muted-foreground tabular-nums">
               {filtered.length}/{session.messages.length}
             </span>
+            {session.messages.length > 0 && (
+              <button
+                onClick={() => setShowFilters((v) => !v)}
+                className={`text-muted-foreground hover:text-foreground cursor-pointer transition-colors ${showFilters ? "text-foreground" : ""}`}
+                title="Toggle filters"
+              >
+                <SlidersHorizontal className="w-3.5 h-3.5" />
+              </button>
+            )}
             <ExpandCollapseButtons
-              onExpandAll={() =>
-                setForceOpen((p) => ({ value: true, rev: (p?.rev ?? 0) + 1 }))
-              }
-              onCollapseAll={() =>
-                setForceOpen((p) => ({ value: false, rev: (p?.rev ?? 0) + 1 }))
-              }
+              onExpandAll={() => setForceOpen((p) => ({ value: true, rev: (p?.rev ?? 0) + 1 }))}
+              onCollapseAll={() => setForceOpen((p) => ({ value: false, rev: (p?.rev ?? 0) + 1 }))}
             />
-            <Button variant="ghost" size="sm" onClick={handleClearAll}>
-              <FolderOpen className="h-4 w-4 mr-1" />
+            <button
+              onClick={handleClearAll}
+              className="text-[11px] text-muted-foreground hover:text-foreground cursor-pointer"
+            >
               Load another
-            </Button>
-          </div>
+            </button>
+          </span>
         </div>
-        {session.messages.length > 0 && (
-          <div className="px-4 py-1.5 border-t border-border/50">
+        {showFilters && session.messages.length > 0 && (
+          <div className="px-5 py-1.5 border-t border-border">
             <FeedFilters
               messages={session.messages}
               filters={filters}
@@ -200,7 +203,7 @@ function StaticApp() {
       />
       <ParseErrorBanner errors={session.errors} />
 
-      <div className="p-4">
+      <div className="px-5 py-4">
         <Feed
           messages={filtered}
           bookmarks={new Set()}
