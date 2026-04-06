@@ -80,17 +80,16 @@ export function MermaidBlock({ chart }: { chart: string }) {
             onClick={(e) => e.stopPropagation()}
           >
             <TransformWrapper
-              initialScale={1}
-              minScale={0.5}
+              initialScale={0.9}
+              minScale={0.3}
               maxScale={5}
               centerOnInit
             >
               <TransformComponent
                 wrapperStyle={{ width: "100%", height: "100%" }}
-                contentStyle={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}
               >
                 <div
-                  className="bg-white rounded-lg p-8 [&_svg]:max-w-none [&_svg]:w-auto [&_svg]:h-auto"
+                  className="bg-white rounded-lg p-8 [&_svg]:max-w-none [&_svg]:h-auto"
                   dangerouslySetInnerHTML={{ __html: svgHtml }}
                 />
               </TransformComponent>
