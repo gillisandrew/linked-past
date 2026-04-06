@@ -95,3 +95,93 @@ def test_bm25_ranking():
     # The schema doc mentions all three terms, should rank highest
     assert results[0]["doc_type"] == "schema"
     idx.close()
+
+
+from linked_past.core.search import hybrid_search
+from linked_past.core.vector import VectorIndex
+
+
+def _make_vector(seed: float, dim: int = 384) -> list[float]:
+    """Deterministic fixture vector."""
+    import hashlib
+    h = hashlib.sha256(f"{seed}".encode()).digest()
+    base = [b / 255.0 for b in h]
+    return (base * (dim // len(base) + 1))[:dim]
+
+
+def test_hybrid_rrf_combines_results():
+    """Both BM25 and vector results contribute to final ranking via RRF."""
+    fts = SearchIndex()
+    vec = VectorIndex()
+
+    # Doc 1: good BM25 match, mediocre vector match
+    id1 = fts.add("dprr", "example", "consul office holding")
+    # Doc 2: poor BM25 match, good vector match
+    id2 = fts.add("dprr", "example", "magistrate administration role")
+
+    v1 = _make_vector(1.0)
+    v2 = _make_vector(2.0)
+    vec.add_batch([id1, id2], [v1, v2])
+
+    # Query that matches doc 1 by keywords
+    results = hybrid_search(
+        query="consul",
+        query_vector=v1,  # close to doc 1's vector
+        search_index=fts,
+        vector_index=vec,
+        k=5,
+    )
+    assert len(results) >= 1
+    # Doc 1 should rank first (strong in both)
+    assert results[0]["text"] == "consul office holding"
+
+    fts.close()
+    vec.close()
+
+
+def test_hybrid_fts_only_fallback():
+    """When vector_index is None, hybrid_search falls back to FTS5-only."""
+    fts = SearchIndex()
+    fts.add("dprr", "example", "consul office holding")
+
+    results = hybrid_search(
+        query="consul",
+        query_vector=None,
+        search_index=fts,
+        vector_index=None,
+        k=5,
+    )
+    assert len(results) >= 1
+    assert results[0]["text"] == "consul office holding"
+    fts.close()
+
+
+def test_hybrid_vector_only_results():
+    """Documents only found by vector search (no keyword overlap) still appear."""
+    fts = SearchIndex()
+    vec = VectorIndex()
+
+    # Doc 1: about grain supply (no keyword overlap with "food administration")
+    id1 = fts.add("dprr", "example", "praefectus annonae grain supply curator")
+    # Doc 2: keyword match
+    id2 = fts.add("dprr", "example", "food administration and distribution")
+
+    v1 = _make_vector(1.0)
+    v2 = _make_vector(2.0)
+    vec.add_batch([id1, id2], [v1, v2])
+
+    # Query with vector close to doc 1 but keywords matching doc 2
+    results = hybrid_search(
+        query="food administration",
+        query_vector=v1,  # close to doc 1
+        search_index=fts,
+        vector_index=vec,
+        k=5,
+    )
+    # Both docs should appear — doc 1 via vector, doc 2 via BM25
+    result_texts = [r["text"] for r in results]
+    assert "praefectus annonae grain supply curator" in result_texts
+    assert "food administration and distribution" in result_texts
+
+    fts.close()
+    vec.close()
