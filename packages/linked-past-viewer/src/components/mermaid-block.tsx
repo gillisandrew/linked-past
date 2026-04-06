@@ -17,6 +17,13 @@ function getMermaid() {
   return mermaidPromise;
 }
 
+/** Strip mermaid's inline max-width style so the SVG can scale freely in the lightbox. */
+function stripMaxWidth(svg: string): string {
+  return svg.replace(/style="[^"]*max-width:[^;"]*;?/g, (match) =>
+    match.replace(/max-width:[^;"]*;?/, ""),
+  );
+}
+
 export function MermaidBlock({ chart }: { chart: string }) {
   const id = useId().replace(/:/g, "_");
   const containerRef = useRef<HTMLDivElement>(null);
@@ -80,17 +87,18 @@ export function MermaidBlock({ chart }: { chart: string }) {
             onClick={(e) => e.stopPropagation()}
           >
             <TransformWrapper
-              initialScale={0.9}
-              minScale={0.3}
-              maxScale={5}
+              initialScale={1}
+              minScale={0.2}
+              maxScale={10}
               centerOnInit
+              wheel={{ step: 0.1 }}
             >
               <TransformComponent
                 wrapperStyle={{ width: "100%", height: "100%" }}
               >
                 <div
-                  className="bg-white rounded-lg p-8 [&_svg]:max-w-none [&_svg]:h-auto"
-                  dangerouslySetInnerHTML={{ __html: svgHtml }}
+                  className="bg-white rounded-lg p-8 [&_svg]:max-w-none [&_svg]:h-auto [&_svg]:max-h-none"
+                  dangerouslySetInnerHTML={{ __html: stripMaxWidth(svgHtml) }}
                 />
               </TransformComponent>
             </TransformWrapper>
