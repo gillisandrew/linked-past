@@ -63,6 +63,15 @@ export const ReportDataSchema = z.object({
   markdown: z.string(),
 });
 
+export const EntityCacheDataSchema = z.object({
+  entities: z.record(z.string(), EntityDataSchema),
+});
+
+export const EntityCacheMessageSchema = z.object({
+  type: z.literal("entity_cache"),
+  data: EntityCacheDataSchema,
+});
+
 // --- Base message fields ---
 
 const BaseMessageFields = {
@@ -91,5 +100,6 @@ export type EntityData = z.infer<typeof EntityDataSchema>;
 export type LinksData = z.infer<typeof LinksDataSchema>;
 export type SearchData = z.infer<typeof SearchDataSchema>;
 export type ReportData = z.infer<typeof ReportDataSchema>;
+export type EntityCacheData = z.infer<typeof EntityCacheDataSchema>;
 export type XrefLink = z.infer<typeof XrefLinkSchema>;
 export type PredicateMeta = z.infer<typeof PredicateMetaSchema>;

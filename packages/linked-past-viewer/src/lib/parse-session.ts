@@ -1,5 +1,5 @@
-import { ViewerMessageSchema, SessionMetaSchema } from "./schemas";
-import type { ViewerMessage } from "./schemas";
+import { ViewerMessageSchema, SessionMetaSchema, EntityCacheMessageSchema } from "./schemas";
+import type { ViewerMessage, EntityData } from "./schemas";
 
 export type ParseError = {
   line: number;
@@ -11,54 +11,55 @@ export type ParseResult = {
   messages: ViewerMessage[];
   errors: ParseError[];
   formatVersion: number | null;
+  entityCache: Map<string, EntityData>;
 };
 
 export function parseSessionJsonl(text: string): ParseResult {
-  const lines = text.split(/\r?\n/).filter((l) => l.trim() !== "");
+  const lines = text.split("\n").filter((l) => l.trim());
   const messages: ViewerMessage[] = [];
   const errors: ParseError[] = [];
   let formatVersion: number | null = null;
+  const entityCache = new Map<string, EntityData>();
 
   for (let i = 0; i < lines.length; i++) {
     const raw = lines[i];
-    const lineNum = i + 1;
-
     let parsed: unknown;
     try {
       parsed = JSON.parse(raw);
-    } catch {
-      errors.push({
-        line: lineNum,
-        raw: raw.length > 200 ? raw.slice(0, 200) + "\u2026" : raw,
-        error: "Invalid JSON",
-      });
+    } catch (e) {
+      errors.push({ line: i + 1, raw, error: `Invalid JSON: ${e}` });
       continue;
     }
 
-    // Check for session_meta preamble
-    const meta = SessionMetaSchema.safeParse(parsed);
-    if (meta.success) {
-      formatVersion = meta.data.format_version;
+    // Session meta preamble
+    const metaResult = SessionMetaSchema.safeParse(parsed);
+    if (metaResult.success) {
+      formatVersion = metaResult.data.format_version;
       continue;
     }
 
-    // Validate as a viewer message
-    const result = ViewerMessageSchema.safeParse(parsed);
-    if (result.success) {
-      messages.push(result.data);
+    // Entity cache messages
+    const cacheResult = EntityCacheMessageSchema.safeParse(parsed);
+    if (cacheResult.success) {
+      for (const [uri, data] of Object.entries(cacheResult.data.data.entities)) {
+        entityCache.set(uri, data);
+      }
+      continue;
+    }
+
+    // Regular viewer messages
+    const msgResult = ViewerMessageSchema.safeParse(parsed);
+    if (msgResult.success) {
+      messages.push(msgResult.data);
     } else {
-      const firstIssue = result.error.issues[0];
-      const path = firstIssue?.path.join(".") || "";
-      const reason = firstIssue?.message || "Validation failed";
       errors.push({
-        line: lineNum,
-        raw: raw.length > 200 ? raw.slice(0, 200) + "\u2026" : raw,
-        error: path ? `${path}: ${reason}` : reason,
+        line: i + 1,
+        raw: raw.length > 200 ? raw.slice(0, 200) + "…" : raw,
+        error: msgResult.error.issues.map((e) => e.message).join("; "),
       });
     }
   }
 
   messages.sort((a, b) => a.seq - b.seq);
-
-  return { messages, errors, formatVersion };
+  return { messages, errors, formatVersion, entityCache };
 }
