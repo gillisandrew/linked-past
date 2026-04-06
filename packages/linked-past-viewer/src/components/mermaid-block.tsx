@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { TransformComponent, TransformWrapper } from "react-zoom-pan-pinch";
 
 let mermaidPromise: Promise<typeof import("mermaid")["default"]> | null = null;
@@ -17,7 +17,12 @@ function getMermaid() {
   return mermaidPromise;
 }
 
-/** Strip mermaid's inline max-width style so the SVG can scale freely in the lightbox. */
+/** Convert an SVG string to a data URI for use in <img> tags. */
+function svgToDataUri(svg: string): string {
+  return `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svg)))}`;
+}
+
+/** Strip mermaid's inline max-width so the SVG renders at natural size. */
 function stripMaxWidth(svg: string): string {
   return svg.replace(/style="[^"]*max-width:[^;"]*;?/g, (match) =>
     match.replace(/max-width:[^;"]*;?/, ""),
@@ -26,23 +31,16 @@ function stripMaxWidth(svg: string): string {
 
 export function MermaidBlock({ chart }: { chart: string }) {
   const id = useId().replace(/:/g, "_");
-  const containerRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [svgHtml, setSvgHtml] = useState<string | null>(null);
-  const [lightbox, setLightbox] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     getMermaid().then(async (mermaid) => {
-      if (cancelled || !containerRef.current) return;
+      if (cancelled) return;
       try {
         const { svg } = await mermaid.render(`mermaid-${id}`, chart);
-        if (!cancelled) {
-          setSvgHtml(svg);
-          if (containerRef.current) {
-            containerRef.current.innerHTML = svg;
-          }
-        }
+        if (!cancelled) setSvgHtml(svg);
       } catch (e) {
         if (!cancelled) setError(String(e));
       }
@@ -60,15 +58,27 @@ export function MermaidBlock({ chart }: { chart: string }) {
     );
   }
 
+  if (!svgHtml) return null;
+
+  const previewUri = svgToDataUri(svgHtml);
+  const lightboxUri = svgToDataUri(stripMaxWidth(svgHtml));
+
+  return <DiagramImage previewUri={previewUri} lightboxUri={lightboxUri} />;
+}
+
+function DiagramImage({ previewUri, lightboxUri }: { previewUri: string; lightboxUri: string }) {
+  const [lightbox, setLightbox] = useState(false);
+
   return (
     <>
-      <div
-        ref={containerRef}
-        className="my-2 overflow-x-auto cursor-zoom-in"
+      <img
+        src={previewUri}
+        alt="Diagram"
+        className="my-2 max-w-full h-auto cursor-zoom-in"
         onClick={() => setLightbox(true)}
         title="Click to enlarge"
       />
-      {lightbox && svgHtml && (
+      {lightbox && (
         <div
           className="fixed inset-0 z-[200] bg-black/80 flex flex-col"
           onClick={() => setLightbox(false)}
@@ -96,9 +106,10 @@ export function MermaidBlock({ chart }: { chart: string }) {
               <TransformComponent
                 wrapperStyle={{ width: "100%", height: "100%" }}
               >
-                <div
-                  className="bg-white rounded-lg p-8 [&_svg]:max-w-none [&_svg]:h-auto [&_svg]:max-h-none"
-                  dangerouslySetInnerHTML={{ __html: stripMaxWidth(svgHtml) }}
+                <img
+                  src={lightboxUri}
+                  alt="Diagram (enlarged)"
+                  className="bg-white rounded-lg p-8"
                 />
               </TransformComponent>
             </TransformWrapper>
