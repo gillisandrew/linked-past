@@ -1,4 +1,5 @@
-import { ExternalLink } from "lucide-react";
+import { useState } from "react";
+import { ExternalLink, ChevronDown, ChevronRight } from "lucide-react";
 import { humanizePredicate } from "../lib/predicates";
 import type { EntityData } from "../lib/types";
 import { linkHref, shortUri } from "../lib/uri";
@@ -21,48 +22,76 @@ function localName(pred: string): string {
   return pred.split("/").pop()?.split("#").pop() ?? pred;
 }
 
-/**
- * Deduplicate and group properties:
- * - If a predicate appears multiple times with URI values, collapse to "N items"
- * - Otherwise keep first occurrence
- */
-function deduplicateProps(
+/** Group properties by humanized predicate label, dedup exact duplicate values. */
+function groupProps(
   props: { pred: string; obj: string }[],
-): { pred: string; obj: string; count?: number }[] {
-  // Group by humanized label (catches hasName + hasPersonName both → "Name")
+): { pred: string; objs: string[] }[] {
   const groups = new Map<string, { pred: string; objs: string[] }>();
   for (const p of props) {
     const label = humanizePredicate(p.pred);
     if (!groups.has(label)) {
       groups.set(label, { pred: p.pred, objs: [] });
     }
-    // Skip exact duplicate values within the same label group
     const existing = groups.get(label)!;
     if (!existing.objs.includes(p.obj)) {
       existing.objs.push(p.obj);
     }
   }
+  return Array.from(groups.values());
+}
 
-  const result: { pred: string; obj: string; count?: number }[] = [];
-  for (const [, group] of groups) {
-    if (group.objs.length <= 2) {
-      // Show all values for small groups
-      for (const obj of group.objs) {
-        result.push({ pred: group.pred, obj });
-      }
-    } else {
-      // Show first value + count for large groups
-      result.push({ pred: group.pred, obj: group.objs[0], count: group.objs.length });
-    }
-  }
-  return result;
+const COLLAPSE_THRESHOLD = 3;
+
+function PropertyGroup({ group, meta }: { group: { pred: string; objs: string[] }; meta: Record<string, any> }) {
+  const [expanded, setExpanded] = useState(group.objs.length <= COLLAPSE_THRESHOLD);
+  const collapsible = group.objs.length > COLLAPSE_THRESHOLD;
+  const visible = expanded ? group.objs : group.objs.slice(0, 1);
+
+  return (
+    <>
+      {visible.map((obj, j) => (
+        <div key={j} className="contents">
+          <dt className="text-muted-foreground font-medium">
+            {j === 0 ? (
+              collapsible ? (
+                <button
+                  type="button"
+                  onClick={() => setExpanded(!expanded)}
+                  className="inline-flex items-center gap-0.5 hover:text-foreground transition-colors"
+                >
+                  {expanded
+                    ? <ChevronDown className="w-3 h-3 shrink-0" />
+                    : <ChevronRight className="w-3 h-3 shrink-0" />}
+                  <PredicateLabel pred={group.pred} meta={meta[group.pred]} />
+                </button>
+              ) : (
+                <PredicateLabel pred={group.pred} meta={meta[group.pred]} />
+              )
+            ) : null}
+          </dt>
+          <dd className="break-words">
+            <PropertyValue value={obj} />
+            {j === 0 && !expanded && (
+              <button
+                type="button"
+                onClick={() => setExpanded(true)}
+                className="text-xs text-muted-foreground ml-1 hover:text-foreground transition-colors"
+              >
+                (+{group.objs.length - 1} more)
+              </button>
+            )}
+          </dd>
+        </div>
+      ))}
+    </>
+  );
 }
 
 export function EntityCard({ data }: { data: EntityData }) {
   const filtered = data.properties.filter(
     (p) => !HIDDEN_PREDICATES.has(localName(p.pred)),
   );
-  const visibleProps = deduplicateProps(filtered);
+  const groups = groupProps(filtered);
   const meta = data.predicate_meta ?? {};
 
   return (
@@ -83,22 +112,10 @@ export function EntityCard({ data }: { data: EntityData }) {
         </p>
       )}
 
-      {visibleProps.length > 0 && (
+      {groups.length > 0 && (
         <dl className="grid grid-cols-[100px_1fr] gap-x-4 gap-y-1.5 text-xs mb-4">
-          {visibleProps.map((p, i) => (
-            <div key={i} className="contents">
-              <dt className="text-muted-foreground font-medium">
-                <PredicateLabel pred={p.pred} meta={meta[p.pred]} />
-              </dt>
-              <dd className="break-words">
-                <PropertyValue value={p.obj} />
-                {p.count && p.count > 1 && (
-                  <span className="text-xs text-muted-foreground ml-1">
-                    (+{p.count - 1} more)
-                  </span>
-                )}
-              </dd>
-            </div>
+          {groups.map((group, i) => (
+            <PropertyGroup key={i} group={group} meta={meta} />
           ))}
         </dl>
       )}
