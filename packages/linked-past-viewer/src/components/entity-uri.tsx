@@ -16,12 +16,12 @@ const EntityPopoverContent = lazy(() =>
 function datasetStyle(dataset: string | null): React.CSSProperties {
   const ds = dataset ?? "default";
   return {
-    color: `var(--ds-${ds}-fg, var(--ds-default-fg))`,
+    textDecorationColor: `var(--ds-${ds}-fg, var(--ds-default-fg))`,
   };
 }
 
 const LINK_CLASSES =
-  "text-xs font-medium cursor-pointer hover:underline underline-offset-2";
+  "cursor-pointer underline decoration-2 underline-offset-2";
 
 export function EntityUri({ uri, display }: { uri: string; display?: string }) {
   const dataset = datasetForUri(uri);
