@@ -135,7 +135,7 @@ function StaticApp() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="sticky top-0 z-10 border-b border-border bg-background">
-        <div className="flex items-center gap-3 px-5 h-10">
+        <div className="flex items-center gap-3 px-5 h-10 text-sm">
           <span className="text-[13px] font-semibold uppercase tracking-wide">
             linked-past
           </span>
