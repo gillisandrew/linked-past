@@ -167,12 +167,21 @@ def hybrid_search(
     fetch_k = k * 3
     bm25_results = search_index.search(query, k=fetch_k, dataset=dataset, doc_type=doc_type)
 
-    # Build rowid lookup for BM25 results
-    bm25_by_text: dict[str, int] = {}
-    bm25_docs: dict[str, dict] = {}
+    # Resolve BM25 results to doc_ids for deduplication
+    bm25_ranks: dict[int, int] = {}  # doc_id -> rank
+    doc_meta: dict[int, dict] = {}  # doc_id -> {dataset, doc_type, text}
     for rank, result in enumerate(bm25_results):
-        bm25_by_text[result["text"]] = rank
-        bm25_docs[result["text"]] = result
+        # Look up the doc_id from the documents table
+        row = search_index._conn.execute(
+            "SELECT id FROM documents WHERE dataset = ? AND doc_type = ? AND text = ? LIMIT 1",
+            (result["dataset"], result["doc_type"], result["text"]),
+        ).fetchone()
+        if row is None:
+            continue
+        doc_id = row[0]
+        if doc_id not in bm25_ranks:
+            bm25_ranks[doc_id] = rank
+            doc_meta[doc_id] = result
 
     if vector_index is None or query_vector is None:
         return bm25_results[:k]
@@ -181,35 +190,35 @@ def hybrid_search(
     vec_results = vector_index.search(query_vector, k=fetch_k)
 
     # Map vec doc_ids back to document metadata via the FTS index's DB
-    vec_docs: dict[str, int] = {}
+    vec_ranks: dict[int, int] = {}  # doc_id -> rank
     for rank, (doc_id, _distance) in enumerate(vec_results):
-        row = search_index._conn.execute(
-            "SELECT dataset, doc_type, text FROM documents WHERE id = ?", (doc_id,)
-        ).fetchone()
-        if row is None:
+        if doc_id in vec_ranks:
             continue
-        text = row[2]
-        # Apply same filters as BM25
-        if dataset and row[0] != dataset:
-            continue
-        if doc_type and row[1] != doc_type:
-            continue
-        if text not in vec_docs:
-            vec_docs[text] = rank
-            if text not in bm25_docs:
-                bm25_docs[text] = {"dataset": row[0], "doc_type": row[1], "text": text, "score": 0.0}
+        # Apply filters by looking up metadata
+        if doc_id not in doc_meta:
+            row = search_index._conn.execute(
+                "SELECT dataset, doc_type, text FROM documents WHERE id = ?", (doc_id,)
+            ).fetchone()
+            if row is None:
+                continue
+            if dataset and row[0] != dataset:
+                continue
+            if doc_type and row[1] != doc_type:
+                continue
+            doc_meta[doc_id] = {"dataset": row[0], "doc_type": row[1], "text": row[2], "score": 0.0}
+        vec_ranks[doc_id] = rank
 
-    # RRF scoring
-    scored: dict[str, float] = {}
-    all_texts = set(bm25_by_text.keys()) | set(vec_docs.keys())
-    for text in all_texts:
+    # RRF scoring (rank is 0-based; standard RRF uses 1-based but relative order is unaffected)
+    scored: dict[int, float] = {}
+    all_ids = set(bm25_ranks.keys()) | set(vec_ranks.keys())
+    for doc_id in all_ids:
         score = 0.0
-        if text in bm25_by_text:
-            score += 1.0 / (rrf_k + bm25_by_text[text])
-        if text in vec_docs:
-            score += 1.0 / (rrf_k + vec_docs[text])
-        scored[text] = score
+        if doc_id in bm25_ranks:
+            score += 1.0 / (rrf_k + bm25_ranks[doc_id])
+        if doc_id in vec_ranks:
+            score += 1.0 / (rrf_k + vec_ranks[doc_id])
+        scored[doc_id] = score
 
     # Sort by RRF score descending, return top k
-    ranked = sorted(scored.keys(), key=lambda t: scored[t], reverse=True)[:k]
-    return [{**bm25_docs[text], "score": scored[text]} for text in ranked]
+    ranked = sorted(scored.keys(), key=lambda did: scored[did], reverse=True)[:k]
+    return [{**doc_meta[did], "score": scored[did]} for did in ranked]

@@ -1,7 +1,5 @@
 """Tests for the sqlite-vec vector index. Uses pre-computed fixture vectors — no embedding model."""
 
-import math
-
 from linked_past.core.vector import VectorIndex
 
 

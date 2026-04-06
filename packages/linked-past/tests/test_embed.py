@@ -16,7 +16,7 @@ def test_embed_calls_model():
     embedder = Embedder()
     fake_vectors = [[0.1] * VECTOR_DIM, [0.2] * VECTOR_DIM]
 
-    with patch("linked_past.core.embed.TextEmbedding") as mock_cls:
+    with patch("fastembed.TextEmbedding") as mock_cls:
         mock_model = MagicMock()
         mock_model.embed.return_value = iter(fake_vectors)
         mock_cls.return_value = mock_model
@@ -33,7 +33,7 @@ def test_embed_single():
     embedder = Embedder()
     fake_vector = [0.1] * VECTOR_DIM
 
-    with patch("linked_past.core.embed.TextEmbedding") as mock_cls:
+    with patch("fastembed.TextEmbedding") as mock_cls:
         mock_model = MagicMock()
         mock_model.embed.return_value = iter([fake_vector])
         mock_cls.return_value = mock_model

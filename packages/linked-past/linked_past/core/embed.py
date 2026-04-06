@@ -9,12 +9,6 @@ logger = logging.getLogger(__name__)
 EMBED_MODEL = "intfloat/multilingual-e5-small"
 VECTOR_DIM = 384
 
-try:
-    from fastembed import TextEmbedding
-except ImportError:  # pragma: no cover
-    TextEmbedding = None  # type: ignore[assignment,misc]
-
-
 class Embedder:
     """Wraps FastEmbed TextEmbedding with lazy model loading."""
 
@@ -23,6 +17,8 @@ class Embedder:
 
     def _load(self):
         if self._model is None:
+            from fastembed import TextEmbedding
+
             logger.info("Loading embedding model %s...", EMBED_MODEL)
             self._model = TextEmbedding(model_name=EMBED_MODEL)
             logger.info("Embedding model loaded")

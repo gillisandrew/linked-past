@@ -49,15 +49,12 @@ class VectorIndex:
 
     def search(self, query_vector: list[float], k: int = 10) -> list[tuple[int, float]]:
         """Return top-k nearest neighbors as (doc_id, cosine_distance) pairs."""
-        try:
-            rows = self._conn.execute(
-                "SELECT doc_id, distance FROM vec_documents "
-                "WHERE embedding MATCH ? AND k = ? "
-                "ORDER BY distance",
-                [sqlite_vec.serialize_float32(query_vector), k],
-            ).fetchall()
-        except sqlite3.OperationalError:
-            return []
+        rows = self._conn.execute(
+            "SELECT doc_id, distance FROM vec_documents "
+            "WHERE embedding MATCH ? AND k = ? "
+            "ORDER BY distance",
+            [sqlite_vec.serialize_float32(query_vector), k],
+        ).fetchall()
         return [(int(row[0]), float(row[1])) for row in rows]
 
     def clear(self) -> None:
