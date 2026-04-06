@@ -10,7 +10,7 @@ from pathlib import Path
 from starlette.requests import Request
 from starlette.responses import JSONResponse, PlainTextResponse
 
-from linked_past.core.store import get_data_dir
+from linked_past.core.store import execute_query, get_data_dir
 from linked_past.core.viewer import get_manager
 
 logger = logging.getLogger(__name__)
@@ -67,18 +67,16 @@ def _extract_name(uri: str, properties: list[dict[str, str]], store=None) -> str
     return uri.rstrip("/").rsplit("/", 1)[-1].rsplit("#", 1)[-1]
 
 
-async def entity_handler(request: Request) -> JSONResponse | PlainTextResponse:
-    """GET /viewer/api/entity?uri=... — return entity properties + xrefs as JSON."""
-    mgr = get_manager()
-    if mgr is None or not mgr.is_active:
-        return PlainTextResponse("Viewer not active", status_code=404)
+def resolve_entity(uri: str, registry, linkage) -> dict | None:
+    """Resolve an entity URI to a data dict, or return None if not found.
 
-    uri = request.query_params.get("uri")
-    if not uri:
-        return JSONResponse({"error": "Missing 'uri' query parameter"}, status_code=400)
-    if not uri.startswith(("http://", "https://")):
-        return JSONResponse({"error": "Invalid URI scheme"}, status_code=400)
+    This is the core logic extracted from entity_handler so it can be called
+    outside the request/response cycle (e.g. for pre-building an entity cache).
 
+    Returns a dict with keys: uri, name, dataset, description, type_hierarchy,
+    see_also, properties, predicate_meta, xrefs — or None if the URI is not
+    known to any loaded dataset.
+    """
     # Normalize URI to match canonical forms in the store.
     # Strip www., map known domain aliases, then try both http/https.
     canonical_uri = uri.replace("://www.", "://")
@@ -87,10 +85,6 @@ async def entity_handler(request: Request) -> JSONResponse | PlainTextResponse:
         "://edh.ub.uni-heidelberg.de/edh/",
         "://edh-www.adw.uni-heidelberg.de/edh/",
     )
-
-    # Access registry and linkage from the app state stored on the manager
-    registry = mgr.app_context.registry
-    linkage = mgr.app_context.linkage
 
     # Try canonical URI, then with swapped scheme (some datasets use http, others https)
     ds_name = registry.dataset_for_uri(canonical_uri)
@@ -103,112 +97,113 @@ async def entity_handler(request: Request) -> JSONResponse | PlainTextResponse:
             ds_name = registry.dataset_for_uri("https://" + canonical_uri[7:])
             if ds_name:
                 canonical_uri = "https://" + canonical_uri[7:]
-    properties: list[dict[str, str]] = []
 
+    if not ds_name:
+        return None
+
+    properties: list[dict[str, str]] = []
     description = ""
     see_also: list[str] = []
     type_hierarchy: list[str] = []
     predicate_meta: dict[str, dict] = {}  # pred URI → {label, comment, domain, range}
 
-    if ds_name:
-        try:
-            store = registry.get_store(ds_name)
-            from linked_past.core.store import execute_query
+    try:
+        store = registry.get_store(ds_name)
 
-            # Entity properties — filter to English/Latin/untagged literals only.
-            # Multilingual datasets (Nomisma) have 100+ language variants per entity;
-            # without filtering, LIMIT truncates before reaching useful properties.
-            def _query_props(query_uri: str) -> list[dict[str, str]]:
-                rows = execute_query(
+        # Entity properties — filter to English/Latin/untagged literals only.
+        # Multilingual datasets (Nomisma) have 100+ language variants per entity;
+        # without filtering, LIMIT truncates before reaching useful properties.
+        def _query_props(query_uri: str) -> list[dict[str, str]]:
+            rows = execute_query(
+                store,
+                f"SELECT ?pred ?obj WHERE {{ "
+                f"  <{query_uri}> ?pred ?obj . "
+                f"  FILTER(!isLiteral(?obj) || lang(?obj) = '' || lang(?obj) = 'en' || lang(?obj) = 'la') "
+                f"}} LIMIT 100",
+            )
+            seen = set()
+            deduped = []
+            for r in rows:
+                key = (r["pred"], r["obj"] or "")
+                if key not in seen:
+                    seen.add(key)
+                    deduped.append({"pred": key[0], "obj": key[1]})
+            return deduped
+
+        properties = _query_props(canonical_uri)
+        # If no results, try the opposite scheme (store may use different scheme than registry)
+        if not properties:
+            if canonical_uri.startswith("http://"):
+                alt_uri = "https://" + canonical_uri[7:]
+            else:
+                alt_uri = "http://" + canonical_uri[8:]
+            properties = _query_props(alt_uri)
+            if properties:
+                canonical_uri = alt_uri  # use the scheme that worked
+
+        # rdfs:comment on the entity itself (Pleiades places have descriptions)
+        rdfs_comment = "http://www.w3.org/2000/01/rdf-schema#comment"
+        comment_rows = execute_query(
+            store,
+            f"SELECT ?comment WHERE {{ <{canonical_uri}> <{rdfs_comment}> ?comment . }} LIMIT 1",
+        )
+        if comment_rows:
+            description = comment_rows[0].get("comment", "")
+
+        # rdfs:seeAlso on the entity (Pleiades has ~30K external links)
+        rdfs_see_also = "http://www.w3.org/2000/01/rdf-schema#seeAlso"
+        see_also_rows = execute_query(
+            store,
+            f"SELECT ?target WHERE {{ <{canonical_uri}> <{rdfs_see_also}> ?target . }} LIMIT 10",
+        )
+        see_also = [r["target"] for r in see_also_rows if r.get("target")]
+
+        # Type hierarchy: rdf:type → rdfs:subClassOf chain
+        rdfs_sub = "http://www.w3.org/2000/01/rdf-schema#subClassOf"
+        type_sparql = (
+            f"SELECT ?type ?parent WHERE {{ <{canonical_uri}> a ?type . "
+            f"OPTIONAL {{ ?type <{rdfs_sub}> ?parent }} }} LIMIT 20"
+        )
+        type_rows = execute_query(store, type_sparql)
+        for r in type_rows:
+            t = r.get("type", "")
+            if t and not t.startswith("http://www.w3.org/"):
+                local = t.rsplit("/", 1)[-1].rsplit("#", 1)[-1]
+                if local not in type_hierarchy:
+                    type_hierarchy.append(local)
+
+        # Predicate metadata: rdfs:label, rdfs:comment, rdfs:domain, rdfs:range
+        pred_uris = {p["pred"] for p in properties}
+        if pred_uris:
+            # Build VALUES clause for the predicates we actually have
+            values = " ".join(f"<{p}>" for p in pred_uris if p.startswith("http"))
+            if values:
+                meta_rows = execute_query(
                     store,
-                    f"SELECT ?pred ?obj WHERE {{ "
-                    f"  <{query_uri}> ?pred ?obj . "
-                    f"  FILTER(!isLiteral(?obj) || lang(?obj) = '' || lang(?obj) = 'en' || lang(?obj) = 'la') "
-                    f"}} LIMIT 100",
+                    f"""SELECT ?pred ?label ?comment ?domain ?range WHERE {{
+                        VALUES ?pred {{ {values} }}
+                        OPTIONAL {{ ?pred <http://www.w3.org/2000/01/rdf-schema#label> ?label }}
+                        OPTIONAL {{ ?pred <http://www.w3.org/2000/01/rdf-schema#comment> ?comment }}
+                        OPTIONAL {{ ?pred <http://www.w3.org/2000/01/rdf-schema#domain> ?domain }}
+                        OPTIONAL {{ ?pred <http://www.w3.org/2000/01/rdf-schema#range> ?range }}
+                    }} LIMIT 200""",
                 )
-                seen = set()
-                deduped = []
-                for r in rows:
-                    key = (r["pred"], r["obj"] or "")
-                    if key not in seen:
-                        seen.add(key)
-                        deduped.append({"pred": key[0], "obj": key[1]})
-                return deduped
+                for r in meta_rows:
+                    pred_uri = r.get("pred", "")
+                    if pred_uri not in predicate_meta:
+                        predicate_meta[pred_uri] = {}
+                    m = predicate_meta[pred_uri]
+                    if r.get("label") and "label" not in m:
+                        m["label"] = r["label"]
+                    if r.get("comment") and "comment" not in m:
+                        m["comment"] = r["comment"]
+                    if r.get("domain") and "domain" not in m:
+                        m["domain"] = r["domain"].rsplit("/", 1)[-1].rsplit("#", 1)[-1]
+                    if r.get("range") and "range" not in m:
+                        m["range"] = r["range"].rsplit("/", 1)[-1].rsplit("#", 1)[-1]
 
-            properties = _query_props(canonical_uri)
-            # If no results, try the opposite scheme (store may use different scheme than registry)
-            if not properties:
-                if canonical_uri.startswith("http://"):
-                    alt_uri = "https://" + canonical_uri[7:]
-                else:
-                    alt_uri = "http://" + canonical_uri[8:]
-                properties = _query_props(alt_uri)
-                if properties:
-                    canonical_uri = alt_uri  # use the scheme that worked
-
-            # rdfs:comment on the entity itself (Pleiades places have descriptions)
-            rdfs_comment = "http://www.w3.org/2000/01/rdf-schema#comment"
-            comment_rows = execute_query(
-                store,
-                f"SELECT ?comment WHERE {{ <{canonical_uri}> <{rdfs_comment}> ?comment . }} LIMIT 1",
-            )
-            if comment_rows:
-                description = comment_rows[0].get("comment", "")
-
-            # rdfs:seeAlso on the entity (Pleiades has ~30K external links)
-            rdfs_see_also = "http://www.w3.org/2000/01/rdf-schema#seeAlso"
-            see_also_rows = execute_query(
-                store,
-                f"SELECT ?target WHERE {{ <{canonical_uri}> <{rdfs_see_also}> ?target . }} LIMIT 10",
-            )
-            see_also = [r["target"] for r in see_also_rows if r.get("target")]
-
-            # Type hierarchy: rdf:type → rdfs:subClassOf chain
-            rdfs_sub = "http://www.w3.org/2000/01/rdf-schema#subClassOf"
-            type_sparql = (
-                f"SELECT ?type ?parent WHERE {{ <{canonical_uri}> a ?type . "
-                f"OPTIONAL {{ ?type <{rdfs_sub}> ?parent }} }} LIMIT 20"
-            )
-            type_rows = execute_query(store, type_sparql)
-            for r in type_rows:
-                t = r.get("type", "")
-                if t and not t.startswith("http://www.w3.org/"):
-                    local = t.rsplit("/", 1)[-1].rsplit("#", 1)[-1]
-                    if local not in type_hierarchy:
-                        type_hierarchy.append(local)
-
-            # Predicate metadata: rdfs:label, rdfs:comment, rdfs:domain, rdfs:range
-            pred_uris = {p["pred"] for p in properties}
-            if pred_uris:
-                # Build VALUES clause for the predicates we actually have
-                values = " ".join(f"<{p}>" for p in pred_uris if p.startswith("http"))
-                if values:
-                    meta_rows = execute_query(
-                        store,
-                        f"""SELECT ?pred ?label ?comment ?domain ?range WHERE {{
-                            VALUES ?pred {{ {values} }}
-                            OPTIONAL {{ ?pred <http://www.w3.org/2000/01/rdf-schema#label> ?label }}
-                            OPTIONAL {{ ?pred <http://www.w3.org/2000/01/rdf-schema#comment> ?comment }}
-                            OPTIONAL {{ ?pred <http://www.w3.org/2000/01/rdf-schema#domain> ?domain }}
-                            OPTIONAL {{ ?pred <http://www.w3.org/2000/01/rdf-schema#range> ?range }}
-                        }} LIMIT 200""",
-                    )
-                    for r in meta_rows:
-                        pred_uri = r.get("pred", "")
-                        if pred_uri not in predicate_meta:
-                            predicate_meta[pred_uri] = {}
-                        m = predicate_meta[pred_uri]
-                        if r.get("label") and "label" not in m:
-                            m["label"] = r["label"]
-                        if r.get("comment") and "comment" not in m:
-                            m["comment"] = r["comment"]
-                        if r.get("domain") and "domain" not in m:
-                            m["domain"] = r["domain"].rsplit("/", 1)[-1].rsplit("#", 1)[-1]
-                        if r.get("range") and "range" not in m:
-                            m["range"] = r["range"].rsplit("/", 1)[-1].rsplit("#", 1)[-1]
-
-        except Exception as e:
-            logger.warning("Entity query failed for %s: %s", uri, e)
+    except Exception as e:
+        logger.warning("Entity query failed for %s: %s", uri, e)
 
     # Cross-references
     xrefs = []
@@ -225,14 +220,13 @@ async def entity_handler(request: Request) -> JSONResponse | PlainTextResponse:
 
     # Get the store for English label preference
     entity_store = None
-    if ds_name:
-        try:
-            entity_store = registry.get_store(ds_name)
-        except KeyError:
-            pass
+    try:
+        entity_store = registry.get_store(ds_name)
+    except KeyError:
+        pass
     name = _extract_name(canonical_uri, properties, store=entity_store)
 
-    return JSONResponse({
+    return {
         "uri": uri,
         "name": name,
         "dataset": ds_name,
@@ -242,7 +236,31 @@ async def entity_handler(request: Request) -> JSONResponse | PlainTextResponse:
         "properties": properties,
         "predicate_meta": predicate_meta,
         "xrefs": xrefs,
-    })
+    }
+
+
+async def entity_handler(request: Request) -> JSONResponse | PlainTextResponse:
+    """GET /viewer/api/entity?uri=... — return entity properties + xrefs as JSON."""
+    mgr = get_manager()
+    if mgr is None or not mgr.is_active:
+        return PlainTextResponse("Viewer not active", status_code=404)
+
+    uri = request.query_params.get("uri")
+    if not uri:
+        return JSONResponse({"error": "Missing 'uri' query parameter"}, status_code=400)
+    if not uri.startswith(("http://", "https://")):
+        return JSONResponse({"error": "Invalid URI scheme"}, status_code=400)
+
+    registry = mgr.app_context.registry
+    linkage = mgr.app_context.linkage
+    result = resolve_entity(uri, registry, linkage)
+    if result is None:
+        return JSONResponse({
+            "uri": uri,
+            "name": uri.rstrip("/").rsplit("/", 1)[-1].rsplit("#", 1)[-1],
+            "dataset": None, "properties": [], "xrefs": [],
+        })
+    return JSONResponse(result)
 
 
 # ── Session history ──────────────────────────────────────────────────────────
