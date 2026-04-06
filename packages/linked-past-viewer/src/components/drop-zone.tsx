@@ -1,6 +1,5 @@
 import { useState, useRef, useCallback, type DragEvent } from "react";
-import { Upload, ClipboardPaste, FileText } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Upload } from "lucide-react";
 
 export function DropZone({
   onLoadText,
@@ -52,20 +51,11 @@ export function DropZone({
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6 px-4">
-      <div className="text-center space-y-2">
-        <h1 className="text-2xl font-semibold tracking-tight">
-          linked-past session viewer
-        </h1>
-        <p className="text-muted-foreground">
-          Drop a session <code className="text-xs bg-muted px-1.5 py-0.5 rounded">.jsonl</code> file or paste its contents to browse
-        </p>
-      </div>
-
       <div
-        className={`w-full max-w-lg border-2 border-dashed rounded-xl p-12 text-center cursor-pointer transition-colors ${
+        className={`w-full max-w-md border border-dashed rounded-lg p-16 text-center cursor-pointer transition-colors ${
           isDragging
-            ? "border-primary bg-primary/5"
-            : "border-muted-foreground/25 hover:border-muted-foreground/50"
+            ? "border-foreground text-foreground"
+            : "border-border text-muted-foreground hover:border-muted-foreground"
         }`}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
@@ -80,42 +70,35 @@ export function DropZone({
           onChange={handleFileChange}
         />
         <div className="flex flex-col items-center gap-3">
-          {isDragging ? (
-            <FileText className="w-10 h-10 text-primary" />
-          ) : (
-            <Upload className="w-10 h-10 text-muted-foreground" />
-          )}
-          <p className="text-sm text-muted-foreground">
-            {isDragging ? "Drop to load" : "Drag & drop or click to browse"}
+          <Upload className="w-4 h-4" />
+          <p className="text-sm">
+            {isDragging ? "Drop to load" : "Drop a session file or click to browse"}
           </p>
         </div>
       </div>
 
-      <Button
-        variant="ghost"
-        size="sm"
+      <button
         onClick={() => setShowPaste(!showPaste)}
-        className="text-muted-foreground"
+        className="text-[11px] text-muted-foreground hover:text-foreground cursor-pointer"
       >
-        <ClipboardPaste className="w-4 h-4 mr-2" />
         {showPaste ? "Hide paste area" : "Or paste JSONL content"}
-      </Button>
+      </button>
 
       {showPaste && (
-        <div className="w-full max-w-lg space-y-3">
+        <div className="w-full max-w-md space-y-3">
           <textarea
-            className="w-full h-40 rounded-lg border border-input bg-background px-3 py-2 text-sm font-mono resize-y focus:outline-none focus:ring-2 focus:ring-ring"
+            className="w-full h-32 border border-border rounded-lg bg-transparent px-3 py-2 text-xs font-mono resize-y focus:outline-none focus:ring-1 focus:ring-ring"
             placeholder='{"session_id":"...","seq":1,"type":"query",...}'
             value={pasteText}
             onChange={(e) => setPasteText(e.target.value)}
           />
-          <Button
+          <button
             onClick={handlePasteLoad}
             disabled={!pasteText.trim()}
-            className="w-full"
+            className="w-full py-2 text-xs font-medium border border-border rounded-lg hover:bg-muted disabled:opacity-40 cursor-pointer transition-colors"
           >
             Load session
-          </Button>
+          </button>
         </div>
       )}
     </div>
