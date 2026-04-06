@@ -258,7 +258,13 @@ async def entity_handler(request: Request) -> JSONResponse | PlainTextResponse:
         return JSONResponse({
             "uri": uri,
             "name": uri.rstrip("/").rsplit("/", 1)[-1].rsplit("#", 1)[-1],
-            "dataset": None, "properties": [], "xrefs": [],
+            "dataset": None,
+            "description": "",
+            "type_hierarchy": [],
+            "see_also": [],
+            "properties": [],
+            "predicate_meta": {},
+            "xrefs": [],
         })
     return JSONResponse(result)
 

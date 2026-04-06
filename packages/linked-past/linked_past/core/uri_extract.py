@@ -9,6 +9,8 @@ _KNOWN_PREFIXES = (
     "http://numismatics.org/ocre/",
     "https://edh.ub.uni-heidelberg.de/",
     "http://edh-hd.de/",
+    "http://edh-www.adw.uni-heidelberg.de/edh/",
+    "https://edh-www.adw.uni-heidelberg.de/edh/",
     "https://pleiades.stoa.org/",
     "http://n2t.net/ark:/99152/",
     "https://rpc.ashmus.ox.ac.uk/",
