@@ -6,31 +6,30 @@ import {
 import { useState } from "react";
 import { DATASETS } from "../lib/datasets";
 
-const TEXT_COLORS: Record<string, string> = {
-  dprr: "#60a5fa",     // blue-400
-  pleiades: "#4ade80",  // green-400
-  periodo: "#c084fc",   // violet-400
-  nomisma: "#facc15",   // yellow-400
-  crro: "#fb923c",      // orange-400
-  ocre: "#f87171",      // red-400
-  edh: "#22d3ee",       // cyan-400
-  rpc: "#2dd4bf",       // teal-400
-};
+function barColor(dataset: string): string {
+  const ds = dataset.toLowerCase();
+  return `var(--ds-${ds}-line, var(--ds-default-line))`;
+}
+
+const BADGE_CLASSES =
+  "inline-flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground";
 
 export function DatasetBadge({ dataset }: { dataset: string }) {
-  const textColor = TEXT_COLORS[dataset.toLowerCase()] ?? "#a1a1aa";
   const info = DATASETS[dataset];
   const [open, setOpen] = useState(false);
 
-  if (!info) {
-    return (
+  const badge = (
+    <span className={BADGE_CLASSES}>
       <span
-        className="text-[10px] font-medium uppercase tracking-wider"
-        style={{ color: textColor }}
-      >
-        {dataset}
-      </span>
-    );
+        className="w-0.5 h-3 rounded-full shrink-0"
+        style={{ backgroundColor: barColor(dataset) }}
+      />
+      {dataset}
+    </span>
+  );
+
+  if (!info) {
+    return badge;
   }
 
   return (
@@ -40,12 +39,7 @@ export function DatasetBadge({ dataset }: { dataset: string }) {
         onMouseEnter={() => setOpen(true)}
         onMouseLeave={() => setOpen(false)}
       >
-        <span
-          className="text-[10px] font-medium uppercase tracking-wider"
-          style={{ color: textColor }}
-        >
-          {dataset}
-        </span>
+        {badge}
       </PopoverTrigger>
       <PopoverContent
         className="w-[280px] p-3"
