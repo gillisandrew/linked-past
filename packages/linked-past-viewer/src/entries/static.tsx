@@ -82,6 +82,12 @@ function StaticApp() {
     history.replaceState(null, "", window.location.pathname + window.location.search);
   }, [clearSession]);
 
+  const isGistMode = gistId !== null && gist.sessions.length > 0;
+  const filtered = useMemo(
+    () => applyFilters(session.messages, filters, new Set()),
+    [session.messages, filters],
+  );
+
   if (gistId && gist.isLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
@@ -125,12 +131,6 @@ function StaticApp() {
       />
     );
   }
-
-  const isGistMode = gistId !== null && gist.sessions.length > 0;
-  const filtered = useMemo(
-    () => applyFilters(session.messages, filters, new Set()),
-    [session.messages, filters],
-  );
 
   return (
     <div className="min-h-screen bg-background text-foreground">
