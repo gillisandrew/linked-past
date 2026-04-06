@@ -20,6 +20,17 @@
 
 The existing `entity_handler()` (lines 70-245 of `viewer_api.py`) is an HTTP request handler that also contains the entity resolution logic. Extract the resolution logic into a standalone function so the cache builder can call it without an HTTP request.
 
+**IMPORTANT:** This task is a **move/extract refactor**, not a rewrite. The actual SPARQL queries, URI normalization, `execute_query` usage, `registry.dataset_for_uri()` return type (`str | None`), `registry.get_store()` pattern, type hierarchy local-name extraction, and batched `VALUES` predicate meta query must all be preserved exactly as they exist in `entity_handler`. Do NOT rewrite the queries from scratch.
+
+**Key API facts from the actual code:**
+- `registry.dataset_for_uri(uri)` returns `str | None` (the dataset name string), NOT a tuple.
+- `registry.get_store(ds_name)` returns the Oxigraph store for a dataset.
+- All SPARQL queries use `execute_query(store, sparql)` from `linked_past.core.store`, which returns `list[dict[str, str]]`.
+- The URI normalization uses `str.replace("://www.", "://")` and maps `edh.ub.uni-heidelberg.de/edh/` to `edh-www.adw.uni-heidelberg.de/edh/` (line 86-89).
+- Type hierarchy filters out `http://www.w3.org/` types and extracts local names via `rsplit` (lines 173-178).
+- Predicate meta uses a single batched `VALUES` clause query (lines 182-208), NOT individual queries per predicate.
+- `description` defaults to `""` (empty string), not `None` (line 108).
+
 - [ ] **Step 1: Write the failing test**
 
 Create `packages/linked-past/tests/test_resolve_entity.py`:
@@ -28,28 +39,26 @@ Create `packages/linked-past/tests/test_resolve_entity.py`:
 """Tests for the standalone resolve_entity function."""
 
 import pytest
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 from linked_past.core.viewer_api import resolve_entity
 
 
-def _make_registry(triples: list[tuple[str, str, str]], uri_dataset: str | None = "test"):
-    """Create a minimal mock registry that returns a store with the given triples."""
+def _make_mock_registry(ds_name: str | None = "dprr"):
+    """Create a mock registry that returns ds_name for known URIs.
+
+    Key: registry.dataset_for_uri() returns str | None (dataset name),
+    and registry.get_store() returns a store mock.
+    """
     store = MagicMock()
-    store.query.return_value = []  # default empty
-    
-    plugin = MagicMock()
-    plugin.store = store
-    plugin.name = uri_dataset or "test"
-    
+    # execute_query returns list[dict[str, str]] — default empty
+    store_query_results = []
+
     registry = MagicMock()
-    if uri_dataset:
-        registry.dataset_for_uri.return_value = (plugin, uri_dataset)
-    else:
-        registry.dataset_for_uri.return_value = None
-    registry.plugins = {uri_dataset: plugin} if uri_dataset else {}
-    
-    return registry
+    registry.dataset_for_uri.return_value = ds_name
+    registry.get_store.return_value = store
+
+    return registry, store
 
 
 def test_resolve_entity_returns_none_for_unknown_uri():
@@ -57,23 +66,28 @@ def test_resolve_entity_returns_none_for_unknown_uri():
     registry.dataset_for_uri.return_value = None
     linkage = MagicMock()
     linkage.find_links.return_value = []
-    
+
     result = resolve_entity("http://unknown.example/thing/1", registry, linkage)
     assert result is None
 
 
-def test_resolve_entity_returns_entity_data_dict():
-    registry = _make_registry([], uri_dataset="dprr")
+@patch("linked_past.core.viewer_api.execute_query", return_value=[])
+@patch("linked_past.core.server._find_store_xrefs", return_value=[])
+def test_resolve_entity_returns_entity_data_dict(mock_xrefs, mock_eq):
+    registry, store = _make_mock_registry("dprr")
     linkage = MagicMock()
     linkage.find_links.return_value = []
-    
+
     result = resolve_entity("http://romanrepublic.ac.uk/person/1", registry, linkage)
     assert result is not None
-    assert result["uri"] == "http://romanrepublic.ac.uk/person/1"
     assert result["dataset"] == "dprr"
     assert "name" in result
     assert "properties" in result
+    assert isinstance(result["properties"], list)
     assert "xrefs" in result
+    assert isinstance(result["xrefs"], list)
+    # description defaults to "" (empty string), not None
+    assert result["description"] == ""
 ```
 
 - [ ] **Step 2: Run tests to verify they fail**
@@ -83,7 +97,9 @@ Expected: FAIL with `ImportError: cannot import name 'resolve_entity'`
 
 - [ ] **Step 3: Extract `resolve_entity` function**
 
-In `viewer_api.py`, add a new function before `entity_handler`. This function contains the resolution logic currently embedded in `entity_handler` (lines 82-245), but takes explicit parameters instead of reading from an HTTP request:
+In `viewer_api.py`, add a new function before `entity_handler` (before line 70). This function is an extraction of the resolution logic from `entity_handler` lines 82-244. **Move the actual code** — do not rewrite queries.
+
+The function signature:
 
 ```python
 def resolve_entity(
@@ -96,141 +112,28 @@ def resolve_entity(
     This is the core resolution logic shared by the REST endpoint and
     the entity cache builder.
     """
-    # --- URI normalisation (from entity_handler lines 82-105) ---
-    _DOMAIN_MAP = {
-        "edh.ub.uni-heidelberg.de": "edh-hd.de",
-    }
-    from urllib.parse import urlparse
-
-    parsed = urlparse(uri)
-    host = parsed.hostname or ""
-    host = host.removeprefix("www.")
-    mapped = _DOMAIN_MAP.get(host)
-    if mapped:
-        uri = uri.replace(host, mapped, 1)
-
-    # Try to find the dataset for this URI
-    match = registry.dataset_for_uri(uri)
-    if match is None:
-        # Try swapping http/https
-        alt = uri.replace("http://", "https://", 1) if uri.startswith("http://") else uri.replace("https://", "http://", 1)
-        match = registry.dataset_for_uri(alt)
-        if match:
-            uri = alt
-
-    if match is None:
-        return None
-
-    plugin, ds_name = match
-    store = plugin.store
-
-    # --- Property query (from entity_handler lines 113-145) ---
-    props_q = f"""
-    SELECT ?p ?o WHERE {{
-        <{uri}> ?p ?o .
-        FILTER(isLiteral(?o) && (lang(?o) IN ("", "en", "la") || !langMatches(lang(?o), "*")))
-    }} LIMIT 100
-    """
-    try:
-        prop_rows = store.query(props_q)
-    except Exception:
-        prop_rows = []
-
-    properties = []
-    for row in prop_rows:
-        p_val = str(row["p"])
-        o_val = str(row["o"])
-        properties.append({"pred": p_val, "obj": o_val})
-
-    # --- Description (rdfs:comment) ---
-    desc_q = f"""
-    SELECT ?c WHERE {{
-        <{uri}> <http://www.w3.org/2000/01/rdf-schema#comment> ?c .
-        FILTER(lang(?c) IN ("", "en"))
-    }} LIMIT 1
-    """
-    try:
-        desc_rows = store.query(desc_q)
-    except Exception:
-        desc_rows = []
-    description = str(desc_rows[0]["c"]) if desc_rows else None
-
-    # --- Type hierarchy ---
-    type_q = f"""
-    SELECT ?t ?super WHERE {{
-        <{uri}> a ?t .
-        OPTIONAL {{ ?t <http://www.w3.org/2000/01/rdf-schema#subClassOf> ?super }}
-    }}
-    """
-    try:
-        type_rows = store.query(type_q)
-    except Exception:
-        type_rows = []
-    types_seen = []
-    for row in type_rows:
-        t = str(row["t"])
-        if t not in types_seen:
-            types_seen.append(t)
-
-    # --- See also ---
-    sa_q = f"""
-    SELECT ?sa WHERE {{ <{uri}> <http://www.w3.org/2000/01/rdf-schema#seeAlso> ?sa }} LIMIT 10
-    """
-    try:
-        sa_rows = store.query(sa_q)
-    except Exception:
-        sa_rows = []
-    see_also = [str(row["sa"]) for row in sa_rows]
-
-    # --- Predicate meta ---
-    pred_uris = list({p["pred"] for p in properties})
-    predicate_meta = {}
-    for pu in pred_uris:
-        meta_q = f"""
-        SELECT ?label ?comment ?domain ?range WHERE {{
-            OPTIONAL {{ <{pu}> <http://www.w3.org/2000/01/rdf-schema#label> ?label }}
-            OPTIONAL {{ <{pu}> <http://www.w3.org/2000/01/rdf-schema#comment> ?comment }}
-            OPTIONAL {{ <{pu}> <http://www.w3.org/2000/01/rdf-schema#domain> ?domain }}
-            OPTIONAL {{ <{pu}> <http://www.w3.org/2000/01/rdf-schema#range> ?range }}
-        }} LIMIT 1
-        """
-        try:
-            meta_rows = store.query(meta_q)
-        except Exception:
-            meta_rows = []
-        if meta_rows:
-            row = meta_rows[0]
-            entry = {}
-            for key in ("label", "comment", "domain", "range"):
-                val = row.get(key)
-                if val is not None:
-                    entry[key] = str(val)
-            if entry:
-                predicate_meta[pu] = entry
-
-    # --- Cross-references ---
-    from linked_past.core.server import _find_store_xrefs
-
-    xrefs = []
-    if linkage:
-        xrefs.extend(linkage.find_links(uri))
-    xrefs.extend(_find_store_xrefs(uri, registry))
-
-    # --- Display name ---
-    name = _extract_name(uri, properties, store)
-
-    return {
-        "uri": uri,
-        "name": name,
-        "dataset": ds_name,
-        "description": description,
-        "type_hierarchy": types_seen if types_seen else None,
-        "see_also": see_also if see_also else None,
-        "properties": properties,
-        "predicate_meta": predicate_meta if predicate_meta else None,
-        "xrefs": xrefs,
-    }
 ```
+
+The body should contain the exact code currently in `entity_handler` lines 82-244, with these adjustments:
+- Replace `mgr.app_context.registry` / `mgr.app_context.linkage` with the `registry` / `linkage` parameters.
+- Replace `request.query_params.get("uri")` with the `uri` parameter.
+- Use `canonical_uri` as the local variable name (matching the existing code).
+- At the end, `return` the dict instead of wrapping in `JSONResponse`.
+- Add `from linked_past.core.store import execute_query` at the top of the function body (matching line 116).
+- Return `None` if no dataset is found (instead of returning a fallback JSONResponse).
+
+The function must preserve:
+- `str.replace("://www.", "://")` normalization (line 84)
+- `edh.ub.uni-heidelberg.de/edh/` → `edh-www.adw.uni-heidelberg.de/edh/` mapping (lines 86-89)
+- `registry.dataset_for_uri()` returning `str | None` (line 96)
+- `registry.get_store(ds_name)` to get the store (line 115)
+- `execute_query(store, sparql)` for all SPARQL calls
+- The `_query_props` inner function with deduplication (lines 121-136)
+- http/https fallback for properties (lines 140-147)
+- Type hierarchy filtering `http://www.w3.org/` and local name extraction (lines 173-178)
+- Batched `VALUES` clause for predicate meta (lines 182-208)
+- `description` defaults to `""` (line 108), NOT `None`
+- Cross-reference deduplication by target (lines 220-224)
 
 - [ ] **Step 4: Update `entity_handler` to call `resolve_entity`**
 
@@ -238,23 +141,34 @@ Replace the body of `entity_handler` (lines 70-245) to delegate to `resolve_enti
 
 ```python
 async def entity_handler(request: Request) -> JSONResponse | PlainTextResponse:
+    """GET /viewer/api/entity?uri=... — return entity properties + xrefs as JSON."""
     mgr = get_manager()
-    if not mgr or not mgr.is_active:
-        return PlainTextResponse("Viewer not active", status_code=503)
+    if mgr is None or not mgr.is_active:
+        return PlainTextResponse("Viewer not active", status_code=404)
 
     uri = request.query_params.get("uri")
     if not uri:
-        return PlainTextResponse("Missing ?uri= parameter", status_code=400)
+        return JSONResponse({"error": "Missing 'uri' query parameter"}, status_code=400)
+    if not uri.startswith(("http://", "https://")):
+        return JSONResponse({"error": "Invalid URI scheme"}, status_code=400)
 
     registry = mgr.app_context.registry
     linkage = mgr.app_context.linkage
 
     result = resolve_entity(uri, registry, linkage)
     if result is None:
-        return JSONResponse({"uri": uri, "name": uri.rsplit("/", 1)[-1], "dataset": None, "properties": [], "xrefs": []})
+        return JSONResponse({
+            "uri": uri,
+            "name": uri.rstrip("/").rsplit("/", 1)[-1].rsplit("#", 1)[-1],
+            "dataset": None,
+            "properties": [],
+            "xrefs": [],
+        })
 
     return JSONResponse(result)
 ```
+
+Note: preserve the original error responses (status 404 for inactive viewer, 400 for missing/invalid URI) and the fallback response shape for unknown URIs.
 
 - [ ] **Step 5: Run tests**
 
@@ -335,10 +249,11 @@ def test_extract_from_entity_data():
         "see_also": ["http://en.wikipedia.org/wiki/Cicero"],
     }
     uris = extract_entity_uris("entity", data)
-    # Should include property object URIs, xref targets, but NOT see_also (external)
+    # Should include the entity's own URI, property object URIs, xref targets
+    assert "http://romanrepublic.ac.uk/person/1" in uris
     assert "http://romanrepublic.ac.uk/office/consul" in uris
     assert "http://nomisma.org/id/cicero" in uris
-    # Literal values and external URIs excluded
+    # Literal values and external URIs excluded (see_also are typically external)
     assert "Marcus Tullius Cicero" not in uris
     assert "http://en.wikipedia.org/wiki/Cicero" not in uris
 
@@ -351,6 +266,8 @@ def test_extract_from_links_data():
         ],
     }
     uris = extract_entity_uris("links", data)
+    # Should include the subject URI and link targets
+    assert "http://romanrepublic.ac.uk/person/1" in uris
     assert "http://nomisma.org/id/cicero" in uris
 
 
@@ -423,6 +340,10 @@ def extract_entity_uris(msg_type: str, data: dict) -> set[str]:
                 uris.add(uri)
 
     elif msg_type == "entity":
+        # The entity's own URI
+        entity_uri = data.get("uri", "")
+        if _is_known(entity_uri):
+            uris.add(entity_uri)
         for prop in data.get("properties", []):
             obj = prop.get("obj", "")
             if _is_known(obj):
@@ -431,8 +352,14 @@ def extract_entity_uris(msg_type: str, data: dict) -> set[str]:
             target = xref.get("target", "")
             if _is_known(target):
                 uris.add(target)
+        # Note: see_also[] are typically external (Wikipedia, Wikidata) — not extracted.
+        # They're not resolvable via our datasets.
 
     elif msg_type == "links":
+        # The subject entity's URI
+        links_uri = data.get("uri", "")
+        if _is_known(links_uri):
+            uris.add(links_uri)
         for link in data.get("links", []):
             target = link.get("target", "")
             if _is_known(target):
@@ -466,7 +393,7 @@ git commit -m "feat: URI extraction utility for entity cache"
 
 **Files:**
 - Modify: `packages/linked-past/linked_past/core/server.py`
-- Modify: `packages/linked-past/linked_last/core/viewer.py`
+- Modify: `packages/linked-past/linked_past/core/viewer.py`
 - Test: `packages/linked-past/tests/test_entity_cache.py`
 
 After each tool message, the server resolves new entity URIs and writes an `entity_cache` message.
@@ -527,6 +454,7 @@ def mock_app():
 
     registry = MagicMock()
     registry.dataset_for_uri.return_value = None  # default: no match
+    registry.get_store.return_value = MagicMock()  # mock store
 
     linkage = MagicMock()
     linkage.find_links.return_value = []
@@ -539,11 +467,9 @@ def mock_app():
 @pytest.mark.asyncio
 async def test_push_to_viewer_writes_entity_cache(mock_app):
     """After a query message with entity URIs, an entity_cache message should follow."""
-    # Make one URI resolvable
+    # Make one URI resolvable — dataset_for_uri returns str | None
     mock_app.registry.dataset_for_uri.side_effect = lambda uri: (
-        (MagicMock(store=MagicMock(query=MagicMock(return_value=[]))), "dprr")
-        if "romanrepublic" in uri
-        else None
+        "dprr" if "romanrepublic" in uri else None
     )
 
     data = {
@@ -619,7 +545,7 @@ async def _push_to_viewer(
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "data": data,
     })
-    _log.debug("Pushing %s message to viewer", tool_name)
+    logger.debug("Pushing %s message to viewer", tool_name)
     await app.viewer.broadcast(message)
 
     # --- Entity cache: resolve new URIs found in this message ---
@@ -636,7 +562,7 @@ async def _push_to_viewer(
         try:
             entity_data = resolve_entity(uri, app.registry, app.linkage)
         except Exception:
-            _log.debug("Failed to resolve entity %s for cache", uri)
+            logger.debug("Failed to resolve entity %s for cache", uri)
             continue
         if entity_data:
             entities[uri] = entity_data
@@ -855,48 +781,65 @@ git commit -m "feat(viewer): useEntityQuery checks cache before fetching"
 ### Task 7: Viewer — Wire entity cache into entry points
 
 **Files:**
+- Modify: `packages/linked-past-viewer/src/hooks/use-static-session.ts`
 - Modify: `packages/linked-past-viewer/src/entries/static.tsx`
-- Modify: `packages/linked-past-viewer/src/entries/main.tsx`
 - Modify: `packages/linked-past-viewer/src/hooks/use-viewer-socket.ts`
+- Modify: `packages/linked-past-viewer/src/components/viewer-layout.tsx`
 - Modify: `packages/linked-past-viewer/src/components/entity-uri.tsx`
 
 - [ ] **Step 1: Static entry — populate cache from parsed JSONL**
 
-In `static.tsx`, the `useStaticSession` hook returns parsed data. Update `use-static-session.ts` to also return `entityCache`. First, read `use-static-session.ts` to understand the current interface.
+First, update `use-static-session.ts`. The current `StaticSession` type (lines 6-15) and `applyResult` callback (line 23-28) need to include `entityCache`.
 
-In `use-static-session.ts`, update `loadFromText` and `loadFromFile` to also capture entityCache from the parse result, and expose it. Add state:
+Add import:
+
+```typescript
+import type { EntityData } from "@/lib/schemas";
+```
+
+Update the `StaticSession` type:
+
+```typescript
+export type StaticSession = {
+  messages: ViewerMessage[];
+  errors: ParseError[];
+  formatVersion: number | null;
+  entityCache: Map<string, EntityData>;
+  loadFromText: (text: string) => void;
+  loadFromFile: (file: File) => void;
+  loadFromParseResult: (result: ParseResult) => void;
+  clear: () => void;
+  isLoaded: boolean;
+};
+```
+
+Add state:
 
 ```typescript
 const [entityCache, setEntityCache] = useState<Map<string, EntityData>>(new Map());
 ```
 
-In the parse handlers, after calling `parseSessionJsonl`, also set:
+In `applyResult`, add:
 
 ```typescript
 setEntityCache(result.entityCache);
 ```
 
+In `clear`, add:
+
+```typescript
+setEntityCache(new Map());
+```
+
 Return `entityCache` alongside other session state.
 
-Then in `static.tsx`, wrap with `EntityCacheProvider`:
+Then in `static.tsx`, add import:
 
 ```typescript
 import { EntityCacheProvider } from "@/lib/entity-cache-context";
 ```
 
-In the render, wrap the `StaticModeProvider` content:
-
-```tsx
-<StaticModeProvider value={true}>
-  <EntityCacheProvider value={session.entityCache}>
-    <StaticApp />
-  </EntityCacheProvider>
-</StaticModeProvider>
-```
-
-Wait — `session` is inside `StaticApp`, not at the root render. The entity cache needs to be at a level where `useEntityQuery` (inside entity-uri.tsx) can access it. Since `StaticApp` owns the session state, the provider goes inside `StaticApp`, wrapping the main content:
-
-In `StaticApp`, after the early returns (loading, error, drop zone), wrap the main return with `EntityCacheProvider`:
+The `session` hook is called inside `StaticApp`, so the `EntityCacheProvider` goes inside `StaticApp`, wrapping the main return (after the early returns for loading, error, and drop zone):
 
 ```tsx
 return (
@@ -910,32 +853,81 @@ return (
 
 - [ ] **Step 2: Live entry — handle entity_cache WebSocket messages**
 
-In `use-viewer-socket.ts`, the WebSocket `onmessage` handler (line 24) validates messages with `ViewerMessageSchema`. Add handling for `entity_cache` messages before the ViewerMessage validation:
+In `use-viewer-socket.ts`, the current `onmessage` handler (line 24-50) combines `JSON.parse` + `ViewerMessageSchema.safeParse` in one line:
 
-Add a new state for the cache:
+```typescript
+const parsed = ViewerMessageSchema.safeParse(JSON.parse(e.data));
+```
+
+This needs to be restructured to a two-step flow so we can check for `entity_cache` before `ViewerMessage`. Add imports at the top:
+
+```typescript
+import { ViewerMessageSchema, EntityCacheMessageSchema } from "../lib/schemas";
+import type { EntityData } from "../lib/types";
+```
+
+Add a new state for the cache after the existing state declarations:
 
 ```typescript
 const [entityCache, setEntityCache] = useState<Map<string, EntityData>>(new Map());
 ```
 
-In the `onmessage` handler, after JSON.parse but before ViewerMessageSchema validation:
+Replace the `onmessage` handler body (lines 24-50) with:
 
 ```typescript
-// Check for entity_cache messages
-const cacheResult = EntityCacheMessageSchema.safeParse(parsed);
-if (cacheResult.success) {
-  setEntityCache((prev) => {
-    const next = new Map(prev);
-    for (const [uri, data] of Object.entries(cacheResult.data.data.entities)) {
-      next.set(uri, data);
+ws.onmessage = (e) => {
+  try {
+    const raw = JSON.parse(e.data);
+
+    // Check for entity_cache messages first (no seq, not a ViewerMessage)
+    const cacheResult = EntityCacheMessageSchema.safeParse(raw);
+    if (cacheResult.success) {
+      setEntityCache((prev) => {
+        const next = new Map(prev);
+        for (const [uri, data] of Object.entries(cacheResult.data.data.entities)) {
+          next.set(uri, data);
+        }
+        return next;
+      });
+      return; // Not a regular message
     }
-    return next;
-  });
-  return; // Not a regular message, don't process further
-}
+
+    // Regular viewer messages
+    const parsed = ViewerMessageSchema.safeParse(raw);
+    if (!parsed.success) {
+      console.warn("Invalid viewer message:", parsed.error.issues[0]?.message);
+      return;
+    }
+    const msg = parsed.data;
+
+    // Detect new session by session_id change
+    if (msg.session_id && msg.session_id !== currentSessionId.current) {
+      if (currentSessionId.current !== null) {
+        seenSeqs.current.clear();
+        setMessages([]);
+        setEntityCache(new Map());
+        clearMessages();
+      }
+      currentSessionId.current = msg.session_id;
+    }
+
+    if (seenSeqs.current.has(msg.seq)) return;
+    seenSeqs.current.add(msg.seq);
+    setMessages((prev) => [...prev, msg]);
+    putMessage(msg);
+  } catch {
+    console.warn("Failed to parse viewer message:", e.data);
+  }
+};
 ```
 
-Return `entityCache` from the hook alongside `messages` and `isConnected`.
+Note: also clear the entity cache on session change (`setEntityCache(new Map())`).
+
+Return `entityCache` from the hook:
+
+```typescript
+return { messages, isConnected, entityCache };
+```
 
 In `viewer-layout.tsx`, get `entityCache` from the hook and wrap with provider:
 
@@ -1028,18 +1020,14 @@ async def test_query_with_entity_uris_produces_cache():
     viewer.broadcast = capture_broadcast
 
     # Setup: a registry that can resolve one URI
+    # Note: dataset_for_uri returns str | None (dataset name), NOT a tuple
     store = MagicMock()
-    store.query.return_value = []
-
-    plugin = MagicMock()
-    plugin.store = store
-    plugin.name = "dprr"
 
     registry = MagicMock()
     registry.dataset_for_uri.side_effect = lambda uri: (
-        (plugin, "dprr") if "romanrepublic" in uri else None
+        "dprr" if "romanrepublic" in uri else None
     )
-    registry.plugins = {"dprr": plugin}
+    registry.get_store.return_value = store
 
     linkage = MagicMock()
     linkage.find_links.return_value = []
