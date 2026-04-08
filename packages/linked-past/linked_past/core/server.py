@@ -787,8 +787,6 @@ def create_mcp_server() -> FastMCP:
         registry = app.registry
 
         if topic and app.search:
-            from linked_past.core.search import hybrid_search
-
             query_vector = None
             if app.vector and app.embedder:
                 try:
