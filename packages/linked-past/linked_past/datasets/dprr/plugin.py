@@ -19,8 +19,9 @@ class DPRRPlugin(DatasetPlugin):
         "and social status with full source citations."
     )
     citation = (
-        "Sherwin et al., Digital Prosopography of the Roman Republic, "
-        "romanrepublic.ac.uk"
+        "Mouritsen, H., Rathbone, D., Bradley, J., & Robb, M. (2018). "
+        "Digital Prosopography of the Roman Republic. "
+        "Data set/Database https://romanrepublic.ac.uk/"
     )
     license = "CC BY-NC 4.0"
     url = "https://romanrepublic.ac.uk"
