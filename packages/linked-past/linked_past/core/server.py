@@ -17,7 +17,7 @@ from mcp.server.fastmcp import Context, FastMCP
 
 from linked_past.core.linkage import LinkageGraph
 from linked_past.core.registry import DatasetRegistry, discover_plugins
-from linked_past.core.search import SearchIndex
+from linked_past.core.search import SearchIndex, hybrid_search
 from linked_past.core.store import get_data_dir
 from linked_past.core.validate import parse_and_fix_prefixes, validate_and_execute
 from linked_past.core.vector import VectorIndex
@@ -658,6 +658,53 @@ def _collect_see_also(
     return "\n─── See also ───\n" + "\n".join(see_also_lines) + "\nUse `find_links(uri)` for full provenance.\n"
 
 
+def _get_example_context(
+    sparql: str,
+    dataset: str,
+    search_index,
+    vector_index,
+    embedder,
+) -> str:
+    """Search for relevant example queries using hybrid search.
+
+    Returns formatted markdown, or empty string if no search index
+    or no results.
+    """
+    if search_index is None:
+        return ""
+
+    query_vector = None
+    if vector_index and embedder:
+        try:
+            query_vector = embedder.embed_single(sparql)
+        except Exception:
+            logger.debug("Vector embedding failed for example search, using BM25 only")
+
+    results = hybrid_search(
+        query=sparql,
+        query_vector=query_vector,
+        search_index=search_index,
+        vector_index=vector_index,
+        k=3,
+        dataset=dataset,
+        doc_type="example",
+    )
+
+    if not results:
+        return ""
+
+    # Each result's text is "question\nsparql" as indexed by _index_dataset
+    sections = []
+    for r in results:
+        text = r["text"]
+        lines = text.split("\n", 1)
+        question = lines[0]
+        sparql_text = lines[1] if len(lines) > 1 else ""
+        sections.append(f"Question: {question}\n\n```sparql\n{sparql_text.strip()}\n```")
+
+    return f"\n\n---\n\n## Relevant Examples\n\n" + "\n\n---\n\n".join(sections)
+
+
 def create_mcp_server() -> FastMCP:
 
     # Build context once, shared across all sessions.
@@ -809,6 +856,8 @@ def create_mcp_server() -> FastMCP:
         if parse_errors:
             error_list = "\n".join(f"- {e}" for e in parse_errors)
             base = f"INVALID\n\nErrors:\n{error_list}"
+            if app.search:
+                return base + _get_example_context(sparql, dataset, app.search, app.vector, app.embedder) + plugin.get_relevant_tips(sparql)
             return base + plugin.get_relevant_context(sparql)
 
         result = plugin.validate(fixed_sparql)
@@ -830,6 +879,8 @@ def create_mcp_server() -> FastMCP:
             hint_list = "\n".join(f"- {h}" for h in result.suggestions)
             base += f"\n\n⚠️ Schema hints (query will still execute):\n{hint_list}"
 
+        if app.search:
+            return base + _get_example_context(fixed_sparql, dataset, app.search, app.vector, app.embedder) + plugin.get_relevant_tips(fixed_sparql)
         return base + plugin.get_relevant_context(fixed_sparql)
 
     @mcp.tool()
