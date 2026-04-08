@@ -58,9 +58,9 @@ jobs:
 
           for ds in $DATASETS; do
             echo "=== Cleaning $ds ==="
-            uv run python scripts/clean_dataset.py "$ds" "$VERSION"
+            uv run python -m scripts.clean_dataset "$ds" "$VERSION"
             echo "=== Validating $ds ==="
-            uv run python scripts/validate_dataset.py "$ds"
+            uv run python -m scripts.validate_dataset "$ds"
           done
 
       - name: Tag as latest

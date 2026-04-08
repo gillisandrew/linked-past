@@ -134,6 +134,6 @@ jobs:
 
       - name: Clean and validate
         run: |
-          uv run python scripts/clean_dataset.py pleiades
-          uv run python scripts/validate_dataset.py pleiades
+          uv run python -m scripts.clean_dataset pleiades
+          uv run python -m scripts.validate_dataset pleiades
         working-directory: linked-past
