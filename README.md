@@ -8,7 +8,8 @@ Scholars can ask natural language questions and receive well-cited results acros
 
 | Package | Description |
 |---------|-------------|
-| [`linked-past`](packages/linked-past/) | MCP server providing 10 SPARQL tools across 7 ancient world datasets (DPRR, Pleiades, PeriodO, Nomisma, CRRO, EDH, OCRE) with cross-dataset linkage, embedding-assisted discovery, and scholarly citations |
+| [`linked-past`](packages/linked-past/) | MCP server providing 15 tools across 8 ancient world datasets (DPRR, Pleiades, PeriodO, Nomisma, CRRO, EDH, OCRE, RPC) with cross-dataset linkage, hybrid search, disambiguation, and scholarly citations |
+| [`linked-past-viewer`](packages/linked-past-viewer/) | React web UI for exploring query results — markdown rendering, Mermaid diagrams, entity cards with live popover links, served at `/viewer` |
 | [`linked-past-store`](packages/linked-past-store/) | Standalone library for distributing scholarly RDF datasets as OCI artifacts via container registries — content-addressable, version-tracked, annotated storage |
 
 ## Quickstart
@@ -27,7 +28,7 @@ docker run -d \
 claude
 ```
 
-Set `LINKED_PAST_DATASETS` to a comma-separated list (e.g., `dprr,pleiades,nomisma`) or `all`. Datasets are downloaded on first startup and cached in the `/data` volume. Subsequent starts skip the download.
+Set `LINKED_PAST_DATASETS` to a comma-separated list (e.g., `dprr,pleiades,nomisma`) or `all`. Datasets are downloaded on first startup and cached in the `/data` volume. Subsequent starts skip the download. The viewer is available at `http://localhost:8000/viewer`.
 
 ### From source
 
@@ -77,9 +78,12 @@ packages/
 ├── linked-past/              # MCP server + dataset plugins
 │   ├── linked_past/
 │   │   ├── core/             # Server, registry, store, validation, linkage, embeddings
-│   │   ├── datasets/         # Plugin per dataset (dprr, pleiades, periodo, nomisma, crro, edh, ocre)
+│   │   ├── datasets/         # Plugin per dataset (dprr, pleiades, periodo, nomisma, crro, edh, ocre, rpc)
 │   │   └── linkages/         # Curated cross-references + Wikidata concordances
 │   └── tests/
+├── linked-past-viewer/       # React web UI (Vite + React 19 + Tailwind)
+│   ├── src/
+│   └── ...
 ├── linked-past-store/        # OCI distribution library
 │   ├── linked_past_store/    # Push, pull, sanitize, verify
 │   └── tests/
