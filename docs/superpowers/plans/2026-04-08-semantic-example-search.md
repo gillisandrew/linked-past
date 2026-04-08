@@ -293,10 +293,14 @@ return base + plugin.get_relevant_context(fixed_sparql)
 
 - [ ] **Step 6: Run full test suite**
 
+Note: The `validate_sparql` MCP tool is registered as a closure inside `create_mcp_server()`, making it difficult to unit-test the wiring directly. Coverage comes from: (1) the `_get_example_context` helper is fully unit-tested above, (2) the fallback path (`app.search is None`) is covered by existing integration tests in `test_server.py` which use `skip_search=True`, (3) the 2-line wiring change is verified by code review.
+
+- [ ] **Step 7: Run full test suite**
+
 Run: `uv run pytest -q`
 Expected: All tests pass.
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 8: Commit**
 
 ```bash
 git add packages/linked-past/linked_past/core/server.py packages/linked-past/tests/test_validate_sparql_examples.py
