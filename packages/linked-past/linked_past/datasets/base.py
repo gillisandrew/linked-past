@@ -199,6 +199,19 @@ class DatasetPlugin:
             return ""
         return "\n\n---\n\n" + "\n\n".join(parts)
 
+    def get_relevant_tips(self, sparql: str) -> str:
+        """Return class-matched tips for a SPARQL query (no examples)."""
+        from linked_past.core.context import get_relevant_tips, render_tips
+        from linked_past.core.validate import extract_query_classes
+
+        classes = extract_query_classes(sparql, self._schema_dict)
+        if not classes:
+            return ""
+        tips = get_relevant_tips(self._tips, classes)
+        if not tips:
+            return ""
+        return f"\n\n---\n\n## Relevant Tips\n\n{render_tips(tips)}"
+
     # ------------------------------------------------------------------
     # Version / update
     # ------------------------------------------------------------------
