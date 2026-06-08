@@ -1,6 +1,5 @@
 """Tests for hybrid example search in validate_sparql."""
 
-import pytest
 from unittest.mock import MagicMock, patch
 
 from linked_past.core.server import _get_example_context

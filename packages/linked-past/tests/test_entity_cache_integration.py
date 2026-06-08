@@ -1,10 +1,10 @@
 """Integration test: tool call produces entity_cache message."""
 
 import json
-import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock
 
-from linked_past.core.server import _push_to_viewer, AppContext
+import pytest
+from linked_past.core.server import AppContext, _push_to_viewer
 
 
 @pytest.mark.asyncio

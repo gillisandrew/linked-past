@@ -702,7 +702,7 @@ def _get_example_context(
         sparql_text = lines[1] if len(lines) > 1 else ""
         sections.append(f"Question: {question}\n\n```sparql\n{sparql_text.strip()}\n```")
 
-    return f"\n\n---\n\n## Relevant Examples\n\n" + "\n\n---\n\n".join(sections)
+    return "\n\n---\n\n## Relevant Examples\n\n" + "\n\n---\n\n".join(sections)
 
 
 def create_mcp_server() -> FastMCP:

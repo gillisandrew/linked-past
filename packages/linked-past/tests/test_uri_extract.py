@@ -1,6 +1,6 @@
 """Tests for URI extraction from viewer messages."""
-import re
 from linked_past.core.uri_extract import extract_entity_uris
+
 
 def test_extract_from_query_rows():
     data = {

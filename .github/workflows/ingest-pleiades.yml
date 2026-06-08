@@ -93,7 +93,9 @@ jobs:
 
           SIZE=$(stat --format=%s "$OUTPUT")
           echo "Created pleiades.ttl ($SIZE bytes)"
-          echo "output_path=$OUTPUT" >> "$GITHUB_ENV"
+          # $OUTPUT is workspace-root-relative, but downstream steps run with
+          # working-directory: linked-past, so export the path relative to that.
+          echo "output_path=$(basename "$OUTPUT")" >> "$GITHUB_ENV"
 
       - name: Verify with pyoxigraph
         run: |

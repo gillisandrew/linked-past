@@ -1,6 +1,7 @@
 """Tests for the FTS5 search index."""
 
-from linked_past.core.search import SearchIndex
+from linked_past.core.search import SearchIndex, hybrid_search
+from linked_past.core.vector import VectorIndex
 
 
 def test_add_and_search():
@@ -95,10 +96,6 @@ def test_bm25_ranking():
     # The schema doc mentions all three terms, should rank highest
     assert results[0]["doc_type"] == "schema"
     idx.close()
-
-
-from linked_past.core.search import hybrid_search
-from linked_past.core.vector import VectorIndex
 
 
 def _make_vector(seed: float, dim: int = 384) -> list[float]:

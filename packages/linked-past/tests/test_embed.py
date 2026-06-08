@@ -2,7 +2,7 @@
 
 from unittest.mock import MagicMock, patch
 
-from linked_past.core.embed import Embedder, EMBED_MODEL, VECTOR_DIM
+from linked_past.core.embed import EMBED_MODEL, VECTOR_DIM, Embedder
 
 
 def test_embedder_lazy_init():
