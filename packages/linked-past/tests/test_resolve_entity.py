@@ -1,7 +1,8 @@
 """Tests for the standalone resolve_entity function."""
-import pytest
 from unittest.mock import MagicMock, patch
+
 from linked_past.core.viewer_api import resolve_entity
+
 
 def _make_mock_registry(ds_name: str | None = "dprr"):
     store = MagicMock()

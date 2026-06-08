@@ -1,5 +1,6 @@
 """Extract entity URIs from viewer message data payloads."""
 from __future__ import annotations
+
 import re
 
 _KNOWN_PREFIXES = (

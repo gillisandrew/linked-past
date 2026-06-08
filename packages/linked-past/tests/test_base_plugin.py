@@ -1,6 +1,7 @@
 """Tests for DatasetPlugin context retrieval methods."""
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
+
 from linked_past.datasets.base import DatasetPlugin
 
 

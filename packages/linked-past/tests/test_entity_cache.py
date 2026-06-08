@@ -1,8 +1,9 @@
 """Tests for entity cache generation after viewer pushes."""
 import json
+from unittest.mock import AsyncMock, MagicMock
+
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
-from linked_past.core.server import _push_to_viewer, AppContext
+from linked_past.core.server import AppContext, _push_to_viewer
 
 
 @pytest.fixture

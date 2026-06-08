@@ -1,10 +1,11 @@
 # Stage 1: Build viewer (runs on builder's native arch — output is static JS/CSS)
-FROM --platform=$BUILDPLATFORM node:22-slim AS viewer-build
+FROM --platform=$BUILDPLATFORM node:24-slim AS viewer-build
+RUN corepack enable
 WORKDIR /app/packages/linked-past-viewer
-COPY packages/linked-past-viewer/package.json packages/linked-past-viewer/package-lock.json ./
-RUN npm ci
+COPY packages/linked-past-viewer/package.json packages/linked-past-viewer/pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
 COPY packages/linked-past-viewer/ .
-RUN npm run build
+RUN pnpm run build
 
 # Stage 2: Python runtime (multi-arch: amd64, arm64)
 FROM python:3.13-slim
