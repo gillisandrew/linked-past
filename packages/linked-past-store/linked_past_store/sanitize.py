@@ -5,7 +5,8 @@ with regex post-processing for issues rapper doesn't fix.
 
 Pipeline:
   1. rapper: parse lenient, serialize clean Turtle (handles most syntax issues)
-  2. Regex fixes: BCP 47 language tags, bare DOIs (issues in the data, not syntax)
+  2. Regex fixes: leaked rapper diagnostic lines, BCP 47 language tags, bare
+     DOIs (issues in the data, not syntax)
   3. pyoxigraph verify: strict validation, triple count
 """
 
@@ -23,6 +24,13 @@ logger = logging.getLogger(__name__)
 # BCP 47: subtags must be max 8 characters
 _LANG_TAG = re.compile(r'"([^"]*)"@([a-zA-Z][a-zA-Z0-9-]*)')
 _BARE_DOI = re.compile(r"<(doi\.org/)")
+# rapper (Raptor) diagnostic messages that occasionally leak into the data
+# stream, e.g. "rapper: Parsing returned 1521736 triples". These are not valid
+# Turtle and make strict parsers fail with "prefix rapper: has not been
+# declared". No vocabulary in these datasets declares a `rapper` prefix, so a
+# line beginning with `rapper:` followed by whitespace is always a leaked log
+# line (a Turtle subject `rapper:Foo` has no space after the colon).
+_RAPPER_LOG = re.compile(r"^rapper:[ \t].*(?:\r?\n|$)", re.MULTILINE)
 
 
 def has_rapper() -> bool:
@@ -122,6 +130,13 @@ def _rapper_convert(input_path: Path, output_path: Path, input_format: str = "gu
 
 def _regex_fixes(text: str) -> tuple[str, int]:
     """Apply regex fixes for issues rapper doesn't handle."""
+    # Strip leaked rapper diagnostic lines first. Done before capturing
+    # `original` so the resulting line shift doesn't confuse the line-diff
+    # counter used for the remaining fixes.
+    rapper_lines = len(_RAPPER_LOG.findall(text))
+    if rapper_lines:
+        text = _RAPPER_LOG.sub("", text)
+
     original = text
 
     # Fix BCP 47 language tags (subtags > 8 chars)
@@ -131,7 +146,7 @@ def _regex_fixes(text: str) -> tuple[str, int]:
     text = _BARE_DOI.sub(r"<https://\1", text)
 
     fixes = sum(1 for a, b in zip(original.splitlines(), text.splitlines()) if a != b)
-    return text, fixes
+    return text, fixes + rapper_lines
 
 
 def sanitize_turtle(

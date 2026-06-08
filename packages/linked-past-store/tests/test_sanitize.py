@@ -78,6 +78,40 @@ def test_overwrite_in_place(tmp_path):
     assert "in-latin-characters" not in content
 
 
+def test_strip_leaked_rapper_log_lines(tmp_path):
+    """Leaked rapper diagnostic lines are stripped so strict parsers don't choke."""
+    ttl = tmp_path / "input.ttl"
+    ttl.write_text(
+        "rapper: Parsing URI file:///data/rpc.rdf with parser rdfxml\n"
+        "rapper: Parsing returned 1521736 triples\n"
+        "@prefix ex: <http://example.org/> .\n"
+        'ex:Thing ex:name "Hello"@en .\n'
+    )
+
+    result = sanitize_turtle(ttl, tmp_path / "output.ttl")
+
+    content = result.output_path.read_text()
+    assert "rapper:" not in content
+    assert result.fixes_applied >= 2
+    # The real data is preserved.
+    assert "ex:Thing" in content
+
+
+def test_real_rapper_prefix_not_stripped(tmp_path):
+    """A legitimately declared `rapper:` prefix (no space after colon) is kept."""
+    ttl = tmp_path / "input.ttl"
+    ttl.write_text(
+        "@prefix rapper: <http://example.org/rapper#> .\n"
+        'rapper:Thing rapper:name "Hello"@en .\n'
+    )
+
+    result = sanitize_turtle(ttl, tmp_path / "output.ttl")
+
+    content = result.output_path.read_text()
+    assert "rapper:Thing" in content
+    assert "@prefix rapper:" in content
+
+
 def test_rapper_available():
     """has_rapper() returns True if rapper is installed."""
     # This test documents the environment — may fail if rapper isn't installed
