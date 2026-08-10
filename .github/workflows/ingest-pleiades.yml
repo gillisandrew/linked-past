@@ -107,6 +107,14 @@ jobs:
             echo "Fixed $DOI_FIXES bare DOI IRIs (added https:// scheme)"
           fi
 
+          # Fix truncated subresource references (upstream base-URI bug):
+          # places reference locations/names as places/<slug> instead of
+          # places/<id>/<slug>; rewrite using the referencing subject's id.
+          REF_FIXES=$(cd linked-past && uv run python -m scripts.fix_pleiades_refs "$(basename "$OUTPUT")")
+          if [ "$REF_FIXES" -gt 0 ]; then
+            echo "Fixed $REF_FIXES truncated subresource references (places/<slug> → places/<id>/<slug>)"
+          fi
+
           SIZE=$(stat --format=%s "$OUTPUT")
           echo "Created pleiades.ttl ($SIZE bytes)"
           # $OUTPUT is workspace-root-relative, but downstream steps run with
