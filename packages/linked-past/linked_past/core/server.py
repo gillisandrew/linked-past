@@ -38,6 +38,7 @@ class AppContext:
     meta: object = None  # MetaEntityIndex
     session_log: list = None
     viewer: object = None  # ViewerManager | None
+    server_port: int = 8000
 
     def __post_init__(self):
         if self.session_log is None:
@@ -706,12 +707,13 @@ def _get_example_context(
     return "\n\n---\n\n## Relevant Examples\n\n" + "\n\n---\n\n".join(sections)
 
 
-def create_mcp_server() -> MCPServer:
+def create_mcp_server(port: int = 8000) -> MCPServer:
 
     # Build context once, shared across all sessions.
     # NOTE: not thread-safe — update_dataset mutates stores/search on the shared
     # context. Fine for single-process MCP server; revisit if adding concurrency.
     _shared_ctx = build_app_context(skip_search=False)
+    _shared_ctx.server_port = port
 
     @asynccontextmanager
     async def lifespan(server: MCPServer):
@@ -1754,12 +1756,12 @@ def create_mcp_server() -> MCPServer:
         app: AppContext = ctx.request_context.lifespan_context
 
         if app.viewer is not None and app.viewer.is_active:
-            port = getattr(app, "server_port", 8000)
+            port = app.server_port
             url = app.viewer.viewer_url("localhost", port)
             return f"Viewer already running at {url}"
 
         app.viewer.activate()
-        port = getattr(app, "server_port", 8000)
+        port = app.server_port
         url = app.viewer.viewer_url("localhost", port)
         return (
             f"Viewer started at {url}\n\n"
