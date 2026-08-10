@@ -1831,6 +1831,15 @@ Use this to send formatted analysis, summaries, comparisons, or visualizations t
     return mcp
 
 
+def build_http_app(mcp: MCPServer, host: str = "127.0.0.1"):
+    """ASGI app serving stateless Streamable HTTP (no Mcp-Session-Id).
+
+    `host` feeds the transport's Host-header allowlist, so it must match
+    how clients address the server.
+    """
+    return mcp.streamable_http_app(stateless_http=True, host=host)
+
+
 def _setup_logging():
     """Configure structured logging for all CLI commands and the server."""
     if logging.root.handlers:
@@ -1859,10 +1868,10 @@ def _cmd_serve(args):
     print(f"  \033[2m➜\033[0m  Viewer:  \033[36mhttp://{host}:{port}/viewer\033[0m")
     print()
 
-    mcp = create_mcp_server()
-    mcp.settings.host = host
-    mcp.settings.port = port
-    mcp.run(transport="streamable-http")
+    import uvicorn
+
+    mcp = create_mcp_server(port=port)
+    uvicorn.run(build_http_app(mcp, host=host), host=host, port=port)
 
 
 def _print_dataset_result(plugin, meta):
