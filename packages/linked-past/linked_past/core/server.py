@@ -13,7 +13,8 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import toons
-from mcp.server.fastmcp import Context, FastMCP
+from mcp.server import MCPServer
+from mcp.server.mcpserver import Context
 
 from linked_past.core.linkage import LinkageGraph
 from linked_past.core.registry import DatasetRegistry, discover_plugins
@@ -705,7 +706,7 @@ def _get_example_context(
     return "\n\n---\n\n## Relevant Examples\n\n" + "\n\n---\n\n".join(sections)
 
 
-def create_mcp_server() -> FastMCP:
+def create_mcp_server() -> MCPServer:
 
     # Build context once, shared across all sessions.
     # NOTE: not thread-safe — update_dataset mutates stores/search on the shared
@@ -713,10 +714,10 @@ def create_mcp_server() -> FastMCP:
     _shared_ctx = build_app_context(skip_search=False)
 
     @asynccontextmanager
-    async def lifespan(server: FastMCP):
+    async def lifespan(server: MCPServer):
         yield _shared_ctx
 
-    mcp = FastMCP(
+    mcp = MCPServer(
         "linked-past",
         instructions=(
             "Linked Past: multi-dataset prosopographical SPARQL tools. "
@@ -1753,12 +1754,12 @@ def create_mcp_server() -> FastMCP:
         app: AppContext = ctx.request_context.lifespan_context
 
         if app.viewer is not None and app.viewer.is_active:
-            port = mcp.settings.port or 8000
+            port = getattr(app, "server_port", 8000)
             url = app.viewer.viewer_url("localhost", port)
             return f"Viewer already running at {url}"
 
         app.viewer.activate()
-        port = mcp.settings.port or 8000
+        port = getattr(app, "server_port", 8000)
         url = app.viewer.viewer_url("localhost", port)
         return (
             f"Viewer started at {url}\n\n"
