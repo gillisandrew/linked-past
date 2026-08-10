@@ -8,17 +8,18 @@ Assessed 2026-03-30 against linked-past datasets.
 |---------|-------|----------|
 | DPRR → Nomisma (confirmed) | ~187 person links | Moneyers matched to Nomisma person authorities |
 | DPRR → Nomisma (probable) | 6 links | Uncertain matches needing review |
-| DPRR → Pleiades | 5 province links | 5 of 92 provinces (Sicilia, Africa, Hispania, Asia, Gallia) |
+| DPRR → Pleiades | 72 province links | All geographic provinces (the other 20 of 92 are legal/administrative categories) |
 | DPRR → PeriodO | 2 era links | Republic + Late Republic |
 | Wikidata-derived | Nomisma↔Pleiades, Pleiades↔TM | Place concordances (indirect to DPRR) |
 
 ## Opportunities
 
-### 1. DPRR Provinces → Pleiades (IN PROGRESS)
+### 1. DPRR Provinces → Pleiades (COMPLETE — 2026-08-10)
 
-Only 5 of ~50 geographic provinces are linked. ~45 real geographic provinces (Macedonia, Syria, Sardinia, Cilicia, Aegyptus, Bithynia, etc.) have obvious Pleiades counterparts. ~20 of the 92 "provinces" are legal categories (repetundae, ambitus, urbanus) that wouldn't link.
-
-**Effort:** Low — straightforward geographic matching.
+All 72 geographic provinces are linked (72 of 92; the remaining 20 are legal
+categories like repetundae, ambitus, urbanus that have no place counterpart).
+Every target URI is validated against the Pleiades store, and
+`test_minimum_link_count` guards the full count.
 
 ### 2. DPRR Persons → CRRO Coin Types (via issuers)
 

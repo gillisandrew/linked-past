@@ -18,10 +18,11 @@ def _load_links() -> dict:
 
 
 def test_minimum_link_count():
-    """We should have at least 55 province→place links."""
+    """We should have at least 72 province→place links — every geographic
+    DPRR province (the remaining 20 are legal/administrative categories)."""
     data = _load_links()
-    assert len(data["links"]) >= 55, (
-        f"Expected >=55 links, got {len(data['links'])}"
+    assert len(data["links"]) >= 72, (
+        f"Expected >=72 links, got {len(data['links'])}"
     )
 
 
