@@ -34,7 +34,8 @@ class MetaEntityIndex:
         self._uri_to_id: dict[str, str] = {}  # Any URI → meta-entity ID
         self._db_path = db_path
         if db_path:
-            self._conn = sqlite3.connect(str(db_path))
+            # check_same_thread=False: see SearchIndex — worker-thread access.
+            self._conn = sqlite3.connect(str(db_path), check_same_thread=False)
             self._init_db()
         else:
             self._conn = None
