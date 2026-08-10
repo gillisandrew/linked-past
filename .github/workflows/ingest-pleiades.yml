@@ -91,6 +91,22 @@ jobs:
             echo "Fixed $BCP47_FIXES BCP 47 language tags (@etruscan-in-latin-characters → @x-etruscan-latn)"
           fi
 
+          # Fix bare DOI IRIs missing the https:// scheme (same fix as
+          # _BARE_DOI in linked-past-store sanitize)
+          # e.g., <doi.org/10.1163/...> → <https://doi.org/10.1163/...>
+          DOI_FIXES=$(uv run python -c "
+          import re
+          path = '$OUTPUT'
+          text = open(path).read()
+          text, count = re.subn(r'<(doi\.org/)', r'<https://\1', text)
+          if count:
+              open(path, 'w').write(text)
+          print(count)
+          ")
+          if [ "$DOI_FIXES" -gt 0 ]; then
+            echo "Fixed $DOI_FIXES bare DOI IRIs (added https:// scheme)"
+          fi
+
           SIZE=$(stat --format=%s "$OUTPUT")
           echo "Created pleiades.ttl ($SIZE bytes)"
           # $OUTPUT is workspace-root-relative, but downstream steps run with
