@@ -1,9 +1,10 @@
 """Tests for ArtifactCache layer-level caching."""
 
+import hashlib
 import json
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from linked_past_store.cache import ArtifactCache, LayerInfo
 
@@ -302,3 +303,26 @@ class TestLayerAwarePull:
         assert (blob_dir / "dprr.ttl").exists()
         assert (blob_dir / "_void.ttl").exists()
         assert (blob_dir / "_schema.yaml").exists()
+
+    def test_download_layer_loads_auth_configs(self, tmp_path):
+        """oras-py's get_blob (unlike get_manifest/pull) never loads registry
+        credentials, so _download_layer must load them itself — pulling from a
+        private registry 401s otherwise."""
+        content = b"rdf data"
+        digest = f"sha256:{hashlib.sha256(content).hexdigest()}"
+
+        client = MagicMock()
+        response = MagicMock()
+        response.iter_content.return_value = [content]
+        client.get_blob.return_value = response
+
+        cache = ArtifactCache(tmp_path / "cache")
+        outpath = tmp_path / "layer.ttl"
+        cache._download_layer(
+            "ghcr.io/test/dataset:v1", digest, str(outpath), client=client
+        )
+
+        client.auth.load_configs.assert_called_once_with(
+            client.get_container.return_value
+        )
+        assert outpath.read_bytes() == content
