@@ -17,10 +17,13 @@ class SearchIndex:
     """Full-text search over documents using SQLite FTS5 with BM25 ranking."""
 
     def __init__(self, db_path: str | Path | None = None) -> None:
+        # check_same_thread=False: tool calls run on anyio worker threads while
+        # the index is built on the startup thread; sqlite3.threadsafety == 3
+        # serializes shared-connection access.
         if db_path is None:
-            self._conn = sqlite3.connect(":memory:")
+            self._conn = sqlite3.connect(":memory:", check_same_thread=False)
         else:
-            self._conn = sqlite3.connect(str(db_path))
+            self._conn = sqlite3.connect(str(db_path), check_same_thread=False)
 
         self._conn.execute("PRAGMA journal_mode=WAL")
 
