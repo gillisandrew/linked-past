@@ -378,11 +378,15 @@ class ArtifactCache:
         client: oras.client.OrasClient | None = None,
     ) -> None:
         """Download a single layer blob by digest with streaming progress."""
-        repo = ref.rsplit(":", 1)[0]
         try:
             if client is None:
                 client = oras.client.OrasClient()
-            response = client.get_blob(repo, digest, stream=True)
+            # oras-py's get_blob (unlike get_manifest/pull) never loads
+            # registry credentials, so load them explicitly — pulling from a
+            # private registry 401s otherwise.
+            container = client.get_container(ref)
+            client.auth.load_configs(container)
+            response = client.get_blob(container, digest, stream=True)
             downloaded = 0
             last_pct = -1
             with open(outpath, "wb") as f:
