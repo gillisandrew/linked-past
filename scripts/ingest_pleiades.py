@@ -16,6 +16,7 @@ from pathlib import Path
 
 from linked_past_store import push_dataset
 
+from scripts.fix_pleiades_refs import fix_truncated_refs
 from scripts.pipeline_config import build_annotations, load_dataset_config
 
 SOURCE_REPO = "https://github.com/isawnyu/pleiades.datasets"
@@ -47,6 +48,7 @@ def main(rdf_dir: str):
         print(f"Concatenating {len(ttl_files)} Turtle files from {rdf_path}...")
         fix_count = 0
         vocab_fix_count = 0
+        ref_fix_count = 0
         with open(output, "w") as out:
             for ttl in ttl_files:
                 text = ttl.read_text()
@@ -68,6 +70,12 @@ def main(rdf_dir: str):
                     text = text.replace(VOCAB_BROKEN, VOCAB_FIXED)
                     text = text.replace("\x00PLACEHOLDER\x00", VOCAB_FIXED)
                     vocab_fix_count += vocab_count
+
+                # Fix truncated subresource references (upstream base-URI
+                # bug): places reference locations/names as places/<slug>
+                # instead of places/<id>/<slug>.
+                text, ref_count = fix_truncated_refs(text)
+                ref_fix_count += ref_count
                 out.write(f"# Source: {ttl.name}\n")
                 out.write(text)
                 out.write("\n\n")
@@ -76,6 +84,8 @@ def main(rdf_dir: str):
             print(f"Fixed {fix_count:,} percent-encoded fragment identifiers (%23 → #)")
         if vocab_fix_count:
             print(f"Fixed {vocab_fix_count:,} vocabulary URIs (added place-types/ segment)")
+        if ref_fix_count:
+            print(f"Fixed {ref_fix_count:,} truncated subresource references (places/<slug> → places/<id>/<slug>)")
         print(f"Created pleiades.ttl ({output.stat().st_size:,} bytes)")
 
         # Push raw
