@@ -16,6 +16,7 @@ on:
           - ocre
           - rpc
           - edh
+          - kerameikos
           - all
       version:
         description: "Version tag (default: latest)"

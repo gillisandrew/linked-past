@@ -4,7 +4,7 @@
 from linked_past.core.registry import discover_plugins
 from linked_past.core.server import create_mcp_server
 
-EXPECTED_DATASETS = {"dprr", "pleiades", "periodo", "nomisma", "crro", "ocre", "rpc", "edh"}
+EXPECTED_DATASETS = {"dprr", "pleiades", "periodo", "nomisma", "crro", "ocre", "rpc", "edh", "kerameikos"}
 
 
 def test_discover_finds_all_datasets():

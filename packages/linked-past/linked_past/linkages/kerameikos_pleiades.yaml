@@ -1,0 +1,32 @@
+metadata:
+  source_dataset: kerameikos
+  target_dataset: pleiades
+  relationship: "skos:exactMatch"
+  confidence: confirmed
+  method: upstream_assertion
+  basis: "skos:exactMatch links published by Kerameikos.org (kerameikos.org.rdf, 2026-09-04), each verified against the Pleiades title in the local store"
+  author: linked-past project
+  date: "2026-09-04"
+links:
+  - source: "https://kerameikos.org/id/athens"
+    target: "https://pleiades.stoa.org/places/579885"
+    note: "Athens — Pleiades 'Athenae'; Kerameikos production place, broader Attica"
+  - source: "https://kerameikos.org/id/attica"
+    target: "https://pleiades.stoa.org/places/579888"
+    note: "Attica — Pleiades 'Attica' (region)"
+  - source: "https://kerameikos.org/id/apulia"
+    target: "https://pleiades.stoa.org/places/442469"
+    note: "Apulia — Pleiades 'Apulia' (region); South Italian production"
+  - source: "https://kerameikos.org/id/crete"
+    target: "https://pleiades.stoa.org/places/589748"
+    note: "Crete — Pleiades 'Creta (island)'"
+  - source: "https://kerameikos.org/id/italy"
+    target: "https://pleiades.stoa.org/places/1052"
+    note: "Italy — Pleiades 'Italia' (peninsula)"
+  - source: "https://kerameikos.org/id/corinth"
+    target: "https://pleiades.stoa.org/places/570180"
+    confidence: probable
+    note: "Corinth — upstream points at Pleiades 570180 'Corinthia' (the region), not 570182 'Corinthus' (the city); Kerameikos defines the concept as the polis, so kept but downgraded"
+  # Rejected: kid:west_greece ("West Greece, including Magna Graecia, Spain, Southern France, and North Africa")
+  # is broader than Pleiades 1113 'Magna Graecia'; no single Pleiades place matches.
+  # kid:south_italy is referenced by kid:apulia skos:broader but has no triples in the dump.

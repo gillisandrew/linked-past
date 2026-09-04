@@ -144,3 +144,23 @@ edh:
       year         = {1997--2021},
       note         = {Founded by G\'eza Alf\"oldy; directed by Christian Witschel. Heidelberg Academy of Sciences and Humanities. CC BY-SA 4.0}
     }
+
+kerameikos:
+  raw_ref: ghcr.io/gillisandrew/linked-past/raw/kerameikos:latest
+  clean_ref: ghcr.io/gillisandrew/linked-past/datasets/kerameikos:latest
+  ingest_script: scripts/ingest_generic.py
+  fetch_url: https://kerameikos.org/kerameikos.org.rdf
+  source_format: rdf-xml
+  ontology_url: https://kerameikos.org/ontology.rdf
+  min_triple_count: 16000
+  license: ODbL-1.0
+  source_url: https://kerameikos.org/
+  description: "Greek pottery concept vocabulary — shapes, painters, potters, techniques, styles, production places (~1,150 concepts with Wikidata, Getty, and British Museum links)"
+  citation: |
+    @misc{kerameikos,
+      author       = {Gruber, Ethan and Smith, Tyler Jo},
+      title        = {{Kerameikos.org: Linked Open Greek Pottery}},
+      howpublished = {\url{https://kerameikos.org/}},
+      year         = {2013--2026},
+      note         = {American Numismatic Society and University of Virginia. NEH Digital Humanities Advancement Grant. ODbL 1.0}
+    }

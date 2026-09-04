@@ -136,7 +136,7 @@ def test_discover_plugins_finds_all():
 
     plugins = discover_plugins()
     names = {p.name for p in plugins}
-    assert names == {"dprr", "pleiades", "periodo", "nomisma", "crro", "ocre", "rpc", "edh"}
+    assert names == {"dprr", "pleiades", "periodo", "nomisma", "crro", "ocre", "rpc", "edh", "kerameikos"}
 
 
 def test_discover_plugins_returns_instances():

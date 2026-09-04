@@ -1,0 +1,245 @@
+examples:
+  - question: "Find a painter or potter by name (e.g., Exekias)"
+    sparql: |
+      PREFIX crm: <http://www.cidoc-crm.org/cidoc-crm/>
+      PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+      SELECT ?person ?label ?definition
+      WHERE {
+        ?person a crm:E21_Person ;
+                skos:prefLabel ?label .
+        OPTIONAL { ?person skos:definition ?definition . FILTER(lang(?definition) = "en") }
+        FILTER(lang(?label) = "en")
+        FILTER(CONTAINS(LCASE(STR(?label)), "exekias"))
+      }
+      LIMIT 20
+
+  - question: "List all potters (as opposed to painters)"
+    sparql: |
+      PREFIX crm: <http://www.cidoc-crm.org/cidoc-crm/>
+      PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+      PREFIX org: <http://www.w3.org/ns/org#>
+      PREFIX kid: <https://kerameikos.org/id/>
+      SELECT ?person ?label
+      WHERE {
+        ?person a crm:E21_Person ;
+                skos:prefLabel ?label ;
+                org:hasMembership ?membership .
+        ?membership a org:Membership ;
+                    org:role kid:potter .
+        FILTER(lang(?label) = "en")
+      }
+      ORDER BY ?label
+      LIMIT 100
+
+  - question: "Which artists were both potter and painter?"
+    sparql: |
+      PREFIX crm: <http://www.cidoc-crm.org/cidoc-crm/>
+      PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+      PREFIX org: <http://www.w3.org/ns/org#>
+      PREFIX kid: <https://kerameikos.org/id/>
+      SELECT ?person ?label
+      WHERE {
+        ?person a crm:E21_Person ;
+                skos:prefLabel ?label ;
+                org:hasMembership/org:role kid:painter ;
+                org:hasMembership/org:role kid:potter .
+        FILTER(lang(?label) = "en")
+      }
+      ORDER BY ?label
+      LIMIT 100
+
+  - question: "Find red-figure painters active in the 5th century BC"
+    sparql: |
+      PREFIX crm: <http://www.cidoc-crm.org/cidoc-crm/>
+      PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+      SELECT ?person ?label ?definition
+      WHERE {
+        ?person a crm:E21_Person ;
+                skos:prefLabel ?label ;
+                skos:definition ?definition .
+        FILTER(lang(?label) = "en" && lang(?definition) = "en")
+        FILTER(CONTAINS(LCASE(STR(?definition)), "red-figure"))
+        FILTER(REGEX(STR(?definition), "4[0-9]{2}(-| BC)|[0-9]{3}-4[0-9]{2}"))
+      }
+      LIMIT 100
+
+  - question: "Painters with recorded working dates, ordered by start year"
+    sparql: |
+      PREFIX crm: <http://www.cidoc-crm.org/cidoc-crm/>
+      PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+      PREFIX org: <http://www.w3.org/ns/org#>
+      PREFIX edm: <http://www.europeana.eu/schemas/edm/>
+      PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+      SELECT ?person ?label ?begin ?end
+      WHERE {
+        ?person a crm:E21_Person ;
+                skos:prefLabel ?label ;
+                org:hasMembership ?membership .
+        ?membership a org:Membership ;
+                    edm:begin ?begin ;
+                    edm:end ?end .
+        FILTER(lang(?label) = "en")
+        FILTER(xsd:integer(STR(?begin)) >= -500)
+      }
+      ORDER BY xsd:integer(STR(?begin))
+      LIMIT 50
+
+  - question: "List painter groups and classes with their definitions"
+    sparql: |
+      PREFIX crm: <http://www.cidoc-crm.org/cidoc-crm/>
+      PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+      PREFIX org: <http://www.w3.org/ns/org#>
+      SELECT ?group ?label ?role ?definition
+      WHERE {
+        ?group a crm:E74_Group ;
+               skos:prefLabel ?label .
+        OPTIONAL { ?group org:hasMembership ?m . ?m a org:Membership ; org:role ?role }
+        OPTIONAL { ?group skos:definition ?definition . FILTER(lang(?definition) = "en") }
+        FILTER(lang(?label) = "en")
+      }
+      ORDER BY ?label
+      LIMIT 100
+
+  - question: "Show the shape hierarchy: every shape with its broader (parent) shape"
+    sparql: |
+      PREFIX kon: <https://kerameikos.org/ontology#>
+      PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+      SELECT ?shape ?label ?parent ?parentLabel
+      WHERE {
+        ?shape a kon:Shape ;
+               skos:prefLabel ?label ;
+               skos:broader ?parent .
+        ?parent skos:prefLabel ?parentLabel .
+        FILTER(lang(?label) = "en" && lang(?parentLabel) = "en")
+      }
+      ORDER BY ?parentLabel ?label
+      LIMIT 200
+
+  - question: "Find a shape by any name, including alternative spellings and Greek plurals (e.g., skyphoi, oenochoe)"
+    sparql: |
+      PREFIX kon: <https://kerameikos.org/ontology#>
+      PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+      PREFIX ontolex: <http://www.w3.org/ns/lemon/ontolex#>
+      SELECT DISTINCT ?shape ?label ?matched
+      WHERE {
+        ?shape a kon:Shape ;
+               skos:prefLabel ?label .
+        { ?shape skos:prefLabel ?matched }
+        UNION { ?shape skos:altLabel ?matched }
+        UNION { ?shape ontolex:otherForm/ontolex:writtenRep ?matched }
+        FILTER(lang(?label) = "en")
+        FILTER(CONTAINS(LCASE(STR(?matched)), "skyph"))
+      }
+      LIMIT 20
+
+  - question: "What does a shape's label look like in German or Greek?"
+    sparql: |
+      PREFIX kon: <https://kerameikos.org/ontology#>
+      PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+      SELECT ?shape ?en ?de ?el
+      WHERE {
+        ?shape a kon:Shape ;
+               skos:prefLabel ?en .
+        FILTER(lang(?en) = "en")
+        OPTIONAL { ?shape skos:prefLabel ?de . FILTER(lang(?de) = "de") }
+        OPTIONAL { ?shape skos:prefLabel ?el . FILTER(lang(?el) = "el") }
+      }
+      ORDER BY ?en
+      LIMIT 150
+
+  - question: "List all decoration and firing techniques with definitions"
+    sparql: |
+      PREFIX kon: <https://kerameikos.org/ontology#>
+      PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+      SELECT ?technique ?label ?definition
+      WHERE {
+        ?technique a kon:Technique ;
+                   skos:prefLabel ?label .
+        OPTIONAL { ?technique skos:definition ?definition . FILTER(lang(?definition) = "en") }
+        FILTER(lang(?label) = "en")
+      }
+      ORDER BY ?label
+      LIMIT 50
+
+  - question: "Which styles are defined, and what are their Getty AAT or Wikidata equivalents?"
+    sparql: |
+      PREFIX kon: <https://kerameikos.org/ontology#>
+      PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+      SELECT ?style ?label ?match
+      WHERE {
+        ?style a kon:Style ;
+               skos:prefLabel ?label .
+        OPTIONAL { ?style skos:exactMatch ?match }
+        FILTER(lang(?label) = "en")
+      }
+      LIMIT 50
+
+  - question: "List materials with their parent material"
+    sparql: |
+      PREFIX crm: <http://www.cidoc-crm.org/cidoc-crm/>
+      PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+      SELECT ?material ?label ?parentLabel
+      WHERE {
+        ?material a crm:E57_Material ;
+                  skos:prefLabel ?label .
+        OPTIONAL {
+          ?material skos:broader ?parent .
+          ?parent skos:prefLabel ?parentLabel .
+          FILTER(lang(?parentLabel) = "en")
+        }
+        FILTER(lang(?label) = "en")
+      }
+      ORDER BY ?label
+      LIMIT 50
+
+  - question: "Production places with their Pleiades link and coordinates"
+    sparql: |
+      PREFIX crm: <http://www.cidoc-crm.org/cidoc-crm/>
+      PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+      PREFIX geo: <http://www.w3.org/2003/01/geo/wgs84_pos#>
+      PREFIX crmgeo: <http://www.ics.forth.gr/isl/CRMgeo/>
+      SELECT ?place ?label ?pleiades ?lat ?long ?wkt
+      WHERE {
+        ?place a crm:E53_Place ;
+               skos:prefLabel ?label .
+        FILTER(lang(?label) = "en")
+        OPTIONAL { ?place skos:exactMatch ?pleiades . FILTER(CONTAINS(STR(?pleiades), "pleiades.stoa.org")) }
+        OPTIONAL {
+          ?place geo:location ?geom .
+          OPTIONAL { ?geom geo:lat ?lat ; geo:long ?long }
+          OPTIONAL { ?geom crmgeo:asWKT ?wkt }
+        }
+      }
+      LIMIT 20
+
+  - question: "Periods with their date ranges"
+    sparql: |
+      PREFIX crm: <http://www.cidoc-crm.org/cidoc-crm/>
+      PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+      PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+      SELECT ?period ?label ?begin ?end
+      WHERE {
+        ?period a crm:E4_Period ;
+                skos:prefLabel ?label ;
+                crm:P4_has_time-span ?span .
+        ?span crm:P82a_begin_of_the_begin ?begin ;
+              crm:P82b_end_of_the_end ?end .
+        FILTER(lang(?label) = "en")
+      }
+      ORDER BY xsd:integer(STR(?begin))
+      LIMIT 10
+
+  - question: "Get the Wikidata and Getty identifiers for a painter (e.g., the Berlin Painter)"
+    sparql: |
+      PREFIX crm: <http://www.cidoc-crm.org/cidoc-crm/>
+      PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+      SELECT ?person ?label ?match
+      WHERE {
+        ?person a crm:E21_Person ;
+                skos:prefLabel ?label ;
+                skos:exactMatch ?match .
+        FILTER(lang(?label) = "en")
+        FILTER(CONTAINS(LCASE(STR(?label)), "berlin painter"))
+        FILTER(CONTAINS(STR(?match), "wikidata.org") || CONTAINS(STR(?match), "vocab.getty.edu"))
+      }
+      LIMIT 20

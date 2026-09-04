@@ -1,0 +1,109 @@
+tips:
+  - title: "labels_are_multilingual"
+    body: |
+      skos:prefLabel is repeated in up to 145 languages per concept (English, then
+      German, Spanish, French, Italian, Dutch, Greek, Chinese, ...). Every query
+      that returns a label must filter one language or it multiplies rows:
+        ?x skos:prefLabel ?label . FILTER(lang(?label) = "en")
+      Every concept has an English prefLabel. skos:definition exists in English
+      for nearly all concepts and in German, Greek, Hebrew, and Chinese for
+      about a quarter; filter it the same way.
+    classes: []
+
+  - title: "concepts_are_multi_typed"
+    body: |
+      Every entity is a skos:Concept AND a specific class (crm:E21_Person,
+      kon:Shape, crm:E74_Group, kon:Technique, crm:E53_Place, ...). Query the
+      specific class; `?x a skos:Concept` alone returns all 461 concepts plus the
+      15 project editors under https://kerameikos.org/editor/ (skos:inScheme
+      <https://kerameikos.org/editor/>), who are modern staff, not ancient
+      persons. kon:ProductionPlace is declared in the ontology but has no
+      instances; places are crm:E53_Place.
+    classes: []
+
+  - title: "painter_and_potter_roles_are_memberships"
+    body: |
+      A person's role lives on an org:Membership node, not on the person:
+        ?person org:hasMembership ?m . ?m org:role kid:painter .   (186 painters)
+        ?person org:hasMembership ?m . ?m org:role kid:potter .    (30 potters)
+      Membership URIs are the person URI plus a fragment: kid:exekias#painter,
+      kid:exekias#potter. An artist with both roles has two memberships. 14
+      persons (e.g. Vouni Painter, Meidias Painter) have no membership at all,
+      so use `?person a crm:E21_Person` rather than the membership when you want
+      everyone. Groups use the same pattern with org:role kid:group or kid:class.
+    classes: ["E21_Person", "Membership", "E74_Group"]
+
+  - title: "no_person_to_group_links"
+    body: |
+      Kerameikos does not record which painters belong to which Group or Class
+      (only one skos:broader from a Person to a Group exists). Membership nodes
+      on a Group say only whether it is a 'group' or a 'class'. To answer "who
+      was in the Pioneer Group", search the Group's skos:definition text and
+      the Person definitions, which name affiliations in prose.
+    classes: ["E74_Group", "E21_Person", "Membership"]
+
+  - title: "dates_mostly_in_prose"
+    body: |
+      Structured working dates (edm:begin / edm:end on the Membership) exist for
+      only 7 painters; they are xsd:gYear literals like "-0470"^^xsd:gYear (BC
+      negative, zero padded). xsd:integer(?begin) on a gYear silently unbinds and
+      the FILTER drops every row; go through the string:
+        FILTER(xsd:integer(STR(?begin)) >= -500)   ORDER BY xsd:integer(STR(?begin))
+      Plain string comparison reverses BC order. For everyone else the date is prose inside the
+      English skos:definition ("active ca. 520-500 BCE", "third quarter of the
+      6th c. BCE"); search it with CONTAINS or REGEX. Period time-spans
+      (crm:P4_has_time-span -> crm:P82a_begin_of_the_begin / P82b_end_of_the_end)
+      use the same "-0600"^^xsd:gYear format and need the same STR() cast.
+    classes: ["E21_Person", "Membership", "E4_Period"]
+
+  - title: "technique_vs_style"
+    body: |
+      Black-figure, red-figure, white ground, Six's technique, coral red, and
+      added colour are kon:Technique (22 concepts). kon:Style holds only three
+      concepts: Wild Goat Style, Marine Style, and South Italian. Chronological
+      labels (Archaic, Classical) are crm:E4_Period. A painter's technique is
+      not a structured link; it appears in the skos:definition text
+      ("an Athenian red-figure painter"), so filter on the definition.
+    classes: ["Technique", "Style", "E21_Person", "E4_Period"]
+
+  - title: "shape_hierarchy_and_plurals"
+    body: |
+      62 of 127 shapes have skos:broader pointing at a parent shape (Volute
+      Krater -> Krater, Stemless Cup -> Cup); the rest are top-level. Use
+      skos:broader* to gather a whole family. Greek plurals (Skyphoi, Pyxides,
+      Rhyta) are not altLabels: they hang off ontolex:otherForm/ontolex:writtenRep
+      with lexinfo:number lexinfo:plural. skos:altLabel carries Latinised or
+      alternative spellings (Oenochoe, Cotyla) and a few German terms.
+    classes: ["Shape"]
+
+  - title: "concordances_by_host"
+    body: |
+      skos:exactMatch is the concordance predicate (1,330 links). By host:
+      vocab.getty.edu (AAT for shapes/techniques, ULAN for persons, TGN for
+      places), britishmuseum.org/collection/term (BIOG... for persons, x...
+      for terms), wikidata.org/entity (241), viaf.org, d-nb.info/gnd, dbpedia.
+      Pleiades appears on 6 of the 7 places; PeriodO (n2t.net/ark:/99152) and
+      ChronOntology on periods; nomisma.org once. skos:closeMatch is used only
+      twice (AAT for black-figure and red-figure). Filter by host with
+      CONTAINS(STR(?match), "wikidata.org").
+    classes: ["E21_Person", "Shape", "E53_Place", "E4_Period", "Technique", "E74_Group"]
+
+  - title: "place_geometry_on_hash_this_node"
+    body: |
+      Coordinates are not on the place. Each place has geo:location and
+      crm:P168_place_is_defined_by pointing at <place URI>#this, a
+      geo:SpatialThing / crmgeo:SP5_Geometric_Place_Expression carrying geo:lat
+      and geo:long (points: Athens, Corinth) or crmgeo:asWKT and a GeoJSON
+      literal (polygons: Attica, Apulia). Only 4 of the 7 places have geometry;
+      Italy, South Italy, and Crete have none. Containment is skos:broader on the
+      place and dcterms:isPartOf on the #this node.
+    classes: ["E53_Place"]
+
+  - title: "ignore_provenance_bookkeeping"
+    body: |
+      About 2,650 of the 18,000 triples' subjects are editing history:
+      skos:changeNote -> <concept>#provenance (dcterms:ProvenanceStatement)
+      -> prov:wasGeneratedBy -> prov:Activity / prov:Create / prov:Modify nodes
+      with prov:atTime and prov:wasAssociatedWith an editor. They are safe to
+      ignore for scholarly questions; do not count them as concepts.
+    classes: []

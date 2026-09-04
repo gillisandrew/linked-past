@@ -7,6 +7,7 @@ from linked_past.datasets.base import ValidationResult
 from linked_past.datasets.crro.plugin import CRROPlugin
 from linked_past.datasets.dprr.plugin import DPRRPlugin
 from linked_past.datasets.edh.plugin import EDHPlugin
+from linked_past.datasets.kerameikos.plugin import KerameikosPlugin
 from linked_past.datasets.nomisma.plugin import NomismaPlugin
 from linked_past.datasets.ocre.plugin import OCREPlugin
 from linked_past.datasets.periodo.plugin import PeriodOPlugin
@@ -115,6 +116,19 @@ PLUGIN_SPECS = [
             '@prefix skos: <http://www.w3.org/2004/02/skos/core#> .\n'
             '<http://edh-www.adw.uni-heidelberg.de/edh/inschrift/HD000001> a epi:Inscription ;\n'
             '    skos:prefLabel "epitaph"@en .\n'
+        ),
+    ),
+    (
+        KerameikosPlugin,
+        "kerameikos",
+        "ODbL 1.0",
+        "kon",
+        ["Person", "Shape"],
+        (
+            '@prefix kon: <https://kerameikos.org/ontology#> .\n'
+            '@prefix skos: <http://www.w3.org/2004/02/skos/core#> .\n'
+            '<https://kerameikos.org/id/kylix> a kon:Shape, skos:Concept ;\n'
+            '    skos:prefLabel "Kylix"@en .\n'
         ),
     ),
 ]

@@ -145,6 +145,7 @@ These break the XML parser before RDF semantics are even considered.
 | ----- | ------- | -------- | --- |
 | Undefined HTML entities | `R.&nbsp;Martini` in text content | RPC | DOCTYPE injection: `<!ENTITY nbsp "&#160;">` |
 | Server blocks bot User-Agents | HTTP 403 for default `Python-urllib` UA | RPC | Send `User-Agent: linked-past/1.0` header |
+| XML declaration and root element on one line | `<?xml ...?><rdf:RDF ...>` | Kerameikos | DOCTYPE injection must follow the `?>`, not the first line (`ingest_generic.prepare_rdfxml`) |
 
 #### IRI-level issues (valid XML, invalid RDF)
 
@@ -157,6 +158,7 @@ The XML parses, but the IRI values violate RFC 3987.
 | Interior spaces in IRIs | spaces inside URI local names | RPC | Percent-encode to `%20` |
 | Unicode replacement chars in IRIs | `Ayd�nc�k` in DBpedia URI (Turkish ı/ğ lost upstream) | Nomisma | Correct to known-good percent-encoded URI (`Ayd%C4%B1nc%C4%B1k`) |
 | Bare DOIs missing scheme | `<doi.org/10.1234/test>` | Pleiades | Prepend `https://` |
+| Hostname-only IRIs missing scheme | `rdf:resource="www.wikidata.org/entity/Q37632834"` (2 occurrences) | Kerameikos | Prepend `http://` at ingest (`ingest_generic.prepare_rdfxml`, prints count) |
 
 #### Turtle-level issues (valid RDF/XML, breaks strict Turtle parsers)
 
