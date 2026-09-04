@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from pyoxigraph import Store
+
 from linked_past.datasets.base import DatasetPlugin, VersionInfo
 
 
@@ -36,3 +38,8 @@ class OCREPlugin(DatasetPlugin):
             triple_count=0,
             rdf_format="turtle",
         )
+
+    def extra_search_entries(self, store: Store, registry) -> list[tuple[str, str]]:
+        from linked_past.datasets.coin_types import issuer_enriched_labels
+
+        return issuer_enriched_labels(self.name, store, registry)
