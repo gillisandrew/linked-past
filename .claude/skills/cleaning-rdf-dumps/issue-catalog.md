@@ -10,14 +10,16 @@ error, and says where the fix already lives.
 |---------|-------|--------------|
 | `undefined entity` | HTML entities in RDF/XML text (currently `nbsp`; add further entities such as `mdash`/`ndash` to the same DOCTYPE if a new source needs them) | `scripts/ingest_generic.py` DOCTYPE injection |
 | HTTP 403 on download | Host blocks default Python user agent | `scripts/ingest_generic.py` sends `User-Agent: linked-past/1.0` |
+| `undefined entity` even though a DOCTYPE was injected | XML declaration and root element share a line, so a line-based injection landed inside the root | `prepare_rdfxml` inserts after the `?>` of the declaration, not after line one |
 
 ## The IRI is rejected
 
 | You see | Cause | Fix lives in |
 |---------|-------|--------------|
-| Invalid IRI `-` or `—` | Placeholder values in `rdf:resource` | Ingest rewrite: drop the attribute |
-| IRI ending in a space | Trailing whitespace upstream | Ingest rewrite: strip |
-| IRI with an interior space | Unencoded local names | Ingest rewrite: percent-encode to `%20` |
+| Invalid IRI `-` or `—` | Placeholder values in `rdf:resource` | Not implemented (designed in `docs/data-lifecycle.md`, "Replacing rapper with pyoxigraph"); add to `ingest_generic.prepare_rdfxml` with a count if a source needs it |
+| IRI ending in a space | Trailing whitespace upstream | Not implemented; same as above |
+| IRI with an interior space | Unencoded local names | Not implemented; same as above |
+| `rdf:resource="www.example.org/..."` rejected or resolved to `file:///` | Hostname-only IRI, no scheme | `scripts/ingest_generic.py` `prepare_rdfxml` prepends `http://` |
 | IRI containing U+FFFD | Characters lost upstream | `scripts/ingest_nomisma.py`: correct known cases, drop the rest |
 | `<doi.org/10....>` rejected | Bare DOI without scheme | `linked_past_store/sanitize.py` `_BARE_DOI` |
 

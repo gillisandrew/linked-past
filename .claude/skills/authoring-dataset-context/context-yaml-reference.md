@@ -103,8 +103,11 @@ examples:
 
 Top-level key `tips`, a list of `{title, body, classes}`. `title` is a short
 snake_case handle; `body` may be multi-line and may contain a SPARQL
-fragment; `classes` lists class names from `schemas.yaml` (empty list for
-cross-cutting).
+fragment; `classes` lists class names, either `schemas.yaml` keys or the URI
+local names (`geography_place` for `edh:geography_place`), empty for
+cross-cutting. Tip matching uses URI local names, so the plugin maps keys to
+local names when it loads; `test_plugin_tip_classes_resolve_to_schema_classes`
+fails on any tag that is neither.
 
 ```yaml
 tips:

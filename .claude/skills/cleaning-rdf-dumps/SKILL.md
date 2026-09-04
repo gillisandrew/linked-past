@@ -57,22 +57,29 @@ been seen before and the fix already exists in one of those files.
 - Ingest script: apply the fix to the raw text before push and print the count.
 - Never edit the Turtle by hand, and never commit a patched artifact. The next upstream release must go through the same code.
 
-### 4. Re-run and record counts
+### 4. Dry-run first, then re-run and record counts
 
-`clean_dataset` pulls raw, sanitizes, verifies, prints the fix count and
-schema diff, and pushes to `clean_ref` — all unconditionally in the same
-run, with no dry-run flag. Confirm with the user before running the
-command, not after the diff prints: by the time the diff is visible the
-push has already happened.
+`clean_dataset` pulls raw, sanitizes, verifies, generates the VoID and
+schema sidecars, prints the fix count and the schema diff against the
+previous version, and pushes to `clean_ref`. Preview all of it without
+pushing:
 
 ```bash
-uv run python -m scripts.clean_dataset <name>       # confirm first: this run also pushes clean
+uv run python -m scripts.clean_dataset <name> --no-push --out scratch/clean-<name>
+```
+
+That writes `<name>.ttl`, `_void.ttl`, `_schema.yaml` (and `_ontology.ttl`
+when `ontology_url` is set) to the directory and pushes nothing. Read the
+fix count, the verified triple count, and the schema diff there. When they
+look right, confirm with the user and run the pushing form:
+
+```bash
+uv run python -m scripts.clean_dataset <name>       # pushes to clean_ref
 uv run python -m scripts.validate_dataset <name>
 ```
 
-`clean_dataset` prints the number of fixes and the schema diff against the
-previous version. Copy the fix count into the `docs/data-lifecycle.md`
-catalog row so the next release can be compared.
+Copy the fix count into the `docs/data-lifecycle.md` catalog row so the
+next release can be compared.
 
 When `rapper` is not installed, `sanitize_turtle` takes the regex-only path
 (input must already be Turtle) and reports `triple_count=0`; take the count
@@ -81,15 +88,16 @@ from `verify_turtle` instead.
 ### 5. Set the threshold
 
 `min_triple_count` in `datasets.yaml` should be about 90% of the verified
-count, rounded down to a clean number. Too tight fails on harmless upstream
+count printed by the dry run, rounded down to a clean number. Too tight fails on harmless upstream
 edits; too loose lets a truncated download through.
 
 ### 6. Read the schema diff
 
-The diff prints after the push has already happened, so this is a post-hoc
-check, not a gate. Removed classes or a class whose count fell by more than
-half almost always mean a conversion error, not an upstream change — fix
-the cause and re-run (which re-pushes and replaces the bad clean artifact).
+The dry run prints the diff before anything is pushed, so treat it as a
+gate. Removed classes or a class whose count fell by more than half almost
+always mean a conversion error, not an upstream change: fix the cause and
+dry-run again. If a bad artifact was already pushed, the pushing form
+replaces it.
 
 ### 7. Catalog it
 

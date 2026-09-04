@@ -66,6 +66,11 @@ label needs a word from another dataset (issuer, findspot, period) ->
 
 label needs a computed form from the same dataset (e.g. name without prefix) ->
     implement extra_search_entries; no registry lookup needed
+
+name is reachable only through another node (person -> name node -> literal,
+a label on a linked concept, any path longer than one predicate) ->
+    implement extra_search_entries; a schemas.yaml `pred` names one hop and
+    the indexer cannot follow a path
 ```
 
 ### 3. Implement the hook

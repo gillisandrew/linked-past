@@ -5,13 +5,17 @@ writing a new one.
 
 ## RDF/XML at a URL (CRRO, OCRE, RPC)
 
-`scripts/ingest_generic.py` with `source_format: rdf-xml`. It injects a
-DOCTYPE declaring `&nbsp;` so files using HTML entities parse, converts with
-`rapper`, and pushes. Known gaps handled elsewhere: placeholder IRIs (`-`,
-`—`), trailing whitespace in IRIs, interior spaces (see
-`docs/data-lifecycle.md`, "IRI-level issues"). If a new RDF/XML source hits
-one of those, extend the generic script's rewrite step rather than adding a
-bespoke script.
+`scripts/ingest_generic.py` with `source_format: rdf-xml`. Its
+`prepare_rdfxml` step injects a DOCTYPE declaring `&nbsp;` directly after the
+XML declaration (the declaration and root element may share a line) and
+prepends `http://` to scheme-less `rdf:resource`/`rdf:about` values,
+printing a count per fix; `rapper` then converts and the script pushes. If a
+new RDF/XML source has a further source-level quirk, add it to
+`prepare_rdfxml` with a count and a test in
+`scripts/tests/test_ingest_generic.py` rather than writing a bespoke script.
+The placeholder-IRI, trailing-whitespace, and interior-space fixes listed
+for RPC in `docs/data-lifecycle.md` are designed, not implemented; do not
+cite them as existing code.
 
 ## JSON-LD at a URL (PeriodO)
 

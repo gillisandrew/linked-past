@@ -153,9 +153,9 @@ The XML parses, but the IRI values violate RFC 3987.
 
 | Issue | Example | Datasets | Fix |
 | ----- | ------- | -------- | --- |
-| Placeholder IRIs | `rdf:resource="-"`, `rdf:resource="—"` | RPC | Drop the attribute (meaningless) |
-| Trailing whitespace in IRIs | `rdf:resource="http://lgpn.ox.ac.uk/id/V5a-54230 "` | RPC | Strip whitespace |
-| Interior spaces in IRIs | spaces inside URI local names | RPC | Percent-encode to `%20` |
+| Placeholder IRIs | `rdf:resource="-"`, `rdf:resource="—"` | RPC | Designed (drop the attribute; see "Replacing rapper with pyoxigraph"), not implemented |
+| Trailing whitespace in IRIs | `rdf:resource="http://lgpn.ox.ac.uk/id/V5a-54230 "` | RPC | Designed (strip), not implemented |
+| Interior spaces in IRIs | spaces inside URI local names | RPC | Designed (percent-encode to `%20`), not implemented |
 | Unicode replacement chars in IRIs | `Ayd�nc�k` in DBpedia URI (Turkish ı/ğ lost upstream) | Nomisma | Correct to known-good percent-encoded URI (`Ayd%C4%B1nc%C4%B1k`) |
 | Bare DOIs missing scheme | `<doi.org/10.1234/test>` | Pleiades | Prepend `https://` |
 | Hostname-only IRIs missing scheme | `rdf:resource="www.wikidata.org/entity/Q37632834"` (2 occurrences) | Kerameikos | Prepend `http://` at ingest (`ingest_generic.prepare_rdfxml`, prints count) |
@@ -185,7 +185,7 @@ Cleaning happens at two pipeline stages:
 
 **Ingest stage** (per-dataset scripts): handles source-format-specific issues before the data reaches OCI. Each dataset's ingest script owns its own quirks:
 
-- `ingest_generic.py` — RDF/XML sources (CRRO, OCRE, RPC): DOCTYPE entity injection + SAX IRI rewrite + pyoxigraph conversion
+- `ingest_generic.py` — RDF/XML sources (CRRO, OCRE, RPC, Kerameikos): `prepare_rdfxml` (DOCTYPE entity injection after the XML declaration, `http://` for scheme-less IRIs) + rapper conversion. The SAX rewrite and pyoxigraph conversion described below are a design, not current code.
 - `ingest_nomisma.py` — strips lines with Unicode replacement characters after conversion
 - `ingest_pleiades.py` — concatenates multi-file tar.gz (BCP 47 / DOI fixes deferred to clean stage)
 

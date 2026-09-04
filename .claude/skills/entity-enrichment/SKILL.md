@@ -5,7 +5,15 @@ description: Use when linking persons, places, or concepts between datasets (e.g
 
 # Entity Enrichment Skill
 
-Cross-dataset entity matching through structured evidence gathering and human-in-loop verification. Produces YAML linkage entries for the linkage graph.
+Cross-dataset entity matching through structured evidence gathering and human-in-loop verification. Produces YAML linkage entries for the linkage graph. The worked examples are DPRR→Nomisma and DPRR→Pleiades; the phases apply to any source/target pair.
+
+## Tools
+
+With the MCP server running, use `query`, `search_entities(query_text=..., dataset=...)`, and `explore_entity`. Without it, the same operations from the shell:
+
+- SPARQL: `get_read_only_store(get_data_dir() / "<dataset>" / "store").query(...)` from `linked_past.core.store`
+- Search: `SearchIndex(get_data_dir() / "search.db").search("<name>", dataset="<dataset>", doc_type="entity_label")` from `linked_past.core.search`
+- Explore: `SELECT ?p ?o WHERE { <uri> ?p ?o }` in the owning dataset's store; a URI with no rows does not resolve
 
 ## When to Use
 
@@ -24,9 +32,22 @@ Ask the user which datasets to link and what entity type (persons, places, perio
 - **Entity slice** (e.g., moneyers, provincial governors, all persons)
 - **Relationship type** (e.g., `skos:closeMatch` for same-person-different-facet, `owl:sameAs` for identity)
 
+### Phase 1b: Does the source already publish the links?
+
+Before generating candidates, query the source store for `skos:exactMatch`, `skos:closeMatch`, or `owl:sameAs` objects in the target's namespace:
+
+```sparql
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+SELECT ?s ?p ?o WHERE { ?s ?p ?o . FILTER(?p IN (skos:exactMatch, skos:closeMatch, <http://www.w3.org/2002/07/owl#sameAs>)) FILTER(STRSTARTS(STR(?o), "<target namespace>")) }
+```
+
+If it does:
+- `find_links` and `explore_entity` already surface those at query time; no YAML is needed for browsing.
+- Write a YAML file only to feed the meta-entity index (it seeds from linkage YAML and Wikidata concordances, not from store triples) or to record that each link was verified. Use `method: upstream_assertion`, name the upstream file and date in `basis`, and skip Phases 2–5: the candidate list is the upstream link set and verification is one resolve check per target (Phase 7).
+
 ### Phase 2: Candidate Generation
 
-Query the source dataset for entities likely to have matches in the target. Use the `query` MCP tool.
+Query the source dataset for entities likely to have matches in the target. Select the entity class with its label and any dating or reference predicates; the two queries below are the DPRR-specific instances of that pattern.
 
 **For DPRR→Nomisma persons (moneyers):**
 ```sparql
@@ -59,7 +80,7 @@ ORDER BY ?label
 For each candidate, search the target dataset using `search_entities`:
 
 ```
-search_entities("{person_name}", "{target_dataset}")
+search_entities(query_text="{person_name}", dataset="{target_dataset}")
 ```
 
 If no results, try variations:
@@ -102,9 +123,26 @@ Wait for user to accept/reject/adjust each row.
 
 ### Phase 6: Write YAML
 
-For accepted links, append to the appropriate YAML file:
-- `linked_past/linkages/dprr_nomisma_confirmed.yaml` for confirmed
-- `linked_past/linkages/dprr_nomisma_probable.yaml` for probable
+For accepted links, append to `linked_past/linkages/<source>_<target>.yaml`. Every `*.yaml` in that directory is loaded, and `metadata.confidence` is the default for its links. Add a `_<confidence>` suffix only when one pair is split across confidence levels, as `dprr_nomisma_confirmed.yaml` and `dprr_nomisma_probable.yaml` are; single-confidence pairs use the bare name (`dprr_pleiades.yaml`, `kerameikos_pleiades.yaml`).
+
+A new file starts with this metadata block:
+
+```yaml
+metadata:
+  source_dataset: <source>
+  target_dataset: <target>
+  relationship: "skos:closeMatch"
+  confidence: confirmed
+  method: manual_alignment        # or upstream_assertion, automated_name_matching
+  basis: "<what the evidence was, with edition or file and date>"
+  author: linked-past project
+  date: "<YYYY-MM-DD>"
+links:
+```
+
+For `upstream_assertion`, set `relationship` to the predicate upstream actually asserted (`skos:exactMatch` if that is what the source publishes); do not downgrade or upgrade it.
+
+Pleiades targets use the `#this` form, `https://pleiades.stoa.org/places/<id>#this`: that is the Place subject in the store, and the bare URI is the document about it. Other datasets use the entity URI exactly as it appears as a subject in their store.
 
 Use this format per link:
 ```yaml
@@ -119,11 +157,10 @@ If a link has different confidence than the file default, either:
 
 ### Phase 7: Verify and Commit
 
-1. Verify each target URI exists: `explore_entity("{target_uri}")`
+1. Verify each target URI exists: `explore_entity("{target_uri}")`, or the store lookup from the Tools section
 2. Drop links where the target doesn't resolve
-3. Commit: `git commit -m "feat: add {N} DPRR↔{target} cross-links ({slice})"`
-
-Note rejected candidates in the commit message or a comment so they aren't re-proposed.
+3. Run `uv run pytest packages/linked-past/tests/test_linkage.py -q`
+4. Do not commit unless the user asks. Propose the message: `feat: add {N} {source}↔{target} cross-links ({slice})`, listing rejected candidates so they aren't re-proposed.
 
 ## Batch Size
 
@@ -135,12 +172,13 @@ Process 10-20 candidates per batch. Larger batches lose context. If the candidat
 ## Output Artifacts
 
 - YAML linkage entries in `linked_past/linkages/`
-- Git commit with provenance in the message
+- A proposed commit message with provenance (committed only on request)
 - Links available in the server on next restart (or hot-reload if implemented)
 
 ## Anti-Patterns
 
-- **Don't guess URIs** — always verify with `search_entities` or `explore_entity`
+- **Don't guess URIs** — always verify with `search_entities`, `explore_entity`, or a store lookup
+- **Don't re-derive links the source already publishes** — Phase 1b: upstream `exactMatch` sets are the candidate list, not a starting point for name matching
 - **Don't assume name = match** — Roman naming is ambiguous; multiple persons share names
 - **Don't skip evidence gathering** — even "obvious" matches need documented basis
 - **Don't batch too large** — human review quality drops after ~20 candidates

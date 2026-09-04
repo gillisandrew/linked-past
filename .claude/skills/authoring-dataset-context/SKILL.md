@@ -22,7 +22,13 @@ ontology document. Then prove every example runs.
 
 ## Procedure
 
-### 1. Get the data locally
+### 1. Create the package, register it, then get the data locally
+
+`linked-past-server update <name>` resolves the dataset through
+`discover_plugins()`, so the plugin must exist and be registered before the
+data can be pulled. Create the package from step 2's skeletons with the
+metadata attributes filled in and the four YAML files holding only their
+top-level key, do every registration in step 8's list, then:
 
 ```bash
 uv run linked-past-server update <name>     # pulls clean artifact, builds store
@@ -95,6 +101,17 @@ Check each property's real range (run with the snippet above):
 SELECT ?o WHERE { ?s a <ClassURI> ; <PredicateURI> ?o } LIMIT 5
 ```
 
+Check literal datatypes as well as shapes. A value that prints as `0071` may
+be `xsd:gYear`, `xsd:integer`, or a plain string, and a cast that works on
+one returns no row on another (`xsd:integer(?y)` on an `xsd:gYear` literal
+fails silently):
+
+```sparql
+SELECT ?dt (COUNT(*) AS ?n) WHERE { ?s <PredicateURI> ?o . BIND(DATATYPE(?o) AS ?dt) } GROUP BY ?dt
+```
+
+Record the datatype in the property comment and in any date tip.
+
 ### 5. Write `examples.yaml`
 
 Each example is a `question` phrased the way a user would ask it, and a
@@ -116,7 +133,9 @@ to compare it, which label predicate carries language tags, predicates that
 look like one ontology but are another, coverage gaps ("no inscriptions
 before 50 BC"), which of two similar text fields to search. Tag each tip with
 the `classes` it applies to; an empty list makes it a cross-cutting tip shown
-in `get_schema`.
+in `get_schema`. Use the `schemas.yaml` keys (or the URI local names); the
+plugin maps keys to local names when it loads, and
+`test_plugin_tip_classes_resolve_to_schema_classes` fails on anything else.
 
 ### 7. Verify
 
@@ -143,17 +162,32 @@ Then:
 uv run pytest packages/linked-past/tests/test_plugins.py -q
 ```
 
-Then start the server, call `validate_sparql` with a deliberately wrong
-query against one of your classes, and confirm your tips appear in the
-response.
+Then confirm the tips surface, without a server, through the same method
+`validate_sparql` uses:
+
+```bash
+uv run python - <<'EOF'
+from linked_past.datasets.<name>.plugin import <Name>Plugin
+p = <Name>Plugin()
+print(p.get_relevant_context("SELECT ?x WHERE { ?x a <ClassURI> ; <SomePredicateURI> ?y } LIMIT 1"))
+EOF
+```
+
+The tips tagged with that class must appear. If none do, the tip's
+`classes` entries are neither `schemas.yaml` keys nor URI local names;
+`uv run pytest packages/linked-past/tests/test_plugins.py -k tip_classes`
+names the offending tags.
 
 ### 8. Register the plugin
 
 The plugin is not done until it is registered; `discover_plugins()` finds
-subclasses only through the import in `datasets/__init__.py`.
+subclasses only through the import in `datasets/__init__.py`. Step 1 did
+this; re-check the list now that the schema is final:
 `datasets/__init__.py` import and `__all__`; `registry.py` `_URI_NAMESPACES`;
 `tests/conftest.py` map; `tests/test_plugins.py` `PLUGIN_SPECS` with a
-two-triple sample that instantiates one hand-written class.
+two-triple sample that instantiates one hand-written class;
+`tests/test_multi_dataset_integration.py` `EXPECTED_DATASETS`;
+`tests/test_registry.py` expected-names set.
 
 ## Common Mistakes
 

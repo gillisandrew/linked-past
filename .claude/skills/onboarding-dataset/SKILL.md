@@ -27,7 +27,7 @@ clean.
 |----------|----------------|
 | Short name (lowercase letters only) | Used as OCI path, directory, plugin `name`, `LINKED_PAST_DATASETS` value |
 | License, as an SPDX id (`CC-BY-4.0`, `ODbL-1.0`, `CC0-1.0`) | Must permit redistribution; it is stamped on the OCI artifact |
-| Citation as BibTeX | Rendered into artifact annotations and the `citation` attribute |
+| Citation as BibTeX | Rendered into artifact annotations and the `citation` attribute. Look for a "how to cite" or "about" page, a Zenodo or DataCite DOI, or a project publication; when none exists, build an `@misc` entry from the site title, publishing organisation, URL, and year, and say in its `note` that it was constructed |
 | Source URL, serialization, and packaging (single file, tarball, endpoint) | Chooses the ingest path |
 | Rough size (MB, triples) | Sets `min_triple_count` and warns about load time |
 | Update cadence | Decides whether a scheduled workflow is worth it |
@@ -41,7 +41,7 @@ and stop rather than inventing an ontology.
 | # | Stage | Skill | Done when |
 |---|-------|-------|-----------|
 | 1 | Ingest | `ingesting-rdf-source` | `datasets.yaml` entry exists; raw artifact at `raw_ref` (user confirmed the push) |
-| 2 | Clean | `cleaning-rdf-dumps` | `uv run python -m scripts.clean_dataset <name>` (the script pushes; confirm first) and `uv run python -m scripts.validate_dataset <name>` pass; clean artifact at `clean_ref` |
+| 2 | Clean | `cleaning-rdf-dumps` | `uv run python -m scripts.clean_dataset <name> --no-push --out scratch/clean-<name>` is clean, then the pushing form (confirm first) and `uv run python -m scripts.validate_dataset <name>` pass; clean artifact at `clean_ref` |
 | 3 | Context | `authoring-dataset-context` | Plugin package with four YAML files; every example returns rows against the local store; `uv run pytest packages/linked-past/tests/test_plugins.py` passes |
 | 4 | Index | `enriching-search-index` | Only if `search_entities` misses entities a scholar would search for by name |
 | 5 | Link | `entity-enrichment` | Only if the dataset shares entities with an existing one |
@@ -56,6 +56,7 @@ These are easy to forget and each one fails a different test or tool:
 - `packages/linked-past/linked_past/datasets/__init__.py`: import the plugin class and add it to `__all__`, or `discover_plugins()` never sees it.
 - `packages/linked-past/linked_past/core/registry.py` `_URI_NAMESPACES`: add the dataset's entity namespace, or `dataset_for_uri` and the meta-entity index cannot attribute its URIs.
 - `packages/linked-past/tests/conftest.py`: add the name to `ALL_DATASETS` and the class path to the map in `patched_app_context`.
+- `packages/linked-past/tests/test_multi_dataset_integration.py` `EXPECTED_DATASETS` and the expected-names set in `packages/linked-past/tests/test_registry.py`: both enumerate every dataset and fail until the new name is added.
 - `packages/linked-past/tests/test_plugins.py`: add a `PLUGIN_SPECS` tuple with a two-triple sample.
 - `.github/workflows/clean-datasets.yml`: add the name to the `dataset` choice list.
 - `README.md`: dataset count and list in the Packages table and the repository tree.

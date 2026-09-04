@@ -58,40 +58,31 @@ turns it into OCI annotations; do not construct annotations by hand.
 
 ### 3. Dry run without pushing
 
-Never push on the first run. Download and convert into a scratch directory,
-then inspect. For the generic script, do it the same way
-`scripts/ingest_generic.py` does: download with the `linked-past/1.0` user
-agent, then convert with `rapper` for RDF/XML (requires `rapper` on PATH) or
-`rdflib` for JSON-LD:
+Never push on the first run.
+
+Preflight: RDF/XML conversion shells out to `rapper` (Raptor), and so does
+the clean stage's ontology fetch. Check for it before anything else, because
+otherwise the failure surfaces mid-run:
 
 ```bash
-uv run python - <<'EOF'
-import urllib.request
-from pathlib import Path
-url = "<fetch_url>"
-req = urllib.request.Request(url, headers={"User-Agent": "linked-past/1.0"})
-with urllib.request.urlopen(req) as resp:
-    Path("scratch/<name>.rdf").write_bytes(resp.read())
-EOF
-
-# rdf-xml source_format:
-rapper -i rdfxml -o turtle scratch/<name>.rdf > scratch/<name>.ttl
+command -v rapper || echo "install Raptor: brew install raptor (macOS) / apt install raptor2-utils (Debian)"
 ```
 
-If `rapper` reports an undefined entity such as `nbsp`, the real script's
-DOCTYPE injection handles it; add the same DOCTYPE line to the scratch file
-to reproduce (`<!DOCTYPE rdf:RDF [<!ENTITY nbsp "&#160;">]>` after the XML
-declaration).
+For the generic script, run it with `--no-push`. It downloads with the
+`linked-past/1.0` user agent, applies the source-format fixes in
+`prepare_rdfxml` (a DOCTYPE declaring `&nbsp;` inserted directly after the
+XML declaration, even when the declaration and root element share a line;
+`http://` prepended to scheme-less `rdf:resource`/`rdf:about` values),
+converts with `rapper` (RDF/XML) or `rdflib` (JSON-LD), prints the count of
+each fix, and writes the Turtle where you say:
 
 ```bash
-# json-ld source_format:
-uv run python - <<'EOF'
-from rdflib import Graph
-g = Graph()
-g.parse("scratch/<name>.rdf", format="json-ld")
-g.serialize("scratch/<name>.ttl", format="turtle")
-EOF
+mkdir -p scratch
+uv run python -m scripts.ingest_generic <name> --no-push --out scratch/<name>.ttl
 ```
+
+For a bespoke script, structure `main()` so the push is the final statement
+and support the same `--no-push [--out PATH]` arguments.
 
 Then inspect:
 
@@ -106,11 +97,9 @@ head -c 2000 scratch/<name>.ttl
 grep -c '^<' scratch/<name>.ttl      # rough subject count
 ```
 
-For bespoke scripts, structure `main()` so the push is the final statement
-and can be skipped with an environment variable or a `--no-push` argument.
-
-Record the triple count. `min_triple_count` will be set to about 90% of it
-in the clean stage.
+Record the triple count. Set `min_triple_count` in `datasets.yaml` now, to
+about 90% of it rounded down; the clean stage's dry run confirms it against
+the sanitized count.
 
 ### 4. Push the raw artifact
 
@@ -121,7 +110,13 @@ uv run python -m scripts.ingest_<name>          # or: -m scripts.ingest_generic 
 ```
 
 `push_dataset(ref, path, annotations=...)` from `linked_past_store` does the
-upload and returns the digest. It needs registry credentials (`oras login ghcr.io`).
+upload and returns the digest. It needs registry credentials. The
+interactive `oras login ghcr.io` prompt does not work in an agent session;
+log in non-interactively with the GitHub CLI token:
+
+```bash
+gh auth token | oras login ghcr.io -u <github-user> --password-stdin
+```
 
 ### 5. Optional: scheduled workflow
 
