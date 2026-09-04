@@ -1,6 +1,6 @@
 ---
 name: entity-enrichment
-description: Cross-dataset entity matching workflow. Use when linking persons, places, or concepts between datasets (e.g., DPRR↔Nomisma, Pleiades↔TM). Produces curated YAML linkage entries with scholarly provenance.
+description: Use when linking persons, places, or concepts between datasets (e.g., DPRR↔Nomisma, Pleiades↔TM) or when the linkage graph needs new cross-references. Produces curated YAML linkage entries with scholarly provenance.
 ---
 
 # Entity Enrichment Skill

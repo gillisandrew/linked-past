@@ -26,7 +26,7 @@ ontology document. Then prove every example runs.
 
 ```bash
 uv run linked-past-server update <name>     # pulls clean artifact, builds store
-ls "${LINKED_PAST_DATA_DIR:-$HOME/.local/share/linked-past}/<name>"   # <name>.ttl _void.ttl _schema.yaml
+ls "$(uv run python -c "from linked_past.core.store import get_data_dir; print(get_data_dir())")/<name>"   # <name>.ttl _void.ttl _schema.yaml
 ```
 
 ### 2. Create the plugin package
@@ -37,7 +37,7 @@ ls "${LINKED_PAST_DATA_DIR:-$HOME/.local/share/linked-past}/<name>"   # <name>.t
 (`datasets/base.py`) requires: `name`, `display_name`, `description`,
 `citation`, `license`, `url`, `time_coverage`, `spatial_coverage`,
 `oci_dataset = "datasets/<name>"`; the parametrized tests in
-`tests/test_plugins.py::test_plugin_attributes` check the first five
+`tests/test_plugins.py::test_plugin_attributes` check five of them
 (`name`, `license`, `display_name`, `description`, `url`). Do not override
 `fetch` or `load` unless the dataset needs a different loading rule; the
 base `load` already handles multi-file datasets, the ontology sidecar, and

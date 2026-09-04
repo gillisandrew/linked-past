@@ -59,8 +59,14 @@ been seen before and the fix already exists in one of those files.
 
 ### 4. Re-run and record counts
 
+`clean_dataset` pulls raw, sanitizes, verifies, prints the fix count and
+schema diff, and pushes to `clean_ref` — all unconditionally in the same
+run, with no dry-run flag. Confirm with the user before running the
+command, not after the diff prints: by the time the diff is visible the
+push has already happened.
+
 ```bash
-uv run python -m scripts.clean_dataset <name>       # pulls raw, sanitizes, verifies, pushes clean (confirm push with user)
+uv run python -m scripts.clean_dataset <name>       # confirm first: this run also pushes clean
 uv run python -m scripts.validate_dataset <name>
 ```
 
@@ -80,8 +86,10 @@ edits; too loose lets a truncated download through.
 
 ### 6. Read the schema diff
 
-Removed classes or a class whose count fell by more than half almost always
-mean a conversion error, not an upstream change. Check before pushing.
+The diff prints after the push has already happened, so this is a post-hoc
+check, not a gate. Removed classes or a class whose count fell by more than
+half almost always mean a conversion error, not an upstream change — fix
+the cause and re-run (which re-pushes and replaces the bad clean artifact).
 
 ### 7. Catalog it
 

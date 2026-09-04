@@ -6,10 +6,11 @@ tips:
   - title: "date_as_string"
     body: |
       nmo:hasStartDate and nmo:hasEndDate are xsd:string values like '0071', not xsd:integer or xsd:gYear.
-      Negative years (e.g., '-0044') represent BC dates. For date range filters, compare as strings:
-        FILTER(STR(?startDate) <= "-0001")
-      Note: the lexicographic ordering of zero-padded negative strings works correctly
-      (e.g., "-0200" < "-0100" < "-0001" as strings).
+      Negative years (e.g., '-0044') represent BC dates. For date range filters, compare numerically
+      by casting:
+        FILTER(xsd:integer(?startDate) <= -1)
+      Note: plain string comparison is reversed for BC years (e.g., "-0044" > "-0001" as strings)
+      and puts every AD year after every BC year, so it cannot be used here.
       IMPORTANT: EDH's dated coverage begins around 2 BC (-0002). There are effectively
       no inscriptions dated before the late 1st century BC. Do not expect results for
       Republican-era queries before ~50 BC.

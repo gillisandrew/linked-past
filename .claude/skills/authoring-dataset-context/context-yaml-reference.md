@@ -111,7 +111,10 @@ tips:
   - title: "date_as_string"
     body: |
       nmo:hasStartDate is an xsd:string like '0071', not an integer.
-      Compare as strings: FILTER(STR(?startDate) <= "-0001").
+      Compare numerically by casting: FILTER(xsd:integer(?startDate) <= -1).
+      Plain string comparison is wrong here: it reverses order within BC
+      years (e.g. "-0044" > "-0001") and sorts every AD year after every BC
+      year.
       Coverage begins around 2 BC; do not expect Republican-era results.
     classes: ["Inscription"]
 ```

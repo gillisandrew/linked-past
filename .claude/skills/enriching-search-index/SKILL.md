@@ -40,7 +40,7 @@ uv run linked-past-server reindex
 
 Pick five entities a scholar would search for, using the names they would
 type (a person's cognomen, a place's ancient name, a coin's issuer). Run
-`search_entities(name, dataset)` for each. Note which miss, then look at the
+`search_entities(query_text=<name>, dataset=<name>)` for each. Note which miss, then look at the
 entity with `explore_entity` to see which predicate carries the name.
 
 Without a running server, search the index directly:

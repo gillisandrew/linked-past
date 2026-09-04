@@ -76,7 +76,14 @@ EOF
 
 # rdf-xml source_format:
 rapper -i rdfxml -o turtle scratch/<name>.rdf > scratch/<name>.ttl
+```
 
+If `rapper` reports an undefined entity such as `nbsp`, the real script's
+DOCTYPE injection handles it; add the same DOCTYPE line to the scratch file
+to reproduce (`<!DOCTYPE rdf:RDF [<!ENTITY nbsp "&#160;">]>` after the XML
+declaration).
+
+```bash
 # json-ld source_format:
 uv run python - <<'EOF'
 from rdflib import Graph

@@ -23,9 +23,10 @@ triple count is in the expected range.
 
 ## Turtle in a release tarball (DPRR)
 
-`scripts/ingest_dprr.py`: download the tarball, extract the single `.ttl`,
-push. Pattern: `tarfile.open(...).extractall(tmpdir)` then locate the file
-by suffix rather than by a hardcoded name.
+`scripts/ingest_dprr.py`: download the tarball, extract `dprr.ttl` by its
+hardcoded name (`tar.extract("dprr.ttl", ...)`), push. For a new source,
+locate the file by suffix instead of a hardcoded name — the current script
+does not do this, so don't copy that part.
 
 ## Many Turtle files in a git checkout (Pleiades)
 

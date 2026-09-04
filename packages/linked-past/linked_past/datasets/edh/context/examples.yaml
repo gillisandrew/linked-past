@@ -42,13 +42,14 @@ examples:
       PREFIX epi: <http://edh-www.adw.uni-heidelberg.de/lod/ontology#>
       PREFIX nmo: <http://nomisma.org/ontology#>
       PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+      PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
       SELECT ?insc ?label ?startDate ?endDate
       WHERE {
         ?insc a epi:Inscription ;
               skos:prefLabel ?label ;
               nmo:hasStartDate ?startDate ;
               nmo:hasEndDate ?endDate .
-        FILTER(?startDate >= "0071" && ?endDate <= "0130")
+        FILTER(xsd:integer(?startDate) >= 71 && xsd:integer(?endDate) <= 130)
       }
       LIMIT 100
 
