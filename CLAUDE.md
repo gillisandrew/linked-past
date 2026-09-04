@@ -49,4 +49,8 @@ Root `pyproject.toml` is workspace config only. Each package has its own `pyproj
 - Tests live in each package: `packages/linked-past/tests/`, `packages/linked-past-store/tests/`.
 - Tests create ephemeral stores with inline SAMPLE_TURTLE fixtures. Do not mock the store.
 - Integration tests use `build_app_context(eager=True)` and patch all plugin `fetch()` methods.
-- When adding a new dataset plugin, add fetch patches to `tests/test_server.py`, `tests/test_linked_past_integration.py`, and `tests/test_multi_dataset_integration.py`.
+- When adding a new dataset plugin, add it to `ALL_DATASETS` and the plugin-class map in the `patched_app_context` fixture in `packages/linked-past/tests/conftest.py`, and add a `PLUGIN_SPECS` entry in `tests/test_plugins.py`.
+
+## Skills
+
+Project skills live in `.claude/skills/`. `onboarding-dataset` is the entry point for adding a dataset and routes to the stage skills: `ingesting-rdf-source`, `cleaning-rdf-dumps`, `authoring-dataset-context`, `enriching-search-index`, `entity-enrichment`. Each skill must be a `SKILL.md` (enforced by `scripts/tests/test_skill_files.py`).
