@@ -39,17 +39,20 @@ def test_source_uris_use_numeric_ids():
         )
 
 
-def test_target_uris_use_pleiades_this_fragment():
-    """All target URIs must use the https://pleiades.stoa.org/places/{id}#this pattern."""
+def test_target_uris_use_bare_pleiades_record_form():
+    """Targets use the bare https://pleiades.stoa.org/places/{id} record URI.
+
+    That is the form upstream sources and the Wikidata concordances publish;
+    ``#this`` is normalised away by ``canonical_uri`` at load, so writing it
+    here only invites inconsistency.
+    """
     data = _load_links()
     for link in data["links"]:
         target = link["target"]
         assert target.startswith("https://pleiades.stoa.org/places/"), (
             f"Target {target} is not a Pleiades place URI"
         )
-        assert target.endswith("#this"), (
-            f"Target {target} missing #this fragment"
-        )
+        assert "#" not in target, f"Target {target} should be the bare record URI, not a fragment form"
 
 
 def test_no_duplicate_sources():

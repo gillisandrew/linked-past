@@ -52,7 +52,7 @@ Copy the closest existing example rather than starting from a blank file.
 | File | Purpose | Closest example |
 |------|---------|-----------------|
 | `packages/linked-past/linked_past/linkages/<source>_<target>.yaml` (append `_<confidence>` only when one pair is split across confidence levels) | Curated links; every `*.yaml` in the directory is loaded, `metadata.confidence` is the file default | `dprr_pleiades.yaml`; `dprr_nomisma_confirmed.yaml` with `dprr_nomisma_probable.yaml` |
-| Pleiades targets in any linkage file | Use the `#this` form, `https://pleiades.stoa.org/places/<id>#this`; that is the Place subject in the store, the bare URI is the document | `dprr_pleiades.yaml` |
+| Pleiades targets in any linkage file | Use the bare record URI `https://pleiades.stoa.org/places/<id>`, as upstream publishes; `#this` is accepted and normalised by `canonical_uri` in `core/linkage.py` | `kerameikos_pleiades.yaml` |
 | `packages/linked-past/linked_past/linkages/wikidata/*.ttl` | Wikidata concordances | |
 
 ## Docs

@@ -113,16 +113,20 @@ class MetaEntityIndex:
         if not linkage:
             return clusters
 
-        # Query the linkage graph for all skos:closeMatch links
+        from linked_past.core.linkage import _PROV_GRAPH, canonical_uri
+
+        # Query the linkage graph for every link triple; the provenance graph
+        # holds metadata about links, not links, so it is excluded.
         try:
-            results = linkage._store.query("""
-                SELECT ?source ?target ?graph WHERE {
-                    GRAPH ?graph { ?source ?rel ?target }
-                }
+            results = linkage._store.query(f"""
+                SELECT ?source ?target ?graph WHERE {{
+                    GRAPH ?graph {{ ?source ?rel ?target }}
+                    FILTER(?graph != <{_PROV_GRAPH.value}>)
+                }}
             """)
             for row in results:
-                source = row["source"].value
-                target = row["target"].value
+                source = canonical_uri(row["source"].value)
+                target = canonical_uri(row["target"].value)
 
                 # Find or create cluster
                 cluster_id = None

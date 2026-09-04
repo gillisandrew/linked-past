@@ -10,6 +10,7 @@ import logging
 import re
 from dataclasses import dataclass, field
 
+from linked_past.core.linkage import canonical_uri
 from linked_past.core.onomastics import (
     is_greek,
     normalize_praenomen,
@@ -221,6 +222,8 @@ def score_geography(
             return 0.3, "Italy-based career + Italian findspot", False
         return 0.0, "no provincial posts recorded", True
 
+    findspot_pleiades_uri = canonical_uri(findspot_pleiades_uri)
+    dprr_province_pleiades_uris = [canonical_uri(u) for u in dprr_province_pleiades_uris]
     if findspot_pleiades_uri in dprr_province_pleiades_uris:
         return 1.0, f"findspot matches provincial post ({findspot_pleiades_uri})", False
 

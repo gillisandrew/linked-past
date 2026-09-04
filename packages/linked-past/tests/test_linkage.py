@@ -65,7 +65,7 @@ def test_find_links_forward(graph):
     results = graph.find_links("http://romanrepublic.ac.uk/rdf/entity/Province/Sicilia")
     assert len(results) == 1
     r = results[0]
-    assert r["target"] == "https://pleiades.stoa.org/places/462492#this"
+    assert r["target"] == "https://pleiades.stoa.org/places/462492"  # ``#this`` normalised away
     assert r["direction"] == "forward"
     assert r["confidence"] == "confirmed"
 
@@ -157,3 +157,12 @@ def test_per_link_confidence(tmp_path):
     links_pompey = graph.find_links("http://romanrepublic.ac.uk/rdf/entity/Person/2253")
     assert len(links_pompey) == 1
     assert links_pompey[0]["confidence"] == "probable"
+
+
+def test_pleiades_this_form_is_normalized_to_bare(graph):
+    """Pleiades ``#this`` targets load as the bare place URI and both forms resolve."""
+    bare = "https://pleiades.stoa.org/places/462492"
+    forward = graph.find_links("http://romanrepublic.ac.uk/rdf/entity/Province/Sicilia")
+    assert [r["target"] for r in forward] == [bare]
+    assert graph.find_links(bare)[0]["direction"] == "reverse"
+    assert graph.find_links(bare + "#this")[0]["direction"] == "reverse"

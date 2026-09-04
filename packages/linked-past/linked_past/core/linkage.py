@@ -26,6 +26,22 @@ _RELATIONSHIP_MAP = {
 
 _PROV_GRAPH = NamedNode(f"{_LINKPAST}provenance")
 
+_PLEIADES_PLACES = "https://pleiades.stoa.org/places/"
+
+
+def canonical_uri(uri: str) -> str:
+    """Return the canonical form of an entity URI for linking.
+
+    Pleiades publishes two URIs per place: the record (``.../places/<id>``)
+    and the feature (``.../places/<id>#this``). Upstream sources, the
+    Wikidata concordances, and Pleiades' own ``isPrimaryTopicOf`` all use
+    the bare record URI, so that is canonical; ``#this`` is accepted and
+    normalised so links written in either form cluster together.
+    """
+    if uri.startswith(_PLEIADES_PLACES) and uri.endswith("#this"):
+        return uri[: -len("#this")]
+    return uri
+
 
 class LinkageGraph:
     """Manages cross-dataset linkages with provenance metadata in an Oxigraph store."""
@@ -80,8 +96,8 @@ class LinkageGraph:
         predicate = NamedNode(relationship_uri)
 
         for link in data["links"]:
-            source = NamedNode(link["source"])
-            target = NamedNode(link["target"])
+            source = NamedNode(canonical_uri(link["source"]))
+            target = NamedNode(canonical_uri(link["target"]))
             graph_id = NamedNode(f"{_LINKPAST}link/{uuid.uuid4()}")
 
             # The link triple in its own named graph
@@ -135,7 +151,8 @@ class LinkageGraph:
             ))
 
     def find_links(self, uri: str) -> list[dict[str, str]]:
-        """Find forward and reverse links for a URI."""
+        """Find forward and reverse links for a URI (either Pleiades form accepted)."""
+        uri = canonical_uri(uri)
         # Named-graph links (from YAML files — have provenance)
         query = f"""
         SELECT ?target ?relationship ?confidence ?basis ?direction ?graph WHERE {{
@@ -205,6 +222,8 @@ class LinkageGraph:
 
     def get_provenance(self, source_uri: str, target_uri: str) -> dict[str, str] | None:
         """Return provenance metadata for a specific source->target link."""
+        source_uri = canonical_uri(source_uri)
+        target_uri = canonical_uri(target_uri)
         query = f"""
         SELECT ?author ?basis ?confidence ?method ?note WHERE {{
             GRAPH <{_LINKPAST}provenance> {{

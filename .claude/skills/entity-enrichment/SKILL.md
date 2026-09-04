@@ -142,7 +142,7 @@ links:
 
 For `upstream_assertion`, set `relationship` to the predicate upstream actually asserted (`skos:exactMatch` if that is what the source publishes); do not downgrade or upgrade it.
 
-Pleiades targets use the `#this` form, `https://pleiades.stoa.org/places/<id>#this`: that is the Place subject in the store, and the bare URI is the document about it. Other datasets use the entity URI exactly as it appears as a subject in their store.
+Pleiades targets use the bare record URI, `https://pleiades.stoa.org/places/<id>`, which is what upstream sources, the Wikidata concordances, and Pleiades' own `isPrimaryTopicOf` publish. The `#this` feature URI is accepted and normalised to the bare form by `canonical_uri` in `linked_past/core/linkage.py`, so either form clusters together; write the bare one. Other datasets use the entity URI exactly as it appears as a subject in their store.
 
 Use this format per link:
 ```yaml
