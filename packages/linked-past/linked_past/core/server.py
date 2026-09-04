@@ -129,44 +129,14 @@ def _index_dataset(search: SearchIndex, name: str, plugin: object, store=None, r
     except Exception as e:
         logger.warning("Failed to index entity labels for %s: %s", name, e)
 
-    # Enrich coin type labels with issuer/authority names from Nomisma (cross-dataset)
-    if name in ("crro", "ocre") and registry and store:
-        try:
-            nomisma_store = registry.get_store("nomisma")
-            issuer_rows = list(store.query(
-                "PREFIX nmo: <http://nomisma.org/ontology#> "
-                "PREFIX skos: <http://www.w3.org/2004/02/skos/core#> "
-                "SELECT DISTINCT ?coin ?coinLabel ?issuer WHERE { "
-                "  ?coin a nmo:TypeSeriesItem ; "
-                "        skos:prefLabel ?coinLabel ; "
-                "        nmo:hasIssuer ?issuer . "
-                "}"
-            ))
-            issuer_batch = []
-            issuer_seen = set()
-            for row in issuer_rows:
-                coin_uri = row[0].value if hasattr(row[0], "value") else str(row[0])
-                coin_label = row[1].value if hasattr(row[1], "value") else str(row[1])
-                issuer_uri = row[2].value if hasattr(row[2], "value") else str(row[2])
-                # Look up issuer label in Nomisma store
-                issuer_labels = list(nomisma_store.query(
-                    f'SELECT ?label WHERE {{ <{issuer_uri}> <http://www.w3.org/2004/02/skos/core#prefLabel> ?label . '
-                    f"FILTER(lang(?label) = 'en' || lang(?label) = '') }} LIMIT 1"
-                ))
-                if issuer_labels:
-                    issuer_name = issuer_labels[0][0].value
-                    enriched = f"{coin_label} — {issuer_name}"
-                    key = (coin_uri, enriched)
-                    if key not in issuer_seen:
-                        issuer_seen.add(key)
-                        issuer_batch.append((name, "entity_label", f"{enriched}\t{coin_uri}"))
-            if issuer_batch:
-                search.add_batch(issuer_batch)
-            logger.info("Indexed %d enriched coin types with issuer names for %s", len(issuer_batch), name)
-        except KeyError:
-            pass  # Nomisma not initialized
-        except Exception as e:
-            logger.warning("Failed to enrich %s with issuer names: %s", name, e)
+    # Dataset-specific enrichment rows (e.g. coin types with issuer names)
+    try:
+        extra = plugin.extra_search_entries(store, registry) if hasattr(plugin, "extra_search_entries") else []
+        if extra:
+            search.add_batch([(name, doc_type, text) for doc_type, text in extra])
+        logger.info("Indexed %d extra search entries for %s", len(extra), name)
+    except Exception as e:
+        logger.warning("Failed to index extra search entries for %s: %s", name, e)
 
     # Index SKOS vocabulary terms
     schemes = list(store.query(

@@ -1,10 +1,9 @@
 """Tests for issuer-name enrichment of coin type labels."""
 
-from pyoxigraph import RdfFormat, Store
-
 from linked_past.datasets.coin_types import issuer_enriched_labels
 from linked_past.datasets.crro.plugin import CRROPlugin
 from linked_past.datasets.ocre.plugin import OCREPlugin
+from pyoxigraph import RdfFormat, Store
 
 CRRO_TURTLE = """\
 @prefix nmo: <http://nomisma.org/ontology#> .
