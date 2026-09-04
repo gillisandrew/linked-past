@@ -41,7 +41,7 @@ and stop rather than inventing an ontology.
 | # | Stage | Skill | Done when |
 |---|-------|-------|-----------|
 | 1 | Ingest | `ingesting-rdf-source` | `datasets.yaml` entry exists; raw artifact at `raw_ref` (user confirmed the push) |
-| 2 | Clean | `cleaning-rdf-dumps` | `python -m scripts.clean_dataset <name>` and `validate_dataset` pass; clean artifact at `clean_ref` |
+| 2 | Clean | `cleaning-rdf-dumps` | `uv run python -m scripts.clean_dataset <name>` and `uv run python -m scripts.validate_dataset <name>` pass; clean artifact at `clean_ref` |
 | 3 | Context | `authoring-dataset-context` | Plugin package with four YAML files; every example returns rows against the local store; `uv run pytest packages/linked-past/tests/test_plugins.py` passes |
 | 4 | Index | `enriching-search-index` | Only if `search_entities` misses entities a scholar would search for by name |
 | 5 | Link | `entity-enrichment` | Only if the dataset shares entities with an existing one |

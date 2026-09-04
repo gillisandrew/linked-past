@@ -59,7 +59,34 @@ turns it into OCI annotations; do not construct annotations by hand.
 ### 3. Dry run without pushing
 
 Never push on the first run. Download and convert into a scratch directory,
-then inspect:
+then inspect. For the generic script, do it the same way
+`scripts/ingest_generic.py` does: download with the `linked-past/1.0` user
+agent, then convert with `rapper` for RDF/XML (requires `rapper` on PATH) or
+`rdflib` for JSON-LD:
+
+```bash
+uv run python - <<'EOF'
+import urllib.request
+from pathlib import Path
+url = "<fetch_url>"
+req = urllib.request.Request(url, headers={"User-Agent": "linked-past/1.0"})
+with urllib.request.urlopen(req) as resp:
+    Path("scratch/<name>.rdf").write_bytes(resp.read())
+EOF
+
+# rdf-xml source_format:
+rapper -i rdfxml -o turtle scratch/<name>.rdf > scratch/<name>.ttl
+
+# json-ld source_format:
+uv run python - <<'EOF'
+from rdflib import Graph
+g = Graph()
+g.parse("scratch/<name>.rdf", format="json-ld")
+g.serialize("scratch/<name>.ttl", format="turtle")
+EOF
+```
+
+Then inspect:
 
 ```bash
 uv run python - <<'EOF'
@@ -72,8 +99,6 @@ head -c 2000 scratch/<name>.ttl
 grep -c '^<' scratch/<name>.ttl      # rough subject count
 ```
 
-For the generic script, the cheapest dry run is to call its conversion
-steps in a REPL or to temporarily point `raw_ref` at a local registry.
 For bespoke scripts, structure `main()` so the push is the final statement
 and can be skipped with an environment variable or a `--no-push` argument.
 

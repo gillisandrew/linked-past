@@ -33,17 +33,40 @@ ls "${LINKED_PAST_DATA_DIR:-$HOME/.local/share/linked-past}/<name>"   # <name>.t
 
 `packages/linked-past/linked_past/datasets/<name>/__init__.py` (empty),
 `plugin.py`, and `context/` with the four files. Skeletons are in
-`context-yaml-reference.md`. The parametrized tests in
-`tests/test_plugins.py` require: `name`, `display_name`, `description`,
+`context-yaml-reference.md`. The `DatasetPlugin` class contract
+(`datasets/base.py`) requires: `name`, `display_name`, `description`,
 `citation`, `license`, `url`, `time_coverage`, `spatial_coverage`,
-`oci_dataset = "datasets/<name>"`. Do not override `fetch` or `load` unless
-the dataset needs a different loading rule; the base `load` already handles
-multi-file datasets, the ontology sidecar, and materialization.
+`oci_dataset = "datasets/<name>"`; the parametrized tests in
+`tests/test_plugins.py::test_plugin_attributes` check the first five
+(`name`, `license`, `display_name`, `description`, `url`). Do not override
+`fetch` or `load` unless the dataset needs a different loading rule; the
+base `load` already handles multi-file datasets, the ontology sidecar, and
+materialization.
+
+### Querying the store from the shell
+
+Steps 3 and 4 both need to run SPARQL against the local store. Use this
+snippet, substituting the query:
+
+```bash
+uv run python - <<'EOF'
+from linked_past.core.store import get_read_only_store, get_data_dir
+name = "<name>"
+store = get_read_only_store(get_data_dir() / name / "store")
+for row in store.query("""<QUERY>"""):
+    print(row)
+EOF
+```
+
+If the dataset has no OCI artifact yet, `get_read_only_store` has nothing to
+open; the fallback is `pyoxigraph.Store().bulk_load(path=..., format=RdfFormat.TURTLE)`
+against the Turtle file directly.
 
 ### 3. Write `prefixes.yaml` from the data
 
 List every namespace that appears in the data with a short prefix. Verify
-each one with a query rather than trusting the ontology documentation:
+each one with a query rather than trusting the ontology documentation (run
+with the snippet above):
 
 ```sparql
 SELECT ?p (COUNT(*) AS ?n) WHERE { ?s ?p ?o } GROUP BY ?p ORDER BY DESC(?n) LIMIT 50
@@ -66,7 +89,7 @@ auto schema, which the registry merges in at load time. For each class:
   `"links to a Nomisma concept URI"`), because that is what the model needs
   to write a `FILTER`.
 
-Check each property's real range:
+Check each property's real range (run with the snippet above):
 
 ```sparql
 SELECT ?o WHERE { ?s a <ClassURI> ; <PredicateURI> ?o } LIMIT 5
@@ -126,6 +149,8 @@ response.
 
 ### 8. Register the plugin
 
+The plugin is not done until it is registered; `discover_plugins()` finds
+subclasses only through the import in `datasets/__init__.py`.
 `datasets/__init__.py` import and `__all__`; `registry.py` `_URI_NAMESPACES`;
 `tests/conftest.py` map; `tests/test_plugins.py` `PLUGIN_SPECS` with a
 two-triple sample that instantiates one hand-written class.
@@ -138,3 +163,4 @@ two-triple sample that instantiates one hand-written class.
 - Examples without `LIMIT`; the model copies them and floods the viewer.
 - Tips that are general SPARQL advice. If it is true of every dataset it is not a tip.
 - Not tagging tips with classes, so they never surface during validation.
+- Stopping after the YAML files. Two pressure runs wrote perfect context and left the plugin unregistered because "registration was out of scope". It is in scope.

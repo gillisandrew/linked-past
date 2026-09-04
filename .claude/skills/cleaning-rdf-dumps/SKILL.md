@@ -53,7 +53,7 @@ been seen before and the fix already exists in one of those files.
 
 ### 3. Fix at the owning stage
 
-- `sanitize.py`: add a compiled regex and apply it in `_regex_fixes`; return the count so `SanitizeResult.fixes` stays accurate. Add a test in `packages/linked-past-store/tests/`.
+- `sanitize.py`: add a compiled regex and apply it in `_regex_fixes`; return the count so `SanitizeResult.fixes_applied` stays accurate. Add a test in `packages/linked-past-store/tests/`.
 - Ingest script: apply the fix to the raw text before push and print the count.
 - Never edit the Turtle by hand, and never commit a patched artifact. The next upstream release must go through the same code.
 
@@ -67,6 +67,10 @@ uv run python -m scripts.validate_dataset <name>
 `clean_dataset` prints the number of fixes and the schema diff against the
 previous version. Copy the fix count into the `docs/data-lifecycle.md`
 catalog row so the next release can be compared.
+
+When `rapper` is not installed, `sanitize_turtle` takes the regex-only path
+(input must already be Turtle) and reports `triple_count=0`; take the count
+from `verify_turtle` instead.
 
 ### 5. Set the threshold
 

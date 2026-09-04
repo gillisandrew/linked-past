@@ -43,6 +43,17 @@ type (a person's cognomen, a place's ancient name, a coin's issuer). Run
 `search_entities(name, dataset)` for each. Note which miss, then look at the
 entity with `explore_entity` to see which predicate carries the name.
 
+Without a running server, search the index directly:
+
+```bash
+uv run python - <<'EOF'
+from linked_past.core.search import SearchIndex
+from linked_past.core.store import get_data_dir
+idx = SearchIndex(get_data_dir() / "search.db")
+print(idx.search("<name>", dataset="<name>", doc_type="entity_label"))
+EOF
+```
+
 ### 2. Choose the fix
 
 ```
@@ -84,13 +95,18 @@ objects from a few lines of Turtle, wrap them in a fake registry whose
 `get_store` raises `KeyError` for missing names, and assert on the exact
 rows. Add a case where the sibling store is absent and expect `[]`.
 
+```bash
+uv run pytest packages/linked-past/tests/test_<name>.py -q
+```
+
 ### 5. Reindex and re-run the five searches
 
 ```bash
 uv run linked-past-server reindex
 ```
 
-Report which of the five now hit.
+Report which of the five now hit. Without a running server, use the
+`SearchIndex` snippet from step 1 against `search.db` after reindexing.
 
 ## Meta-entity index
 

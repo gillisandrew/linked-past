@@ -8,7 +8,7 @@ error, and says where the fix already lives.
 
 | You see | Cause | Fix lives in |
 |---------|-------|--------------|
-| `undefined entity` naming `nbsp`, `mdash`, `ndash` | HTML entities in RDF/XML text | `scripts/ingest_generic.py` DOCTYPE injection |
+| `undefined entity` | HTML entities in RDF/XML text (currently `nbsp`; add further entities such as `mdash`/`ndash` to the same DOCTYPE if a new source needs them) | `scripts/ingest_generic.py` DOCTYPE injection |
 | HTTP 403 on download | Host blocks default Python user agent | `scripts/ingest_generic.py` sends `User-Agent: linked-past/1.0` |
 
 ## The IRI is rejected
