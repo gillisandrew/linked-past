@@ -200,3 +200,27 @@ def test_plugin_version_info(plugin_spec, tmp_path):
     info = plugin.get_version_info(tmp_path)
     assert info is not None
     assert info.rdf_format == "turtle"
+
+
+def test_plugin_tip_classes_resolve_to_schema_classes(plugin_spec):
+    """Every tip class must match the URI local name the validator extracts.
+
+    ``extract_query_classes`` returns URI local names (``geography_place``,
+    ``E21_Person``), and ``get_relevant_tips`` intersects tip ``classes`` with
+    that set. A tip tagged with a schema key that differs from the local name
+    (``GeographyPlace`` for ``edh:geography_place``) can never surface.
+    """
+    plugin, name, *_ = plugin_spec
+    local_names = set()
+    for cls in plugin._schemas.values():
+        uri = cls["uri"]
+        prefix, _, local = uri.rpartition(":")
+        ns = plugin._prefixes.get(prefix, "")
+        full = ns + local if ns else uri
+        local_names.add(full.rsplit("#", 1)[-1].rsplit("/", 1)[-1])
+    for tip in plugin._tips:
+        for cls in tip.get("classes", []):
+            assert cls in local_names, (
+                f"{name}: tip '{tip['title']}' is tagged '{cls}', which is neither a "
+                f"schema URI local name nor resolvable; it will never be shown"
+            )

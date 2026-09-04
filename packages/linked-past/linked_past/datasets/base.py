@@ -79,6 +79,29 @@ class DatasetPlugin:
         self._schema_dict = build_schema_dict(self._schemas, self._prefixes)
         for ex in self._examples:
             ex["classes"] = extract_query_classes(ex["sparql"], self._schema_dict)
+        self._resolve_tip_classes()
+
+    def _resolve_tip_classes(self) -> None:
+        """Rewrite tip ``classes`` from schema keys to URI local names.
+
+        ``extract_query_classes`` identifies classes by the local name of their
+        URI (``geography_place``, ``E21_Person``), and ``get_relevant_tips``
+        intersects tip ``classes`` with that set. Authors tag tips with the
+        human-readable ``schemas.yaml`` key, which often differs; map each key
+        to its URI local name so the tip can surface. Unknown names are left
+        as written (``test_plugin_tip_classes_resolve_to_schema_classes``
+        reports them).
+        """
+        from linked_past.core.validate import _local_name
+
+        key_to_local: dict[str, str] = {}
+        for key, cls in self._schemas.items():
+            uri = cls.get("uri", "")
+            prefix, sep, local = uri.rpartition(":")
+            namespace = self._prefixes.get(prefix, "") if sep else ""
+            key_to_local[key] = _local_name(namespace + local if namespace else uri)
+        for tip in self._tips:
+            tip["classes"] = [key_to_local.get(c, c) for c in tip.get("classes", [])]
 
     # ------------------------------------------------------------------
     # Fetch / load

@@ -2,8 +2,14 @@
 
 Also runs schema diff against the previous version (if available) before pushing,
 since both schemas are in memory at that point.
+
+Usage: clean_dataset.py <dataset> [version] [--no-push [--out DIR]]
+
+With --no-push the clean Turtle and its sidecars are written to DIR (default:
+a temporary directory that is deleted on exit) and nothing is pushed.
 """
 
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -24,7 +30,7 @@ from scripts.pipeline_config import build_annotations, load_dataset_config, rend
 from scripts.validate_dataset import diff_schemas
 
 
-def main(dataset: str, version: str = "latest"):
+def main(dataset: str, version: str = "latest", push: bool = True, out_dir: Path | None = None):
     ds = load_dataset_config(dataset)
     raw_ref = ds["raw_ref"]
     clean_ref = ds["clean_ref"]
@@ -147,6 +153,16 @@ def main(dataset: str, version: str = "latest"):
             print(f"Downloaded ontology ({ontology_path.stat().st_size:,} bytes)")
             files_to_push.append(ontology_path)
 
+        if not push:
+            if out_dir is not None:
+                out_dir.mkdir(parents=True, exist_ok=True)
+                for f in files_to_push:
+                    shutil.copy2(f, out_dir / f.name)
+                print(f"Dry run: wrote {', '.join(f.name for f in files_to_push)} to {out_dir} (not pushed)")
+            else:
+                print("Dry run: not pushed (pass --out DIR to keep the files)")
+            return
+
         digest = push_dataset(clean_ref, files_to_push, annotations=annotations)
         print(f"Pushed clean: {clean_ref}")
         if digest:
@@ -154,9 +170,16 @@ def main(dataset: str, version: str = "latest"):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("Usage: clean_dataset.py <dataset> [version]")
+    args = sys.argv[1:]
+    push = "--no-push" not in args
+    out_dir = None
+    if "--out" in args:
+        out_dir = Path(args[args.index("--out") + 1])
+        args = [a for i, a in enumerate(args) if i not in (args.index("--out"), args.index("--out") + 1)]
+    args = [a for a in args if a != "--no-push"]
+    if not args:
+        print("Usage: clean_dataset.py <dataset> [version] [--no-push [--out DIR]]")
         sys.exit(1)
-    dataset = sys.argv[1]
-    version = sys.argv[2] if len(sys.argv) > 2 else "latest"
-    main(dataset, version)
+    dataset = args[0]
+    version = args[1] if len(args) > 1 else "latest"
+    main(dataset, version, push=push, out_dir=out_dir)
