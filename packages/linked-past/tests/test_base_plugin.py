@@ -45,3 +45,9 @@ def test_get_relevant_tips_returns_empty_when_no_classes(mock_init):
     sparql = "SELECT ?x WHERE { ?x ?p ?o }"
     result = plugin.get_relevant_tips(sparql)
     assert result == ""
+
+
+@patch("linked_past.datasets.base.DatasetPlugin.__init__", return_value=None)
+def test_extra_search_entries_default_is_empty(mock_init):
+    plugin = FakePlugin.__new__(FakePlugin)
+    assert plugin.extra_search_entries(store=None, registry=None) == []

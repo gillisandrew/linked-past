@@ -213,6 +213,25 @@ class DatasetPlugin:
         return f"\n\n---\n\n## Relevant Tips\n\n{render_tips(tips)}"
 
     # ------------------------------------------------------------------
+    # Search index enrichment
+    # ------------------------------------------------------------------
+
+    def extra_search_entries(self, store: Store, registry) -> list[tuple[str, str]]:
+        """Return additional ``(doc_type, text)`` rows for the search index.
+
+        Called by the server after automatic label indexing. Use it when a
+        dataset's labels are meaningless without context from elsewhere
+        (e.g. coin types that need their issuer's name). Rows use the same
+        text format as entity labels: ``f"{label}\\t{uri}"`` with
+        ``doc_type == "entity_label"``.
+
+        Must tolerate sibling datasets being uninitialised:
+        ``registry.get_store(name)`` raises ``KeyError`` and ``registry``
+        may be ``None``. Return ``[]`` when there is nothing to add.
+        """
+        return []
+
+    # ------------------------------------------------------------------
     # Version / update
     # ------------------------------------------------------------------
 
